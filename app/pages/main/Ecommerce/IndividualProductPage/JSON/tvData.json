@@ -1,0 +1,183 @@
+{
+  "status": "success",
+  "product_id": "58234901625862237890",
+  "name": "SmartTech Pro4K Ultra HD Smart TV",
+  "short_desc": "55-Inch4K Ultra HD Smart LED TV with Voice Control",
+  "long_desc": "Experience stunning picture quality and smart features with the SmartTech Pro4K Ultra HD Smart TV. This55-inch LED TV offers vibrant colors, deep blacks, and immersive audio. Perfect for movie nights, gaming, or binge-watching your favorite shows.",
+  "price": 59999,
+  "currency": "₹",
+  "discount": 15,
+  "final_price": 50999.15,
+  "rating": 4.7,
+  "reviewsCount": 250,
+  "available_sizes": ["55 Inch", "65 Inch", "75 Inch"],
+  "available_colors": [],
+  "images": [
+    "https://img.freepik.com/free-photo/modern-flat-screen-tv-living-room_23-2149072598.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/close-up-4k-tv-remote-control_23-2149076453.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/happy-family-watching-tv-living-room_23-2149077463.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/living-room-modern-flat-screen-tv_23-2149076690.jpg?size=626&ext=jpg"
+  ],
+
+  "features": [
+    "4K Ultra HD Resolution",
+    "Smart TV with Apps",
+    "Voice Control via Remote",
+    "High Dynamic Range (HDR) Support",
+    "Multiple Connectivity Options"
+  ],
+  "reviews_summary": {
+    "average_rating": 4.7,
+    "total_reviews": 250,
+    "reviews_per_rating": [
+      {
+        "star": 5,
+        "count": 180
+      },
+      {
+        "star": 4,
+        "count": 45
+      },
+      {
+        "star": 3,
+        "count": 15
+      },
+      {
+        "star": 2,
+        "count": 5
+      },
+      {
+        "star": 1,
+        "count": 5
+      }
+    ]
+  },
+  "about_item": [
+    {
+      "description": "13mm Full Range Dynamic drivers - Experience audio sensation like no other with the powerful 13mm driver that delivers rich, dynamic sound that transforms your music listening experience."
+    },
+    {
+      "description": "Bluetooth 5.3 - Embrace the future of wireless connectivity with Bluetooth 5.3 for fast, stable, and hassle-free pairing."
+    },
+    {
+      "description": "30dB ANC - Immerse yourself in exceptional, immersive audio and enjoy uninterrupted peace as unwanted noise fades away with 30dB Active Noise Cancellation."
+    },
+    {
+      "description": "40ms low latency Gaming Mode - Dive into the excitement of real-time gaming with the 50ms Low Latency Gaming Mode, unleashing uninterrupted action and elevating your gaming to new heights."
+    },
+    {
+      "description": "IPX4 water resistance - Enjoy your music with peace of mind, knowing your earbuds are protected from water splashes and can withstand various weather conditions for an uninterrupted listening experience."
+    },
+    {
+      "description": "Voice Assistance - Experience enhanced convenience and seamless control with the personal voice assistant, providing instant information and assistance with a simple command."
+    }
+  ],
+  "product_specifications": [
+    {
+      "label": "Brand",
+      "value": "SmartTech"
+    },
+    {
+      "label": "Screen Size",
+      "value": "55 Inch"
+    },
+    {
+      "label": "Display Type",
+      "value": "LED"
+    },
+    {
+      "label": "Resolution",
+      "value": "4K Ultra HD (3840 x2160)"
+    },
+    {
+      "label": "Color",
+      "value": "Black"
+    },
+    {
+      "label": "Smart Features",
+      "value": "Yes"
+    },
+    {
+      "label": "Connectivity Options",
+      "value": "HDMI x3, USB x2, Ethernet, Wi-Fi"
+    },
+    {
+      "label": "Audio Output",
+      "value": "20W"
+    }
+  ],
+  "reviews_insights": [
+    {
+      "attribute": "Picture Quality",
+      "positive": "Excellent",
+      "positive_count": 223,
+      "negative": "Poor",
+      "negative_count": 8
+    },
+    {
+      "attribute": "Sound Quality",
+      "positive": "Good",
+      "positive_count": 150,
+      "negative": "Needs Improvement",
+      "negative_count": 30
+    },
+    {
+      "attribute": "User Interface",
+      "positive": "Intuitive",
+      "positive_count": 180,
+      "negative": "Confusing",
+      "negative_count": 10
+    },
+    {
+      "attribute": "Value for Money",
+      "positive": "Great",
+      "positive_count": 190,
+      "negative": "Overpriced",
+      "negative_count": 5
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": {
+        "name": "Alice Cooper",
+        "avatar": "https://randomuser.me/api/portraits/women/1.jpg"
+      },
+      "rating": 5,
+      "reviewText": "The picture quality is breathtaking! Love the smart features. Setup was a breeze!",
+      "photos": [
+        "https://via.placeholder.com/150",
+        "https://via.placeholder.com/150"
+      ],
+      "likes": 75,
+      "dislikes": 2,
+      "timestamp": "2024-05-10T15:45:23Z"
+    },
+    {
+      "reviewer": {
+        "name": "Robert Miller",
+        "avatar": "https://randomuser.me/api/portraits/men/2.jpg"
+      },
+      "rating": 4,
+      "reviewText": "Great TV for the price! The sound could be better, but overall a solid purchase.",
+      "photos": ["https://via.placeholder.com/150"],
+      "likes": 40,
+      "dislikes": 5,
+      "timestamp": "2024-04-20T09:25:00Z"
+    },
+    {
+      "reviewer": {
+        "name": "Emma Johnson",
+        "avatar": "https://randomuser.me/api/portraits/women/3.jpg"
+      },
+      "rating": 3,
+      "reviewText": "The smart features are cool, but I faced some issues with the remote control. It's decent for the price.",
+      "photos": [
+        "https://via.placeholder.com/150",
+        "https://via.placeholder.com/150"
+      ],
+      "likes": 15,
+      "dislikes": 10,
+      "timestamp": "2024-03-15T13:30:00Z"
+    }
+  ]
+}

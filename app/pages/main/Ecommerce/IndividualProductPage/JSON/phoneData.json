@@ -1,0 +1,181 @@
+{
+  "status": "success",
+  "product_id": "93847296438270189425",
+  "name": "GalaxyUltra12 Pro",
+  "short_desc": "Latest5G Smartphone with108 MP Camera and12 GB RAM",
+  "long_desc": "The GalaxyUltra12 Pro is a cutting-edge smartphone designed for the tech-savvy user. Featuring a stunning6.8-inch Dynamic AMOLED2X display, an incredible108 MP triple camera system, and lightning-fast5G connectivity, this device is perfect for photography enthusiasts and multitaskers alike.",
+  "price": 99999,
+  "currency": "₹",
+  "discount": 10,
+  "final_price": 89999,
+  "rating": 4.8,
+  "reviewsCount": 1500,
+  "available_colors": [
+    {
+      "color": "Phantom Black",
+      "image_url": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTuTgSYCYM4W-Wq4gId3iJaexMQmHxBEaeAZAx0L4MwCAT1encqx6dfPASysPfx37cP0WHPUCq5ACDAEM1krDEFEbtxguIN&usqp=CAE"
+    },
+    {
+      "color": "Phantom Silver",
+      "image_url": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTuTgSYCYM4W-Wq4gId3iJaexMQmHxBEaeAZAx0L4MwCAT1encqx6dfPASysPfx37cP0WHPUCq5ACDAEM1krDEFEbtxguIN&usqp=CAE"
+    },
+    {
+      "color": "Phantom Violet",
+      "image_url": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTuTgSYCYM4W-Wq4gId3iJaexMQmHxBEaeAZAx0L4MwCAT1encqx6dfPASysPfx37cP0WHPUCq5ACDAEM1krDEFEbtxguIN&usqp=CAE"
+    },
+    {
+      "color": "Phantom Pink",
+      "image_url": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTuTgSYCYM4W-Wq4gId3iJaexMQmHxBEaeAZAx0L4MwCAT1encqx6dfPASysPfx37cP0WHPUCq5ACDAEM1krDEFEbtxguIN&usqp=CAE"
+    }
+  ],
+  "images": [
+    "https://img.freepik.com/free-photo/smartphone-with-modern-technology-background_23-2149118602.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/top-view-smartphone-with-black-friday-sale_23-2149113492.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/horizontal-shot-mobile-phone-tablet_23-2149012398.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/black-smartphone-with-light-background_23-2149118238.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/black-smartphone-with-light-background_23-2149118238.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/black-smartphone-with-light-background_23-2149118238.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/black-smartphone-with-light-background_23-2149118238.jpg?size=626&ext=jpg",
+    "https://img.freepik.com/free-photo/black-smartphone-with-light-background_23-2149118238.jpg?size=626&ext=jpg"
+  ],
+  "available_sizes": [],
+  "features": [
+    "Exceptional camera performance",
+    "Immersive display experience",
+    "Fast charging and power share",
+    "High-capacity battery life",
+    "Multiple storage and RAM options"
+  ],
+  "about_item": [
+    {
+      "description": "13mm Full Range Dynamic drivers - Experience audio sensation like no other with the powerful 13mm driver that delivers rich, dynamic sound that transforms your music listening experience."
+    },
+    {
+      "description": "Bluetooth 5.3 - Embrace the future of wireless connectivity with Bluetooth 5.3 for fast, stable, and hassle-free pairing."
+    },
+    {
+      "description": "30dB ANC - Immerse yourself in exceptional, immersive audio and enjoy uninterrupted peace as unwanted noise fades away with 30dB Active Noise Cancellation."
+    },
+    {
+      "description": "40ms low latency Gaming Mode - Dive into the excitement of real-time gaming with the 50ms Low Latency Gaming Mode, unleashing uninterrupted action and elevating your gaming to new heights."
+    },
+    {
+      "description": "IPX4 water resistance - Enjoy your music with peace of mind, knowing your earbuds are protected from water splashes and can withstand various weather conditions for an uninterrupted listening experience."
+    },
+    {
+      "description": "Voice Assistance - Experience enhanced convenience and seamless control with the personal voice assistant, providing instant information and assistance with a simple command."
+    }
+  ],
+  "reviews_summary": {
+    "average_rating": 4.8,
+    "total_reviews": 1500,
+    "reviews_per_rating": [
+      {
+        "star": 5,
+        "count": 1200
+      },
+      {
+        "star": 4,
+        "count": 220
+      },
+      {
+        "star": 3,
+        "count": 40
+      },
+      {
+        "star": 2,
+        "count": 30
+      },
+      {
+        "star": 1,
+        "count": 10
+      }
+    ]
+  },
+  "product_specifications": [
+    {
+      "label": "Brand",
+      "value": "Galaxy"
+    },
+    {
+      "label": "Display",
+      "value": "6.8-inch Dynamic AMOLED2X"
+    },
+    {
+      "label": "Resolution",
+      "value": "3200 x1440 pixels"
+    },
+    {
+      "label": "Camera",
+      "value": "108 MP Triple Camera"
+    },
+    {
+      "label": "Front Camera",
+      "value": "40 MP"
+    },
+    {
+      "label": "RAM",
+      "value": "12 GB"
+    },
+    {
+      "label": "Storage Options",
+      "value": "256 GB /512 GB"
+    },
+    {
+      "label": "Battery Capacity",
+      "value": "5000 mAh"
+    },
+    {
+      "label": "Operating System",
+      "value": "Android13"
+    },
+    {
+      "label": "5G Support",
+      "value": "Yes"
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": {
+        "name": "Sophia Davis",
+        "avatar": "https://randomuser.me/api/portraits/women/1.jpg"
+      },
+      "rating": 5,
+      "reviewText": "Best phone I have ever owned! The camera is mind-blowing, and performance is top-notch!",
+      "photos": [
+        "https://via.placeholder.com/150",
+        "https://via.placeholder.com/150"
+      ],
+      "likes": 150,
+      "dislikes": 2,
+      "timestamp": "2024-07-15T10:45:23Z"
+    },
+    {
+      "reviewer": {
+        "name": "Liam Smith",
+        "avatar": "https://randomuser.me/api/portraits/men/2.jpg"
+      },
+      "rating": 4,
+      "reviewText": "Great performance and display. Battery life could be better, especially for heavy users.",
+      "photos": ["https://via.placeholder.com/150"],
+      "likes": 85,
+      "dislikes": 15,
+      "timestamp": "2024-06-20T12:25:00Z"
+    },
+    {
+      "reviewer": {
+        "name": "Emma Johnson",
+        "avatar": "https://randomuser.me/api/portraits/women/3.jpg"
+      },
+      "rating": 3,
+      "reviewText": "Good phone, but I was expecting better battery life. The camera is really nice though!",
+      "photos": [
+        "https://via.placeholder.com/150",
+        "https://via.placeholder.com/150"
+      ],
+      "likes": 27,
+      "dislikes": 22,
+      "timestamp": "2024-05-01T14:30:00Z"
+    }
+  ]
+}
