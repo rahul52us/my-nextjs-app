@@ -4,6 +4,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
       <nav style={{ display: 'flex', justifyContent: 'center', backgroundColor: '#34495E', padding: '0.5rem' }}>
+      <Link
+          href="/"
+          style={{
+            marginRight: '1rem',
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '5px',
+            transition: 'background-color 0.3s ease',
+          }}
+        >
+          Home
+        </Link>
         <Link
           href="/about"
           style={{
@@ -32,7 +45,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </nav>
 
       {/* Main Content */}
-      <main style={{ flex: '1', padding: '2rem', backgroundColor: '#ecf0f1' }}>
+      <main style={{ flex: '1' }}>
         {children}
       </main>
 
