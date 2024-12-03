@@ -1,4 +1,5 @@
 // app/layout.tsx
+import './styles/global.css'; // Import the global CSS file
 import ThemeProvider from './component/ThemeProvider'; // Import the ThemeProvider
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

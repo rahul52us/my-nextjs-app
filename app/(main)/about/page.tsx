@@ -1,8 +1,11 @@
 import React from 'react'
+import Base64ToFile from '../(base64Tools)/Base64ToFile'
 
 const page = () => {
   return (
-    <div>page</div>
+    <div>
+      <Base64ToFile />
+    </div>
   )
 }
 
