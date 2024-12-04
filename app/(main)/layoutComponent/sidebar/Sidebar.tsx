@@ -34,6 +34,9 @@ const Sidebar: React.FC = () => {
       { name: "File to Base64", icon: FaFileAlt, path: "/converter/encoder/file" },
       { name: "Url to Base64", icon: FaCode, path: "/converter/encoder/url" },
     ],
+    converters: [
+      { name: "Images to Pdf & Base64", icon: FaCode, path: "/converter/images-to-pdf" },
+    ],
   };
 
   const toggleSection = (section: string) => {
