@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Box, VStack, Text, Icon, Collapse, Divider, Tooltip } from "@chakra-ui/react";
-import { FaChevronDown, FaChevronUp, FaFileAlt, FaMusic, FaCode } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaFileAlt, FaMusic, FaCode, FaQrcode, FaBarcode, FaFilePdf, FaLock, FaLockOpen } from "react-icons/fa";
 import { useRouter } from "next/navigation"; // Import useRouter for navigation
 import { usePathname } from "next/navigation"; // Use usePathname to track the current path
 
@@ -36,6 +36,19 @@ const Sidebar: React.FC = () => {
     ],
     converters: [
       { name: "Images to Pdf & Base64", icon: FaCode, path: "/converter/images-to-pdf" },
+      { name: "QR Code Generator", icon: FaQrcode, path: "/converter/qr-code-generator" },
+      { name: "QR Code Reader", icon: FaQrcode, path: "/converter/qr-code-reader" },
+      { name: "Bar Code Generator", icon: FaBarcode, path: "/converter/bar-code-generator" },
+      { name: "Bar Code Reader", icon: FaBarcode, path: "/converter/bar-code-reader" },
+      { name: "files to Zip Compress", icon: FaBarcode, path: "/converter/files-to-zip" },
+      { name: "Zip to Files DeCompress", icon: FaBarcode, path: "/converter/decompress-zip" },
+      { name: "Encrypt File", icon: FaLock, path: "/converter/encrypt-file" },
+      { name: "Decrypt File", icon: FaLockOpen, path: "/converter/decrypt-file" },
+
+
+
+      // { name: "PDF to Text", icon: FaFilePdf, path: "/converter/pdf-to-text" },
+
     ],
   };
 
