@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import debounce from "lodash.debounce";
 import {
   Box,
   Flex,
@@ -51,6 +52,9 @@ export default function MainLayout({
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
+
+  // Debounced Search Handler
+  const handleSearchDebounced = debounce((query: string) => handleSearch(query), 100);
 
   // Search logic
   const handleSearch = (query: string) => {
@@ -107,21 +111,33 @@ export default function MainLayout({
         <Box
           position="relative"
           width="300px"
-          display={{ base: "none", md: "inline" }}
+          display={{ base: "none", md: "block" }}
           ref={dropdownRef}
         >
           <InputGroup>
             <InputLeftElement>
-              <FaSearch color="gray.300" />
+              <FaSearch color="gray.400" />
             </InputLeftElement>
             <Input
               placeholder="Search tools or converters"
               bg="white"
-              borderRadius="md"
+              border="1px solid"
+              borderColor="gray.300"
+              _focus={{
+                borderColor: "teal.500",
+                boxShadow: "0 0 4px teal",
+              }}
+              _hover={{
+                borderColor: "gray.400",
+              }}
+              borderRadius="full"
+              px={4}
+              py={2}
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => handleSearchDebounced(e.target.value)}
             />
           </InputGroup>
+
           {results.length > 0 && (
             <List
               bg="white"
@@ -134,8 +150,20 @@ export default function MainLayout({
               border="1px solid"
               borderColor="gray.200"
               overflowX="hidden"
-              overflowY={'auto'}
-              maxH={'400px'}
+              overflowY="auto"
+              maxHeight="300px"
+              sx={{
+                "&::-webkit-scrollbar": {
+                  width: "8px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "teal.400",
+                  borderRadius: "4px",
+                },
+                "&::-webkit-scrollbar-thumb:hover": {
+                  background: "teal.500",
+                },
+              }}
             >
               {results.map((result: any, index: number) => (
                 <ListItem
@@ -149,9 +177,7 @@ export default function MainLayout({
                     transition:
                       "transform 0.2s ease-in-out, background-color 0.2s ease-in-out",
                   }}
-                  borderBottom={
-                    index < results.length - 1 ? "1px solid" : "none"
-                  }
+                  borderBottom={index < results.length - 1 ? "1px solid" : "none"}
                   borderColor="gray.100"
                 >
                   <Link
@@ -168,16 +194,21 @@ export default function MainLayout({
                         fontWeight="semibold"
                         fontSize="md"
                         color="gray.700"
-                      >
-                        {result.name}
-                      </Text>
+                        dangerouslySetInnerHTML={{
+                          __html: result.name.replace(
+                            new RegExp(searchQuery, "gi"),
+                            (match : any) =>
+                              `<mark style="background: yellow;">${match}</mark>`
+                          ),
+                        }}
+                      />
                     </Flex>
                   </Link>
                 </ListItem>
               ))}
             </List>
           )}
-          </Box>
+        </Box>
 
         {/* Profile */}
         <Flex align="center">
