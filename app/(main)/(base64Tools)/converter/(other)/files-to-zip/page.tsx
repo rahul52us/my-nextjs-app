@@ -9,9 +9,12 @@ import {
   Heading,
   useColorModeValue,
   Text,
+  FormControl,
+  FormLabel,
+  VStack,
 } from "@chakra-ui/react";
-import JSZip from "jszip";
 import { FaDownload } from "react-icons/fa";
+import JSZip from "jszip";
 
 const ZipCompression: React.FC = () => {
   const [files, setFiles] = useState<FileList | null>(null);
@@ -74,21 +77,43 @@ const ZipCompression: React.FC = () => {
   };
 
   return (
-    <Box p={6} bg={bgColor} color={textColor} minH={"80vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
-        Compress Files to ZIP
+    <Box p={8} bg={bgColor} color={textColor} minH={"78vh"} borderRadius="lg" boxShadow="md">
+      <Heading as="h1" size="2xl" color="teal.500" textAlign="center" mb={4}>
+        Compress Files into a ZIP
       </Heading>
-      <Text fontSize="lg" color="gray.600" textAlign="center" mb={6}>
+      <Text fontSize="lg" textAlign="center" mb={6}>
         Choose files from your device to compress into a single ZIP file.
       </Text>
-      <Input type="file" onChange={handleFileChange} multiple mb={4} />
-      <Button
-        colorScheme="blue"
-        onClick={handleCompressFiles}
-        leftIcon={<FaDownload />}
-      >
-        Compress Files to ZIP
-      </Button>
+
+      <VStack spacing={6} align="stretch">
+        {/* File Input */}
+        <FormControl>
+          <FormLabel htmlFor="file" fontSize="lg" fontWeight="bold">
+            Choose Files to Compress
+          </FormLabel>
+          <Input
+            id="file"
+            type="file"
+            onChange={handleFileChange}
+            multiple
+            bg="white"
+            _hover={{ bg: "gray.200" }}
+            borderColor="teal.300"
+          />
+        </FormControl>
+
+        {/* Compress Button */}
+        <Button
+          colorScheme="teal"
+          onClick={handleCompressFiles}
+          leftIcon={<FaDownload />}
+          size="lg"
+          fontSize="lg"
+          _hover={{ bg: "teal.600" }}
+        >
+          Compress Files to ZIP
+        </Button>
+      </VStack>
     </Box>
   );
 };

@@ -140,7 +140,7 @@ const ZipDecompression: React.FC = () => {
   };
 
   return (
-    <Box p={6} bg={bgColor} color={textColor} minH={"80vh"}>
+    <Box p={6} bg={bgColor} color={textColor} minH={"78vh"}>
       <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
         Decompress ZIP File
       </Heading>
@@ -158,6 +158,7 @@ const ZipDecompression: React.FC = () => {
         size="lg"
         fontSize="md"
         borderRadius="md"
+        _hover={{ borderColor: "blue.700" }}
       />
 
       {/* Decompress Button */}
@@ -300,20 +301,18 @@ const ZipDecompression: React.FC = () => {
             )}
             {fileToView?.type === "download" && (
               <Text>
-                This file format is not viewable directly. You can download it
-                using the link below.
-                <br />
-                <Link href={fileToView.url} download>
-                  Download File
-                </Link>
+                The file format is not supported for direct viewing. You can
+                download it instead.
               </Text>
             )}
           </ModalBody>
-
           <ModalFooter>
-            <Button colorScheme="blue" onClick={onClose}>
+            <Button colorScheme="blue" onClick={onClose} mr={3}>
               Close
             </Button>
+            <Link href={fileToView?.url} download="file" isExternal>
+              <Button colorScheme="green">Download File</Button>
+            </Link>
           </ModalFooter>
         </ModalContent>
       </Modal>
