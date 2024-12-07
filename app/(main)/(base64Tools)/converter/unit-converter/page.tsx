@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Select,
   Input,
@@ -27,7 +27,7 @@ export default function UnitConverter() {
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
-  const handleConversion = () => {
+  const handleConversion = useCallback(() => {
     const numericValue = parseFloat(value);
 
     if (isNaN(numericValue) || value.trim() === "") {
@@ -44,11 +44,11 @@ export default function UnitConverter() {
       setError("Invalid conversion options.");
       setResult("");
     }
-  };
+  },[performConversion,value]);
 
   useEffect(() => {
     handleConversion();
-  }, [type, fromUnit, toUnit, value]);
+  }, [type, fromUnit, toUnit, value, handleConversion]);
 
   const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr 1fr" });
 

@@ -1,7 +1,7 @@
 // app/components/ThemeProvider.tsx
 'use client';
 
-import { Box, ChakraProvider, extendTheme, Text } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 
 const theme = extendTheme({

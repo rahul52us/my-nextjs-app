@@ -20,8 +20,6 @@ import {
 } from "@chakra-ui/react";
 import {
   FaExchangeAlt,
-  FaClipboard,
-  FaDownload,
   FaTrashAlt,
 } from "react-icons/fa";
 import { saveAs } from "file-saver";

@@ -24,6 +24,7 @@ const CssToScssConverter = () => {
       const convertedScss = convertCssToScss(fileContent);
       setScssContent(convertedScss);
     } catch (err) {
+      console.log(err)
       setError('Failed to read or convert file.');
     }
   };

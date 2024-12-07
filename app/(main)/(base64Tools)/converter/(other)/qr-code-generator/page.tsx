@@ -20,7 +20,7 @@ import html2canvas from "html2canvas";
 const QRCodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
   const [size, setSize] = useState<number>(256);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading] = useState<boolean>(false);
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const toast = useToast(); // For showing toast notifications

@@ -23,12 +23,12 @@ import {
   CardBody,
   IconButton,
   HStack,
-  Spacer,
   Heading,
   useColorModeValue,
 } from "@chakra-ui/react";
 import JSZip from "jszip";
 import { FaUpload, FaEye, FaDownload, FaTrash } from "react-icons/fa";
+import Image from "next/image";
 
 const ZipDecompression: React.FC = () => {
   const [zipFile, setZipFile] = useState<File | null>(null);
@@ -291,11 +291,9 @@ const ZipDecompression: React.FC = () => {
             )}
 
             {fileToView?.type === "image" && (
-              <img
+              <Image
                 src={fileToView.url}
                 alt="Image"
-                width="100%"
-                height="auto"
                 style={{ borderRadius: "8px" }}
               />
             )}

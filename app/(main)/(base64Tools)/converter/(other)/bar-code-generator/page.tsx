@@ -16,11 +16,12 @@ import {
 import JsBarcode from "jsbarcode";
 import { FaDownload, FaTrash } from "react-icons/fa";
 import html2canvas from "html2canvas";
+import Image from "next/image";
 
 const BarcodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
   const [size, setSize] = useState<number>(256);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading] = useState<boolean>(false);
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const toast = useToast(); // For showing toast notifications
@@ -128,7 +129,7 @@ const BarcodeGenerator: React.FC = () => {
           maxWidth="100%"
           boxShadow="md"
         >
-          <img src={generateBarcode()} alt="Generated Barcode" />
+          <Image src={generateBarcode()} alt="Generated Barcode" />
         </Box>
       ) : (
         <Text mt={5} textAlign="center" color="gray.500">

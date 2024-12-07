@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Select,
   Input,
@@ -71,7 +71,7 @@ export default function TimeConverter() {
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
-  const handleConversion = () => {
+  const handleConversion = useCallback(() => {
     if (value.trim() === "") {
       setResult("");
       setError("Please enter a value.");
@@ -93,11 +93,11 @@ export default function TimeConverter() {
       setError("Invalid input or conversion units.");
       setResult("");
     }
-  };
+  },[convertTime,value]);
 
   useEffect(() => {
     handleConversion();
-  }, [fromUnit, toUnit, value]);
+  }, [fromUnit, toUnit, value,handleConversion]);
 
   const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
 

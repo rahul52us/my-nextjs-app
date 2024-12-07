@@ -25,7 +25,7 @@ import {
 const Base64Image = () => {
   const [base64, setBase64] = useState<string>("");
   const [previewContent, setPreviewContent] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string | null>(null);
+  const  setFileType = useState<string | null>(null)[1];
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
@@ -91,8 +91,14 @@ const Base64Image = () => {
 
   const handleTogglePreview = () => {
     setShowPreview((prev) => !prev);
-    showPreview ? onClose() : onOpen();
+
+    if (showPreview) {
+      onClose();
+    } else {
+      onOpen();
+    }
   };
+
 
   const handleReset = () => {
     setPreviewContent(null);

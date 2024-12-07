@@ -30,7 +30,7 @@ const ImagesToPdf: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [base64Data, setBase64Data] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>("output");
+  const [fileName] = useState<string>("output");
   const toast = useToast();
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");

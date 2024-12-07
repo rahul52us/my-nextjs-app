@@ -108,7 +108,8 @@ export function getCustomTextDate(
     const date = moment.utc(dateString);
     const formattedDate = date.format(format || SHORT_DATE_FORMAT);
     return `${title} ${formattedDate}`;
-  } catch (_) {
+  } catch (err) {
+    console.log(err)
     return ``;
   }
 }

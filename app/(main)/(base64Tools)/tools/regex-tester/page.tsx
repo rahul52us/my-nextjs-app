@@ -11,12 +11,12 @@ import {
   Input,
   Textarea,
   useToast,
-  useColorModeValue,
   HStack,
   Checkbox,
   Text,
   Spinner,
   Flex,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { FaClipboard, FaTrashAlt, FaLightbulb } from "react-icons/fa";
 
@@ -47,7 +47,8 @@ const RegexTester = () => {
         duration: 3000,
         isClosable: true,
       });
-    } catch (error) {
+    } catch (err) {
+      console.log(err)
       toast({
         title: "Invalid Regex",
         description: "Check your regular expression and try again.",
@@ -122,7 +123,6 @@ const RegexTester = () => {
             value={regex}
             onChange={(e) => setRegex(e.target.value)}
             placeholder="e.g., \\d{3}-\\d{2}-\\d{4}"
-            bg={useColorModeValue("white", "gray.700")}
             rounded="md"
           />
         </FormControl>
@@ -157,7 +157,6 @@ const RegexTester = () => {
             onChange={(e) => setTestString(e.target.value)}
             placeholder="Paste text here to test against regex"
             rows={6}
-            bg={useColorModeValue("white", "gray.700")}
             rounded="md"
           />
         </FormControl>
@@ -181,7 +180,6 @@ const RegexTester = () => {
               value={matches.join("\n")}
               readOnly
               rows={matches.length + 2}
-              bg={useColorModeValue("white", "gray.700")}
               rounded="md"
             />
           </Box>

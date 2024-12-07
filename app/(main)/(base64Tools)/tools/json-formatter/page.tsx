@@ -48,7 +48,7 @@ const JsonFormatter = () => {
   const [isClient, setIsClient] = useState(false);
   const [fontSize, setFontSize] = useState(14); // Initial font size
   const [jsonTheme, setJsonTheme] = useState<any>("rjv-default"); // Initial theme
-  const [file, setFile] = useState<File | null>(null);
+  const setFile = useState<File | null>(null)[1]
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const bgColor = useColorModeValue("gray.50", "gray.800");
@@ -79,6 +79,7 @@ const JsonFormatter = () => {
       setFormattedJson(parsedJson);
       setError(null);
     } catch (err: any) {
+      console.log(err)
       // Enhanced error handling
       setFormattedJson(null);
       console.error("Error parsing JSON:", err);  // Debugging output
@@ -98,6 +99,7 @@ const JsonFormatter = () => {
           setFile(file);
           onClose(); // Close the modal after successful file upload
         } catch (err) {
+          console.log(err)
           setError("Failed to read the file.");
         }
       };
@@ -156,7 +158,7 @@ const JsonFormatter = () => {
             <Editor
               height="410px"
               language="json"
-              theme={useColorModeValue("vs-light", "vs-dark")}
+              theme={"vs-light"}
               value={rawJson}
               onChange={(value) => handleJsonInput(value || "")}
               options={{

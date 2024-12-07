@@ -13,7 +13,6 @@ import {
   useToast,
   HStack,
   useColorModeValue,
-  useBreakpointValue,
   Spinner,
 } from "@chakra-ui/react";
 import { FaCopy, FaDownload, FaUpload } from "react-icons/fa";

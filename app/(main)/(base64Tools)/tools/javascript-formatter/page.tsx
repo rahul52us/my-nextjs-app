@@ -82,6 +82,7 @@ const CodeFormatter = () => {
         isClosable: true,
       });
     } catch (err) {
+      console.log(err)
       toast({
         title: "Error formatting code!",
         description: "Ensure your code is valid before formatting.",

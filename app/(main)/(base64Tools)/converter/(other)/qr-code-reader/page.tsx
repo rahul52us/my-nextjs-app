@@ -13,7 +13,6 @@ import {
   Card,
   CardBody,
   CardFooter,
-  Stack,
   IconButton,
   useClipboard,
 } from "@chakra-ui/react";
@@ -27,7 +26,7 @@ const QRCodeReaderComponent: React.FC = () => {
   const textColor = useColorModeValue("gray.800", "gray.100");
   const toast = useToast();
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
-  const { onCopy, hasCopied } = useClipboard(scannedText || ""); // Chakra's clipboard hook
+  const { onCopy } = useClipboard(scannedText || ""); // Chakra's clipboard hook
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -64,6 +63,7 @@ const QRCodeReaderComponent: React.FC = () => {
             }
           })
           .catch((error) => {
+            console.log(error)
             toast({
               title: "Scan Failed",
               description: "Could not decode QR code from image.",

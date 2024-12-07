@@ -8,7 +8,6 @@ import {
   InputGroup,
   Input,
   InputLeftElement,
-  useBreakpointValue,
 } from "@chakra-ui/react";
 import { FaBars, FaSearch, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import debounce from "lodash.debounce";
@@ -30,7 +29,7 @@ export default function Header({
   toggleSidebar,
 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [results, setResults] = React.useState<any[]>([]);
+  const setResults = React.useState<any[]>([])[1]
 
   const handleSearch = debounce((query: string) => {
     if (!query) {

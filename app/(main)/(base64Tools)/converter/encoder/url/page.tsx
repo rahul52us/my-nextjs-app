@@ -48,6 +48,7 @@ const UrlToBase64 = () => {
 
       reader.readAsDataURL(blob);
     } catch (error) {
+      console.log(error)
       toast({
         title: "Error",
         description: "Failed to fetch or convert the URL content.",

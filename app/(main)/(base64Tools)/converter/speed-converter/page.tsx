@@ -91,7 +91,7 @@ export default function SpeedConverter() {
 
   useEffect(() => {
     handleConversion();
-  }, [fromUnit, toUnit, value]);
+  }, [fromUnit, toUnit, value,handleConversion]);
 
   const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
 

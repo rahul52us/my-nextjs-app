@@ -94,10 +94,10 @@ const FileEncryption = () => {
             Enter Secret Key
           </FormLabel>
           <InputGroup>
-            <InputLeftElement
-              pointerEvents="none"
-              children={<IconButton aria-label="Key Icon" icon={<FaKey />} variant="link" />}
-            />
+          <InputLeftElement pointerEvents="none">
+  <IconButton aria-label="Key Icon" icon={<FaKey />} variant="link" />
+</InputLeftElement>
+
             <Input
               id="secret-key"
               type="text"

@@ -86,7 +86,7 @@ export const advancedSearch = (
 };
 
 export const getIdFromObject = (data: any, property: string = "_id") => {
-  var arr: any = [];
+  const arr: any = [];
   if (Array.isArray(data)) {
     data.forEach((item: any) => {
       arr.push(item[property]);
@@ -108,7 +108,8 @@ export const formatCurrency = (amount: number, currency: string = '₹'): string
 
     // Format the amount with commas and two decimal places
     return `${currency} ${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
-  } catch (error) {
+  } catch (err) {
+    console.log(err)
     // Return a default value in case of error
     return `${currency} 0.00`;
   }

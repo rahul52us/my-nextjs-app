@@ -25,7 +25,7 @@ import {
 const Base64ToFile = () => {
   const [base64, setBase64] = useState<string>("");
   const [previewContent, setPreviewContent] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string | null>(null);
+  const setFileType = useState<string | null>(null)[1];
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const bgColor = useColorModeValue("gray.100", "gray.800");
@@ -68,6 +68,7 @@ const Base64ToFile = () => {
       // Save the file using the correct MIME type and file name
       saveAs(blob, generateFileName(mimeType));
     } catch (error) {
+      console.log(error)
       alert("Invalid Base64 data. Please check the input format.");
     }
   };
@@ -88,9 +89,17 @@ const Base64ToFile = () => {
   };
 
   const handleTogglePreview = () => {
-    setShowPreview((prev) => !prev);
-    showPreview ? onClose() : onOpen();
+    setShowPreview((prev) => {
+      const newState = !prev;
+      if (newState) {
+        onOpen();
+      } else {
+        onClose();
+      }
+      return newState;
+    });
   };
+
 
   const handleReset = (reset ? : string) => {
     if(reset){
