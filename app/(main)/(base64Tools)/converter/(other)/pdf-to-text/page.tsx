@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from "react";
 import { Box, Button, Input, Textarea, useToast } from "@chakra-ui/react";
 import { Document, Page, pdfjs } from "react-pdf";
