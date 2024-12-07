@@ -3,17 +3,16 @@ import { useState, useEffect } from "react";
 import {
   Select,
   Input,
-  VStack,
   Text,
   Divider,
   Box,
   Alert,
-  AlertIcon,
   Grid,
-  Flex,
   useBreakpointValue,
   Heading,
   useColorModeValue,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import { performConversion, ConversionCategory, unitConversionMap } from "./conversionLogic";
 
@@ -60,73 +59,132 @@ export default function UnitConverter() {
       </Heading>
       <Divider borderColor="blue.300" mb={6} />
 
+      {/* Dropdown Section */}
       <Grid templateColumns={responsiveGridColumns} gap={6}>
-        <Box p={4} shadow="md" bg="gray.50" borderRadius="md">
-          <Text fontWeight="bold">Category</Text>
-          <Select
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value as ConversionCategory);
-              setFromUnit("");
-              setToUnit("");
-            }}
-            placeholder="Choose category"
-          >
-            {Object.keys(unitConversionMap).map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </Select>
+        {/* Category Dropdown */}
+        <Box
+          p={4}
+          shadow="md"
+          bg="gray.50"
+          borderRadius="md"
+          _hover={{ boxShadow: "lg" }}
+          transition="all 0.2s ease-in-out"
+        >
+          <FormControl>
+            <FormLabel fontWeight="bold">Category</FormLabel>
+            <Select
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value as ConversionCategory);
+                setFromUnit("");
+                setToUnit("");
+              }}
+              placeholder="Select category"
+              bg="white"
+              border="1px"
+              borderColor="gray.300"
+              _hover={{ borderColor: "blue.400" }}
+              _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+              transition="all 0.2s ease-in-out"
+            >
+              {Object.keys(unitConversionMap).map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
-        <Box p={4} shadow="md" bg="gray.50" borderRadius="md">
-          <Text fontWeight="bold">From Unit</Text>
-          <Select
-            value={fromUnit}
-            onChange={(e) => {
-              setFromUnit(e.target.value);
-              setToUnit("");
-            }}
-            placeholder="Choose starting unit"
-          >
-            {Object.keys(unitConversionMap[type] || {}).map((unit) => (
-              <option key={unit} value={unit}>
-                {unit}
-              </option>
-            ))}
-          </Select>
+        {/* From Unit Dropdown */}
+        <Box
+          p={4}
+          shadow="md"
+          bg="gray.50"
+          borderRadius="md"
+          _hover={{ boxShadow: "lg" }}
+          transition="all 0.2s ease-in-out"
+        >
+          <FormControl>
+            <FormLabel fontWeight="bold">From Unit</FormLabel>
+            <Select
+              value={fromUnit}
+              onChange={(e) => {
+                setFromUnit(e.target.value);
+                setToUnit("");
+              }}
+              placeholder="Select starting unit"
+              bg="white"
+              border="1px"
+              borderColor="gray.300"
+              _hover={{ borderColor: "blue.400" }}
+              _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+              transition="all 0.2s ease-in-out"
+            >
+              {Object.keys(unitConversionMap[type] || {}).map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
-        <Box p={4} shadow="md" bg="gray.50" borderRadius="md">
-          <Text fontWeight="bold">To Unit</Text>
-          <Select
-            value={toUnit}
-            onChange={(e) => setToUnit(e.target.value)}
-            placeholder="Choose target unit"
-          >
-            {Object.keys(unitConversionMap[type]?.[fromUnit] || {}).map((unit) => (
-              <option key={unit} value={unit}>
-                {unit}
-              </option>
-            ))}
-          </Select>
+        {/* To Unit Dropdown */}
+        <Box
+          p={4}
+          shadow="md"
+          bg="gray.50"
+          borderRadius="md"
+          _hover={{ boxShadow: "lg" }}
+          transition="all 0.2s ease-in-out"
+        >
+          <FormControl>
+            <FormLabel fontWeight="bold">To Unit</FormLabel>
+            <Select
+              value={toUnit}
+              onChange={(e) => setToUnit(e.target.value)}
+              placeholder="Select target unit"
+              bg="white"
+              border="1px"
+              borderColor="gray.300"
+              _hover={{ borderColor: "blue.400" }}
+              _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+              transition="all 0.2s ease-in-out"
+            >
+              {Object.keys(unitConversionMap[type]?.[fromUnit] || {}).map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Grid>
 
+      {/* Input for Value */}
       <Input
         placeholder="Enter value to convert"
         type="number"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        mt={4}
+        mt={6}
         bg="white"
+        border="1px"
+        borderColor="gray.300"
+        _hover={{ borderColor: "blue.400" }}
+        _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+        transition="all 0.2s ease-in-out"
       />
 
+      {/* Error Alert */}
       {error && value?.length > 0 && <Alert status="error" mt={2}>{error}</Alert>}
 
-      <Box mt={6} p={4} bg="blue.50">
-        <Text fontSize="xl">Converted Value: {result || "---"}</Text>
+      {/* Converted Value Display */}
+      <Box mt={6} p={4} bg="blue.50" borderRadius="md" shadow="md">
+        <Text fontSize="xl" fontWeight="bold" textAlign="center">
+          Converted Value: {result || "---"}
+        </Text>
       </Box>
     </Box>
   );
