@@ -38,6 +38,8 @@ export const features: any = {
       { name: "Encrypt File", icon: FaLock, path: "/converter/encrypt-file" },
       { name: "Decrypt File", icon: FaLockOpen, path: "/converter/decrypt-file" },
       { name: "Unit Converter", icon: FaLockOpen, path: "/converter/unit-converter" },
-
+      { name: "Base Converter", icon: FaLockOpen, path: "/converter/base-converter" },
+      { name: "Speed Converter", icon: FaLockOpen, path: "/converter/speed-converter" },
+      { name: "Time Converter", icon: FaLockOpen, path: "/converter/time-converter" },
     ],
   };
