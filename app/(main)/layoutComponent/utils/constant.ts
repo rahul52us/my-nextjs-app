@@ -1,5 +1,9 @@
 import { FaBarcode, FaCode, FaConfluence, FaFileAlt, FaLock, FaLockOpen, FaMusic, FaQrcode } from "react-icons/fa";
 
+export const headerHeight = "70px"
+export const childrenHeight = "860px"
+export const footerHeight = "60px"
+
 export const features: any = {
     decoders: [
       { name: "Base64 to ASCII", icon: FaCode, path: "/converter/decoder/ascii" },
@@ -20,6 +24,8 @@ export const features: any = {
       { name: "Text Formatter", icon: FaConfluence, path: "/tools/text-formatter" },
       { name: "Javascript Formatter", icon: FaConfluence, path: "/tools/javascript-formatter" },
       { name: "Code Minifier", icon: FaConfluence, path: "/tools/code-minifier" },
+      { name: "Regex Tester", icon: FaConfluence, path: "/tools/regex-tester" },
+
     ],
     converters: [
       { name: "Images to Pdf & Base64", icon: FaCode, path: "/converter/images-to-pdf" },
@@ -31,5 +37,7 @@ export const features: any = {
       { name: "Zip to Files DeCompress", icon: FaBarcode, path: "/converter/decompress-zip" },
       { name: "Encrypt File", icon: FaLock, path: "/converter/encrypt-file" },
       { name: "Decrypt File", icon: FaLockOpen, path: "/converter/decrypt-file" },
+      { name: "Unit Converter", icon: FaLockOpen, path: "/converter/unit-converter" },
+
     ],
   };

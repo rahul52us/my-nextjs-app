@@ -23,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { FaBars, FaSearch } from "react-icons/fa";
 import Sidebar from "./layoutComponent/sidebar/Sidebar";
-import { features } from "./layoutComponent/utils/constant";
+import { childrenHeight, features, footerHeight, headerHeight } from "./layoutComponent/utils/constant";
 
 export default function MainLayout({
   children,
@@ -54,7 +54,10 @@ export default function MainLayout({
   }, []);
 
   // Debounced Search Handler
-  const handleSearchDebounced = debounce((query: string) => handleSearch(query), 100);
+  const handleSearchDebounced = debounce(
+    (query: string) => handleSearch(query),
+    10
+  );
 
   // Search logic
   const handleSearch = (query: string) => {
@@ -75,8 +78,9 @@ export default function MainLayout({
   return (
     <Flex direction="column" minHeight="100vh">
       {/* Header */}
+      {/* Header */}
       <Flex
-        bg="teal.700"
+        bgGradient="linear(to-r, teal.600, teal.800)"
         p={4}
         align="center"
         justify="space-between"
@@ -86,6 +90,7 @@ export default function MainLayout({
         top="0"
         left="0"
         right="0"
+        height={headerHeight}
       >
         {/* Hamburger Menu for Mobile */}
         {isMobile && (
@@ -93,8 +98,8 @@ export default function MainLayout({
             icon={<FaBars />}
             aria-label="Open Sidebar"
             onClick={onOpen}
-            colorScheme="teal"
-            variant="outline"
+            colorScheme="whiteAlpha"
+            variant="ghost"
             mr={2}
           />
         )}
@@ -102,7 +107,12 @@ export default function MainLayout({
         {/* Logo */}
         <Flex align="center" gap={2}>
           <Avatar size="sm" name="Company Logo" src="/path/to/logo.png" />
-          <Text fontSize="xl" fontWeight="bold" color="white">
+          <Text
+            fontSize={{ base: "lg", md: "xl" }}
+            fontWeight="bold"
+            color="white"
+            textShadow="1px 1px 2px rgba(0,0,0,0.5)"
+          >
             HRMS Tools
           </Text>
         </Flex>
@@ -110,8 +120,10 @@ export default function MainLayout({
         {/* Search */}
         <Box
           position="relative"
-          width="300px"
+          flex="1"
+          maxWidth="400px"
           display={{ base: "none", md: "block" }}
+          mx={4}
           ref={dropdownRef}
         >
           <InputGroup>
@@ -121,18 +133,17 @@ export default function MainLayout({
             <Input
               placeholder="Search tools or converters"
               bg="white"
-              border="1px solid"
-              borderColor="gray.300"
-              _focus={{
-                borderColor: "teal.500",
-                boxShadow: "0 0 4px teal",
-              }}
-              _hover={{
-                borderColor: "gray.400",
-              }}
-              borderRadius="full"
+              border="none"
+              borderRadius="lg"
               px={4}
               py={2}
+              _focus={{
+                borderColor: "teal.500",
+                boxShadow: "0 0 6px rgba(0, 128, 128, 0.6)",
+              }}
+              _hover={{
+                boxShadow: "0 0 4px rgba(0, 128, 128, 0.3)",
+              }}
               value={searchQuery}
               onChange={(e) => handleSearchDebounced(e.target.value)}
             />
@@ -143,27 +154,15 @@ export default function MainLayout({
               bg="white"
               mt={2}
               borderRadius="lg"
-              boxShadow="xl"
+              boxShadow="lg"
               position="absolute"
               width="100%"
               zIndex={100}
               border="1px solid"
               borderColor="gray.200"
-              overflowX="hidden"
-              overflowY="auto"
               maxHeight="300px"
-              sx={{
-                "&::-webkit-scrollbar": {
-                  width: "8px",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  background: "teal.400",
-                  borderRadius: "4px",
-                },
-                "&::-webkit-scrollbar-thumb:hover": {
-                  background: "teal.500",
-                },
-              }}
+              overflowY="auto"
+              overflowX="hidden"
             >
               {results.map((result: any, index: number) => (
                 <ListItem
@@ -173,11 +172,12 @@ export default function MainLayout({
                   _hover={{
                     bg: "teal.50",
                     cursor: "pointer",
-                    transform: "scale(1.01)",
-                    transition:
-                      "transform 0.2s ease-in-out, background-color 0.2s ease-in-out",
+                    transform: "scale(1.02)",
+                    transition: "transform 0.2s ease-in-out",
                   }}
-                  borderBottom={index < results.length - 1 ? "1px solid" : "none"}
+                  borderBottom={
+                    index < results.length - 1 ? "1px solid" : "none"
+                  }
                   borderColor="gray.100"
                 >
                   <Link
@@ -197,7 +197,7 @@ export default function MainLayout({
                         dangerouslySetInnerHTML={{
                           __html: result.name.replace(
                             new RegExp(searchQuery, "gi"),
-                            (match : any) =>
+                            (match: any) =>
                               `<mark style="background: yellow;">${match}</mark>`
                           ),
                         }}
@@ -211,9 +211,22 @@ export default function MainLayout({
         </Box>
 
         {/* Profile */}
-        <Flex align="center">
-          <Avatar size="sm" src="/path/to/avatar.jpg" />
-          <Text ml={2} fontWeight="bold" color="white">
+        <Flex align="center" gap={2} cursor="pointer">
+          <Avatar
+            size="sm"
+            src="/path/to/avatar.jpg"
+            border="2px solid white"
+            _hover={{
+              boxShadow: "0 0 4px rgba(255, 255, 255, 0.8)",
+            }}
+          />
+          <Text
+            ml={2}
+            fontWeight="bold"
+            color="white"
+            fontSize="sm"
+            display={{ base: "none", md: "block" }}
+          >
             John Doe
           </Text>
         </Flex>
@@ -240,6 +253,8 @@ export default function MainLayout({
           bottom="0"
           boxShadow="lg"
           zIndex={9999}
+          height={"100vh"}
+          overflowY={"auto"}
         >
           <Sidebar />
         </Box>
@@ -251,12 +266,13 @@ export default function MainLayout({
         ml={{ base: "0", md: "260px" }}
         p={2}
         pt={{ base: "60px", md: "80px" }}
+        height={childrenHeight}
       >
         {children}
       </Box>
 
       {/* Footer */}
-      <Box bg="teal.800" color="white" textAlign="center" py={4}>
+      <Box bg="blue.900" color="white" textAlign="center" py={4} height={footerHeight}>
         &copy; 2024 HRMS Tools. All rights reserved.
       </Box>
     </Flex>
