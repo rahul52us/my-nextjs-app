@@ -147,7 +147,7 @@ const AudioToBase64 = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor}>
+    <Box p={4} bg={bgColor} color={textColor} minH="78vh">
       <Heading
         as="h1"
         size="xl"

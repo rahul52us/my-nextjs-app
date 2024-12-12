@@ -90,7 +90,7 @@ const BarcodeGenerator: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor} minH={"80vh"}>
+    <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
       <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
         Barcode Generator
       </Heading>
