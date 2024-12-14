@@ -1,8 +1,6 @@
 {
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/next"
-      }
-    ]
-  }
+  "builds": [
+    { "src": "package.json", "use": "@vercel/next" }
+  ],
+  "installCommand": "npm install --legacy-peer-deps"
+}
