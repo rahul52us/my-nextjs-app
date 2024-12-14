@@ -22,7 +22,7 @@ const AudioToBase64 = () => {
   const [base64, setBase64] = useState<string>("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileType, setFileType] = useState<string>("");
-  const [format, setFormat] = useState<string>("plainText");
+  const [format, setFormat] = useState<string>("dataUri");
   const toast = useToast();
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");

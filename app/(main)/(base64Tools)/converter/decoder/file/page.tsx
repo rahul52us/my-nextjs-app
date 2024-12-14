@@ -20,6 +20,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  HStack,
 } from "@chakra-ui/react";
 
 const Base64ToFile = () => {
@@ -52,7 +53,7 @@ const Base64ToFile = () => {
     return `file_${timestamp}.${extension}`;
   };
 
-  const handleConvert = () => {
+  const handleDownload = () => {
     if (!base64.trim()) {
       alert("Please enter a valid Base64 string.");
       return;
@@ -68,7 +69,49 @@ const Base64ToFile = () => {
       // Save the file using the correct MIME type and file name
       saveAs(blob, generateFileName(mimeType));
     } catch (error) {
-      console.log(error)
+      console.log(error);
+      alert("Invalid Base64 data. Please check the input format.");
+    }
+  };
+
+  const handleShare = () => {
+    if (!base64.trim()) {
+      alert("Please enter a valid Base64 string.");
+      return;
+    }
+    const { mimeType, base64Data } = extractMimeAndData(base64);
+    try {
+      const byteCharacters = atob(base64Data);
+      const byteArray = new Uint8Array(
+        Array.from(byteCharacters, (char) => char.charCodeAt(0))
+      );
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      // Convert the Blob to a File object
+      const file = new File([blob], generateFileName(mimeType), {
+        type: mimeType,
+      });
+
+      // Try to use the native share API if available
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator
+          .share({
+            files: [file],
+            title: "Shared File",
+            text: "Here is the file you requested.",
+          })
+          .then(() => {
+            console.log("File shared successfully!");
+          })
+          .catch((error) => {
+            console.error("Error sharing the file:", error);
+            alert("Sharing failed or not supported on your device.");
+          });
+      } else {
+        alert("Sharing is not supported on your device.");
+      }
+    } catch (error) {
+      console.log(error);
       alert("Invalid Base64 data. Please check the input format.");
     }
   };
@@ -100,9 +143,8 @@ const Base64ToFile = () => {
     });
   };
 
-
-  const handleReset = (reset ? : string) => {
-    if(reset){
+  const handleReset = (reset?: string) => {
+    if (reset) {
       setBase64("");
     }
     setPreviewContent(null);
@@ -148,22 +190,35 @@ const Base64ToFile = () => {
         <Button
           colorScheme="green"
           width="full"
-          onClick={handleConvert}
+          onClick={handleDownload}
           _hover={{ bg: "green.600" }}
           fontFamily="'Courier New', monospace"
         >
-          Convert & Download
+          Download File
         </Button>
-        <Button
-          colorScheme="blue"
-          width="full"
-          onClick={handleTogglePreview}
-          mt={2}
-          _hover={{ bg: "blue.600" }}
-          fontFamily="'Courier New', monospace"
-        >
-          {showPreview ? "Hide Preview" : "Show Preview"}
-        </Button>
+
+        <HStack>
+          <Button
+            colorScheme="blue"
+            width="full"
+            onClick={handleShare}
+            mt={2}
+            _hover={{ bg: "blue.600" }}
+            fontFamily="'Courier New', monospace"
+          >
+            Share File
+          </Button>
+          <Button
+            colorScheme="blue"
+            width="full"
+            onClick={handleTogglePreview}
+            mt={2}
+            _hover={{ bg: "blue.600" }}
+            fontFamily="'Courier New', monospace"
+          >
+            {showPreview ? "Hide Preview" : "Show Preview"}
+          </Button>
+        </HStack>
         <Text fontSize="sm" color="gray.500" textAlign="center">
           Ensure your Base64 starts with "data:" for accurate conversion.
         </Text>

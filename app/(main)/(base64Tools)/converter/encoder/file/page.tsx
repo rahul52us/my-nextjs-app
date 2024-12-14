@@ -15,14 +15,14 @@ import {
   useToast,
   HStack,
 } from "@chakra-ui/react";
-import { FaClipboard, FaDownload, FaTrashAlt } from "react-icons/fa";
+import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
 const FileToBase64 = () => {
   const [base64, setBase64] = useState<string>("");
   const [fileName, setFileName] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string>("");  // Store the MIME type of the file
-  const [format, setFormat] = useState<string>("plainText");
+  const [fileType, setFileType] = useState<string>(""); // Store the MIME type of the file
+  const [format, setFormat] = useState<string>("dataUri");
   const toast = useToast();
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
@@ -32,7 +32,7 @@ const FileToBase64 = () => {
     if (file) {
       const reader = new FileReader();
       setFileName(file.name);
-      setFileType(file.type);  // Store the MIME type of the file
+      setFileType(file.type); // Store the MIME type of the file
 
       reader.onload = () => {
         const result = reader.result as string;
@@ -130,12 +130,64 @@ const FileToBase64 = () => {
     setFileType("");
   };
 
+  const handleShare = async () => {
+    const textToShare = formattedOutput();
+
+    // Create a Blob from the text content
+    const blob = new Blob([textToShare], { type: 'text/plain' });
+    const file = new File([blob], "output.txt", { type: 'text/plain' });
+
+    if (navigator.share) {
+      try {
+        // Ensure the file is shareable by checking if the device supports it
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: "Base64 File Converter",
+            files: [file],
+          });
+          toast({
+            title: "Shared Successfully",
+            description: "The formatted output was shared successfully as a file.",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "Sharing Not Supported",
+            description: "This device/browser does not support file sharing.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      } catch (error : any) {
+        console.error("Error sharing the file:", error);
+        toast({
+          title: "Share Failed",
+          description: error?.message || "There was an issue sharing the file.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      toast({
+        title: "Share Unavailable",
+        description: "Sharing is not supported on this device/browser.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+
   const formattedOutput = () => {
     switch (format) {
       case "plainText":
         return base64.split(",")[1];
       case "dataUri":
-        // For dataUri, we use the MIME type of the file
         return `data:${fileType};base64,${base64.split(",")[1]}`;
       case "htmlLink":
         return `<a href="${base64}" download="${
@@ -190,36 +242,11 @@ const FileToBase64 = () => {
             Select Output Format
           </FormLabel>
           <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-            <option
-              value="plainText"
-              title="Outputs only the Base64-encoded string without any prefix."
-            >
-              Plain Text (Base64String)
-            </option>
-            <option
-              value="dataUri"
-              title="Outputs the Base64 data URI, which can be used directly in web pages."
-            >
-              Data URI (data:;base64,Base64String)
-            </option>
-            <option
-              value="htmlLink"
-              title="Outputs an HTML hyperlink that links to the Base64 file."
-            >
-              HTML Hyperlink (Download)
-            </option>
-            <option
-              value="json"
-              title="Outputs a JSON object containing the file name and Base64 data."
-            >
-              JSON ("fileName": "filename", "base64": "Base64String")
-            </option>
-            <option
-              value="xml"
-              title="Outputs an XML structure with file name and Base64 data."
-            >
-              XML (&lt;file&gt;&lt;name&gt;filename&lt;/name&gt;&lt;base64&gt;Base64String&lt;/base64&gt;&lt;/file&gt;)
-            </option>
+            <option value="plainText">Plain Text (Base64String)</option>
+            <option value="dataUri">Data URI (data:;base64,Base64String)</option>
+            <option value="htmlLink">HTML Hyperlink (Download)</option>
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
           </Select>
         </FormControl>
 
@@ -249,6 +276,15 @@ const FileToBase64 = () => {
             isDisabled={!base64}
           >
             Download Base64
+          </Button>
+
+          <Button
+            colorScheme="teal"
+            leftIcon={<FaShareAlt />}
+            onClick={handleShare}
+            isDisabled={!base64}
+          >
+            Share
           </Button>
 
           <Button

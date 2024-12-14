@@ -11,9 +11,10 @@ import {
   Textarea,
   useColorModeValue,
   useToast,
+  HStack,
 } from "@chakra-ui/react";
 import { saveAs } from "file-saver";
-import { FaDownload } from "react-icons/fa";
+import { FaDownload, FaShareAlt } from "react-icons/fa";
 
 const FileToAudio = () => {
   const [base64Input, setBase64Input] = useState<string>(""); // For the Base64 input string
@@ -71,6 +72,59 @@ const FileToAudio = () => {
     }
   };
 
+  const handleShare = () => {
+    if (audioUrl) {
+      const audioBlob = new Blob([new Uint8Array(atob(audioUrl.split(',')[1]).split("").map(char => char.charCodeAt(0)))], {
+        type: "audio/mpeg"
+      });
+      const file = new File([audioBlob], "audio.mp3", { type: "audio/mpeg" });
+
+      // Check if the Share API is available
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: 'Shared Audio File',
+          text: 'Here is an audio file shared with you.',
+        })
+        .then(() => {
+          toast({
+            title: "Shared Successfully",
+            description: "The audio file has been shared.",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        })
+        .catch((error) => {
+          console.error("Error sharing the file:", error);
+          toast({
+            title: "Share Failed",
+            description: "Unable to share the file. Please try again.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        });
+      } else {
+        toast({
+          title: "Share Not Supported",
+          description: "Sharing is not supported on your device.",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      toast({
+        title: "No Audio",
+        description: "Please load a valid Base64 string first.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
     <Box p={4} bg={bgColor} color={textColor} minH='78vh'>
       <Heading
@@ -115,6 +169,7 @@ const FileToAudio = () => {
               Your browser does not support the audio element.
             </audio>
 
+            <HStack>
             <Button
               colorScheme="green"
               mt={4}
@@ -123,6 +178,16 @@ const FileToAudio = () => {
             >
               Download Audio
             </Button>
+
+            <Button
+              colorScheme="purple"
+              mt={4}
+              onClick={handleShare}
+              leftIcon={<FaShareAlt />}
+            >
+              Share Audio
+            </Button>
+            </HStack>
           </Box>
         )}
       </VStack>

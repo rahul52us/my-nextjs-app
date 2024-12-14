@@ -1,8 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Heading, VStack, FormControl, FormLabel, Input, Textarea, useToast, useColorModeValue, HStack, Spinner } from "@chakra-ui/react";
-import { FaClipboard, FaDownload, FaTrashAlt } from "react-icons/fa";
+import {
+  Box,
+  Button,
+  Heading,
+  VStack,
+  FormControl,
+  FormLabel,
+  Input,
+  Textarea,
+  useToast,
+  useColorModeValue,
+  HStack,
+  Spinner,
+} from "@chakra-ui/react";
+import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
 const UrlToBase64 = () => {
@@ -15,7 +28,7 @@ const UrlToBase64 = () => {
   const textColor = useColorModeValue("gray.800", "gray.100");
 
   const handleUrlToBase64 = async () => {
-    setLoading(true);  // Start loading
+    setLoading(true); // Start loading
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -43,12 +56,12 @@ const UrlToBase64 = () => {
           duration: 3000,
           isClosable: true,
         });
-        setLoading(false);  // End loading on error
+        setLoading(false); // End loading on error
       };
 
       reader.readAsDataURL(blob);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast({
         title: "Error",
         description: "Failed to fetch or convert the URL content.",
@@ -56,7 +69,7 @@ const UrlToBase64 = () => {
         duration: 3000,
         isClosable: true,
       });
-      setLoading(false);  // End loading on error
+      setLoading(false); // End loading on error
     }
   };
 
@@ -64,7 +77,9 @@ const UrlToBase64 = () => {
     if (!base64) return;
 
     // Include the Base64 prefix (e.g., data:image/png;base64, or application/octet-stream)
-    const base64WithPrefix = base64.startsWith("data:") ? base64 : `data:${fileName ? `application/octet-stream` : ''};base64,${base64.split(",")[1]}`;
+    const base64WithPrefix = base64.startsWith("data:")
+      ? base64
+      : `data:${fileName ? `application/octet-stream` : ""};base64,${base64.split(",")[1]}`;
 
     navigator.clipboard
       .writeText(base64WithPrefix) // Copy the Base64 string with the prefix
@@ -101,6 +116,64 @@ const UrlToBase64 = () => {
     setFileName(null);
   };
 
+  const handleShare = async () => {
+    const textToShare = base64
+    if(!base64){
+      alert('Invalid Base64')
+      return
+    }
+    // Create a Blob from the text content
+    const blob = new Blob([textToShare], { type: 'text/plain' });
+    const file = new File([blob], "output.txt", { type: 'text/plain' });
+
+    if (navigator.share) {
+      try {
+        // Ensure the file is shareable by checking if the device supports it
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: "Base64 File Converter",
+            files: [file],
+          });
+          toast({
+            title: "Shared Successfully",
+            description: "The formatted output was shared successfully as a file.",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "Sharing Not Supported",
+            description: "This device/browser does not support file sharing.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      } catch (error : any) {
+        console.error("Error sharing the file:", error);
+        toast({
+          title: "Share Failed",
+          description: error?.message || "There was an issue sharing the file.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      toast({
+        title: "Share Unavailable",
+        description: "Sharing is not supported on this device/browser.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+
+
+
   return (
     <Box p={4} bg={bgColor} color={textColor} minH="78vh">
       <Heading
@@ -133,7 +206,7 @@ const UrlToBase64 = () => {
         <Button
           colorScheme="blue"
           onClick={handleUrlToBase64}
-          isDisabled={!url || loading}  // Disable button during loading
+          isDisabled={!url || loading} // Disable button during loading
         >
           {loading ? <Spinner size="sm" /> : "Convert URL to Base64"}
         </Button>
@@ -172,6 +245,15 @@ const UrlToBase64 = () => {
             isDisabled={!base64}
           >
             Download Base64
+          </Button>
+
+          <Button
+            colorScheme="purple"
+            leftIcon={<FaShareAlt />}
+            onClick={handleShare}
+            isDisabled={!base64}
+          >
+            Share Base64
           </Button>
 
           <Button
