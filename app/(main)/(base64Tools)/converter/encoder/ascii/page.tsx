@@ -19,33 +19,65 @@ import {
   Spinner,
   Input,
 } from "@chakra-ui/react";
-import { FaExchangeAlt, FaTrashAlt, FaFileUpload, FaShareAlt, FaCopy } from "react-icons/fa";
+import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy, FaUpload } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
-const Base64ToAscii: React.FC = () => {
-  const [base64Input, setBase64Input] = useState<string>("");
-  const [asciiOutput, setAsciiOutput] = useState<string>("");
+const AsciiToBase64: React.FC = () => {
+  const [asciiInput, setAsciiInput] = useState<string>("");
+  const [base64Output, setBase64Output] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const toast = useToast();
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
-  const convertBase64ToAscii = (base64: string): string => {
+  const convertAsciiToBase64 = (ascii: string): string => {
     try {
-      const buffer = Buffer.from(base64, "base64");
-      return buffer.toString("ascii");
+      return Buffer.from(ascii, "ascii").toString("base64");
     } catch {
-      return "Invalid Base64 string";
+      return "Invalid ASCII string";
     }
   };
 
-  const handleConversion = () => {
+  const handleAsciiToBase64Conversion = () => {
     setLoading(true);
-    setAsciiOutput("");
-    const output = convertBase64ToAscii(base64Input);
-    setAsciiOutput(output);
+    setBase64Output("");
+    const output = convertAsciiToBase64(asciiInput);
+    setBase64Output(output);
     setLoading(false);
+  };
+
+  const handleClear = () => {
+    setAsciiInput("");
+    setBase64Output("");
+  };
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast({
+          title: "Copied to clipboard!",
+          description: "The output has been copied successfully.",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Copy failed.",
+          description: "Something went wrong while copying.",
+          status: "error",
+          duration: 2000,
+          isClosable: true,
+        });
+      });
+  };
+
+  const handleDownload = (text: string) => {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, "output.txt");
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,10 +88,10 @@ const Base64ToAscii: React.FC = () => {
     reader.onload = () => {
       const content = reader.result?.toString();
       if (content) {
-        setBase64Input(content);
+        setAsciiInput(content);
         toast({
           title: "File uploaded successfully!",
-          description: "Base64 string loaded from the file.",
+          description: "ASCII content loaded from the file.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -81,9 +113,8 @@ const Base64ToAscii: React.FC = () => {
   };
 
   const handleShare = async () => {
-
     // Create a Blob from the text content
-    const blob = new Blob([asciiOutput], { type: 'text/plain' });
+    const blob = new Blob([base64Output], { type: 'text/plain' });
     const file = new File([blob], "output.txt", { type: 'text/plain' });
 
     if (navigator.share) {
@@ -91,7 +122,7 @@ const Base64ToAscii: React.FC = () => {
         // Ensure the file is shareable by checking if the device supports it
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: "Ascii Data",
+            title: "Base64 Data",
             files: [file],
           });
           toast({
@@ -110,7 +141,7 @@ const Base64ToAscii: React.FC = () => {
             isClosable: true,
           });
         }
-      } catch (error : any) {
+      } catch (error: any) {
         console.error("Error sharing the file:", error);
         toast({
           title: "Share Failed",
@@ -131,39 +162,6 @@ const Base64ToAscii: React.FC = () => {
     }
   };
 
-  const handleCopyToClipboard = () => {
-    navigator.clipboard
-      .writeText(asciiOutput)
-      .then(() => {
-        toast({
-          title: "Copied to clipboard!",
-          description: "The ASCII output has been copied successfully.",
-          status: "success",
-          duration: 2000,
-          isClosable: true,
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Copy failed.",
-          description: "Something went wrong while copying.",
-          status: "error",
-          duration: 2000,
-          isClosable: true,
-        });
-      });
-  };
-
-  const handleDownload = () => {
-    const blob = new Blob([asciiOutput], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, "ascii_output.txt");
-  };
-
-  const handleClear = () => {
-    setBase64Input("");
-    setAsciiOutput("");
-  };
-
   return (
     <Box p={4} bg={bgColor} color={textColor}>
       <Heading
@@ -179,18 +177,19 @@ const Base64ToAscii: React.FC = () => {
         textTransform="uppercase"
         fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
       >
-        Base64 to ASCII
+        ASCII to Base64
       </Heading>
 
       <VStack spacing={6} align="stretch">
+        {/* ASCII Input Section */}
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">
-            Enter Base64 String
+            Enter ASCII String
           </FormLabel>
           <Textarea
-            placeholder="Paste your Base64 encoded text here"
-            value={base64Input}
-            onChange={(e) => setBase64Input(e.target.value)}
+            placeholder="Paste your ASCII text here"
+            value={asciiInput}
+            onChange={(e) => setAsciiInput(e.target.value)}
             size="lg"
             bg={useColorModeValue("white", "gray.700")}
             _focus={{ borderColor: "teal.500" }}
@@ -202,7 +201,7 @@ const Base64ToAscii: React.FC = () => {
 
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">
-            Upload File with Base64 Content
+            Upload File with ASCII Content
           </FormLabel>
           <Input
             type="file"
@@ -219,15 +218,15 @@ const Base64ToAscii: React.FC = () => {
             colorScheme="teal"
             size="lg"
             leftIcon={<Icon as={FaExchangeAlt} />}
-            onClick={handleConversion}
+            onClick={handleAsciiToBase64Conversion}
           >
-            Convert to ASCII
+            Convert ASCII to Base64
           </Button>
 
           <Button
             colorScheme="red"
             size="lg"
-            display={base64Input?.trim() ? undefined : "none"}
+            display={asciiInput?.trim() ? undefined : "none"}
             leftIcon={<Icon as={FaTrashAlt} />}
             onClick={handleClear}
           >
@@ -238,41 +237,9 @@ const Base64ToAscii: React.FC = () => {
         <Divider borderColor="teal.500" />
 
         <Box>
-          <Flex justifyContent="space-between" mb={2}>
-            <Text fontSize="lg" fontWeight="semibold">
-              ASCII Output
-            </Text>
-            {asciiOutput && (
-              <HStack spacing={4} align="stretch">
-                <Button
-                  colorScheme="blue"
-                  size="sm"
-                  leftIcon={<Icon as={FaCopy} />}
-                  onClick={handleCopyToClipboard}
-                >
-                  Copy to Clipboard
-                </Button>
-
-                <Button
-                  colorScheme="green"
-                  size="sm"
-                  onClick={handleDownload}
-                >
-                  Download Output
-                </Button>
-
-                <Button
-                  colorScheme="teal"
-                  size="sm"
-                  leftIcon={<Icon as={FaShareAlt} />}
-                  onClick={handleShare}
-                >
-                  Share Result
-                </Button>
-              </HStack>
-            )}
-          </Flex>
-
+          <Text fontSize="lg" fontWeight="semibold" mb={2}>
+            Base64 Output
+          </Text>
           <Box
             p={4}
             bg={useColorModeValue("gray.200", "gray.700")}
@@ -289,13 +256,42 @@ const Base64ToAscii: React.FC = () => {
                 <Spinner size="lg" color="teal.400" />
               </Flex>
             ) : (
-              asciiOutput || "Your converted text will appear here."
+              base64Output || "Your converted text will appear here."
             )}
           </Box>
+          {base64Output && (
+            <HStack spacing={4} align="stretch">
+              <Button
+                colorScheme="blue"
+                size="sm"
+                leftIcon={<Icon as={FaCopy} />}
+                onClick={() => handleCopyToClipboard(base64Output)}
+              >
+                Copy to Clipboard
+              </Button>
+
+              <Button
+                colorScheme="green"
+                size="sm"
+                onClick={() => handleDownload(base64Output)}
+              >
+                Download Output
+              </Button>
+
+              <Button
+                colorScheme="teal"
+                size="sm"
+                leftIcon={<Icon as={FaShareAlt} />}
+                onClick={handleShare}
+              >
+                Share Result
+              </Button>
+            </HStack>
+          )}
         </Box>
       </VStack>
     </Box>
   );
 };
 
-export default Base64ToAscii;
+export default AsciiToBase64;

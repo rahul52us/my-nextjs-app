@@ -96,7 +96,7 @@ const FileToBase64 = () => {
         blob = new Blob([formattedOutput()], {
           type: "text/plain;charset=utf-8",
         });
-        fileExtension = "uri";
+        fileExtension = "txt";
         break;
       case "htmlLink":
         blob = new Blob([formattedOutput()], {

@@ -21,11 +21,12 @@ import {
   ModalFooter,
   useDisclosure,
   HStack,
+  Input,
 } from "@chakra-ui/react";
 
 const Base64ToFile = () => {
-  const [base64, setBase64] = useState<string>("");
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [base64, setBase64] = useState<string>(""); // Base64 string state
+  const [previewContent, setPreviewContent] = useState<string | null>(null); // For image preview
   const setFileType = useState<string | null>(null)[1];
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
@@ -153,6 +154,19 @@ const Base64ToFile = () => {
     onClose();
   };
 
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setBase64(content);
+        previewBase64(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
     <Box p={4} bg={bgColor} color={textColor} minH="78vh">
       <Heading
@@ -185,6 +199,19 @@ const Base64ToFile = () => {
             _focus={{ borderColor: "teal.500" }}
             rounded="md"
             fontFamily="'Courier New', monospace"
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel fontSize="lg" fontWeight="semibold">
+            Upload a File
+          </FormLabel>
+          <Input
+            type="file"
+            accept=".txt"
+            onChange={handleFileUpload}
+            bg={useColorModeValue("white", "gray.700")}
+            rounded="md"
+            size="lg"
           />
         </FormControl>
         <Button

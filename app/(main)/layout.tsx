@@ -1,15 +1,10 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import debounce from "lodash.debounce";
+import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation"; // Use usePathname for detecting route changes
 import {
   Box,
   Flex,
-  Text,
-  IconButton,
-  InputGroup,
-  Input,
-  InputLeftElement,
+  Spinner,
   Avatar,
   useDisclosure,
   useBreakpointValue,
@@ -18,12 +13,9 @@ import {
   DrawerContent,
   DrawerCloseButton,
   DrawerBody,
-  List,
-  ListItem,
 } from "@chakra-ui/react";
-import { FaBars, FaSearch } from "react-icons/fa";
 import Sidebar from "./layoutComponent/sidebar/Sidebar";
-import { childrenHeight, features, footerHeight, headerHeight } from "./layoutComponent/utils/constant";
+import { childrenHeight, footerHeight, headerHeight } from "./layoutComponent/utils/constant";
 
 export default function MainLayout({
   children,
@@ -32,52 +24,20 @@ export default function MainLayout({
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [loading, setLoading] = useState(false);
+  const pathname = usePathname(); // Monitors the current route
 
-  // Close dropdown on outside click
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setResults([]);
-      }
-    };
+    setLoading(true);
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
+    // Simulate loading until component is fully mounted
+    const timeout = setTimeout(() => setLoading(false), 500);
 
-  // Debounced Search Handler
-  const handleSearchDebounced = debounce(
-    (query: string) => handleSearch(query),
-    10
-  );
-
-  // Search logic
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-
-    if (!query) {
-      setResults([]);
-      return;
-    }
-
-    const allFeatures = Object.values(features).flat();
-    const filtered = allFeatures.filter((item: any) =>
-      item.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setResults(filtered);
-  };
+    return () => clearTimeout(timeout);
+  }, [pathname]); // Trigger on pathname change
 
   return (
     <Flex direction="column" minHeight="100vh">
-      {/* Header */}
       {/* Header */}
       <Flex
         bgGradient="linear(to-r, teal.600, teal.800)"
@@ -92,143 +52,12 @@ export default function MainLayout({
         right="0"
         height={headerHeight}
       >
-        {/* Hamburger Menu for Mobile */}
         {isMobile && (
-          <IconButton
-            icon={<FaBars />}
-            aria-label="Open Sidebar"
-            onClick={onOpen}
-            colorScheme="whiteAlpha"
-            variant="ghost"
-            mr={2}
-          />
+          <button onClick={onOpen}>Menu</button>
         )}
-
-        {/* Logo */}
         <Flex align="center" gap={2}>
           <Avatar size="sm" name="Company Logo" src="/path/to/logo.png" />
-          <Text
-            fontSize={{ base: "lg", md: "xl" }}
-            fontWeight="bold"
-            color="white"
-            textShadow="1px 1px 2px rgba(0,0,0,0.5)"
-          >
-            HRMS Tools
-          </Text>
-        </Flex>
-
-        {/* Search */}
-        <Box
-          position="relative"
-          flex="1"
-          maxWidth="400px"
-          display={{ base: "none", md: "block" }}
-          mx={4}
-          ref={dropdownRef}
-        >
-          <InputGroup>
-            <InputLeftElement>
-              <FaSearch color="gray.400" />
-            </InputLeftElement>
-            <Input
-              placeholder="Search tools or converters"
-              bg="white"
-              border="none"
-              borderRadius="lg"
-              px={4}
-              py={2}
-              _focus={{
-                borderColor: "teal.500",
-                boxShadow: "0 0 6px rgba(0, 128, 128, 0.6)",
-              }}
-              _hover={{
-                boxShadow: "0 0 4px rgba(0, 128, 128, 0.3)",
-              }}
-              value={searchQuery}
-              onChange={(e) => handleSearchDebounced(e.target.value)}
-            />
-          </InputGroup>
-
-          {results.length > 0 && (
-            <List
-              bg="white"
-              mt={2}
-              borderRadius="lg"
-              boxShadow="lg"
-              position="absolute"
-              width="100%"
-              zIndex={100}
-              border="1px solid"
-              borderColor="gray.200"
-              maxHeight="300px"
-              overflowY="auto"
-              overflowX="hidden"
-            >
-              {results.map((result: any, index: number) => (
-                <ListItem
-                  key={result.path}
-                  px={4}
-                  py={3}
-                  _hover={{
-                    bg: "teal.50",
-                    cursor: "pointer",
-                    transform: "scale(1.02)",
-                    transition: "transform 0.2s ease-in-out",
-                  }}
-                  borderBottom={
-                    index < results.length - 1 ? "1px solid" : "none"
-                  }
-                  borderColor="gray.100"
-                >
-                  <Link
-                    href={result.path}
-                    onClick={() => {
-                      setSearchQuery("");
-                      setResults([]);
-                    }}
-                    style={{ textDecoration: "none" }}
-                  >
-                    <Flex align="center" gap={4}>
-                      <Box as={result.icon} size="24px" color="teal.500" />
-                      <Text
-                        fontWeight="semibold"
-                        fontSize="md"
-                        color="gray.700"
-                        dangerouslySetInnerHTML={{
-                          __html: result.name.replace(
-                            new RegExp(searchQuery, "gi"),
-                            (match: any) =>
-                              `<mark style="background: yellow;">${match}</mark>`
-                          ),
-                        }}
-                      />
-                    </Flex>
-                  </Link>
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Box>
-
-        {/* Profile */}
-        <Flex align="center" gap={2} cursor="pointer">
-          <Avatar
-            size="sm"
-            src="/path/to/avatar.jpg"
-            border="2px solid white"
-            _hover={{
-              boxShadow: "0 0 4px rgba(255, 255, 255, 0.8)",
-            }}
-          />
-          <Text
-            ml={2}
-            fontWeight="bold"
-            color="white"
-            fontSize="sm"
-            display={{ base: "none", md: "block" }}
-          >
-            John Doe
-          </Text>
+          <Box>HRMS Tools</Box>
         </Flex>
       </Flex>
 
@@ -268,7 +97,13 @@ export default function MainLayout({
         pt={{ base: "60px", md: "80px" }}
         height={childrenHeight}
       >
-        {children}
+        {loading ? (
+          <Flex justify="center" align="center" height="100%">
+            <Spinner size="xl" color="teal.500" />
+          </Flex>
+        ) : (
+          children
+        )}
       </Box>
 
       {/* Footer */}

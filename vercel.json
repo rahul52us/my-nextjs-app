@@ -1,6 +1,7 @@
 {
   "builds": [
-    { "src": "package.json", "use": "@vercel/next" }
+    { "src": "next.config.js", "use": "@vercel/next" }
   ],
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "npm install --legacy-peer-deps",
+  "outputDirectory": "out"
 }

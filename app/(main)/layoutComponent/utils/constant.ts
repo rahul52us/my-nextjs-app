@@ -32,7 +32,9 @@ export const features: any = {
     { name: "Base64 to Text", icon: FaTextHeight, path: "/converter/decoder/text" },
   ],
   encoders: [
+    { name: "ASCII to Base64", icon: FaCode, path: "/converter/encoder/ascii" },
     { name: "Audio to Base64", icon: FaMusic, path: "/converter/encoder/audio" },
+    { name: "HEX to Base64", icon: FaCode, path: "/converter/encoder/hex" },
     { name: "File to Base64", icon: FaFileAlt, path: "/converter/encoder/file" },
     { name: "Url to Base64", icon: FaCode, path: "/converter/encoder/url" },
   ],
@@ -42,6 +44,7 @@ export const features: any = {
     { name: "Javascript Formatter", icon: FaCode, path: "/tools/javascript-formatter" },
     { name: "Code Minifier", icon: FaCut, path: "/tools/code-minifier" },
     { name: "Regex Tester", icon: FaExchangeAlt, path: "/tools/regex-tester" },
+    { name: "Text Difference Checker", icon: FaExchangeAlt, path: "/tools/text-difference-checker" },
   ],
   converters: [
     { name: "Images to Pdf & Base64", icon: FaFileArchive, path: "/converter/images-to-pdf" },

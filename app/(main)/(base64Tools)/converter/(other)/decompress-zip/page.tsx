@@ -113,11 +113,26 @@ const ZipDecompression: React.FC = () => {
     const fileURL = URL.createObjectURL(file.content);
 
     if (fileType === "pdf") {
-      setFileToView({ type: "pdf", url: fileURL });
+      setFileToView({
+        type: "pdf",
+        url: fileURL,
+        name: file.name,
+        content: file.content,
+      });
     } else if (["jpg", "jpeg", "png", "gif"].includes(fileType || "")) {
-      setFileToView({ type: "image", url: fileURL });
+      setFileToView({
+        type: "image",
+        url: fileURL,
+        name: file.name,
+        content: file.content,
+      });
     } else {
-      setFileToView({ type: "download", url: fileURL });
+      setFileToView({
+        type: "download",
+        url: fileURL,
+        name: file.name,
+        content: file.content,
+      });
     }
 
     onOpen();
@@ -162,21 +177,6 @@ const ZipDecompression: React.FC = () => {
       />
 
       {/* Decompress Button */}
-      <Button
-        colorScheme="green"
-        onClick={handleDecompressZip}
-        leftIcon={<FaUpload />}
-        isLoading={isLoading}
-        width="100%"
-        mb={6}
-        size="lg"
-        fontSize="lg"
-        borderRadius="md"
-        boxShadow="md"
-        _hover={{ boxShadow: "lg" }}
-      >
-        Decompress ZIP File
-      </Button>
 
       {/* Loading Spinner */}
       {isLoading && <Spinner size="lg" color="green.500" />}
@@ -242,37 +242,52 @@ const ZipDecompression: React.FC = () => {
       )}
 
       {/* Download All Button */}
-      <Button
-        colorScheme="blue"
-        onClick={handleDownloadAll}
-        mt={6}
-        isDisabled={output.length === 0}
-        width="100%"
-        size="lg"
-        fontSize="lg"
-        borderRadius="md"
-        boxShadow="md"
-        _hover={{ boxShadow: "lg" }}
-      >
-        Download All Files
-      </Button>
+      <HStack mt={4}>
+        <Button
+          colorScheme="green"
+          onClick={handleDecompressZip}
+          leftIcon={<FaUpload />}
+          isLoading={isLoading}
+          width="100%"
+          size="lg"
+          fontSize="lg"
+          borderRadius="md"
+          boxShadow="md"
+          _hover={{ boxShadow: "lg" }}
+        >
+          Decompress ZIP File
+        </Button>
 
-      {/* Clear All Button */}
-      <Button
-        colorScheme="red"
-        onClick={handleClearAll}
-        leftIcon={<FaTrash />}
-        mt={4}
-        width="100%"
-        size="lg"
-        fontSize="lg"
-        borderRadius="md"
-        boxShadow="md"
-        _hover={{ boxShadow: "lg" }}
-      >
-        Clear All
-      </Button>
+        <Button
+          colorScheme="blue"
+          onClick={handleDownloadAll}
+          isDisabled={output.length === 0}
+          width="100%"
+          size="lg"
+          fontSize="lg"
+          borderRadius="md"
+          boxShadow="md"
+          _hover={{ boxShadow: "lg" }}
+        >
+          Download All Files
+        </Button>
 
+        {/* Clear All Button */}
+        <Button
+          colorScheme="red"
+          onClick={handleClearAll}
+          leftIcon={<FaTrash />}
+          isDisabled={output.length === 0}
+          width="100%"
+          size="lg"
+          fontSize="lg"
+          borderRadius="md"
+          boxShadow="md"
+          _hover={{ boxShadow: "lg" }}
+        >
+          Clear All
+        </Button>
+      </HStack>
       {/* Modal to View File Content */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
@@ -291,12 +306,23 @@ const ZipDecompression: React.FC = () => {
             )}
 
             {fileToView?.type === "image" && (
-              <Image
-                src={fileToView.url}
-                alt="Image"
-                style={{ borderRadius: "8px" }}
-              />
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "auto",
+                  aspectRatio: "16 / 9",
+                }}
+              >
+                <Image
+                  src={fileToView.url}
+                  alt="Preview Image"
+                  fill
+                  style={{ objectFit: "contain", borderRadius: "8px" }}
+                />
+              </div>
             )}
+
             {fileToView?.type === "download" && (
               <Text>
                 The file format is not supported for direct viewing. You can
@@ -308,9 +334,16 @@ const ZipDecompression: React.FC = () => {
             <Button colorScheme="blue" onClick={onClose} mr={3}>
               Close
             </Button>
-            <Link href={fileToView?.url} download="file" isExternal>
-              <Button colorScheme="green">Download File</Button>
-            </Link>
+            {fileToView?.content && (
+              <Link
+                href={URL.createObjectURL(fileToView.content)}
+                download={fileToView.name}
+                color="blue.500"
+                isExternal
+              >
+                <Button colorScheme="green">Download File</Button>
+              </Link>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>

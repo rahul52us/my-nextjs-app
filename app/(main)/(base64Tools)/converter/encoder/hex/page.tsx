@@ -22,32 +22,44 @@ import {
 import { FaExchangeAlt, FaTrashAlt, FaFileUpload, FaShareAlt, FaCopy } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
-const Base64ToAscii: React.FC = () => {
-  const [base64Input, setBase64Input] = useState<string>("");
-  const [asciiOutput, setAsciiOutput] = useState<string>("");
+const HexToBase64: React.FC = () => {
+  const [hexInput, setHexInput] = useState<string>("");
+  const [base64Output, setBase64Output] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const toast = useToast();
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
-  const convertBase64ToAscii = (base64: string): string => {
+  // Convert Hex to Base64
+  const convertHexToBase64 = (hex: string): string => {
     try {
-      const buffer = Buffer.from(base64, "base64");
-      return buffer.toString("ascii");
-    } catch {
-      return "Invalid Base64 string";
+      // Clean up Hex input by removing spaces and newlines
+      const cleanedHex = hex.replace(/[\s\n]/g, "");
+
+      // Ensure the Hex string is even length (Hex pairs)
+      if (cleanedHex.length % 2 !== 0) {
+        throw new Error("Hex string must have an even length.");
+      }
+
+      // Convert Hex to Base64 using Buffer
+      const buffer = Buffer.from(cleanedHex, "hex");
+      return buffer.toString("base64");
+    } catch (error : any) {
+      return `Error: ${error.message}`;
     }
   };
 
+  // Handle conversion when user clicks the button
   const handleConversion = () => {
     setLoading(true);
-    setAsciiOutput("");
-    const output = convertBase64ToAscii(base64Input);
-    setAsciiOutput(output);
+    setBase64Output("");
+    const output = convertHexToBase64(hexInput);
+    setBase64Output(output);
     setLoading(false);
   };
 
+  // Handle file upload to load Hex from a file
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -56,10 +68,10 @@ const Base64ToAscii: React.FC = () => {
     reader.onload = () => {
       const content = reader.result?.toString();
       if (content) {
-        setBase64Input(content);
+        setHexInput(content);
         toast({
           title: "File uploaded successfully!",
-          description: "Base64 string loaded from the file.",
+          description: "Hex string loaded from the file.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -80,18 +92,51 @@ const Base64ToAscii: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handleShare = async () => {
+  // Copy the output to clipboard
+  const handleCopyToClipboard = () => {
+    navigator.clipboard
+      .writeText(base64Output)
+      .then(() => {
+        toast({
+          title: "Copied to clipboard!",
+          description: "The Base64 output has been copied successfully.",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Copy failed.",
+          description: "Something went wrong while copying.",
+          status: "error",
+          duration: 2000,
+          isClosable: true,
+        });
+      });
+  };
 
-    // Create a Blob from the text content
-    const blob = new Blob([asciiOutput], { type: 'text/plain' });
-    const file = new File([blob], "output.txt", { type: 'text/plain' });
+  // Download the output as a text file
+  const handleDownload = () => {
+    const blob = new Blob([base64Output], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, "base64_output.txt");
+  };
+
+  // Clear the input and output
+  const handleClear = () => {
+    setHexInput("");
+    setBase64Output("");
+  };
+
+  const handleShare = async () => {
+    const blob = new Blob([base64Output], { type: "text/plain" });
+    const file = new File([blob], "output.txt", { type: "text/plain" });
 
     if (navigator.share) {
       try {
-        // Ensure the file is shareable by checking if the device supports it
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: "Ascii Data",
+            title: "Base64 Data",
             files: [file],
           });
           toast({
@@ -110,7 +155,7 @@ const Base64ToAscii: React.FC = () => {
             isClosable: true,
           });
         }
-      } catch (error : any) {
+      } catch (error: any) {
         console.error("Error sharing the file:", error);
         toast({
           title: "Share Failed",
@@ -131,39 +176,6 @@ const Base64ToAscii: React.FC = () => {
     }
   };
 
-  const handleCopyToClipboard = () => {
-    navigator.clipboard
-      .writeText(asciiOutput)
-      .then(() => {
-        toast({
-          title: "Copied to clipboard!",
-          description: "The ASCII output has been copied successfully.",
-          status: "success",
-          duration: 2000,
-          isClosable: true,
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Copy failed.",
-          description: "Something went wrong while copying.",
-          status: "error",
-          duration: 2000,
-          isClosable: true,
-        });
-      });
-  };
-
-  const handleDownload = () => {
-    const blob = new Blob([asciiOutput], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, "ascii_output.txt");
-  };
-
-  const handleClear = () => {
-    setBase64Input("");
-    setAsciiOutput("");
-  };
-
   return (
     <Box p={4} bg={bgColor} color={textColor}>
       <Heading
@@ -179,18 +191,19 @@ const Base64ToAscii: React.FC = () => {
         textTransform="uppercase"
         fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
       >
-        Base64 to ASCII
+        Hex to Base64
       </Heading>
 
       <VStack spacing={6} align="stretch">
+        {/* Hex Input Section */}
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">
-            Enter Base64 String
+            Enter Hex String
           </FormLabel>
           <Textarea
-            placeholder="Paste your Base64 encoded text here"
-            value={base64Input}
-            onChange={(e) => setBase64Input(e.target.value)}
+            placeholder="Paste your Hex encoded text here"
+            value={hexInput}
+            onChange={(e) => setHexInput(e.target.value)}
             size="lg"
             bg={useColorModeValue("white", "gray.700")}
             _focus={{ borderColor: "teal.500" }}
@@ -200,9 +213,10 @@ const Base64ToAscii: React.FC = () => {
           />
         </FormControl>
 
+        {/* File Upload Section */}
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">
-            Upload File with Base64 Content
+            Upload File with Hex Content
           </FormLabel>
           <Input
             type="file"
@@ -214,6 +228,7 @@ const Base64ToAscii: React.FC = () => {
           />
         </FormControl>
 
+        {/* Action Buttons */}
         <HStack spacing={4} justify="space-between">
           <Button
             colorScheme="teal"
@@ -221,13 +236,13 @@ const Base64ToAscii: React.FC = () => {
             leftIcon={<Icon as={FaExchangeAlt} />}
             onClick={handleConversion}
           >
-            Convert to ASCII
+            Convert to Base64
           </Button>
 
           <Button
             colorScheme="red"
             size="lg"
-            display={base64Input?.trim() ? undefined : "none"}
+            display={hexInput?.trim() ? undefined : "none"}
             leftIcon={<Icon as={FaTrashAlt} />}
             onClick={handleClear}
           >
@@ -235,14 +250,16 @@ const Base64ToAscii: React.FC = () => {
           </Button>
         </HStack>
 
+        {/* Divider */}
         <Divider borderColor="teal.500" />
 
+        {/* Output Section */}
         <Box>
           <Flex justifyContent="space-between" mb={2}>
             <Text fontSize="lg" fontWeight="semibold">
-              ASCII Output
+              Base64 Output
             </Text>
-            {asciiOutput && (
+            {base64Output && (
               <HStack spacing={4} align="stretch">
                 <Button
                   colorScheme="blue"
@@ -289,7 +306,7 @@ const Base64ToAscii: React.FC = () => {
                 <Spinner size="lg" color="teal.400" />
               </Flex>
             ) : (
-              asciiOutput || "Your converted text will appear here."
+              base64Output || "Your converted Base64 will appear here."
             )}
           </Box>
         </Box>
@@ -298,4 +315,4 @@ const Base64ToAscii: React.FC = () => {
   );
 };
 
-export default Base64ToAscii;
+export default HexToBase64;

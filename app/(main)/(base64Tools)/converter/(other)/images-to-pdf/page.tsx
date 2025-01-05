@@ -13,24 +13,17 @@ import {
   Spinner,
   useToast,
   useColorModeValue,
-  Textarea,
   HStack,
   Button,
+  Textarea,
 } from "@chakra-ui/react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import {
-  FaFilePdf,
-  FaTrashAlt,
-  FaClipboard,
-  FaDownload,
-  FaTrash,
-} from "react-icons/fa";
+import { FaFilePdf, FaTrashAlt, FaTrash, FaCode, FaClipboard } from "react-icons/fa";
 
 const ImagesToPdf: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
+  const [base64Strings, setBase64Strings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [base64Data, setBase64Data] = useState<string | null>(null);
-  const [fileName] = useState<string>("output");
   const toast = useToast();
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
@@ -40,6 +33,15 @@ const ImagesToPdf: React.FC = () => {
       const newFiles = Array.from(e.target.files);
       setFiles((prev) => [...prev, ...newFiles]);
     }
+  };
+
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleGeneratePDF = async () => {
@@ -58,29 +60,50 @@ const ImagesToPdf: React.FC = () => {
     const pdf = new jsPDF();
 
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const imgData = await readFileAsDataURL(file);
+      try {
+        const file = files[i];
+        console.log(`Processing file: ${file.name}`);
+        const imgData = await readFileAsDataURL(file);
 
-      const img = document.createElement("img");
-      img.src = imgData;
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.src = imgData;
 
-      await new Promise<void>((resolve) => {
-        img.onload = () => {
-          const width = pdf.internal.pageSize.getWidth();
-          const height = (img.height * width) / img.width;
-          if (i > 0) pdf.addPage();
-          pdf.addImage(img, "JPEG", 0, 0, width, height);
-          resolve();
-        };
-      });
+          img.onload = () => {
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+
+            let width, height;
+            if (imgWidth / imgHeight > pdfWidth / pdfHeight) {
+              width = pdfWidth;
+              height = (imgHeight * width) / imgWidth;
+            } else {
+              height = pdfHeight;
+              width = (imgWidth * height) / imgHeight;
+            }
+
+            const x = (pdfWidth - width) / 2;
+            const y = (pdfHeight - height) / 2;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(img, "JPEG", x, y, width, height);
+            resolve();
+          };
+
+          img.onerror = () => reject(new Error("Failed to load image"));
+        });
+      } catch (error) {
+        console.error(`Error processing file ${files[i].name}:`, error);
+      }
     }
 
-    const pdfDataUri = pdf.output("datauristring");
-    setBase64Data(pdfDataUri);
+    pdf.save("output.pdf");
 
     toast({
       title: "PDF Generated",
-      description: "You can now download the PDF or Base64 data.",
+      description: "Your PDF has been created and downloaded.",
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -89,31 +112,105 @@ const ImagesToPdf: React.FC = () => {
     setLoading(false);
   };
 
-  const handleDownloadPDF = () => {
-    const pdf = new jsPDF();
+  const handleGenerateBase64 = async () => {
+    if (files.length === 0) {
+      toast({
+        title: "No Files Selected",
+        description: "Please upload at least one image.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
-    files.forEach((file, index) => {
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
+    setLoading(true);
 
-      img.onload = () => {
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (img.height * width) / img.width;
-        if (index > 0) pdf.addPage();
-        pdf.addImage(img, "JPEG", 0, 0, width, height);
-        if (index === files.length - 1) {
-          pdf.save(`${fileName}.pdf`);
-        }
-      };
+    try {
+      const pdf = new jsPDF();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const imgData = await readFileAsDataURL(file);
+
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.src = imgData;
+
+          img.onload = () => {
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+
+            let width, height;
+            if (imgWidth / imgHeight > pdfWidth / pdfHeight) {
+              width = pdfWidth;
+              height = (imgHeight * width) / imgWidth;
+            } else {
+              height = pdfHeight;
+              width = (imgWidth * height) / imgHeight;
+            }
+
+            const x = (pdfWidth - width) / 2;
+            const y = (pdfHeight - height) / 2;
+
+            if (i > 0) pdf.addPage();
+            pdf.addImage(img, "JPEG", x, y, width, height);
+            resolve();
+          };
+
+          img.onerror = () => reject(new Error("Failed to load image"));
+        });
+      }
+
+      // Generate Base64 string for the entire PDF
+      const pdfBase64 = pdf.output("datauristring");
+      setBase64Strings([pdfBase64]);
+
+      toast({
+        title: "Base64 Generated",
+        description: "Base64 string of the PDF is displayed below.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error("Error generating Base64 PDF string:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate Base64 for PDF.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+
+    setLoading(false);
+  };
+
+
+  const handleClearAll = () => {
+    setFiles([]);
+    setBase64Strings([]);
+    toast({
+      title: "Cleared",
+      description: "All files and outputs have been removed.",
+      status: "info",
+      duration: 3000,
+      isClosable: true,
     });
   };
 
-  const readFileAsDataURL = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(base64Strings.join("\n")).then(() => {
+      toast({
+        title: "Copied to Clipboard",
+        description: "Base64 strings copied successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     });
   };
 
@@ -125,69 +222,21 @@ const ImagesToPdf: React.FC = () => {
     setFiles(reorderedFiles);
   };
 
-  const handleCopyBase64 = () => {
-    if (base64Data) {
-      navigator.clipboard.writeText(base64Data);
-      toast({
-        title: "Copied",
-        description: "Base64 data copied to clipboard.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleDownloadBase64 = () => {
-    if (base64Data) {
-      const blob = new Blob([base64Data], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${fileName}.txt`;
-      link.click();
-    }
-  };
-
-  const handleClearAll = () => {
-    setFiles([]);
-    setBase64Data(null);
-    toast({
-      title: "Cleared",
-      description: "All files have been removed.",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-
   return (
-    <Box p={4} bg={bgColor} color={textColor} minH={'78vh'}>
+    <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
       <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
-        Images to PDF Converter
+        Images to PDF & Base64 Converter
       </Heading>
 
       <VStack spacing={6} align="stretch">
-        <Input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleFileChange}
-        />
+        <Input type="file" multiple accept="image/*" onChange={handleFileChange} />
         {files.length > 0 && (
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="files">
               {(provided) => (
-                <Flex
-                  wrap="wrap"
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                >
+                <Flex wrap="wrap" ref={provided.innerRef} {...provided.droppableProps}>
                   {files.map((file, index) => (
-                    <Draggable
-                      key={file.name}
-                      draggableId={file.name}
-                      index={index}
-                    >
+                    <Draggable key={file.name} draggableId={file.name} index={index}>
                       {(provided) => (
                         <Box
                           ref={provided.innerRef}
@@ -221,6 +270,7 @@ const ImagesToPdf: React.FC = () => {
             </Droppable>
           </DragDropContext>
         )}
+
         <HStack spacing={6} justify="center">
           <Button
             onClick={handleGeneratePDF}
@@ -231,24 +281,21 @@ const ImagesToPdf: React.FC = () => {
             variant="solid"
             boxShadow="lg"
             borderRadius="md"
-            _hover={{ bg: "blue.600", transform: "scale(1.05)" }}
-            _active={{ bg: "blue.700" }}
           >
-            {loading ? "Generating..." : "Generate Base64"}
+            {loading ? "Generating..." : "Generate PDF"}
           </Button>
 
           <Button
-            isDisabled={loading || files.length === 0}
-            onClick={handleDownloadPDF}
+            onClick={handleGenerateBase64}
+            leftIcon={loading ? <Spinner size="sm" /> : <FaCode />}
+            isDisabled={files.length === 0}
             colorScheme="green"
             size="lg"
             variant="solid"
             boxShadow="lg"
             borderRadius="md"
-            _hover={{ bg: "green.600", transform: "scale(1.05)" }}
-            _active={{ bg: "green.700" }}
           >
-            Download PDF
+            {loading ? "Generating..." : "Generate Base64"}
           </Button>
 
           <Button
@@ -259,50 +306,35 @@ const ImagesToPdf: React.FC = () => {
             variant="solid"
             boxShadow="lg"
             borderRadius="md"
-            _hover={{ bg: "red.600", transform: "scale(1.05)" }}
-            _active={{ bg: "red.700" }}
           >
             Clear All
           </Button>
         </HStack>
 
-        {base64Data && (
-          <VStack spacing={4} align="stretch">
+        {base64Strings.length > 0 && (
+          <>
             <Textarea
-              value={base64Data}
-              isReadOnly
-              h="200px"
-              resize="vertical"
+              value={base64Strings.join("\n")}
+              readOnly
+              placeholder="Base64 strings will appear here"
+              size="sm"
+              bg="white"
+              borderRadius="md"
+              boxShadow="sm"
+              rows={10}
             />
-            <HStack spacing={4}>
-              <Button
-                leftIcon={<FaClipboard />}
-                onClick={handleCopyBase64}
-                colorScheme="teal"
-                variant="solid"
-                size="lg"
-                boxShadow="lg"
-                borderRadius="full"
-                _hover={{ bg: "teal.600", transform: "scale(1.05)" }}
-                _active={{ bg: "teal.700" }}
-              >
-                Copy Base64
-              </Button>
-              <Button
-                leftIcon={<FaDownload />}
-                onClick={handleDownloadBase64}
-                colorScheme="orange"
-                variant="solid"
-                size="lg"
-                boxShadow="lg"
-                borderRadius="full"
-                _hover={{ bg: "orange.600", transform: "scale(1.05)" }}
-                _active={{ bg: "orange.700" }}
-              >
-                Download Base64 (.txt)
-              </Button>
-            </HStack>
-          </VStack>
+            <Button
+              onClick={copyToClipboard}
+              leftIcon={<FaClipboard />}
+              colorScheme="teal"
+              size="md"
+              variant="solid"
+              boxShadow="sm"
+              borderRadius="md"
+            >
+              Copy to Clipboard
+            </Button>
+          </>
         )}
       </VStack>
     </Box>

@@ -20,12 +20,14 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Input,
+  HStack,
 } from "@chakra-ui/react";
 
 const Base64Image = () => {
   const [base64, setBase64] = useState<string>("");
   const [previewContent, setPreviewContent] = useState<string | null>(null);
-  const  setFileType = useState<string | null>(null)[1];
+  const setFileType = useState<string | null>(null)[1];
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
@@ -89,6 +91,61 @@ const Base64Image = () => {
     previewBase64(e.target.value);
   };
 
+  const handleShare = () => {
+    if (!base64.trim()) {
+      alert("Please enter a valid Base64 string.");
+      return;
+    }
+    const { mimeType, base64Data } = extractMimeAndData(base64);
+    try {
+      const byteCharacters = atob(base64Data);
+      const byteArray = new Uint8Array(
+        Array.from(byteCharacters, (char) => char.charCodeAt(0))
+      );
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      // Convert the Blob to a File object
+      const file = new File([blob], generateFileName(mimeType), {
+        type: mimeType,
+      });
+
+      // Try to use the native share API if available
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator
+          .share({
+            files: [file],
+            title: "Shared File",
+            text: "Here is the file you requested.",
+          })
+          .then(() => {
+            console.log("File shared successfully!");
+          })
+          .catch((error) => {
+            console.error("Error sharing the file:", error);
+            alert("Sharing failed or not supported on your device.");
+          });
+      } else {
+        alert("Sharing is not supported on your device.");
+      }
+    } catch (error) {
+      console.log(error);
+      alert("Invalid Base64 data. Please check the input format.");
+    }
+  };
+
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setBase64(content);
+        previewBase64(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleTogglePreview = () => {
     setShowPreview((prev) => !prev);
 
@@ -98,7 +155,6 @@ const Base64Image = () => {
       onOpen();
     }
   };
-
 
   const handleReset = () => {
     setPreviewContent(null);
@@ -126,9 +182,7 @@ const Base64Image = () => {
         Base64 to Image
       </Heading>
 
-      {/* Instructions Section for the User */}
-
-      <VStack spacing={2} align="stretch">
+      <VStack spacing={4} align="stretch">
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">
             Base64 Input
@@ -145,55 +199,54 @@ const Base64Image = () => {
             fontFamily="'Courier New', monospace"
           />
         </FormControl>
-        <Button
-          colorScheme="green"
-          width="full"
-          onClick={handleConvert}
-          _hover={{ bg: "green.600" }}
-          fontFamily="'Courier New', monospace"
-        >
-          Convert & Download
-        </Button>
-        <Button
-          colorScheme="blue"
-          width="full"
-          onClick={handleTogglePreview}
-          mt={2}
-          _hover={{ bg: "blue.600" }}
-          fontFamily="'Courier New', monospace"
-        >
-          {showPreview ? "Hide Preview" : "Show Preview"}
-        </Button>
+        <FormControl>
+          <FormLabel fontSize="lg" fontWeight="semibold">
+            Upload an Image
+          </FormLabel>
+          <Input
+            type="file"
+            accept=".txt"
+            onChange={handleFileUpload}
+            bg={useColorModeValue("white", "gray.700")}
+            rounded="md"
+            size="lg"
+          />
+        </FormControl>
+        <HStack mt={2}>
+          <Button
+            colorScheme="green"
+            width="full"
+            onClick={handleConvert}
+            _hover={{ bg: "green.600" }}
+            fontFamily="'Courier New', monospace"
+          >
+            Convert & Download
+          </Button>
+          <Button
+            colorScheme="blue"
+            width="full"
+            isDisabled={base64?.trim() ? false : true}
+            onClick={handleShare}
+            _hover={{ bg: "blue.600" }}
+            fontFamily="'Courier New', monospace"
+          >
+            Share File
+          </Button>
+          <Button
+            colorScheme="blue"
+            width="full"
+            onClick={handleTogglePreview}
+            _hover={{ bg: "blue.600" }}
+            fontFamily="'Courier New', monospace"
+          >
+            {showPreview ? "Hide Preview" : "Show Preview"}
+          </Button>
+        </HStack>
         {warningMessage && (
           <Text fontSize="sm" color="red.500" textAlign="center" mt={2}>
             {warningMessage}
           </Text>
         )}
-
-<Box mb={6}>
-        <Text fontSize="lg" fontWeight="semibold" textAlign="center">
-          Instructions:
-        </Text>
-        <VStack align="stretch" spacing={3} mt={2}>
-          <Text fontSize="sm">
-            1. Paste your <strong>Base64 string</strong> into the provided input
-            field.
-          </Text>
-          <Text fontSize="sm">
-            2. Click <strong>"Convert & Download"</strong> to convert and
-            download the file.
-          </Text>
-          <Text fontSize="sm">
-            3. Optionally, click <strong>"Show Preview"</strong> to see a
-            preview of the image.
-          </Text>
-          <Text fontSize="sm" color="red.500">
-            * Ensure the Base64 string starts with "data:" for accurate
-            conversion.
-          </Text>
-        </VStack>
-      </Box>
-
       </VStack>
 
       <Modal isOpen={isOpen} onClose={handleReset} size="sm">
