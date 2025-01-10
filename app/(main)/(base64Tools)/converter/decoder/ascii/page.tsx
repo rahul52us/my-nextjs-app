@@ -18,9 +18,18 @@ import {
   HStack,
   Spinner,
   Input,
+  Stack,
 } from "@chakra-ui/react";
-import { FaExchangeAlt, FaTrashAlt, FaFileUpload, FaShareAlt, FaCopy } from "react-icons/fa";
+import {
+  FaExchangeAlt,
+  FaTrashAlt,
+  FaFileUpload,
+  FaShareAlt,
+  FaCopy,
+} from "react-icons/fa";
 import { saveAs } from "file-saver";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 const Base64ToAscii: React.FC = () => {
   const [base64Input, setBase64Input] = useState<string>("");
@@ -30,6 +39,14 @@ const Base64ToAscii: React.FC = () => {
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
+
+  const isValidBase64 = (str: string): boolean => {
+    try {
+      return btoa(atob(str)) === str;
+    } catch {
+      return false;
+    }
+  };
 
   const convertBase64ToAscii = (base64: string): string => {
     try {
@@ -41,6 +58,16 @@ const Base64ToAscii: React.FC = () => {
   };
 
   const handleConversion = () => {
+    if (!isValidBase64(base64Input)) {
+      toast({
+        title: "Invalid Input",
+        description: "Please enter a valid Base64 string.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setLoading(true);
     setAsciiOutput("");
     const output = convertBase64ToAscii(base64Input);
@@ -51,6 +78,17 @@ const Base64ToAscii: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 2MB.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -81,17 +119,14 @@ const Base64ToAscii: React.FC = () => {
   };
 
   const handleShare = async () => {
-
-    // Create a Blob from the text content
-    const blob = new Blob([asciiOutput], { type: 'text/plain' });
-    const file = new File([blob], "output.txt", { type: 'text/plain' });
+    const blob = new Blob([asciiOutput], { type: "text/plain" });
+    const file = new File([blob], "output.txt", { type: "text/plain" });
 
     if (navigator.share) {
       try {
-        // Ensure the file is shareable by checking if the device supports it
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: "Ascii Data",
+            title: "ASCII Data",
             files: [file],
           });
           toast({
@@ -110,7 +145,7 @@ const Base64ToAscii: React.FC = () => {
             isClosable: true,
           });
         }
-      } catch (error : any) {
+      } catch (error: any) {
         console.error("Error sharing the file:", error);
         toast({
           title: "Share Failed",
@@ -188,7 +223,7 @@ const Base64ToAscii: React.FC = () => {
             Enter Base64 String
           </FormLabel>
           <Textarea
-            placeholder="Paste your Base64 encoded text here"
+            placeholder="Paste your Base64 encoded text here (e.g., aGVsbG8gd29ybGQ=)"
             value={base64Input}
             onChange={(e) => setBase64Input(e.target.value)}
             size="lg"
@@ -214,7 +249,7 @@ const Base64ToAscii: React.FC = () => {
           />
         </FormControl>
 
-        <HStack spacing={4} justify="space-between">
+        <Stack spacing={4} direction={["column", "row"]} justify="space-between">
           <Button
             colorScheme="teal"
             size="lg"
@@ -233,7 +268,7 @@ const Base64ToAscii: React.FC = () => {
           >
             Clear Input
           </Button>
-        </HStack>
+        </Stack>
 
         <Divider borderColor="teal.500" />
 

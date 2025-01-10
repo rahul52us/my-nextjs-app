@@ -1,6 +1,6 @@
 // app/layout.tsx
-import './styles/global.css'; // Import the global CSS file
-import ThemeProvider from './component/ThemeProvider'; // Import the ThemeProvider
+import './styles/global.css';
+import ThemeProvider from './component/ThemeProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +10,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <meta charSet="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>Your App</title>
-          {/* You can add more meta tags here */}
         </head>
         <body>
           <ThemeProvider>

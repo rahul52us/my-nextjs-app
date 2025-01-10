@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Box, VStack, Text, Icon, Collapse, Divider, Input, InputGroup, InputLeftElement, Tooltip, Flex } from "@chakra-ui/react";
 import { useRouter, usePathname } from "next/navigation";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
-import {  features, footerHeight, headerHeight } from "../utils/constant";
+import { childrenHeight, features, footerHeight, headerHeight } from "../utils/constant";
 
 const Sidebar: React.FC = () => {
   const router = useRouter();
@@ -60,9 +60,7 @@ const Sidebar: React.FC = () => {
       </Flex>
 
       <InputGroup mb={4} display="none">
-      <InputLeftElement pointerEvents="none">
-  <FaSearch color="gray.400" />
-</InputLeftElement>
+        <InputLeftElement pointerEvents="none" children={<FaSearch color="gray.400" />} />
         <Input
           placeholder="Search features..."
           bg="gray.700"
