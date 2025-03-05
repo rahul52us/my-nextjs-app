@@ -51,7 +51,7 @@ export const features: any = {
     { name: "QR Code Generator", icon: FaQrcode, path: "/converter/qr-code-generator" },
     { name: "QR Code Reader", icon: FaQrcode, path: "/converter/qr-code-reader" },
     { name: "Bar Code Generator", icon: FaBarcode, path: "/converter/bar-code-generator" },
-    { name: "Bar Code Reader", icon: FaBarcode, path: "/converter/bar-code-reader" },
+    // { name: "Bar Code Reader", icon: FaBarcode, path: "/converter/bar-code-reader" },
     { name: "Files to Zip Compress", icon: FaCompress, path: "/converter/files-to-zip" },
     { name: "Zip to Files DeCompress", icon: FaFileArchive, path: "/converter/decompress-zip" },
     { name: "Encrypt File", icon: FaLock, path: "/converter/encrypt-file" },
