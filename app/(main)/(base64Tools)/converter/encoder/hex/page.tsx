@@ -19,7 +19,7 @@ import {
   Spinner,
   Input,
 } from "@chakra-ui/react";
-import { FaExchangeAlt, FaTrashAlt, FaFileUpload, FaShareAlt, FaCopy } from "react-icons/fa";
+import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
 const HexToBase64: React.FC = () => {

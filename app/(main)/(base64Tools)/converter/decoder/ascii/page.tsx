@@ -23,7 +23,6 @@ import {
 import {
   FaExchangeAlt,
   FaTrashAlt,
-  FaFileUpload,
   FaShareAlt,
   FaCopy,
 } from "react-icons/fa";

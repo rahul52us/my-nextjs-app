@@ -214,7 +214,7 @@ const TextDifferenceChecker = () => {
                 </Thead>
                 <Tbody>
                   {differences.diff1.map((line, index) => {
-                    const isLineDifferent = line.words.some((word: any) => word.isDifferent);
+                    // const isLineDifferent = line.words.some((word: any) => word.isDifferent);
                     return (
                       <Tr key={index}>
                         <Td>{line.lineNumber}</Td>
