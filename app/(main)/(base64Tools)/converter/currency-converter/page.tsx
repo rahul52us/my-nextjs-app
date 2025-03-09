@@ -12,7 +12,6 @@ import {
   Fade,
   IconButton,
   Tooltip,
-  Switch,
   FormControl,
   FormLabel,
   Alert,
@@ -24,32 +23,33 @@ import {
 import { FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
 
-// Define speed units with conversion rates relative to meters per second (m/s)
-const speedUnits = [
-  { label: "Meters per Second (m/s)", value: "m/s", factor: 1 },
-  { label: "Kilometers per Hour (km/h)", value: "km/h", factor: 0.277778 }, // 1 km/h = 0.277778 m/s
-  { label: "Miles per Hour (mph)", value: "mph", factor: 0.44704 }, // 1 mph = 0.44704 m/s
-  { label: "Feet per Second (ft/s)", value: "ft/s", factor: 0.3048 }, // 1 ft/s = 0.3048 m/s
-  { label: "Knots (kn)", value: "kn", factor: 0.514444 }, // 1 knot = 0.514444 m/s
+// Sample exchange rates (relative to USD) - Replace with API data in production
+const currencies = [
+  { label: "US Dollar (USD)", value: "USD", rate: 1 },
+  { label: "Euro (EUR)", value: "EUR", rate: 0.92 },
+  { label: "British Pound (GBP)", value: "GBP", rate: 0.78 },
+  { label: "Japanese Yen (JPY)", value: "JPY", rate: 149.50 },
+  { label: "Indian Rupee (INR)", value: "INR", rate: 83.20 },
+  { label: "Canadian Dollar (CAD)", value: "CAD", rate: 1.35 },
 ];
 
-// Helper function to handle speed conversion
-const convertSpeed = (value: number, fromUnit: string, toUnit: string): number => {
-  const fromFactor = speedUnits.find((u) => u.value === fromUnit)?.factor || 1;
-  const toFactor = speedUnits.find((u) => u.value === toUnit)?.factor || 1;
-  return (value * fromFactor) / toFactor; // Convert to m/s first, then to target
+// Helper function to handle currency conversion
+const convertCurrency = (value: number, fromUnit: string, toUnit: string): number => {
+  const fromRate = currencies.find((c) => c.value === fromUnit)?.rate || 1;
+  const toRate = currencies.find((c) => c.value === toUnit)?.rate || 1;
+  return (value / fromRate) * toRate; // Convert to USD first, then to target
 };
 
-export default function SpeedConverter() {
-  const [fromUnit, setFromUnit] = useState("m/s");
-  const [toUnit, setToUnit] = useState("km/h");
+export default function CurrencyConverter() {
+  const [fromUnit, setFromUnit] = useState("USD");
+  const [toUnit, setToUnit] = useState("EUR");
   const [value, setValue] = useState("");
   const [precision, setPrecision] = useState<number>(2);
   const [result, setResult] = useState<{
     value: string;
     steps: string[];
   } | null>(null);
-  const [humanReadable, setHumanReadable] = useState<boolean>(false);
+  const [humanReadable] = useState<boolean>(false);
   const [history, setHistory] = useState<string[]>([]);
   const [error, setError] = useState("");
   const toast = useToast();
@@ -77,26 +77,26 @@ export default function SpeedConverter() {
       }
 
       try {
-        const convertedValue = convertSpeed(parsedValue, fromUnit, toUnit);
+        const convertedValue = convertCurrency(parsedValue, fromUnit, toUnit);
         let displayValue = convertedValue.toFixed(precision);
 
-        // Human-readable formatting (e.g., large speeds in higher units)
+        // Human-readable formatting (simplified for currency)
         if (humanReadable && convertedValue >= 1000) {
-          const suffixes = ["", "k", "M"];
+          const suffixes = ["", "K", "M", "B"];
           let index = 0;
           let adjustedValue = convertedValue;
           while (adjustedValue >= 1000 && index < suffixes.length - 1) {
             adjustedValue /= 1000;
             index++;
           }
-          displayValue = `${adjustedValue.toFixed(2)} ${suffixes[index]}${toUnit.split("/")[0]}/s`;
+          displayValue = `${adjustedValue.toFixed(2)} ${suffixes[index]}${toUnit}`;
         }
 
-        const fromFactor = speedUnits.find((u) => u.value === fromUnit)?.factor || 1;
-        const toFactor = speedUnits.find((u) => u.value === toUnit)?.factor || 1;
+        const fromRate = currencies.find((c) => c.value === fromUnit)?.rate || 1;
+        const toRate = currencies.find((c) => c.value === toUnit)?.rate || 1;
         const steps = [
-          `1. Convert to m/s: ${parsedValue} ${fromUnit} × ${fromFactor} = ${(parsedValue * fromFactor).toFixed(4)} m/s`,
-          `2. Convert to ${toUnit}: ${(parsedValue * fromFactor).toFixed(4)} m/s ÷ ${toFactor} = ${convertedValue.toFixed(precision)} ${toUnit}`,
+          `1. Convert to USD: ${parsedValue} ${fromUnit} ÷ ${fromRate} = ${(parsedValue / fromRate).toFixed(4)} USD`,
+          `2. Convert to ${toUnit}: ${(parsedValue / fromRate).toFixed(4)} USD × ${toRate} = ${convertedValue.toFixed(precision)} ${toUnit}`,
         ];
 
         setResult({ value: displayValue, steps });
@@ -151,16 +151,16 @@ export default function SpeedConverter() {
         <VStack spacing={{ base: 6, md: 8 }} align="stretch">
           {/* Header */}
           <Heading as="h1" size="xl" color="teal.500" textAlign="center">
-            Speed Converter
+            Currency Converter
           </Heading>
           <Text textAlign="center" fontSize="md" color="gray.600" maxW="600px" mx="auto">
-            Convert speed units instantly with detailed steps and history.
+            Convert currencies instantly with detailed steps and history (sample rates).
           </Text>
 
           {/* Input Section */}
           <Grid templateColumns={responsiveGridColumns} gap={6}>
             <FormControl>
-              <FormLabel fontWeight="bold" color="teal.600">From Unit</FormLabel>
+              <FormLabel fontWeight="bold" color="teal.600">From Currency</FormLabel>
               <Select
                 value={fromUnit}
                 onChange={(e) => setFromUnit(e.target.value)}
@@ -172,16 +172,16 @@ export default function SpeedConverter() {
                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                 transition="all 0.2s ease"
               >
-                {speedUnits.map((unit) => (
-                  <option key={unit.value} value={unit.value}>
-                    {unit.label}
+                {currencies.map((currency) => (
+                  <option key={currency.value} value={currency.value}>
+                    {currency.label}
                   </option>
                 ))}
               </Select>
             </FormControl>
 
             <FormControl>
-              <FormLabel fontWeight="bold" color="teal.600">To Unit</FormLabel>
+              <FormLabel fontWeight="bold" color="teal.600">To Currency</FormLabel>
               <Select
                 value={toUnit}
                 onChange={(e) => setToUnit(e.target.value)}
@@ -193,9 +193,9 @@ export default function SpeedConverter() {
                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                 transition="all 0.2s ease"
               >
-                {speedUnits.map((unit) => (
-                  <option key={unit.value} value={unit.value}>
-                    {unit.label}
+                {currencies.map((currency) => (
+                  <option key={currency.value} value={currency.value}>
+                    {currency.label}
                   </option>
                 ))}
               </Select>
@@ -204,7 +204,7 @@ export default function SpeedConverter() {
 
           <Flex direction={{ base: "column", md: "row" }} gap={4} align="center">
             <Input
-              placeholder="Enter speed (e.g., 100)"
+              placeholder="Enter amount (e.g., 100)"
               value={value}
               onChange={(e) => setValue(e.target.value)}
               bg="white"
@@ -239,17 +239,16 @@ export default function SpeedConverter() {
           </Flex>
 
           <Flex align="center" justify="center" gap={4}>
-            <Switch
+            {/* <Switch
               id="human-readable"
               isChecked={humanReadable}
               onChange={(e) => setHumanReadable(e.target.checked)}
               colorScheme="teal"
-              display="none"
             />
-            <Text display="none" fontSize="sm" color="gray.600">Human-Readable Format</Text>
-            <Tooltip label="Swap Units" placement="top">
+            <Text fontSize="sm" color="gray.600">Human-Readable Format</Text> */}
+            <Tooltip label="Swap Currencies" placement="top">
               <IconButton
-                aria-label="Swap units"
+                aria-label="Swap currencies"
                 icon={<FaExchangeAlt />}
                 size="md"
                 colorScheme="teal"
@@ -339,18 +338,11 @@ export default function SpeedConverter() {
             </Box>
           )}
 
-          {/* Overview */}
+          {/* Note */}
           <Box mt={6} p={4} bg="blue.50" borderRadius="lg" shadow="md">
-            <Text fontSize="lg" fontWeight="bold" color="blue.700" mb={2}>
-              Speed Units Overview:
+            <Text fontSize="sm" color="blue.700" fontWeight="medium">
+              Note: This uses sample exchange rates (as of March 7, 2025). For live rates, integrate an API like Open Exchange Rates.
             </Text>
-            <VStack align="start" spacing={2}>
-              <Text><strong>m/s:</strong> Meters per second, base SI unit.</Text>
-              <Text><strong>km/h:</strong> Kilometers per hour, 1 km/h = 0.277778 m/s.</Text>
-              <Text><strong>mph:</strong> Miles per hour, 1 mph = 0.44704 m/s.</Text>
-              <Text><strong>ft/s:</strong> Feet per second, 1 ft/s = 0.3048 m/s.</Text>
-              <Text><strong>kn:</strong> Knots, 1 kn = 0.514444 m/s (used in aviation/nautical).</Text>
-            </VStack>
           </Box>
         </VStack>
       </Box>
