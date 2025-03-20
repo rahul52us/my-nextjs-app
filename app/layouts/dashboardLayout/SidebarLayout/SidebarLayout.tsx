@@ -219,7 +219,7 @@ const SidebarPopover = observer(({
         <Portal>
           <PopoverContent
             zIndex={15}
-            w={"200px"}
+            w={sidebarWidth}
             onMouseEnter={handleMouseEnter}
             bg={useColorModeValue("white", "gray.800")}
           >
@@ -562,6 +562,7 @@ const SidebarLayout: React.FC<SidebarProps> = observer(({
             position="fixed"
             bottom={0}
             left={0}
+            display="none"
             width={isCollapsed ? mediumSidebarWidth : sidebarWidth}
             transition="width 0.3s"
             py={4}

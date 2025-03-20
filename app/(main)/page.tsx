@@ -129,7 +129,7 @@ export default function HomePage() {
           padding: 40px 20px;
           background-color: #f9fafb;
           min-height: 70vh;
-          max-width: 900px;
+          max-width: 1200px;
           margin: auto;
         }
 
