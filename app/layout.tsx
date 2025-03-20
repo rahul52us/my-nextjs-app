@@ -1,7 +1,7 @@
 "use client";
 
 import { observer } from "mobx-react-lite";
-import { Box, ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./theme/theme";
 import { lato } from "./theme/theme";
 import MainLayout from "./layouts/mainLayout/MainLayout";
@@ -11,7 +11,6 @@ import { useEffect } from "react";
 import stores from "./store/stores";
 import Notification from "./component/common/Notification/Notification";
 import { Montserrat } from "next/font/google";
-import WhatsAppButton from "./component/common/whatsApp/whatsAppButton";
 import DashboardLayout from "./layouts/dashboardLayout/DashboardLayout";
 import SeoHead from "./component/config/component/SeoHead/SeoHead";
 import { WEBSITE_DESCRIPTION, WEBSITE_TITLE } from "./config/utils/variables";
@@ -51,10 +50,6 @@ const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
         <ChakraProvider theme={theme}>
           <Notification />
           <LayoutComponent>{children}</LayoutComponent>
-
-          <Box display={{ base: "none", lg: "block" }}>
-            <WhatsAppButton />
-          </Box>
         </ChakraProvider>
       </body>
     </html>
