@@ -15,6 +15,7 @@ import {
 } from '../../component/config/utils/variable';
 import ThemeChangeContainer from '../../component/common/ThemeChangeContainer/ThemeChangeContainer';
 import PageLoader from '../../component/common/Loader/PageLoader';
+import React from 'react';
 
 const DashboardLayout = observer(({ children }: { children: React.ReactNode }) => {
   const {

@@ -341,12 +341,12 @@ const CustomTable: React.FC<CustomTableProps> = ({
                 isMobile={actions?.datePicker?.isMobile}
                 startDate={actions?.datePicker?.date.startDate}
                 endDate={actions?.datePicker?.date.endDate}
-                onStartDateChange={(e) => {
+                onStartDateChange={(e : any) => {
                   if (actions?.datePicker?.onDateChange) {
                     actions?.datePicker?.onDateChange(e, "startDate");
                   }
                 }}
-                onEndDateChange={(e) => {
+                onEndDateChange={(e : any) => {
                   if (actions?.datePicker?.onDateChange) {
                     actions?.datePicker?.onDateChange(e, "endDate");
                   }
@@ -521,7 +521,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
       {actions?.pagination?.show && (
         <Pagination
           currentPage={actions?.pagination?.currentPage || 1}
-          onPageChange={(e) => {
+          onPageChange={(e : any) => {
             if (actions?.pagination?.onClick) {
               actions?.pagination?.onClick(e);
             }

@@ -15,6 +15,7 @@ import WhatsAppButton from "./component/common/whatsApp/whatsAppButton";
 import DashboardLayout from "./layouts/dashboardLayout/DashboardLayout";
 import SeoHead from "./component/config/component/SeoHead/SeoHead";
 import { WEBSITE_DESCRIPTION, WEBSITE_TITLE } from "./config/utils/variables";
+import React from "react";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 

@@ -4,6 +4,7 @@ import Head from "next/head";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SITE_URL, WEBSITE_TITLE, KEYWORDS, WEBSITE_DESCRIPTION } from "../../../../config/utils/variables";
+import React from "react";
 
 interface SeoProps {
   title?: string;

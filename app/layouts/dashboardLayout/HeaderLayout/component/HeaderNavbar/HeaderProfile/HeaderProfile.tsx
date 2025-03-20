@@ -83,7 +83,7 @@ const HeaderProfile = observer(() => {
                 <FaHome style={{ marginRight: "8px" }} /> Home
               </MenuItem>
             )}
-            <MenuItem onClick={() => router.push(main.profile)}>
+            <MenuItem display="none" onClick={() => router.push(main.profile)}>
               <FaCog style={{ marginRight: "8px" }} /> Profile Settings
             </MenuItem>
             <MenuItem display="none" onClick={() => router.push(main.changePassword)}>
@@ -94,6 +94,7 @@ const HeaderProfile = observer(() => {
             </MenuItem>
             <Divider />
             <MenuItem
+              display="none"
               onClick={() => {
                 doLogout(); // Uncomment and implement if needed
                 router.push(authentication.login);

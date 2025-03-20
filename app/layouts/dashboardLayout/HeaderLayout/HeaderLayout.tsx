@@ -6,6 +6,7 @@ import HeaderNavbar from "./component/HeaderNavbar/HeaderNavbar";
 import HeaderLogo from "./component/Logo/HeaderLogo";
 import { observer } from "mobx-react-lite";
 import { headerHeight, headerPadding } from "../../../component/config/utils/variable";
+import React from "react";
 
 const HeaderLayout = observer(() => {
   const [isLargerThan1020] = useMediaQuery("(min-width: 1020px)");

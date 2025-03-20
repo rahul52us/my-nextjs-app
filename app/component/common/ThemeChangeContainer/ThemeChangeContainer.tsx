@@ -8,6 +8,7 @@ import { FaCheck } from "react-icons/fa";
 import stores from "../../../store/stores";
 import ColorPickerComponent from "../ColorPicker/ColorPicker";
 import theme from "../../../theme/theme";
+import React from "react";
 
 interface ColorOption {
   name: string;

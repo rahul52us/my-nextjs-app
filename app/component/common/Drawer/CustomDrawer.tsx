@@ -12,6 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { useRef } from "react";
 import DrawerLoader from "../Loader/DrawerLoader";
+import React from "react";
 
 interface CustomDrawerProps {
   open: boolean;

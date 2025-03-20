@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import { BiLeftArrowAlt, BiRightArrowAlt } from "react-icons/bi";
 import stores from "../../../../../store/stores";
 import SearchBar from "../HeaderNavbar/SearchBar/SearchBar";
+import React from "react";
 
 const HeaderLogo = observer(() => {
   const isLargerThanXl = useBreakpointValue({ lg: true }) ?? false;

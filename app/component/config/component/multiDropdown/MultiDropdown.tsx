@@ -129,12 +129,12 @@ const MultiDropdown = ({
                 isMobile={actions?.datePicker?.isMobile}
                 startDate={actions?.datePicker?.date.startDate}
                 endDate={actions?.datePicker?.date.endDate}
-                onStartDateChange={(e) => {
+                onStartDateChange={(e : any) => {
                   if (actions?.datePicker?.onDateChange) {
                     actions?.datePicker?.onDateChange(e, "startDate");
                   }
                 }}
-                onEndDateChange={(e) => {
+                onEndDateChange={(e : any) => {
                   if (actions?.datePicker?.onDateChange) {
                     actions?.datePicker?.onDateChange(e, "endDate");
                   }

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
-const AnimatedWrapper = ({ children, ...props }) => {
+const AnimatedWrapper = ({ children, ...props } : any) => {
   const MotionBox = motion(Box);
 
   return (
