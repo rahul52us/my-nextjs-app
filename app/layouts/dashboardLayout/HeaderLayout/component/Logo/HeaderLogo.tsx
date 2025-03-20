@@ -7,7 +7,7 @@ import stores from "../../../../../store/stores";
 import SearchBar from "../HeaderNavbar/SearchBar/SearchBar";
 
 const HeaderLogo = observer(() => {
-  const isLargerThanXl = useBreakpointValue({ lg: true }) ?? false; // Added default value for SSR
+  const isLargerThanXl = useBreakpointValue({ lg: true }) ?? false;
 
   const {
     layout: { fullScreenMode, openDashSidebarFun, isCallapse },

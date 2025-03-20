@@ -7,7 +7,6 @@ import HeaderLogo from "./component/Logo/HeaderLogo";
 import { observer } from "mobx-react-lite";
 import { headerHeight, headerPadding } from "../../../component/config/utils/variable";
 
-
 const HeaderLayout = observer(() => {
   const [isLargerThan1020] = useMediaQuery("(min-width: 1020px)");
 
@@ -18,7 +17,7 @@ const HeaderLayout = observer(() => {
       justifyContent="space-between"
       height={headerHeight}
       padding={headerPadding}
-      boxShadow="2px 2px 4px rgba(0, 0, 0, 0.2)" // Moved styled-components shadow to Chakra UI prop
+      boxShadow="2px 2px 4px rgba(0, 0, 0, 0.2)"
     >
       <Flex width={isLargerThan1020 ? "85%" : "95%"}>
         <HeaderLogo />

@@ -14,6 +14,7 @@ import { Montserrat } from "next/font/google";
 import WhatsAppButton from "./component/common/whatsApp/whatsAppButton";
 import DashboardLayout from "./layouts/dashboardLayout/DashboardLayout";
 import SeoHead from "./component/config/component/SeoHead/SeoHead";
+import { WEBSITE_DESCRIPTION, WEBSITE_TITLE } from "./config/utils/variables";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
@@ -40,8 +41,8 @@ const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
     <html lang="en">
         {/* ✅ SEO */}
         <SeoHead
-          title="Mental Health Clinic In Noida | Best Psychologist In Noida | Metamind"
-          description="Searching for the best mental health doctor in Noida? Metamind, a trusted mental health clinic in Noida, offers expert care from top psychologists."
+          title={WEBSITE_TITLE}
+          description={WEBSITE_DESCRIPTION}
         />
 
       <body className={`${lato.className} ${montserrat.className}`}>

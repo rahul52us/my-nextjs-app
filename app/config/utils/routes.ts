@@ -9,7 +9,7 @@ export const authentication = {
   createOrganisationStep1: "/create/company",
 };
 
-const dashboardName = "dashboard";
+const dashboardName = "";
 
 export const dashboard = {
   home: `/${dashboardName}`,

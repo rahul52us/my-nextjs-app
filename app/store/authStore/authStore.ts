@@ -3,6 +3,7 @@ import { makeAutoObservable } from "mobx";
 import axios from "axios";
 import stores from "../stores";
 import CryptoJS from "crypto-js";
+import { AUTH_TOKEN, BACKEND_URL, ENCRYPT_SECRET_KEY, USER_SESSION_DATA } from "../../config/utils/variables";
 
 interface Notification {
   title?: any;
@@ -14,7 +15,29 @@ interface Notification {
 }
 
 class AuthStore {
-  user: any = null;
+  user: any = {
+    "_id": "67a0febf6d59f5cb285d8dad",
+    "username": "unknown",
+    "is_active": true,
+    "role": "superadmin",
+    "createdAt": "2025-02-03T17:36:49.475Z",
+    "__v": 0,
+    "company": "65f65a70fbe7ae65d05dac64",
+    "name": "unknown",
+    "profile_details": null,
+    "companyDetails": {
+        "_id": "65f65a70fbe7ae65d05dac64",
+        "company_name": "dev tools",
+        "is_active": true,
+        "verified_email_allowed": false,
+        "otherLinks": [],
+        "createdAt": "2024-03-17T02:50:03.268Z",
+        "__v": 0,
+        "companyOrg": "65f65a70fbe7ae65d05dac64",
+        "companyType": "organisation",
+        "addressInfo": []
+    }
+};
   token: string | null = null;
   isLoading: boolean = false;
   error: string | null = null;
@@ -31,7 +54,7 @@ class AuthStore {
     axios.interceptors.request.use(
       (config) => {
         if (typeof window !== "undefined") {
-          const token = localStorage.getItem(AUTH_TOKEN);
+          const token = localStorage.getItem(AUTH_TOKEN!);
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -59,7 +82,7 @@ class AuthStore {
   // Initialize User Session
   initializeUser = async () => {
     if (typeof window !== "undefined") {  // ✅ Prevent SSR errors
-      const savedToken = localStorage.getItem(AUTH_TOKEN);
+      const savedToken = localStorage.getItem(AUTH_TOKEN!);
       if (savedToken) {
         this.token = savedToken;
         await this.fetchUser();
@@ -96,7 +119,7 @@ class AuthStore {
       this.token = response.data.token;
 
       if (typeof window !== "undefined") {
-        localStorage.setItem(AUTH_TOKEN, this.token);
+        localStorage.setItem(AUTH_TOKEN!, this.token!);
       }
 
       await this.fetchUser();
@@ -124,7 +147,7 @@ class AuthStore {
         this.doLogout();
         return false;
       }
-    } catch ({}) {
+    } catch ({} : any) {
       this.user = null;
       this.doLogout();
     }
@@ -149,7 +172,7 @@ class AuthStore {
       this.token = response?.data?.data?.authorization_token;
 
       if (this.token && typeof window !== "undefined") {
-        localStorage.setItem(AUTH_TOKEN, this.token);
+        localStorage.setItem(AUTH_TOKEN!, this.token);
       }
 
       await this.fetchUser();
@@ -175,9 +198,9 @@ class AuthStore {
     if (typeof window !== "undefined" && user) {
       const encryptedData = CryptoJS.AES.encrypt(
         JSON.stringify(user),
-        ENCRYPT_SECRET_KEY
+        ENCRYPT_SECRET_KEY!
       ).toString();
-      sessionStorage.setItem(USER_SESSION_DATA, encryptedData);
+      sessionStorage.setItem(USER_SESSION_DATA!, encryptedData);
     }
   }
 
@@ -209,14 +232,14 @@ class AuthStore {
   getUserFromSessionStorage() {
     if (typeof window === "undefined") return false;
 
-    const storedData = sessionStorage.getItem(USER_SESSION_DATA);
+    const storedData = sessionStorage.getItem(USER_SESSION_DATA!);
     if (!storedData) return false;
 
     try {
-      const decryptedBytes = CryptoJS.AES.decrypt(storedData, ENCRYPT_SECRET_KEY);
+      const decryptedBytes = CryptoJS.AES.decrypt(storedData, ENCRYPT_SECRET_KEY!);
       const decryptedData = decryptedBytes.toString(CryptoJS.enc.Utf8);
       return decryptedData ? JSON.parse(decryptedData) : false;
-    } catch ({}) {
+    } catch ({} : any) {
       return false;
     }
   }
@@ -228,7 +251,7 @@ class AuthStore {
     this.error = null;
 
     if (typeof window !== "undefined") {
-      localStorage.removeItem(AUTH_TOKEN);
+      localStorage.removeItem(AUTH_TOKEN!);
     }
   };
 }

@@ -93,12 +93,12 @@ class ThemeStore {
     if (typeof window !== "undefined") {
       // Ensure this only runs on the client-side
       const storedThemeConfig = localStorage.getItem(
-        process.env.NEXT_PUBLIC_THEME_STORE || "theme_config"
+        process.env.NEXT_PUBLIC_THEME_TOKEN_STORE || "theme_config"
       );
       if (storedThemeConfig) {
         try {
           this.themeConfig = JSON.parse(storedThemeConfig);
-        } catch ({}) {
+        } catch ({} : any) {
           this.resetTheme();
         }
       }
@@ -109,7 +109,7 @@ class ThemeStore {
     _.set(this.themeConfig, key, value);
     if (typeof window !== "undefined") {
       localStorage.setItem(
-        process.env.NEXT_PUBLIC_THEME_STORE || "theme_config",
+        process.env.NEXT_PUBLIC_THEME_TOKEN_STORE || "theme_config",
         JSON.stringify(this.themeConfig)
       );
     }
@@ -121,7 +121,7 @@ class ThemeStore {
 
   resetTheme = () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem(process.env.NEXT_PUBLIC_THEME_STORE || "theme_config");
+      localStorage.removeItem(process.env.NEXT_PUBLIC_THEME_TOKEN_STORE || "theme_config");
     }
     this.themeConfig = { ...this.backthemeConfig };
   };

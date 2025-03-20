@@ -69,6 +69,7 @@ const ThemeChangeContainer: React.FC = observer(() => {
 
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
+
   const handleColorSelect = (color: ColorOption) => {
     theme.colors.custom.light.primary = color.code;
     setThemeConfig("colors.custom.light.primary", color.code);

@@ -6,3 +6,4 @@ export const USER_SESSION_DATA = process.env.NEXT_PUBLIC_USER_SESSION_DATA
 export const ENCRYPT_SECRET_KEY = process.env.NEXT_PUBLIC_ENCRYPT_SECRET_KEY
 export const SITE_URL =  process.env.NEXT_PUBLIC_SITE_URL
 export const KEYWORDS = process.env.NEXT_PUBLIC_DEFAULT_KEYWORDS
+export const themeToken = process.env.NEXT_PUBLIC_THEME_TOKEN_STORE

@@ -22,13 +22,13 @@ const SeoHead = ({ title, description, image, url, keywords }: SeoProps) => {
   }, [pathname]);
 
   useEffect(() => {
-    document.title = title ? `${title} | ${WEBSITE_TITLE}` : WEBSITE_TITLE;
+    document.title = title ? `${title} | ${WEBSITE_TITLE}` : WEBSITE_TITLE!;
 
     const metaDescription = document.querySelector("meta[name='description']");
-    if (metaDescription) metaDescription.setAttribute("content", description || WEBSITE_DESCRIPTION);
+    if (metaDescription) metaDescription.setAttribute("content", description || WEBSITE_DESCRIPTION!);
 
     const metaKeywords = document.querySelector("meta[name='keywords']");
-    if (metaKeywords) metaKeywords.setAttribute("content", keywords || KEYWORDS);
+    if (metaKeywords) metaKeywords.setAttribute("content", keywords || KEYWORDS!);
   }, [title, description, keywords]);
 
   return (

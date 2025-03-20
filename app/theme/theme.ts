@@ -108,6 +108,6 @@ const {
   themeStore: { themeConfig },
 } = stores;
 
-const theme = extendTheme({...themeConfig,colors, fonts,breakpoints,components,styles});
+const theme = extendTheme({...themeConfig, fonts,breakpoints,components,styles});
 export { theme, lato };
 export default theme;

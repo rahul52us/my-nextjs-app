@@ -5,23 +5,32 @@ import { observer } from 'mobx-react-lite';
 import { Box, Spinner, useBreakpointValue, useColorModeValue, useMediaQuery, useTheme } from '@chakra-ui/react';
 import styled from 'styled-components';
 import stores from '../../store/stores';
-// import { authenticastion } from '../../config/utils/routes';
 import SidebarLayout from './SidebarLayout/SidebarLayout';
 import HeaderLayout from './HeaderLayout/HeaderLayout';
-// import PermissionDeniedPage from '../../component/common/Loader/PermissionDeniedPage';
-import { contentLargeBodyPadding, contentSmallBodyPadding, headerHeight, mediumSidebarWidth } from '../../component/config/utils/variable';
+import {
+  contentLargeBodyPadding,
+  contentSmallBodyPadding,
+  headerHeight,
+  mediumSidebarWidth,
+} from '../../component/config/utils/variable';
 import ThemeChangeContainer from '../../component/common/ThemeChangeContainer/ThemeChangeContainer';
 import PageLoader from '../../component/common/Loader/PageLoader';
-
 
 const DashboardLayout = observer(({ children }: { children: React.ReactNode }) => {
   const {
     auth: { user },
-    layout: { fullScreenMode, mediumScreenMode, isCallapse, openDashSidebarFun, openMobileSideDrawer, setOpenMobileSideDrawer },
+    layout: {
+      fullScreenMode,
+      mediumScreenMode,
+      isCallapse,
+      openDashSidebarFun,
+      openMobileSideDrawer,
+      setOpenMobileSideDrawer,
+    },
     themeStore: { themeConfig },
   } = stores;
-  const theme = useTheme();
 
+  const theme = useTheme();
   const [sizeStatus] = useMediaQuery(`(max-width: ${theme.breakpoints.xl})`);
   const isMobile = useBreakpointValue({ base: true, lg: false }) ?? false;
   const sidebarRef = useRef<HTMLDivElement | null>(null);
@@ -50,9 +59,8 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
   }, [isCallapse, openDashSidebarFun]);
 
   return user ? (
-    <Box
-    >
-      <MainContainer isMobile={isMobile}>
+    <Box>
+      <MainContainer $isMobile={isMobile}>
         <Box ref={sidebarRef}>
           <SidebarLayout
             onItemClick={handleSidebarItemClick}
@@ -62,13 +70,13 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
             setOpenMobileSideDrawer={closeDrawerModel}
           />
         </Box>
-        <Container fullScreenMode={fullScreenMode}>
+        <Container $fullScreenMode={fullScreenMode}>
           <HeaderContainer
-            isMobile={isMobile}
-            sizeStatus={sizeStatus}
-            mediumScreenMode={mediumScreenMode}
-            fullScreenMode={fullScreenMode}
-            backgroundColor={useColorModeValue(
+            $isMobile={isMobile}
+            $sizeStatus={sizeStatus}
+            $mediumScreenMode={mediumScreenMode}
+            $fullScreenMode={fullScreenMode}
+            $backgroundColor={useColorModeValue(
               themeConfig.colors.custom.light.primary,
               themeConfig.colors.custom.dark.primary
             )}
@@ -76,13 +84,13 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
             <HeaderLayout />
           </HeaderContainer>
           <ContentContainer
-            isMobile={isMobile}
-            mediumScreenMode={mediumScreenMode}
+            $isMobile={isMobile}
+            $mediumScreenMode={mediumScreenMode}
             className={
               fullScreenMode ? 'fullscreen' : mediumScreenMode ? 'mediumScreen' : ''
             }
-            fullScreenMode={fullScreenMode}
-            sizeStatus={sizeStatus}
+            $fullScreenMode={fullScreenMode}
+            $sizeStatus={sizeStatus}
           >
             {children}
           </ContentContainer>
@@ -92,54 +100,54 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
     </Box>
   ) : (
     <PageLoader loading={true}>
-    <Spinner />
+      <Spinner />
     </PageLoader>
-    // <RedirectComponent />
   );
 });
 
 export default DashboardLayout;
 
-const MainContainer = styled.div<{ isMobile: boolean }>`
+// Styled Components with Fixed Transient Props ($ prefix)
+const MainContainer = styled.div<{ $isMobile: boolean }>`
   display: flex;
   transition: all 0.3s ease-in-out;
   overflow: hidden;
-  margin-left: ${(props) => (props.isMobile ? '0px' : mediumSidebarWidth)};
+  margin-left: ${(props) => (props.$isMobile ? '0px' : mediumSidebarWidth)};
 `;
 
-const Container = styled.div<{ fullScreenMode: boolean }>`
+const Container = styled.div<{ $fullScreenMode: boolean }>`
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease-in-out;
 `;
 
 const HeaderContainer = styled.div<{
-  fullScreenMode: boolean;
-  sizeStatus: boolean;
-  mediumScreenMode: boolean;
-  backgroundColor: string;
-  isMobile: boolean;
+  $fullScreenMode: boolean;
+  $sizeStatus: boolean;
+  $mediumScreenMode: boolean;
+  $backgroundColor: string;
+  $isMobile: boolean;
 }>`
   z-index: 99;
   height: ${headerHeight};
   position: fixed;
   top: 0;
   right: 0;
-  background-color: ${(props) => props.backgroundColor};
-  left: ${(props) => (props.isMobile ? '0px' : mediumSidebarWidth)};
+  background-color: ${(props) => props.$backgroundColor};
+  left: ${(props) => (props.$isMobile ? '0px' : mediumSidebarWidth)};
   transition: all 0.3s ease-in-out;
 `;
 
 const ContentContainer = styled.div<{
-  sizeStatus: boolean;
-  fullScreenMode: boolean;
-  mediumScreenMode: boolean;
-  isMobile: boolean;
+  $sizeStatus: boolean;
+  $fullScreenMode: boolean;
+  $mediumScreenMode: boolean;
+  $isMobile: boolean;
 }>`
-  padding: ${({ isMobile }) =>
-    isMobile ? `${contentSmallBodyPadding}` : `${contentLargeBodyPadding}`};
-  width: ${({ isMobile }) =>
-    isMobile ? '100vw' : `calc(100vw - ${mediumSidebarWidth})`};
+  padding: ${({ $isMobile }) =>
+    $isMobile ? `${contentSmallBodyPadding}` : `${contentLargeBodyPadding}`};
+  width: ${({ $isMobile }) =>
+    $isMobile ? '100vw' : `calc(100vw - ${mediumSidebarWidth})`};
   overflow-x: hidden;
   height: calc(100vh - ${headerHeight});
   transition: all 0.3s ease-in-out;

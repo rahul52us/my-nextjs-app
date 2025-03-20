@@ -13,7 +13,7 @@ import {
 import { FaSearch } from "react-icons/fa";
 import debounce from "lodash.debounce";
 import Link from "next/link";
-import { sidebarData } from "../../../../SidebarLayout/utils/SidebarItems";
+import { filterSearchData } from "../../../../SidebarLayout/utils/SidebarItems";
 
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +43,7 @@ const SearchBar = () => {
       return;
     }
 
-    const filtered = sidebarData.filter((item: any) =>
+    const filtered = filterSearchData.filter((item: any) =>
       item?.name?.toLowerCase()?.includes(query.toLowerCase())
     );
     setResults(filtered);
