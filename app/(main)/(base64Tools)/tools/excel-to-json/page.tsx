@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, ChangeEvent, useMemo, useEffect } from "react";
+import { useState, useCallback, ChangeEvent, useMemo, useEffect, useRef } from "react";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 import {
@@ -25,14 +25,18 @@ import {
   Link,
   Select,
   Spinner,
-  Flex,
   useToast,
   Tooltip,
   Skeleton,
+  Checkbox,
+  Progress,
+  InputGroup,
+  InputRightElement,
+  CloseButton,
 } from "@chakra-ui/react";
-import { DownloadIcon, ExternalLinkIcon, ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { DownloadIcon, ExternalLinkIcon, ViewIcon, ViewOffIcon, RepeatIcon } from "@chakra-ui/icons";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, IHeaderParams } from "ag-grid-community";
+import { ColDef, IHeaderParams, GridApi } from "ag-grid-community";
 import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import * as XLSX from "xlsx";
 import ReactSelect, { MultiValue } from "react-select";
@@ -174,13 +178,13 @@ const extractMimeAndData = (input: string) => {
   throw new Error("Invalid base64 string");
 };
 
-const generateFileName = (mimeType: string) => {
+const generateFileName = (mimeType: string, suffix: string = "") => {
   const extension = mimeToExtension[mimeType] || "bin";
   const timestamp = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, "")
     .slice(0, 14);
-  return `file_${timestamp}.${extension}`;
+  return `file_${timestamp}${suffix}.${extension}`;
 };
 
 const Base64ToFile = () => {
@@ -190,17 +194,61 @@ const Base64ToFile = () => {
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
-  const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>(
-    {}
-  );
+  const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>({});
+  const [selectAllColumns, setSelectAllColumns] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const toast = useToast();
+  const gridApiRef = useRef<any | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const cardBg = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
+
+  // Load saved column selections from localStorage
+  useEffect(() => {
+    const savedSelections = localStorage.getItem("selectedColumns");
+    if (savedSelections) {
+      try {
+        setSelectedColumns(JSON.parse(savedSelections));
+      } catch (err) {
+        console.error("Error loading saved column selections:", err);
+      }
+    }
+  }, []);
+
+  // Save column selections to localStorage
+  useEffect(() => {
+    if (Object.keys(selectedColumns).length > 0) {
+      localStorage.setItem("selectedColumns", JSON.stringify(selectedColumns));
+    }
+  }, [selectedColumns]);
+
+  // Handle search input with debouncing
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      if (gridApiRef.current) {
+        gridApiRef.current.setQuickFilter(value);
+      }
+    }, 300);
+  };
+
+  // Clear search input
+  const clearSearch = () => {
+    setSearchQuery("");
+    if (gridApiRef.current) {
+      gridApiRef.current.setQuickFilter("");
+    }
+  };
 
   const decodeBase64ToBlob = (
     input: string
@@ -213,106 +261,111 @@ const Base64ToFile = () => {
         Array.from(byteCharacters, (char) => char.charCodeAt(0))
       );
       if (byteArray.length === 0) {
-        setError("Decoded byte array is empty");
+        setError("Decoded byte array is empty. Please check the Base64 string.");
+        return null;
+      }
+      if (byteArray.length > 100 * 1024 * 1024) { // 100MB limit
+        setError("File size exceeds 100MB. Please upload a smaller file.");
         return null;
       }
       const blob = new Blob([byteArray], { type: mimeType });
       return { blob, mimeType };
     } catch (error) {
       console.error("Error decoding base64 to blob:", error);
-      setError("Invalid Base64 data. Check the console for details.");
+      setError("Invalid Base64 data. Ensure the string is correctly encoded.");
       return null;
     }
   };
 
-  const parseExcelFile = (data: ArrayBuffer) => {
-    try {
-      const workbook = XLSX.read(data, { type: "array", cellDates: true });
-      const sheetsData = workbook.SheetNames.map((sheetName) => {
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, {
-          header: 1,
-          blankrows: false,
-          defval: "",
-        }) as any[][];
-        if (!jsonData.length) {
-          return { sheetName, data: [], rowData: [] };
-        }
-        // Ensure unique headers by appending index to duplicates
-        const headerCounts: Record<string, number> = {};
-        const headers =
-          Array.isArray(jsonData[0]) && jsonData[0].length
-            ? jsonData[0].map((cell, index) => {
-                const baseHeader = cell != null && cell !== "" ? String(cell) : `Column ${index + 1}`;
-                headerCounts[baseHeader] = (headerCounts[baseHeader] || 0) + 1;
-                return headerCounts[baseHeader] > 1 ? `${baseHeader}_${headerCounts[baseHeader] - 1}` : baseHeader;
-              })
-            : Array.from(
-                {
-                  length:
-                    Math.max(
-                      ...jsonData
-                        .slice(1)
-                        .map((row) => (Array.isArray(row) ? row.length : 0))
-                    ) || 1,
-                },
-                (_, i) => `Column ${i + 1}`
-              );
-        console.log(`Headers for sheet ${sheetName}:`, headers); // Debug headers
-        const rowData = jsonData
-          .slice(1)
-          .map((row) => {
-            if (!Array.isArray(row)) return {};
-            return row.reduce(
-              (acc, cell, index) => {
-                const key = headers[index] || `Col${index}`;
-                acc[key] =
-                  typeof cell === "object" && cell !== null
-                    ? JSON.stringify(cell, null, 2)
-                    : cell ?? "";
-                return acc;
-              },
-              {} as Record<string, any>
-            );
-          })
-          .filter((row) => Object.keys(row).length > 0);
-        return { sheetName, data: [headers, ...jsonData.slice(1)], rowData };
-      }).filter((sheet) => sheet.data.length > 0 || sheet.rowData.length > 0);
-      if (!sheetsData.length) {
-        throw new Error("No valid sheets found in the Excel file.");
+const parseExcelFile = (data: ArrayBuffer) => {
+  try {
+    setLoadingProgress(0);
+    const workbook = XLSX.read(data, {
+      type: "array",
+      cellDates: true,
+    });
+    const sheetsData = workbook.SheetNames.map((sheetName) => {
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        blankrows: false,
+        defval: "",
+      }) as any[][];
+      if (!jsonData.length) {
+        return { sheetName, data: [], rowData: [] };
       }
-      setPreviewContent(sheetsData);
-      setSelectedSheet(sheetsData[0].sheetName);
-      setSelectedColumns(
-        sheetsData.reduce(
-          (acc, sheet) => {
-            acc[sheet.sheetName] = [];
-            return acc;
-          },
-          {} as Record<string, string[]>
-        )
-      );
-      setFileType(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      setIsLoading(false);
-      toast({
-        title: "File loaded successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top-right",
-      });
-    } catch (error) {
-      console.error("Error parsing Excel file:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to parse the Excel file."
-      );
-      setIsLoading(false);
+      // Ensure unique headers by appending index to duplicates
+      const headerCounts: Record<string, number> = {};
+      const headers =
+        Array.isArray(jsonData[0]) && jsonData[0].length
+          ? jsonData[0].map((cell, index) => {
+              const baseHeader = cell != null && cell !== "" ? String(cell) : `Column ${index + 1}`;
+              headerCounts[baseHeader] = (headerCounts[baseHeader] || 0) + 1;
+              return headerCounts[baseHeader] > 1 ? `${baseHeader}_${headerCounts[baseHeader] - 1}` : baseHeader;
+            })
+          : Array.from(
+              {
+                length: Math.max(
+                  ...jsonData.slice(1).map((row) => (Array.isArray(row) ? row.length : 0))
+                ) || 1,
+              },
+              (_, i) => `Column ${i + 1}`
+            );
+      console.log(`Headers for sheet ${sheetName}:`, headers); // Debug headers
+      const rowData = jsonData
+        .slice(1)
+        .map((row) => {
+          if (!Array.isArray(row)) return {};
+          return row.reduce(
+            (acc, cell, index) => {
+              const key = headers[index] || `Col${index}`;
+              acc[key] =
+                typeof cell === "object" && cell !== null
+                  ? JSON.stringify(cell, null, 2)
+                  : cell ?? "";
+              return acc;
+            },
+            {} as Record<string, any>
+          );
+        })
+        .filter((row) => Object.keys(row).length > 0);
+      return { sheetName, data: [headers, ...jsonData.slice(1)], rowData };
+    }).filter((sheet) => sheet.data.length > 0 || sheet.rowData.length > 0);
+    if (!sheetsData.length) {
+      throw new Error("No valid sheets found in the Excel file.");
     }
-  };
+    setPreviewContent(sheetsData);
+    setSelectedSheet(sheetsData[0].sheetName);
+    setSelectedColumns(
+      sheetsData.reduce(
+        (acc, sheet) => {
+          acc[sheet.sheetName] = acc[sheet.sheetName] || [];
+          return acc;
+        },
+        {} as Record<string, string[]>
+      )
+    );
+    setFileType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    setIsLoading(false);
+    setLoadingProgress(100);
+    toast({
+      title: "File loaded successfully",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top-right",
+    });
+  } catch (error) {
+    console.error("Error parsing Excel file:", error);
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Failed to parse the Excel file. Ensure it is a valid Excel file."
+    );
+    setIsLoading(false);
+    setLoadingProgress(0);
+  }
+};
 
   const previewBase64 = useCallback((input: string) => {
     setIsLoading(true);
@@ -333,19 +386,20 @@ const Base64ToFile = () => {
         ]);
         setSelectedSheet("Preview");
         setIsLoading(false);
+        setLoadingProgress(100);
       } else if (
-        mimeType ===
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
         mimeType === "application/vnd.ms-excel"
       ) {
         const byteCharacters = atob(base64Data);
-        const byteArray: any = new Uint8Array(
+        const byteArray : any = new Uint8Array(
           Array.from(byteCharacters, (char) => char.charCodeAt(0))
         );
         parseExcelFile(byteArray);
       } else {
         setError("Unsupported file type for preview.");
         setIsLoading(false);
+        setLoadingProgress(0);
       }
     } catch (error) {
       console.error("Error in previewBase64:", error);
@@ -358,6 +412,7 @@ const Base64ToFile = () => {
           : "Failed to preview the file. Ensure the Base64 string is valid."
       );
       setIsLoading(false);
+      setLoadingProgress(0);
     }
   }, []);
 
@@ -374,6 +429,13 @@ const Base64ToFile = () => {
     }
     setIsLoading(true);
     setError(null);
+    setLoadingProgress(0);
+
+    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      setError("File size exceeds 100MB. Please upload a smaller file.");
+      setIsLoading(false);
+      return;
+    }
 
     if (file.name.endsWith(".txt")) {
       const reader = new FileReader();
@@ -382,13 +444,20 @@ const Base64ToFile = () => {
         if (!content) {
           setError("Uploaded file is empty or invalid.");
           setIsLoading(false);
+          setLoadingProgress(0);
           return;
         }
         setBase64(content);
       };
       reader.onerror = () => {
-        setError("Error reading the file.");
+        setError("Error reading the text file.");
         setIsLoading(false);
+        setLoadingProgress(0);
+      };
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setLoadingProgress((e.loaded / e.total) * 100);
+        }
       };
       reader.readAsText(file);
     } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
@@ -398,6 +467,7 @@ const Base64ToFile = () => {
         if (!arrayBuffer) {
           setError("Error reading the Excel file.");
           setIsLoading(false);
+          setLoadingProgress(0);
           return;
         }
         parseExcelFile(arrayBuffer);
@@ -405,11 +475,18 @@ const Base64ToFile = () => {
       reader.onerror = () => {
         setError("Error reading the Excel file.");
         setIsLoading(false);
+        setLoadingProgress(0);
+      };
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setLoadingProgress((e.loaded / e.total) * 100);
+        }
       };
       reader.readAsArrayBuffer(file);
     } else {
       setError("Please upload a .txt, .xlsx, or .xls file.");
       setIsLoading(false);
+      setLoadingProgress(0);
     }
   };
 
@@ -422,7 +499,14 @@ const Base64ToFile = () => {
       setSelectedSheet("");
       setError(null);
       setIsLoading(false);
+      setLoadingProgress(0);
       setSelectedColumns({});
+      setSelectAllColumns(false);
+      setSearchQuery("");
+      localStorage.removeItem("selectedColumns");
+      if (gridApiRef.current) {
+        gridApiRef.current?.setQuickFilter("");
+      }
     }
   }, [base64, previewBase64]);
 
@@ -564,6 +648,72 @@ const Base64ToFile = () => {
     });
   };
 
+  const handleDownloadExcel = (sheetName: string) => {
+    if (!previewContent || !selectedColumns[sheetName]?.length) {
+      setError("Please select at least one column for the sheet.");
+      toast({
+        title: "No columns selected",
+        description: `Please select columns for ${sheetName} to download as Excel.`,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      return;
+    }
+
+    const selectedSheetData = previewContent.find(
+      (sheet) => sheet.sheetName === sheetName
+    );
+    if (!selectedSheetData || !selectedSheetData.rowData) {
+      setError("No data available for the selected sheet.");
+      return;
+    }
+
+    const filteredData = selectedSheetData.rowData
+      .map((row) => {
+        const filteredRow: Record<string, any> = {};
+        selectedColumns[sheetName].forEach((col) => {
+          if (row.hasOwnProperty(col)) {
+            filteredRow[col] = row[col];
+          }
+        });
+        return Object.keys(filteredRow).length > 0 ? filteredRow : null;
+      })
+      .filter((row): row is Record<string, any> => row !== null);
+
+    if (filteredData.length === 0) {
+      setError("No data available for the selected columns.");
+      toast({
+        title: "No data to download",
+        description: `No valid data for the selected columns in ${sheetName}.`,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(filteredData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, `${sheetName}_selected_columns.xlsx`);
+    setError(null);
+    toast({
+      title: "Excel downloaded",
+      description: `Successfully downloaded Excel for ${sheetName}.`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top-right",
+    });
+  };
+
   const handleDownloadAllJsons = async () => {
     if (!previewContent) {
       setError("No sheets available to download.");
@@ -625,6 +775,22 @@ const Base64ToFile = () => {
       console.error("Error generating zip:", error);
       setError("Failed to generate zip file.");
     }
+  };
+
+  const handleResetColumns = () => {
+    setSelectedColumns((prev) => ({
+      ...prev,
+      [selectedSheet]: [],
+    }));
+    setSelectAllColumns(false);
+    toast({
+      title: "Columns reset",
+      description: `Column selections for ${selectedSheet} have been reset.`,
+      status: "info",
+      duration: 3000,
+      isClosable: true,
+      position: "top-right",
+    });
   };
 
   const columnDefs = useMemo<ColDef[]>(() => {
@@ -700,6 +866,21 @@ const Base64ToFile = () => {
     return options;
   }, [previewContent, selectedSheet]);
 
+  // Handle select all columns checkbox
+  useEffect(() => {
+    if (selectAllColumns && columnOptions.length > 0) {
+      setSelectedColumns((prev) => ({
+        ...prev,
+        [selectedSheet]: columnOptions.map((opt) => opt.value),
+      }));
+    } else if (!selectAllColumns) {
+      setSelectedColumns((prev) => ({
+        ...prev,
+        [selectedSheet]: [],
+      }));
+    }
+  }, [selectAllColumns, columnOptions, selectedSheet]);
+
   return (
     <Box p={4} bg={bgColor} color={textColor} minH="78vh">
       <Heading
@@ -722,6 +903,7 @@ const Base64ToFile = () => {
           bg="red.50"
           p={3}
           borderRadius="md"
+          role="alert"
         >
           {error}
         </Text>
@@ -742,8 +924,16 @@ const Base64ToFile = () => {
           flexDirection="column"
         >
           <Spinner size="xl" color="teal.500" thickness="4px" />
+          <Progress
+            value={loadingProgress}
+            size="xs"
+            colorScheme="teal"
+            width="200px"
+            mt={4}
+            borderRadius="md"
+          />
           <Text mt={4} color="white" fontSize="lg" fontWeight="medium">
-            Processing file...
+            Processing file... {Math.round(loadingProgress)}%
           </Text>
         </Box>
       )}
@@ -851,6 +1041,12 @@ const Base64ToFile = () => {
           onClose();
           setShowPreview(false);
           setSelectedColumns({});
+          setSelectAllColumns(false);
+          setSearchQuery("");
+          if (gridApiRef.current) {
+            gridApiRef.current.setQuickFilter("");
+          }
+          localStorage.removeItem("selectedColumns");
         }}
         size={{ base: "full", md: "xl" }}
       >
@@ -858,8 +1054,7 @@ const Base64ToFile = () => {
         <DrawerContent
           css={{
             minWidth:
-              fileType ===
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+              fileType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
               fileType === "application/vnd.ms-excel"
                 ? "93vw"
                 : "60vw",
@@ -886,7 +1081,14 @@ const Base64ToFile = () => {
             {isLoading ? (
               <VStack spacing={4} py={10} align="center">
                 <Spinner size="xl" color="teal.500" thickness="4px" />
-                <Text color={textColor}>Loading file...</Text>
+                <Progress
+                  value={loadingProgress}
+                  size="xs"
+                  colorScheme="teal"
+                  width="200px"
+                  borderRadius="md"
+                />
+                <Text color={textColor}>Loading file... {Math.round(loadingProgress)}%</Text>
               </VStack>
             ) : previewContent ? (
               fileType?.startsWith("image") ? (
@@ -917,92 +1119,156 @@ const Base64ToFile = () => {
                     )
                   }
                 />
-              ) : fileType ===
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+              ) : fileType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
                 fileType === "application/vnd.ms-excel" ? (
                 <VStack spacing={6} align="stretch">
                   <HStack spacing={5}>
-                  <FormControl>
-                    <FormLabel fontWeight="semibold" color={textColor}>
-                      Select Sheet
-                    </FormLabel>
-                    <Select
-                      value={selectedSheet}
-                      onChange={(e) => setSelectedSheet(e.target.value)}
-                      bg={cardBg}
-                      borderColor={borderColor}
-                      borderRadius="md"
-                      _focus={{ borderColor: "teal.500", boxShadow: "0 0 0 2px teal.500" }}
-                      _hover={{ borderColor: "teal.400" }}
-                      aria-label="Select sheet"
-                    >
-                      {previewContent.map((sheet) => (
-                        <option key={sheet.sheetName} value={sheet.sheetName}>
-                          {sheet.sheetName} ({sheet.rowData.length} rows)
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel fontWeight="semibold" color={textColor}>
-                      Select Columns to Export
-                    </FormLabel>
-                    <ReactSelect
-                      isMulti
-                      options={columnOptions}
-                      value={columnOptions.filter((opt) =>
-                        selectedColumns[selectedSheet]?.includes(opt.value)
-                      )}
-                      onChange={(selected: MultiValue<SelectOption>) => {
-                        const uniqueValues = [...new Set(selected.map((opt) => opt.value))];
-                        console.log(`Selected columns for ${selectedSheet}:`, uniqueValues); // Debug selections
-                        setSelectedColumns((prev) => ({
-                          ...prev,
-                          [selectedSheet]: uniqueValues,
-                        }));
-                      }}
-                      placeholder="Select columns to export..."
-                      menuPortalTarget={document.body}
-                      styles={{
-                        control: (provided) => ({
-                          ...provided,
-                          backgroundColor: cardBg,
-                          borderColor: borderColor,
-                          borderRadius: "8px",
-                          padding: "4px",
-                          boxShadow: useColorModeValue(
-                            "0 1px 3px rgba(0,0,0,0.1)",
-                            "none"
-                          ),
-                        }),
-                        menu: (provided) => ({
-                          ...provided,
-                          backgroundColor: cardBg,
-                          borderRadius: "8px",
-                          border: `1px solid ${borderColor}`,
-                          zIndex: 10000,
-                        }),
-                        menuPortal: (provided) => ({
-                          ...provided,
-                          zIndex: 10000,
-                        }),
-                        option: (provided, state) => ({
-                          ...provided,
-                          backgroundColor: state.isSelected
-                            ? "teal.500"
-                            : state.isFocused
-                            ? useColorModeValue("#E6FFFA", "#2D3748")
-                            : undefined,
-                          color: state.isSelected
-                            ? "white"
-                            : useColorModeValue("gray.800", "white"),
-                          padding: "8px 12px",
-                        }),
-                      }}
-                      aria-label="Select columns"
-                    />
-                  </FormControl>
+                    <FormControl>
+                      <FormLabel fontWeight="semibold" color={textColor}>
+                        Select Sheet
+                      </FormLabel>
+                      <Select
+                        value={selectedSheet}
+                        onChange={(e) => {
+                          setSelectedSheet(e.target.value);
+                          setSearchQuery("");
+                          if (gridApiRef.current) {
+                            gridApiRef.current.setQuickFilter("");
+                          }
+                        }}
+                        bg={cardBg}
+                        borderColor={borderColor}
+                        borderRadius="md"
+                        _focus={{ borderColor: "teal.500", boxShadow: "0 0 0 2px teal.500" }}
+                        _hover={{ borderColor: "teal.400" }}
+                        aria-label="Select sheet"
+                      >
+                        {previewContent.map((sheet) => (
+                          <option key={sheet.sheetName} value={sheet.sheetName}>
+                            {sheet.sheetName} ({sheet.rowData.length} rows)
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontWeight="semibold" color={textColor}>
+                        Select Columns to Export
+                      </FormLabel>
+                      <ReactSelect
+                        isMulti
+                        isSearchable
+                        options={columnOptions}
+                        value={columnOptions.filter((opt) =>
+                          selectedColumns[selectedSheet]?.includes(opt.value)
+                        )}
+                        onChange={(selected: MultiValue<SelectOption>) => {
+                          const uniqueValues = [...new Set(selected.map((opt) => opt.value))];
+                          console.log(`Selected columns for ${selectedSheet}:`, uniqueValues);
+                          setSelectedColumns((prev) => ({
+                            ...prev,
+                            [selectedSheet]: uniqueValues,
+                          }));
+                          setSelectAllColumns(
+                            uniqueValues.length === columnOptions.length
+                          );
+                        }}
+                        placeholder="Search and select columns..."
+                        menuPortalTarget={document.body}
+                        styles={{
+                          control: (provided) => ({
+                            ...provided,
+                            backgroundColor: cardBg,
+                            borderColor: borderColor,
+                            borderRadius: "8px",
+                            padding: "4px",
+                            boxShadow: useColorModeValue(
+                              "0 1px 3px rgba(0,0,0,0.1)",
+                              "none"
+                            ),
+                          }),
+                          menu: (provided) => ({
+                            ...provided,
+                            backgroundColor: cardBg,
+                            borderRadius: "8px",
+                            border: `1px solid ${borderColor}`,
+                            zIndex: 10000,
+                          }),
+                          menuPortal: (provided) => ({
+                            ...provided,
+                            zIndex: 10000,
+                          }),
+                          option: (provided, state) => ({
+                            ...provided,
+                            backgroundColor: state.isSelected
+                              ? "teal.500"
+                              : state.isFocused
+                              ? useColorModeValue("#E6FFFA", "#2D3748")
+                              : undefined,
+                            color: state.isSelected
+                              ? "white"
+                              : useColorModeValue("gray.800", "white"),
+                            padding: "8px 12px",
+                          }),
+                          input: (provided) => ({
+                            ...provided,
+                            color: textColor,
+                          }),
+                        }}
+                        aria-label="Select columns to export"
+                      />
+                    </FormControl>
                   </HStack>
+                  <HStack spacing={4} align="center">
+                    <Checkbox
+                      isChecked={selectAllColumns}
+                      onChange={(e) => setSelectAllColumns(e.target.checked)}
+                      colorScheme="teal"
+                      aria-label="Select all columns"
+                    >
+                      Select All Columns
+                    </Checkbox>
+                    <Tooltip label="Reset column selections" hasArrow>
+                      <Button
+                        size="sm"
+                        colorScheme="orange"
+                        leftIcon={<RepeatIcon />}
+                        onClick={handleResetColumns}
+                        isDisabled={!selectedColumns[selectedSheet]?.length}
+                        bgGradient="linear(to-r, orange.400, orange.600)"
+                        _hover={{ bgGradient: "linear(to-r, orange.500, orange.700)" }}
+                        aria-label="Reset column selections"
+                      >
+                        Reset Columns
+                      </Button>
+                    </Tooltip>
+                  </HStack>
+                  <FormControl display="none">
+                    <FormLabel fontWeight="semibold" color={textColor}>
+                      Search in Grid
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        placeholder="Search all columns..."
+                        bg={cardBg}
+                        borderColor={borderColor}
+                        borderRadius="md"
+                        _focus={{ borderColor: "teal.500", boxShadow: "0 0 0 2px teal.500" }}
+                        _hover={{ borderColor: "teal.400" }}
+                        aria-label="Search grid data"
+                      />
+                      {searchQuery && (
+                        <InputRightElement>
+                          <CloseButton
+                            size="sm"
+                            onClick={clearSearch}
+                            aria-label="Clear search"
+                          />
+                        </InputRightElement>
+                      )}
+                    </InputGroup>
+                  </FormControl>
                   <HStack spacing={4} flexWrap="wrap">
                     <Tooltip label={`Download JSON for ${selectedSheet}`} hasArrow>
                       <Button
@@ -1018,6 +1284,22 @@ const Base64ToFile = () => {
                         aria-label={`Download JSON for ${selectedSheet}`}
                       >
                         Download JSON
+                      </Button>
+                    </Tooltip>
+                    <Tooltip label={`Download Excel for ${selectedSheet}`} hasArrow>
+                      <Button
+                        colorScheme="teal"
+                        onClick={() => handleDownloadExcel(selectedSheet)}
+                        isDisabled={!selectedColumns[selectedSheet]?.length}
+                        bgGradient="linear(to-r, teal.500, teal.600)"
+                        _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+                        size="sm"
+                        transform="scale(1)"
+                        transition="transform 0.2s"
+                        _active={{ transform: "scale(0.95)" }}
+                        aria-label={`Download Excel for ${selectedSheet}`}
+                      >
+                        Download Excel
                       </Button>
                     </Tooltip>
                     <Tooltip label="Download all sheets with selected columns as a zip" hasArrow>
@@ -1088,11 +1370,10 @@ const Base64ToFile = () => {
                           )}
                           headerHeight={40}
                           rowHeight={48}
-                          onGridReady={() =>
-                            console.log(
-                              "AG Grid rendered with drawer width: 93vw"
-                            )
-                          }
+                          onGridReady={(params) => {
+                            gridApiRef.current = params.api;
+                            console.log("AG Grid rendered with drawer width: 93vw");
+                          }}
                         />
                       </Box>
                     </Box>
@@ -1116,6 +1397,12 @@ const Base64ToFile = () => {
                 onClose();
                 setShowPreview(false);
                 setSelectedColumns({});
+                setSelectAllColumns(false);
+                setSearchQuery("");
+                if (gridApiRef.current) {
+                  gridApiRef.current.setQuickFilter("");
+                }
+                localStorage.removeItem("selectedColumns");
               }}
               bgGradient="linear(to-r, red.400, red.600)"
               _hover={{ bgGradient: "linear(to-r, red.500, red.700)" }}
