@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, ChangeEvent } from "react";
+import { useState, useCallback, ChangeEvent, useMemo, useEffect } from "react";
 import { saveAs } from "file-saver";
 import {
   Box,
@@ -26,10 +25,19 @@ import {
   Tabs,
   TabList,
   Tab,
-  TabPanels,
-  TabPanel,
+  Spinner,
+  Flex,
 } from "@chakra-ui/react";
+import { AgGridReact } from "ag-grid-react";
+import { ColDef } from "ag-grid-community";
+import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import * as XLSX from "xlsx";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import "./excelViewer.css";
+
+// Register AG Grid Community modules
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Detect MIME type from base64 magic bytes
 const detectMimeTypeFromBase64 = (base64: string): string | null => {
@@ -38,19 +46,33 @@ const detectMimeTypeFromBase64 = (base64: string): string | null => {
       console.warn("Base64 string too short for reliable MIME detection");
       return null;
     }
-
     const binary = atob(base64.slice(0, 30));
-    const bytes = Array.from(binary).slice(0, 4).map((c) => c.charCodeAt(0));
-
+    const bytes = Array.from(binary)
+      .slice(0, 4)
+      .map((c) => c.charCodeAt(0));
     console.log("Magic bytes:", bytes);
-
-    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+    if (
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47
+    )
       return "image/png";
     if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
       return "image/jpeg";
-    if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
+    if (
+      bytes[0] === 0x25 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x44 &&
+      bytes[3] === 0x46
+    )
       return "application/pdf";
-    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38)
+    if (
+      bytes[0] === 0x47 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x46 &&
+      bytes[3] === 0x38
+    )
       return "image/gif";
     if (
       bytes[0] === 0x50 &&
@@ -66,7 +88,6 @@ const detectMimeTypeFromBase64 = (base64: string): string | null => {
       bytes[3] === 0xe0
     )
       return "application/vnd.ms-excel";
-
     console.warn("No matching MIME type found for magic bytes");
     return null;
   } catch (error) {
@@ -109,52 +130,61 @@ const detectMimeTypeFromSuffix = (input: string): string | null => {
 
 const ensureBase64HasPrefix = (base64: string): string => {
   if (base64.startsWith("data:")) return base64;
-
   let mimeType = detectMimeTypeFromBase64(base64);
   if (!mimeType) mimeType = detectMimeTypeFromSuffix(base64);
-
   if (!mimeType) {
-    console.error("Failed to detect MIME type. Input may be malformed or unsupported.");
+    console.error(
+      "Failed to detect MIME type. Input may be malformed or unsupported."
+    );
     throw new Error(
       "Unknown file type. Please ensure the Base64 string is valid and includes a correct data URI prefix or a supported file extension."
     );
   }
-
-  const cleanBase64 = base64.replace(/\.([a-zA-Z0-9]+)$/, "").replace(/\s/g, "");
+  const cleanBase64 = base64
+    .replace(/\.([a-zA-Z0-9]+)$/, "")
+    .replace(/\s/g, "");
   return `data:${mimeType};base64,${cleanBase64}`;
+};
+
+const extractMimeAndData = (input: string) => {
+  const normalized = ensureBase64HasPrefix(input);
+  const regex = /^data:(.*?);base64,(.*)$/;
+  const matches = normalized.match(regex);
+  if (matches) {
+    return {
+      mimeType: matches[1],
+      base64Data: matches[2],
+    };
+  }
+  throw new Error("Invalid base64 string");
+};
+
+const generateFileName = (mimeType: string) => {
+  const extension = mimeToExtension[mimeType] || "bin";
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:.TZ]/g, "")
+    .slice(0, 14);
+  return `file_${timestamp}.${extension}`;
 };
 
 const Base64ToFile = () => {
   const [base64, setBase64] = useState<string>("");
-  const [previewContent, setPreviewContent] = useState<{ sheetName: string; data: any[] }[] | null>(null);
+  const [previewContent, setPreviewContent] = useState<
+    { sheetName: string; data: any[][]; rowData: any[] }[] | null
+  >(null);
   const [fileType, setFileType] = useState<string | null>(null);
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [currentPages, setCurrentPages] = useState<Record<string, number>>({});
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
-
-  const itemsPerPage = 10; // Number of rows per page
-
-  const extractMimeAndData = (input: string) => {
-    const normalized = ensureBase64HasPrefix(input);
-    const regex = /^data:(.*?);base64,(.*)$/;
-    const matches = normalized.match(regex);
-    if (matches) {
-      return {
-        mimeType: matches[1],
-        base64Data: matches[2],
-      };
-    }
-    throw new Error("Invalid base64 string");
-  };
-
-  const generateFileName = (mimeType: string) => {
-    const extension = mimeToExtension[mimeType] || "bin";
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-    return `file_${timestamp}.${extension}`;
-  };
+  const itemsPerPage = 10;
+  const maxRows = 1000;
 
   const decodeBase64ToBlob = (
     input: string
@@ -166,160 +196,300 @@ const Base64ToFile = () => {
       const byteArray = new Uint8Array(
         Array.from(byteCharacters, (char) => char.charCodeAt(0))
       );
-
-      console.log("Decoded byte array length:", byteArray.length, "MIME type:", mimeType);
-
+      console.log(
+        "Decoded byte array length:",
+        byteArray.length,
+        "MIME type:",
+        mimeType
+      );
       if (byteArray.length === 0) {
         console.error("Decoded byte array is empty");
+        setError("Decoded byte array is empty");
         return null;
       }
-
       const blob = new Blob([byteArray], { type: mimeType });
       console.log("Blob created, size:", blob.size, "type:", blob.type);
       return { blob, mimeType };
     } catch (error) {
       console.error("Error decoding base64 to blob:", error);
+      setError("Invalid Base64 data. Check the console for details.");
       return null;
     }
   };
 
-  const handleDownload = () => {
-    if (!base64.trim()) {
-      alert("Please enter a valid Base64 string.");
-      return;
-    }
-    const decoded = decodeBase64ToBlob(base64);
-    if (!decoded) {
-      alert("Invalid Base64 data. Check the console for details.");
-      return;
-    }
-    try {
-      saveAs(decoded.blob, generateFileName(decoded.mimeType));
-      console.log("File download initiated for MIME type:", decoded.mimeType);
-    } catch (error) {
-      console.error("Error during file download:", error);
-      alert("Failed to download the file. Check the console for details.");
-    }
-  };
-
-  const handleShare = () => {
-    if (!base64.trim()) {
-      alert("Please enter a valid Base64 string.");
-      return;
-    }
-    const decoded = decodeBase64ToBlob(base64);
-    if (!decoded) {
-      alert("Invalid Base64 data. Check the console for details.");
-      return;
-    }
-    const file = new File([decoded.blob], generateFileName(decoded.mimeType), {
-      type: decoded.mimeType,
-    });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator
-        .share({
-          files: [file],
-          title: "Shared File",
-          text: "Here is the file you requested.",
-        })
-        .then(() => console.log("File shared successfully!"))
-        .catch((err) => {
-          console.error("Share failed:", err);
-          alert("Sharing failed or not supported.");
-        });
-    } else {
-      alert("Sharing is not supported on your device.");
-    }
-  };
-
-  const previewBase64 = (input: string) => {
+  const previewBase64 = useCallback((input: string) => {
+    console.log("previewBase64 called with input length:", input.length);
+    setIsLoading(true);
+    setError(null);
     try {
       const { mimeType, base64Data } = extractMimeAndData(input);
+      console.log("Detected MIME type:", mimeType);
       setFileType(mimeType);
 
       if (mimeType.startsWith("image") || mimeType === "application/pdf") {
-        setPreviewContent([{ sheetName: "Preview", data: [`data:${mimeType};base64,${base64Data}`] }]);
+        console.log("Rendering image/PDF preview");
+        const previewUri = `data:${mimeType};base64,${base64Data}`;
+        try {
+          atob(base64Data.slice(0, 100));
+        } catch (e) {
+          throw new Error("Invalid Base64 encoding for image/PDF.");
+        }
+        setPreviewContent([
+          { sheetName: "Preview", data: [[previewUri]], rowData: [] },
+        ]);
+        setSelectedSheet("Preview");
+        setIsLoading(false);
       } else if (
-        mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        mimeType ===
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
         mimeType === "application/vnd.ms-excel"
       ) {
-        const byteCharacters = atob(base64Data);
-        const byteArray = new Uint8Array(
-          Array.from(byteCharacters, (char) => char.charCodeAt(0))
+        console.log("Parsing Excel file");
+        let byteArray;
+        try {
+          const byteCharacters = atob(base64Data);
+          byteArray = new Uint8Array(
+            Array.from(byteCharacters, (char) => char.charCodeAt(0))
+          );
+          console.log("Byte array created, length:", byteArray.length);
+        } catch (e) {
+          throw new Error("Invalid Base64 encoding for Excel file.");
+        }
+        let workbook;
+        try {
+          workbook = XLSX.read(byteArray, { type: "array", cellDates: true });
+          console.log("Excel workbook parsed, sheets:", workbook.SheetNames);
+        } catch (e) {
+          throw new Error("Corrupt or unsupported Excel file format.");
+        }
+        const sheetsData = workbook.SheetNames.map((sheetName) => {
+          const sheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            blankrows: false,
+            defval: "",
+          }) as any[][];
+          console.log(
+            `Sheet ${sheetName} jsonData length:`,
+            jsonData.length,
+            "data:",
+            jsonData
+          );
+          if (!jsonData.length) {
+            console.warn(`Sheet ${sheetName} is empty`);
+            return { sheetName, data: [], rowData: [] };
+          }
+          const headers =
+            Array.isArray(jsonData[0]) && jsonData[0].length
+              ? jsonData[0].map((cell, index) =>
+                  cell != null && cell !== ""
+                    ? String(cell)
+                    : `Column ${index + 1}`
+                )
+              : Array.from(
+                  {
+                    length:
+                      Math.max(
+                        ...jsonData
+                          .slice(1)
+                          .map((row) => (Array.isArray(row) ? row.length : 0))
+                      ) || 1,
+                  },
+                  (_, i) => `Column ${i + 1}`
+                );
+          console.log(`Sheet ${sheetName} headers:`, headers);
+          const rowData = jsonData
+            .slice(1)
+            .slice(0, maxRows)
+            .map((row, rowIndex) => {
+              if (!Array.isArray(row)) {
+                console.warn(`Row ${rowIndex + 1} is not an array:`, row);
+                return {};
+              }
+              return row.reduce(
+                (acc, cell, index) => {
+                  const key = headers[index] || `Col${index}`;
+                  if (
+                    typeof cell === "object" &&
+                    cell !== null &&
+                    !Array.isArray(cell)
+                  ) {
+                    try {
+                      acc[key] = JSON.stringify(cell, null, 2);
+                      console.log(
+                        `Stringified object in ${sheetName}, row ${
+                          rowIndex + 1
+                        }, col ${key}:`,
+                        acc[key]
+                      );
+                    } catch (e) {
+                      console.warn(
+                        `Failed to stringify object in ${sheetName}, row ${
+                          rowIndex + 1
+                        }, col ${key}:`,
+                        cell
+                      );
+                      acc[key] = "[Invalid Object]";
+                    }
+                  } else {
+                    acc[key] = cell ?? "";
+                  }
+                  return acc;
+                },
+                {} as Record<string, any>
+              );
+            })
+            .filter((row) => Object.keys(row).length > 0);
+          console.log(
+            `Sheet ${sheetName} rowData length:`,
+            rowData.length,
+            "rowData:",
+            rowData
+          );
+          return { sheetName, data: jsonData, rowData };
+        }).filter((sheet) => sheet.data.length > 0 || sheet.rowData.length > 0);
+        if (!sheetsData.length) {
+          throw new Error("No valid sheets found in the Excel file.");
+        }
+        console.log(
+          "Setting previewContent with sheets:",
+          sheetsData.map((s) => s.sheetName)
         );
-        const workbook = XLSX.read(byteArray, { type: "array" });
-        const sheetsData = workbook.SheetNames.map((sheetName) => ({
-          sheetName,
-          data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]),
-        }));
         setPreviewContent(sheetsData);
-        // Initialize pagination for each sheet
+        setSelectedSheet(sheetsData[0].sheetName);
         setCurrentPages(
-          workbook.SheetNames.reduce((acc, sheetName) => {
-            acc[sheetName] = 1;
-            return acc;
-          }, {} as Record<string, number>)
+          sheetsData.reduce(
+            (acc, sheet) => {
+              acc[sheet.sheetName] = 1;
+              return acc;
+            },
+            {} as Record<string, number>
+          )
         );
+        setIsLoading(false);
       } else {
+        console.warn("Unsupported file type:", mimeType);
         setPreviewContent(null);
+        setSelectedSheet("");
+        setError("Unsupported file type for preview.");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error in previewBase64:", error);
       setPreviewContent(null);
       setFileType(null);
+      setSelectedSheet("");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to preview the file. Ensure the Base64 string is valid."
+      );
+      setIsLoading(false);
     }
-  };
+  }, []);
 
   const handleBase64Change = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value.trim().replace(/\s/g, "");
     setBase64(value);
-    if (value) {
-      previewBase64(value);
+  };
+
+  useEffect(() => {
+    if (base64) {
+      console.log("useEffect: Processing base64 input");
+      previewBase64(base64);
     } else {
+      console.log("useEffect: Clearing preview");
       setPreviewContent(null);
       setFileType(null);
       setCurrentPages({});
+      setSelectedSheet("");
+      setError(null);
+      setIsLoading(false);
     }
-  };
+  }, [base64, previewBase64]);
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.name.endsWith(".txt")) {
-        alert("Please upload a .txt file containing a Base64 string.");
+    if (!file) return;
+    if (!file.name.endsWith(".txt")) {
+      setError("Please upload a .txt file containing a Base64 string.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = (ev.target?.result as string)?.trim().replace(/\s/g, "");
+      if (!content) {
+        setError("Uploaded file is empty or invalid.");
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const content = (ev.target?.result as string)?.trim().replace(/\s/g, "");
-        if (!content) {
-          alert("Uploaded file is empty or invalid.");
-          return;
-        }
-        try {
-          setBase64(content);
-          previewBase64(content);
-        } catch (error) {
-          console.error("Error processing uploaded file:", error);
-          alert("Failed to process the uploaded Base64 string. Ensure it is valid.");
-        }
-      };
-      reader.onerror = () => {
-        alert("Error reading the file.");
-      };
-      reader.readAsText(file);
+      console.log("File uploaded, setting base64");
+      setBase64(content);
+    };
+    reader.onerror = () => {
+      setError("Error reading the file.");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDownload = () => {
+    if (!base64.trim()) {
+      setError("Please enter a valid Base64 string.");
+      return;
+    }
+    const decoded = decodeBase64ToBlob(base64);
+    if (!decoded) return;
+    try {
+      saveAs(decoded.blob, generateFileName(decoded.mimeType));
+      setError(null);
+    } catch (error) {
+      console.error("Error during file download:", error);
+      setError("Failed to download the file.");
+    }
+  };
+
+  const handleShare = async () => {
+    if (!base64.trim()) {
+      setError("Please enter a valid Base64 string.");
+      return;
+    }
+    const decoded = decodeBase64ToBlob(base64);
+    if (!decoded) return;
+    const file = new File([decoded.blob], generateFileName(decoded.mimeType), {
+      type: decoded.mimeType,
+    });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Shared File",
+          text: "Here is the file you requested.",
+        });
+        setError(null);
+      } catch (err) {
+        console.error("Share failed:", err);
+        setError("Sharing failed or not supported.");
+      }
+    } else {
+      setError("Sharing is not supported on this device.");
     }
   };
 
   const handleTogglePreview = () => {
+    if (!base64.trim()) {
+      setError("Please provide a valid Base64 string.");
+      return;
+    }
     if (!previewContent) {
-      alert("No preview available.");
+      setError("No preview available. Please provide a valid Base64 string.");
       return;
     }
     setShowPreview((prev) => {
       const newState = !prev;
-      newState ? onOpen() : onClose();
+      if (newState) {
+        onOpen();
+      } else {
+        onClose();
+      }
       return newState;
     });
   };
@@ -328,12 +498,15 @@ const Base64ToFile = () => {
     setCurrentPages((prev) => ({ ...prev, [sheetName]: page }));
   };
 
-  const renderPaginatedData = (sheetData: any[], sheetName: string) => {
+  const renderPaginatedData = (sheetData: any[][], sheetName: string) => {
     const currentPage = currentPages[sheetName] || 1;
     const totalItems = sheetData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = sheetData.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedData = sheetData.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
 
     return (
       <Box>
@@ -373,6 +546,71 @@ const Base64ToFile = () => {
     );
   };
 
+  const columnDefs = useMemo<ColDef[]>(() => {
+    console.log("Computing columnDefs for sheet:", selectedSheet);
+    const selectedSheetData = previewContent?.find(
+      (sheet) => sheet.sheetName === selectedSheet
+    );
+    if (
+      !selectedSheetData ||
+      !selectedSheetData.data ||
+      !Array.isArray(selectedSheetData.data) ||
+      selectedSheetData.data.length === 0
+    ) {
+      console.log(
+        "No valid data for columnDefs, sheet data:",
+        selectedSheetData
+      );
+      return [
+        {
+          headerName: "Column 1",
+          field: "Col0",
+          sortable: true,
+          filter: true,
+          resizable: true,
+          editable: false,
+          minWidth: 120,
+          maxWidth: 300,
+          cellStyle: { textAlign: "left", padding: "8px" },
+        },
+      ];
+    }
+    const firstRow = selectedSheetData.data[0];
+    const headers =
+      Array.isArray(firstRow) && firstRow.length > 0
+        ? firstRow.map((cell, index) =>
+            cell != null && cell !== "" ? String(cell) : `Column ${index + 1}`
+          )
+        : Array.from(
+            {
+              length:
+                Math.max(
+                  ...selectedSheetData.data
+                    .slice(1)
+                    .map((row) => (Array.isArray(row) ? row.length : 0))
+                ) || 1,
+            },
+            (_, i) => `Column ${i + 1}`
+          );
+    console.log("Generated headers for columnDefs:", headers);
+    return headers.map((header, index) => ({
+      headerName: header,
+      field: header || `Col${index}`,
+      sortable: true,
+      filter: true,
+      resizable: true,
+      editable: false,
+      minWidth: 120,
+      maxWidth: 300,
+      cellStyle: { textAlign: "left", padding: "8px" },
+    }));
+  }, [previewContent, selectedSheet]);
+
+  // Compute the index of the selected sheet for Tabs
+  const selectedSheetIndex = previewContent
+    ? previewContent.findIndex((sheet) => sheet.sheetName === selectedSheet)
+    : 0;
+
   return (
     <Box p={4} bg={bgColor} color={textColor} minH="78vh">
       <Heading
@@ -386,6 +624,12 @@ const Base64ToFile = () => {
       >
         Base64 to File Converter
       </Heading>
+
+      {error && (
+        <Text color="red.500" textAlign="center" mb={4}>
+          {error}
+        </Text>
+      )}
 
       <VStack spacing={6} align="stretch">
         <FormControl>
@@ -426,8 +670,8 @@ const Base64ToFile = () => {
         </HStack>
 
         <Text fontSize="sm" color="gray.500" textAlign="center">
-          If no prefix is given, the converter will attempt to detect the file type
-          automatically.
+          If no prefix is given, the converter will attempt to detect the file
+          type automatically.
         </Text>
       </VStack>
 
@@ -438,60 +682,170 @@ const Base64ToFile = () => {
           onClose();
           setShowPreview(false);
         }}
-        size="xl"
       >
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent
+          css={{
+            minWidth:
+              fileType ===
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+              fileType === "application/vnd.ms-excel"
+                ? "93vw"
+                : "60vw",
+          }}
+        >
           <DrawerHeader borderBottomWidth="1px">File Preview</DrawerHeader>
           <DrawerBody>
-            {previewContent ? (
+            {isLoading ? (
+              <Box textAlign="center" py={10}>
+                <Spinner size="xl" />
+                <Text mt={4}>Loading file...</Text>
+              </Box>
+            ) : previewContent ? (
               fileType?.startsWith("image") ? (
                 <Image
-                  src={previewContent[0].data[0]}
+                  src={previewContent[0].data[0][0]}
                   alt="Preview"
                   maxH="60vh"
                   mx="auto"
                   objectFit="contain"
                   rounded="md"
+                  onError={() =>
+                    setError(
+                      "Failed to load image preview. Ensure the Base64 string is valid."
+                    )
+                  }
                 />
               ) : fileType === "application/pdf" ? (
                 <iframe
-                  src={previewContent[0].data[0]}
+                  src={previewContent[0].data[0][0]}
                   title="PDF Preview"
                   width="100%"
                   height="100%"
                   style={{ border: "none", minHeight: "80vh" }}
+                  onError={() =>
+                    setError(
+                      "Failed to load PDF preview. Ensure the Base64 string is valid."
+                    )
+                  }
                 />
-              ) : fileType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+              ) : fileType ===
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
                 fileType === "application/vnd.ms-excel" ? (
-                <Box>
-                  <Text mb={4}>Excel File Preview (All Sheets as JSON):</Text>
-                  <Tabs variant="enclosed">
-                    <TabList>
-                      {previewContent.map((sheet) => (
-                        <Tab key={sheet.sheetName}>{sheet.sheetName}</Tab>
-                      ))}
-                    </TabList>
-                    <TabPanels>
-                      {previewContent.map((sheet) => (
-                        <TabPanel key={sheet.sheetName}>
-                          {renderPaginatedData(sheet.data, sheet.sheetName)}
-                        </TabPanel>
-                      ))}
-                    </TabPanels>
-                  </Tabs>
-                  <Link
-                    href={`data:${fileType};base64,${base64.split(",")[1] || base64}`}
-                    download={generateFileName(fileType)}
-                    color="teal.500"
-                    fontWeight="bold"
-                    isExternal
-                    mt={4}
-                    display="block"
-                    textAlign="center"
-                  >
-                    Click here to download the Excel file
-                  </Link>
+                <Box display="flex" flexDirection="column" height="100%">
+                  <Flex mb={4} alignItems="end" justifyContent="end">
+                    <Link
+                      href={`data:${fileType};base64,${base64.includes(",") ? base64.split(",")[1] : base64}`}
+                      download={generateFileName(fileType)}
+                      color="teal.500"
+                      fontWeight="bold"
+                      textDecoration="underline"
+                      isExternal
+                      mt={4}
+                      display="block"
+                      textAlign="right"
+                      w="full"
+                      aria-label={`Download ${generateFileName(fileType)}`}
+                    >
+                      Download {generateFileName(fileType)}
+                    </Link>
+                  </Flex>
+                  {previewContent.find(
+                    (sheet) => sheet.sheetName === selectedSheet
+                  )?.rowData.length > 0 || columnDefs.length > 0 ? (
+                    <Box
+                      className="excel-grid-container"
+                      w="100%"
+                      flex="1"
+                      overflow="auto"
+                    >
+                      <Box
+                        className={`ag-theme-alpine${useColorModeValue("", "-dark")}`}
+                        h="60vh"
+                        overflow="auto"
+                        w="100%"
+                      >
+                        <AgGridReact
+                          rowData={
+                            previewContent.find(
+                              (sheet) => sheet.sheetName === selectedSheet
+                            )?.rowData || []
+                          }
+                          columnDefs={columnDefs}
+                          domLayout="autoHeight"
+                          enableCellTextSelection={true}
+                          suppressRowClickSelection={true}
+                          pagination={false}
+                          noRowsOverlayComponent={() => (
+                            <Text>No data available for this sheet.</Text>
+                          )}
+                          theme="legacy"
+                          headerHeight={30}
+                          onGridReady={() =>
+                            console.log(
+                              "AG Grid rendered with drawer width: 93vw"
+                            )
+                          }
+                        />
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box w="100%" flex="1" overflow="auto">
+                      <Text mb={4}>JSON View (Fallback):</Text>
+                      {renderPaginatedData(
+                        previewContent.find(
+                          (sheet) => sheet.sheetName === selectedSheet
+                        )?.data || [],
+                        selectedSheet
+                      )}
+                    </Box>
+                  )}
+                  {previewContent.length > 1 && (
+                    <Tabs
+                      variant="unstyled"
+                      index={selectedSheetIndex}
+                      onChange={(index) => {
+                        const newSheet = previewContent[index].sheetName;
+                        setSelectedSheet(newSheet);
+                        console.log("Selected sheet:", newSheet);
+                      }}
+                      mt={4}
+                    >
+                      <TabList
+                        borderTop="1px solid"
+                        borderColor={useColorModeValue("gray.200", "gray.600")}
+                        overflowX="auto"
+                        whiteSpace="nowrap"
+                        bg={useColorModeValue("gray.50", "gray.700")}
+                        px={2}
+                      >
+                        {previewContent.map((sheet) => (
+                          <Tab
+                            key={sheet.sheetName}
+                            fontSize="sm"
+                            py={1}
+                            px={4}
+                            borderRight="1px solid"
+                            borderColor={useColorModeValue(
+                              "gray.200",
+                              "gray.600"
+                            )}
+                            _selected={{
+                              bg: useColorModeValue("white", "gray.800"),
+                              borderBottom: "2px solid",
+                              borderColor: "teal.500",
+                              fontWeight: "bold",
+                            }}
+                            _hover={{
+                              bg: useColorModeValue("gray.100", "gray.600"),
+                            }}
+                          >
+                            {sheet.sheetName}
+                          </Tab>
+                        ))}
+                      </TabList>
+                    </Tabs>
+                  )}
                 </Box>
               ) : (
                 <Text>No preview available for this file type.</Text>

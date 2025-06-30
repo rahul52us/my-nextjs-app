@@ -1,25 +1,23 @@
-"use client";
+'use client';
 
-import { observer } from "mobx-react-lite";
-import { ChakraProvider } from "@chakra-ui/react";
-import { theme } from "./theme/theme";
-import { lato } from "./theme/theme";
-import MainLayout from "./layouts/mainLayout/MainLayout";
-import AuthenticationLayout from "./layouts/authenticationLayout/AuthenticationLayout";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import stores from "./store/stores";
-import Notification from "./component/common/Notification/Notification";
-import { Montserrat } from "next/font/google";
-import DashboardLayout from "./layouts/dashboardLayout/DashboardLayout";
-import SeoHead from "./component/config/component/SeoHead/SeoHead";
-import { WEBSITE_DESCRIPTION, WEBSITE_TITLE } from "./config/utils/variables";
-import React from "react";
-
-const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+import { observer } from 'mobx-react-lite';
+import { ChakraProvider, CSSReset } from '@chakra-ui/react';
+import { theme } from './theme/theme';
+import MainLayout from './layouts/mainLayout/MainLayout';
+import AuthenticationLayout from './layouts/authenticationLayout/AuthenticationLayout';
+import DashboardLayout from './layouts/dashboardLayout/DashboardLayout';
+import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import stores from './store/stores';
+import Notification from './component/common/Notification/Notification';
+import SeoHead from './component/config/component/SeoHead/SeoHead';
+import { WEBSITE_DESCRIPTION, WEBSITE_TITLE } from './config/utils/variables';
+import React from 'react';
 
 const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
-  const { companyStore: { getCompanyDetails } } = stores;
+  const {
+    companyStore: { getCompanyDetails },
+  } = stores;
   const pathname = usePathname();
 
   useEffect(() => {
@@ -27,9 +25,9 @@ const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
   }, [getCompanyDetails]);
 
   const getLayout = () => {
-    if (pathname === "/login" || pathname === "/register" || pathname === "/forgot-password") {
+    if (['/login', '/register', '/forgot-password'].includes(pathname)) {
       return AuthenticationLayout;
-    } else if (pathname.startsWith("/")) {
+    } else if (pathname.startsWith('/')) {
       return DashboardLayout;
     }
     return MainLayout;
@@ -39,15 +37,10 @@ const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang="en">
-        {/* ✅ SEO */}
-        <SeoHead
-          title={WEBSITE_TITLE}
-          description={WEBSITE_DESCRIPTION}
-        />
-
-      <body className={`${lato.className} ${montserrat.className}`}>
-        {/* ✅ Google Tag Manager (noscript fallback) */}
+      <SeoHead title={WEBSITE_TITLE} description={WEBSITE_DESCRIPTION} />
+      <body>
         <ChakraProvider theme={theme}>
+          <CSSReset />
           <Notification />
           <LayoutComponent>{children}</LayoutComponent>
         </ChakraProvider>

@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  FaCog,
   FaFileAlt,
   FaCode,
   FaMusic,
@@ -74,6 +73,8 @@ const sidebarData: SidebarItem[] = [
       { id: 302, name: "Text Formatter", icon: <FaPencilAlt />, url: "/tools/text-formatter" },
       { id: 303, name: "JavaScript Formatter", icon: <FaCode />, url: "/tools/javascript-formatter" },
       { id: 304, name: "SQL Formatter", icon: <FaTable />, url: "/tools/sql-formatter" },
+      { id: 305, name: "Excel To Json Formatter", icon: <FaTable />, url: "/tools/excel-to-json" },
+
     ],
   },
   {

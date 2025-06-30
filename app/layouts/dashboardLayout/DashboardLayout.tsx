@@ -1,8 +1,16 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Box, Spinner, useBreakpointValue, useColorModeValue, useMediaQuery, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Spinner,
+  Text,
+  useBreakpointValue,
+  useColorModeValue,
+  useMediaQuery,
+  useTheme,
+} from '@chakra-ui/react';
 import styled from 'styled-components';
 import stores from '../../store/stores';
 import SidebarLayout from './SidebarLayout/SidebarLayout';
@@ -31,6 +39,7 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
     themeStore: { themeConfig },
   } = stores;
 
+  const [isReady, setIsReady] = useState(false); // 👈 Delay flag
   const theme = useTheme();
   const [sizeStatus] = useMediaQuery(`(max-width: ${theme.breakpoints.xl})`);
   const isMobile = useBreakpointValue({ base: true, lg: false }) ?? false;
@@ -59,7 +68,44 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
     };
   }, [isCallapse, openDashSidebarFun]);
 
-  return user ? (
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setIsReady(true);
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (!isReady || !user) {
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        height="100vh"
+        width="100vw"
+        bg={useColorModeValue('gray.50', 'gray.900')}
+      >
+        <Spinner
+          size="xl"
+          thickness="4px"
+          speed="0.65s"
+          color="blue.500"
+          mb={4}
+        />
+        <Text
+          fontSize="lg"
+          color={useColorModeValue('gray.700', 'gray.300')}
+          fontWeight="medium"
+        >
+          Loading Dev Tools...
+        </Text>
+      </Box>
+    );
+  }
+
+
+  return (
     <Box>
       <MainContainer $isMobile={isMobile}>
         <Box ref={sidebarRef}>
@@ -87,9 +133,6 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
           <ContentContainer
             $isMobile={isMobile}
             $mediumScreenMode={mediumScreenMode}
-            className={
-              fullScreenMode ? 'fullscreen' : mediumScreenMode ? 'mediumScreen' : ''
-            }
             $fullScreenMode={fullScreenMode}
             $sizeStatus={sizeStatus}
           >
@@ -99,27 +142,26 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
       </MainContainer>
       <ThemeChangeContainer />
     </Box>
-  ) : (
-    <PageLoader loading={true}>
-      <Spinner />
-    </PageLoader>
   );
 });
 
 export default DashboardLayout;
 
-// Styled Components with Fixed Transient Props ($ prefix)
+// ✅ Styled Components
 const MainContainer = styled.div<{ $isMobile: boolean }>`
   display: flex;
   transition: all 0.3s ease-in-out;
   overflow: hidden;
   margin-left: ${(props) => (props.$isMobile ? '0px' : mediumSidebarWidth)};
+  box-sizing: border-box;
 `;
 
 const Container = styled.div<{ $fullScreenMode: boolean }>`
   display: flex;
   flex-direction: column;
+  width: 100%;
   transition: all 0.3s ease-in-out;
+  box-sizing: border-box;
 `;
 
 const HeaderContainer = styled.div<{
@@ -134,8 +176,8 @@ const HeaderContainer = styled.div<{
   position: fixed;
   top: 0;
   right: 0;
-  background-color: ${(props) => props.$backgroundColor};
   left: ${(props) => (props.$isMobile ? '0px' : mediumSidebarWidth)};
+  background-color: ${(props) => props.$backgroundColor};
   transition: all 0.3s ease-in-out;
 `;
 
@@ -146,11 +188,11 @@ const ContentContainer = styled.div<{
   $isMobile: boolean;
 }>`
   padding: ${({ $isMobile }) =>
-    $isMobile ? `${contentSmallBodyPadding}` : `${contentLargeBodyPadding}`};
-  width: ${({ $isMobile }) =>
-    $isMobile ? '100vw' : `calc(100vw - ${mediumSidebarWidth})`};
+    $isMobile ? contentSmallBodyPadding : contentLargeBodyPadding};
+  width: 100%;
   overflow-x: hidden;
   height: calc(100vh - ${headerHeight});
   transition: all 0.3s ease-in-out;
   margin-top: ${headerHeight};
+  box-sizing: border-box;
 `;
