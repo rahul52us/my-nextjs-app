@@ -145,6 +145,8 @@ const filterSearchData: SidebarItem[] = [
   { id: 302, name: "Text Formatter", icon: <FaPencilAlt />, url: "/tools/text-formatter" },
   { id: 303, name: "JavaScript Formatter", icon: <FaCode />, url: "/tools/javascript-formatter" },
   { id: 304, name: "SQL Formatter", icon: <FaTable />, url: "/tools/sql-formatter" },
+  { id: 305, name: "Excel to Json Formatters", icon: <FaTable />, url: "/tools/excel-to-json" },
+
 
   { id: 4, name: "File Converters", icon: <FaFileArchive />, url: "#" },
   { id: 401, name: "Images to PDF & Base64", icon: <FaFileArchive />, url: "/converter/images-to-pdf" },
