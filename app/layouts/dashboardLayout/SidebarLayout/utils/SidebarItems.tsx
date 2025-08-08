@@ -74,6 +74,7 @@ const sidebarData: SidebarItem[] = [
       { id: 303, name: "JavaScript Formatter", icon: <FaCode />, url: "/tools/javascript-formatter" },
       { id: 304, name: "SQL Formatter", icon: <FaTable />, url: "/tools/sql-formatter" },
       { id: 305, name: "Excel To Json Formatter", icon: <FaTable />, url: "/tools/excel-to-json" },
+            { id: 306, name: "JSON To Excel", icon: <FaTable />, url: "/tools/json-to-excel" },
 
     ],
   },
@@ -146,6 +147,7 @@ const filterSearchData: SidebarItem[] = [
   { id: 303, name: "JavaScript Formatter", icon: <FaCode />, url: "/tools/javascript-formatter" },
   { id: 304, name: "SQL Formatter", icon: <FaTable />, url: "/tools/sql-formatter" },
   { id: 305, name: "Excel to Json Formatters", icon: <FaTable />, url: "/tools/excel-to-json" },
+    { id: 305, name: "JSON to Excel", icon: <FaTable />, url: "/tools/json-to-excel" },
 
 
   { id: 4, name: "File Converters", icon: <FaFileArchive />, url: "#" },
