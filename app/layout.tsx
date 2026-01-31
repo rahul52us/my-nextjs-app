@@ -1,8 +1,8 @@
 'use client';
 
 import { observer } from 'mobx-react-lite';
-import { ChakraProvider, CSSReset } from '@chakra-ui/react';
-import { theme } from './theme/theme';
+import { ChakraProvider, CSSReset, extendTheme } from '@chakra-ui/react';
+import { fonts, breakpoints, components, styles } from './theme/theme';
 import MainLayout from './layouts/mainLayout/MainLayout';
 import AuthenticationLayout from './layouts/authenticationLayout/AuthenticationLayout';
 import DashboardLayout from './layouts/dashboardLayout/DashboardLayout';
@@ -23,6 +23,8 @@ const RootLayout = observer(({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     getCompanyDetails();
   }, [getCompanyDetails]);
+
+  const theme = extendTheme({...stores.themeStore.themeConfig, fonts, breakpoints, components, styles});
 
   const getLayout = () => {
     if (['/login', '/register', '/forgot-password'].includes(pathname)) {

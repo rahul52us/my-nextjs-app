@@ -28,6 +28,7 @@ import stores from "../../../../../../store/stores";
 import { authentication, main } from "../../../../../../config/utils/routes";
 import { useRouter, usePathname } from "next/navigation"; // Replace react-router-dom hooks
 import { WEBSITE_TITLE } from "../../../../../../config/utils/variables";
+import { themeStore } from "../../../../../../store/themeStore/themeStore";
 
 
 const HeaderProfile = observer(() => {
@@ -38,6 +39,8 @@ const HeaderProfile = observer(() => {
     auth: { user },
     themeStore: { setOpenThemeDrawer },
   } = stores;
+
+  const themeConfig = themeStore.themeConfig;
 
   return user ? (
     <Menu closeOnSelect={false} placement="bottom-end">
@@ -89,9 +92,10 @@ const HeaderProfile = observer(() => {
             <MenuItem display="none" onClick={() => router.push(main.changePassword)}>
               <FaLock style={{ marginRight: "8px" }} /> Change Password
             </MenuItem>
-            <MenuItem onClick={setOpenThemeDrawer}>
-              <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
-            </MenuItem>
+<MenuItem onClick={() => themeStore.setOpenThemeDrawer()}>
+  <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
+</MenuItem>
+
             <Divider />
             <MenuItem
               display="none"
@@ -129,7 +133,7 @@ const HeaderProfile = observer(() => {
               display="flex"
               alignItems="center"
             >
-              <Icon as={FaUser} boxSize={6} mr={2} color="blue.500" />
+              <Icon as={FaUser} boxSize={6} mr={2} color={themeConfig.colors.brand[500]} />
               <Text>Login</Text>
             </MenuItem>
             <MenuItem
@@ -139,7 +143,7 @@ const HeaderProfile = observer(() => {
               display="flex"
               alignItems="center"
             >
-              <Icon as={FaKey} boxSize={6} mr={2} color="blue.500" />
+              <Icon as={FaKey} boxSize={6} mr={2} color={themeConfig.colors.brand[500]} />
               <Text>Create New Account</Text>
             </MenuItem>
           </VStack>

@@ -15,8 +15,8 @@ const ColorPickerComponent = observer(() => {
 
   const handleColorChange = (newColor: ColorResult) => {
     setColor(newColor.hex);
-    theme.colors.custom.light.primary = newColor.hex;
-    setThemeConfig("colors.custom.light.primary", newColor.hex);
+    theme.colors.brand[500] = newColor.hex;
+    setThemeConfig("colors.brand.500", newColor.hex);
   };
 
   const pickerStyles = {

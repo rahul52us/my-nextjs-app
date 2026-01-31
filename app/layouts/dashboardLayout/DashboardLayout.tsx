@@ -257,10 +257,7 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
     <Box minH="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
       {/* Full Width Header */}
       <HeaderContainer
-        $backgroundColor={useColorModeValue(
-          themeConfig.colors.custom.light.primary,
-          themeConfig.colors.custom.dark.primary
-        )}
+            $backgroundColor={ `linear-gradient(to right, ${themeConfig.colors.brand[500]}, ${themeConfig.colors.brand[600]})` }
       >
         <HeaderLayout />
       </HeaderContainer>
@@ -287,8 +284,8 @@ const HeaderContainer = styled.div<{ $backgroundColor: string }>`
   top: 0;
   right: 0;
   left: 0; /* Changed from sidebar width to 0 for full width */
-  background-color: ${(props) => props.$backgroundColor};
-  transition: background-color 0.3s ease;
+  background: ${(props) => props.$backgroundColor};
+  transition: background 0.3s ease;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 `;
 
