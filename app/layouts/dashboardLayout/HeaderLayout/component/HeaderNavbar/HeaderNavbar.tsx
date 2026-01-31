@@ -17,13 +17,13 @@ import HeaderThemeSwitch from "./HeaderThemeSwitch/HeaderThemeSwitch";
 import stores from "../../../../../store/stores";
 
 const HeaderNavbar = observer(() => {
-  const { layout: { setOpenMobileSideDrawer } } = stores;
+  const { layout: { setOpenMobileSideDrawer }, themeStore: { themeConfig } } = stores;
   const isDesktop = useBreakpointValue({ base: false, lg: true });
 
   // Premium styling variables
   const borderColor = useColorModeValue("whiteAlpha.400", "whiteAlpha.300");
   const glassBg = useColorModeValue("whiteAlpha.200", "blackAlpha.300");
-  const mobileMenuColor = "white";
+  const mobileMenuColor = themeConfig.colors.brand[100];
 
   return (
     <HStack spacing={4} pr={2}>

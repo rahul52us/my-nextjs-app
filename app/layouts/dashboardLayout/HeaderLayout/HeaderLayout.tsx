@@ -5,14 +5,13 @@ import { observer } from "mobx-react-lite";
 import HeaderNavbar from "./component/HeaderNavbar/HeaderNavbar";
 import HeaderLogo from "./component/Logo/HeaderLogo";
 import { headerHeight, headerPadding } from "../../../component/config/utils/variable";
+import stores from "../../../store/stores";
 import React from "react";
 
 const HeaderLayout = observer(() => {
+  const { themeStore: { themeConfig } } = stores;
+  
   // Enhanced Professional Color Logic
-  const bgGradient = useColorModeValue(
-    "linear(to-r, skyblue.600, skyblue.500)", 
-    "gray.900"
-  );
   const borderColor = useColorModeValue("whiteAlpha.300", "whiteAlpha.100");
   
   return (
@@ -23,7 +22,6 @@ const HeaderLayout = observer(() => {
       justifyContent="space-between"
       height={headerHeight}
       px={headerPadding} // Use horizontal padding only
-      bg={bgGradient}
       // Glassmorphism effect
       backdropFilter="blur(10px)"
       borderBottom="1px solid"

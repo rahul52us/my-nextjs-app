@@ -28,14 +28,16 @@ import { observer } from "mobx-react-lite";
 import Link from "next/link";
 import { BiHomeAlt } from "react-icons/bi";
 import { sidebarData } from "../../../SidebarLayout/utils/SidebarItems";
+import stores from "../../../../../store/stores";
 
 const HeaderLogo = observer(() => {
+  const { themeStore: { themeConfig } } = stores;
   const isDesktop = useBreakpointValue({ base: false, lg: true });
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Theming
   const textColor = "white";
-  const accentColor = "blue.300";
+  const accentColor = themeConfig.colors.brand[300];
   const hoverBg = useColorModeValue("whiteAlpha.200", "whiteAlpha.100");
   const menuBg = useColorModeValue("white", "gray.800");
   const menuItemColor = useColorModeValue("gray.700", "gray.200");
@@ -122,9 +124,9 @@ const HeaderLogo = observer(() => {
                     </Text>
                     <Icon
                       as={ChevronDownIcon}
-                      color="whiteAlpha.600"
+                      color={themeConfig.colors.brand[200]}
                       transition="transform 0.2s"
-                      _groupHover={{ transform: "translateY(1px)", color: "white" }}
+                      _groupHover={{ transform: "translateY(1px)", color: themeConfig.colors.brand[100] }}
                     />
                   </HStack>
                 </MenuButton>
@@ -209,7 +211,7 @@ const HeaderLogo = observer(() => {
                 transition="background 0.2s"
               >
                 <HStack spacing={3}>
-                  <Icon as={BiHomeAlt} boxSize={5} color="blue.500" />
+                  <Icon as={BiHomeAlt} boxSize={5} color={themeConfig.colors.brand[500]} />
                   <Text fontWeight="600">Home</Text>
                 </HStack>
               </Box>
@@ -224,7 +226,7 @@ const HeaderLogo = observer(() => {
                     py={2} 
                     fontSize="xs" 
                     fontWeight="bold" 
-                    color="gray.400" 
+                    color={themeConfig.colors.brand[300]} 
                     textTransform="uppercase"
                     letterSpacing="wider"
                   >
@@ -244,7 +246,7 @@ const HeaderLogo = observer(() => {
                       transition="background 0.2s"
                     >
                       <HStack spacing={3}>
-                        <Box color="gray.500">{child.icon}</Box>
+                        <Box color={themeConfig.colors.brand[400]}>{child.icon}</Box>
                         <Text fontSize="md" fontWeight="500" color={menuItemColor}>
                           {child.name}
                         </Text>
