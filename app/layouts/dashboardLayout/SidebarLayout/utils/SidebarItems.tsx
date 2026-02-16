@@ -20,6 +20,8 @@ import {
   FaDollarSign,
   FaDatabase,
   FaThermometerHalf,
+  FaFileWord,
+  FaFilePdf,
 } from "react-icons/fa";
 
 interface SidebarItem {
@@ -116,6 +118,16 @@ const sidebarData: SidebarItem[] = [
       { id: 606, name: "Temperature Converter", icon: <FaThermometerHalf />, url: "/converter/temperature-converter" },
       { id: 607, name: "Data Size Converter", icon: <FaDatabase />, url: "/converter/data-size-converter" },
       { id: 608, name: "IP Address Lookup", icon: <FaGlobe />, url: "/tools/ip-lookup" },
+    ],
+  },
+    {
+    id: 7,
+    name: "PDF Tools",
+    icon: <FaGlobe />,
+    url: "#",
+    children: [
+      { id: 609, name: "PDF to Word", icon: <FaFileWord />, url: "/converter/PDFtools/PDFtoWord" },
+      { id: 610, name: "PDF edit", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfedit" },
     ],
   },
 ];

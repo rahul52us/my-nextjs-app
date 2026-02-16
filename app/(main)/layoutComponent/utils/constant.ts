@@ -76,4 +76,8 @@ export const features: any = {
     { name: "Data Size Converter", icon: FaDatabase, path: "/converter/data-size-converter" },
     { name: "IP Address Lookup", icon: FaGlobe, path: "/tools/ip-lookup" },
   ],
+    "PDF Tools": [
+    { name: "PDF to Word", icon: FaFileAlt, path: "/converter/PDFtools/PDFtoWord" },
+    { name: "PDF Edit", icon: FaFileAlt, path: "/converter/PDFtools/Pdfedit" },
+  ],
 };
