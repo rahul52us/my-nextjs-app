@@ -22,6 +22,7 @@ import {
   FaThermometerHalf,
   FaFileWord,
   FaFilePdf,
+  FaFileExcel,
 } from "react-icons/fa";
 
 interface SidebarItem {
@@ -128,6 +129,9 @@ const sidebarData: SidebarItem[] = [
     children: [
       { id: 609, name: "PDF to Word", icon: <FaFileWord />, url: "/converter/PDFtools/PDFtoWord" },
       { id: 610, name: "PDF edit", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfedit" },
+      { id: 611, name: "PDF to JPG", icon: <FaImage />, url: "/converter/PDFtools/PdftoJpg" },
+      { id: 612, name: "PDF Merge", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfmerge" },
+      { id: 613, name: "Excel To PDF", icon: <FaFileExcel />, url: "/converter/PDFtools/Excletopdf" },
     ],
   },
 ];
