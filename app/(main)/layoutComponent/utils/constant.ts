@@ -1,4 +1,4 @@
-import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette } from "react-icons/fa";
+import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette, FaFilePdf } from "react-icons/fa";
 export const headerHeight = "70px";
 export const childrenHeight = "860px";
 export const footerHeight = "60px";
@@ -75,5 +75,12 @@ export const features: any = {
     { name: "Temperature Converter", icon: FaThermometerHalf, path: "/converter/temperature-converter" },
     { name: "Data Size Converter", icon: FaDatabase, path: "/converter/data-size-converter" },
     { name: "IP Address Lookup", icon: FaGlobe, path: "/tools/ip-lookup" },
+  ],
+    "PDF Tools": [
+    { name: "PDF to Word", icon: FaFileAlt, path: "/converter/PDFtools/PDFtoWord" },
+    { name: "PDF Edit", icon: FaFileAlt, path: "/converter/PDFtools/Pdfedit" },
+    {name: "Excel To PDF", icon: FaFileAlt, path: "/converter/PDFtools/Excletopdf" },  
+    {name: "PDF to JPG", icon: FaImage, path: "/converter/PDFtools/PdftoJpg" },  
+    {name: "PDF Merge", icon: FaFilePdf, path: "/converter/PDFtools/PDFmerge" },
   ],
 };
