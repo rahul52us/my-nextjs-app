@@ -132,6 +132,9 @@ const sidebarData: SidebarItem[] = [
       { id: 611, name: "PDF to JPG", icon: <FaImage />, url: "/converter/PDFtools/PdftoJpg" },
       { id: 612, name: "PDF Merge", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfmerge" },
       { id: 613, name: "Excel To PDF", icon: <FaFileExcel />, url: "/converter/PDFtools/Excletopdf" },
+      { id: 614, name: "PDF Split", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsplit" },
+      { id: 615, name: "PDF Rotate", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfrotate" },
+      { id: 616, name: "PDF Sign", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsign" },
     ],
   },
 ];

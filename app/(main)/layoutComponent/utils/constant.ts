@@ -82,5 +82,8 @@ export const features: any = {
     {name: "Excel To PDF", icon: FaFileAlt, path: "/converter/PDFtools/Excletopdf" },  
     {name: "PDF to JPG", icon: FaImage, path: "/converter/PDFtools/PdftoJpg" },  
     {name: "PDF Merge", icon: FaFilePdf, path: "/converter/PDFtools/PDFmerge" },
+    {name: "PDF Split", icon: FaFilePdf, path: "/converter/PDFtools/Pdfsplit" },
+    {name: "PDF Rotate", icon: FaFilePdf, path: "/converter/PDFtools/Pdfrotate" },
+    {name: "PDF Sign", icon: FaFilePdf, path: "/converter/PDFtools/Pdfsign" },
   ],
 };
