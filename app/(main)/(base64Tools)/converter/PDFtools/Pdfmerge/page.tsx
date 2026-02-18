@@ -2,33 +2,11 @@
 
 import React, { useState, useRef } from 'react';
 import {
-  Box,
-  Button,
-  Container,
-  VStack,
-  HStack,
-  Text,
-  Heading,
-  Icon,
-  IconButton,
-  List,
-  ListItem,
-  useToast,
-  Center,
-  Divider,
-  Spinner,
-  Badge,
-  Tooltip,
+  Box, Button, Container, VStack, HStack, Text, Heading, Icon, IconButton,
+  List, ListItem, useToast, Center, Divider, Spinner, Badge, Tooltip, Image, AspectRatio
 } from '@chakra-ui/react';
 import { 
-  FiFileText, 
-  FiX, 
-  FiArrowUp, 
-  FiArrowDown, 
-  FiPlus, 
-  FiLink,
-  FiTrash2,
-  FiFilePlus
+  FiFileText, FiX, FiArrowUp, FiArrowDown, FiTrash2, FiFilePlus, FiEye, FiDownload
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDocument } from 'pdf-lib';
@@ -37,33 +15,40 @@ import { saveAs } from 'file-saver';
 const MotionBox = motion(Box);
 const MotionListItem = motion(ListItem);
 
+// Define the type strictly
+type FileDocType = 'application/pdf' | 'image';
+
 interface FileWithId {
   id: string;
   file: File;
+  preview: string;
+  type: FileDocType;
 }
 
 const PdfMerger = () => {
   const [files, setFiles] = useState<FileWithId[]>([]);
-  const [isMerging, setIsMerging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map((file) => ({
+      const newFiles: FileWithId[] = Array.from(e.target.files).map((file) => ({
         id: Math.random().toString(36).substring(7),
         file,
+        preview: URL.createObjectURL(file),
+        // Fix 1: Cast the string to our specific union type
+        type: (file.type.includes('pdf') ? 'application/pdf' : 'image') as FileDocType,
       }));
       setFiles((prev) => [...prev, ...newFiles]);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = (id: string, preview: string) => {
+    URL.revokeObjectURL(preview);
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
-
-  const clearAll = () => setFiles([]);
 
   const moveFile = (index: number, direction: 'up' | 'down') => {
     const newFiles = [...files];
@@ -73,176 +58,127 @@ const PdfMerger = () => {
     setFiles(newFiles);
   };
 
-  const mergePdfs = async () => {
-    if (files.length < 2) return;
-    setIsMerging(true);
-    try {
-      const mergedPdf = await PDFDocument.create();
-      for (const fileItem of files) {
-        const fileBytes = await fileItem.file.arrayBuffer();
-        const pdf = await PDFDocument.load(fileBytes);
+  const generateMergedPdf = async () => {
+    const mergedPdf = await PDFDocument.create();
+    
+    for (const item of files) {
+      const arrayBuffer = await item.file.arrayBuffer();
+      
+      if (item.type === 'application/pdf') {
+        const pdf = await PDFDocument.load(arrayBuffer);
         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach((page) => mergedPdf.addPage(page));
+      } else {
+        const image = item.file.type === 'image/png' 
+          ? await mergedPdf.embedPng(arrayBuffer)
+          : await mergedPdf.embedJpg(arrayBuffer);
+        
+        const page = mergedPdf.addPage([image.width, image.height]);
+        page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
       }
-      const pdfBytes = await mergedPdf.save();
+    }
+    return await mergedPdf.save();
+  };
+
+  const handleAction = async (action: 'download' | 'preview') => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const pdfBytes = await generateMergedPdf();
+      // Fix 2: Explicitly wrapping in Uint8Array to satisfy BlobPart requirements
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-      saveAs(blob, `merged_${Date.now()}.pdf`);
-      toast({ title: "Merged Successfully", status: "success", duration: 2000 });
+      const url = URL.createObjectURL(blob);
+
+      if (action === 'download') {
+        saveAs(blob, `merged_${Date.now()}.pdf`);
+        toast({ title: "Downloaded Successfully", status: "success" });
+      } else {
+        window.open(url, '_blank');
+      }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to merge PDFs.", status: "error" });
+      console.error(error);
+      toast({ title: "Error processing files", status: "error" });
     } finally {
-      setIsMerging(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <Box 
-      minH="100vh" 
-      bg="gray.50" 
-      bgGradient="radial(circle at 20% 20%, blue.50 0%, transparent 40%), radial(circle at 80% 80%, pink.50 0%, transparent 40%)"
-      py={20}
-    >
+    <Box minH="100vh" bg="gray.50" py={10} px={4}>
       <Container maxW="container.md">
         <VStack spacing={8} align="stretch">
-          
-          {/* Header Section */}
-          <VStack spacing={3} textAlign="center">
-            <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full" textTransform="uppercase" letterSpacing="widest">
-              PDF Toolbox
-            </Badge>
-            <Heading size="2xl" color="gray.900" fontWeight="900" letterSpacing="tight">
-              PDF <Text as="span" color="blue.500">Merger</Text>
-            </Heading>
-            <Text color="gray.500" fontSize="lg" fontWeight="medium">
-              Drag, reorder, and combine your documents with ease.
-            </Text>
+          <VStack spacing={2} textAlign="center">
+            <Badge colorScheme="purple" borderRadius="full" px={3}>All-in-One</Badge>
+            <Heading size="xl">PDF & Image <Text as="span" color="blue.500">Converter</Text></Heading>
+            <Text color="gray.500">Combine PDFs and Images into a single document</Text>
           </VStack>
 
-          {/* Drag & Drop Area */}
-          <MotionBox
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
+          <Center
+            as="label"
+            htmlFor="file-upload"
+            p={10}
+            cursor="pointer"
+            border="2px dashed"
+            borderColor="blue.300"
+            borderRadius="2xl"
+            bg="white"
+            _hover={{ bg: 'blue.50', borderColor: 'blue.500' }}
+            transition="all 0.2s"
           >
-            <Center
-              as="label"
-              htmlFor="file-upload"
-              p={12}
-              cursor="pointer"
-              border="2px dashed"
-              borderColor="blue.200"
-              borderRadius="3xl"
-              bg="white"
-              shadow="sm"
-              transition="all 0.3s ease"
-              _hover={{ borderColor: 'blue.500', shadow: '2xl', bg: 'blue.50/30' }}
-              flexDirection="column"
-              position="relative"
-              overflow="hidden"
-            >
-              <VStack spacing={4}>
-                <Box bg="blue.500" color="white" p={4} borderRadius="2xl" shadow="0 10px 20px -5px rgba(66, 153, 225, 0.6)">
-                  <Icon as={FiFilePlus} boxSize={8} />
-                </Box>
-                <VStack spacing={1}>
-                  <Text fontWeight="bold" fontSize="xl" color="gray.800">Choose PDF files</Text>
-                  <Text fontSize="sm" color="gray.400">or drag and drop them here</Text>
-                </VStack>
-              </VStack>
-              <input id="file-upload" type="file" multiple accept="application/pdf" hidden onChange={handleFileChange} ref={fileInputRef} />
-            </Center>
-          </MotionBox>
+            <VStack>
+              <Icon as={FiFilePlus} boxSize={10} color="blue.500" />
+              <Text fontWeight="bold">Click to upload PDFs or Images</Text>
+              <Text fontSize="xs" color="gray.400">Supports PDF, PNG, JPG</Text>
+            </VStack>
+            <input id="file-upload" type="file" multiple accept="application/pdf,image/*" hidden onChange={handleFileChange} ref={fileInputRef} />
+          </Center>
 
-          {/* List Section */}
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {files.length > 0 && (
-              <MotionBox
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                bg="white" 
-                shadow="2xl" 
-                borderRadius="3xl" 
-                border="1px solid" 
-                borderColor="gray.100" 
-                overflow="hidden"
-              >
-                <Box px={6} py={4} bg="white" borderBottom="1px solid" borderColor="gray.50">
-                  <HStack justify="space-between">
-                    <HStack spacing={3}>
-                      <Text fontWeight="800" fontSize="xs" color="blue.500" textTransform="uppercase" letterSpacing="widest">
-                        Queue
-                      </Text>
-                      <Badge borderRadius="full" px={2} colorScheme="blue">{files.length}</Badge>
-                    </HStack>
-                    <Button leftIcon={<FiTrash2 />} size="xs" variant="ghost" colorScheme="red" onClick={clearAll} borderRadius="full">
-                      Clear All
-                    </Button>
-                  </HStack>
-                </Box>
-                
-                <List spacing={0}>
-                  <AnimatePresence>
+              <VStack align="stretch" spacing={4}>
+                <Box bg="white" shadow="xl" borderRadius="2xl" overflow="hidden">
+                  <List>
                     {files.map((item, index) => (
-                      <MotionListItem 
-                        key={item.id}
-                        layout
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: 20, opacity: 0 }}
-                        px={6} py={4}
-                        _notLast={{ borderBottom: '1px solid', borderColor: 'gray.50' }}
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        _hover={{ bg: 'blue.50/20' }}
-                      >
-                        <HStack spacing={4} overflow="hidden">
-                          <Text fontSize="xs" fontWeight="bold" color="gray.300" w="18px">{index + 1}</Text>
-                          <Icon as={FiFileText} color="red.400" boxSize={5} />
+                      <MotionListItem key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        p={4} borderBottom="1px solid" borderColor="gray.100" display="flex" alignItems="center" justifyContent="space-between">
+                        
+                        <HStack spacing={4} flex={1}>
+                          <Text fontWeight="bold" color="gray.300" w="20px">{index + 1}</Text>
+                          <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg="gray.50">
+                            {item.type === 'image' ? (
+                              <Image src={item.preview} alt="preview" objectFit="cover" />
+                            ) : (
+                              <Center><Icon as={FiFileText} color="red.400" /></Center>
+                            )}
+                          </AspectRatio>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="sm" fontWeight="bold" color="gray.700" isTruncated maxW={["140px", "280px"]}>
-                              {item.file.name}
-                            </Text>
-                            <Text fontSize="xs" color="gray.400">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</Text>
+                            <Text fontSize="sm" fontWeight="bold" noOfLines={1}>{item.file.name}</Text>
+                            <Text fontSize="xs" color="gray.400">{(item.file.size / 1024).toFixed(0)} KB</Text>
                           </VStack>
                         </HStack>
 
-                        <HStack spacing={1}>
-                          <Tooltip label="Move Up" hasArrow>
-                            <IconButton aria-label="up" icon={<FiArrowUp />} size="sm" variant="ghost" isDisabled={index === 0} onClick={() => moveFile(index, 'up')} borderRadius="lg" />
-                          </Tooltip>
-                          <Tooltip label="Move Down" hasArrow>
-                            <IconButton aria-label="down" icon={<FiArrowDown />} size="sm" variant="ghost" isDisabled={index === files.length - 1} onClick={() => moveFile(index, 'down')} borderRadius="lg" />
-                          </Tooltip>
-                          <Divider orientation="vertical" h="20px" mx={2} />
-                          <IconButton aria-label="remove" icon={<FiX />} size="sm" variant="ghost" colorScheme="red" onClick={() => removeFile(item.id)} borderRadius="lg" />
+                        <HStack>
+                          <Tooltip label="Preview File"><IconButton aria-label="view" icon={<FiEye />} size="sm" variant="ghost" onClick={() => window.open(item.preview, '_blank')} /></Tooltip>
+                          <IconButton aria-label="up" icon={<FiArrowUp />} size="sm" variant="ghost" isDisabled={index === 0} onClick={() => moveFile(index, 'up')} />
+                          <IconButton aria-label="down" icon={<FiArrowDown />} size="sm" variant="ghost" isDisabled={index === files.length - 1} onClick={() => moveFile(index, 'down')} />
+                          <IconButton aria-label="remove" icon={<FiX />} size="sm" variant="ghost" colorScheme="red" onClick={() => removeFile(item.id, item.preview)} />
                         </HStack>
                       </MotionListItem>
                     ))}
-                  </AnimatePresence>
-                </List>
-              </MotionBox>
+                  </List>
+                </Box>
+
+                <HStack spacing={4}>
+                  <Button flex={1} leftIcon={<FiEye />} size="lg" variant="outline" colorScheme="blue" isDisabled={isProcessing} onClick={() => handleAction('preview')}>
+                    Preview Merge
+                  </Button>
+                  <Button flex={2} leftIcon={isProcessing ? <Spinner size="sm" /> : <FiDownload />} size="lg" colorScheme="blue" isDisabled={files.length < 1 || isProcessing} onClick={() => handleAction('download')}>
+                    {isProcessing ? 'Processing...' : 'Merge & Download'}
+                  </Button>
+                </HStack>
+              </VStack>
             )}
           </AnimatePresence>
-
-          {/* Merge Button */}
-          <Button
-            size="lg"
-            colorScheme="blue"
-            h="70px"
-            borderRadius="2xl"
-            fontSize="lg"
-            fontWeight="bold"
-            leftIcon={isMerging ? <Spinner size="sm" /> : <FiLink />}
-            isDisabled={files.length < 2 || isMerging}
-            onClick={mergePdfs}
-            shadow="0 20px 40px -10px rgba(66, 153, 225, 0.5)"
-            _hover={{ transform: 'translateY(-2px)', shadow: '0 25px 50px -12px rgba(66, 153, 225, 0.6)' }}
-            _active={{ transform: 'translateY(0)' }}
-            transition="all 0.3s cubic-bezier(.23,1,.32,1)"
-          >
-            {isMerging ? 'Combining your files...' : `Merge Documents`}
-          </Button>
         </VStack>
       </Container>
     </Box>

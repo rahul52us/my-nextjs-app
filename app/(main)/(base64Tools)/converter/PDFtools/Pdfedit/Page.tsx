@@ -13,14 +13,14 @@ import { saveAs } from 'file-saver';
 import {
   FiDownload, FiUpload, FiType, FiSquare, FiImage,
   FiTrash2, FiMaximize, FiChevronLeft, FiChevronRight,
-  FiRotateCcw, FiMousePointer, FiEyeOff, FiBold, FiItalic
+  FiRotateCcw, FiMousePointer, FiEyeOff, FiBold, FiItalic, FiEdit3
 } from 'react-icons/fi';
 
 // Initialize PDF.js Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // --- Types ---
-type ElementType = 'text' | 'shape' | 'image' | 'redaction';
+type ElementType = 'text' | 'shape' | 'image' | 'redaction' | 'highlight';
 
 interface EditorElement {
   id: string;
@@ -69,16 +69,19 @@ const AdvancedPDFEditor: React.FC = () => {
   const addElement = (type: ElementType) => {
     if (!file) return;
     const isText = type === 'text';
+    const isHighlight = type === 'highlight';
+    
     const newEl: EditorElement = {
       id: `el-${Date.now()}`,
       page: currentPage,
       type,
       x: 100,
       y: 100,
-      width: isText ? 200 : 100,
-      height: isText ? 40 : 100,
-      color: isText ? globalColor : (type === 'redaction' ? "#000000" : "#3182ce"),
-      opacity: type === 'redaction' ? 1 : 0.7,
+      width: isText ? 200 : (isHighlight ? 120 : 100),
+      height: isText ? 40 : (isHighlight ? 25 : 100),
+      // Default highlight to yellow if global color is black, otherwise use global
+      color: isHighlight ? (globalColor === "#000000" ? "#ffff00" : globalColor) : (isText ? globalColor : (type === 'redaction' ? "#000000" : "#3182ce")),
+      opacity: type === 'redaction' ? 1 : (isHighlight ? 0.4 : 0.7),
       content: isText ? "New Text" : "",
       fontSize: isText ? 16 : undefined,
       bold: false,
@@ -210,13 +213,13 @@ const AdvancedPDFEditor: React.FC = () => {
 
           page.drawText(el.content, {
             x: pdfX,
-            y: pdfY + (2 * scale), // Minor offset for baseline alignment
+            y: pdfY + (2 * scale),
             size: (el.fontSize || 16) * scale * 0.96,
             font,
             color: rgb(r, g, b),
             opacity: el.opacity,
           });
-        } else if (el.type === 'shape' || el.type === 'redaction') {
+        } else if (el.type === 'shape' || el.type === 'redaction' || el.type === 'highlight') {
           page.drawRectangle({
             x: pdfX, y: pdfY, width: el.width * scale, height: el.height * scale,
             color: rgb(r, g, b), opacity: el.opacity,
@@ -231,8 +234,6 @@ const AdvancedPDFEditor: React.FC = () => {
       }
 
       const pdfBytes = await pdfDoc.save();
-      
-      // FIXED: Using Uint8Array copy to bypass SharedArrayBuffer / BlobPart issues
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       saveAs(blob, `edited_${file.name}`);
 
@@ -264,6 +265,7 @@ const AdvancedPDFEditor: React.FC = () => {
           <Divider orientation="vertical" h="40px" />
           <HStack spacing={3}>
             <Tooltip label="Text"><IconButton aria-label="Text" icon={<FiType />} onClick={() => addElement('text')} isDisabled={!file} /></Tooltip>
+            <Tooltip label="Highlight"><IconButton aria-label="Highlight" icon={<FiEdit3 />} onClick={() => addElement('highlight')} isDisabled={!file} colorScheme="yellow" /></Tooltip>
             <Tooltip label="Shape"><IconButton aria-label="Shape" icon={<FiSquare />} onClick={() => addElement('shape')} isDisabled={!file} /></Tooltip>
             <Tooltip label="Redact"><IconButton aria-label="Redact" icon={<FiEyeOff />} onClick={() => addElement('redaction')} isDisabled={!file} colorScheme="red" /></Tooltip>
             <Tooltip label="Edit Existing"><IconButton aria-label="Select" icon={<FiMousePointer />} onClick={() => setSelectTextMode(!selectTextMode)} colorScheme={selectTextMode ? "orange" : "gray"} isDisabled={!file} /></Tooltip>
@@ -318,7 +320,7 @@ const AdvancedPDFEditor: React.FC = () => {
                     <Box
                       w={`${el.width}px`} h={`${el.height}px`}
                       border={selectedId === el.id ? "2px solid #319795" : "1px dashed transparent"}
-                      bg={el.type === 'redaction' || el.type === 'shape' ? el.color : 'transparent'}
+                      bg={['redaction', 'shape', 'highlight'].includes(el.type) ? el.color : 'transparent'}
                       opacity={el.opacity}
                     >
                       {el.type === 'text' && (
