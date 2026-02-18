@@ -1,13 +1,5 @@
 import { extendTheme, StyleFunctionProps } from "@chakra-ui/react";
-import { Lato } from "next/font/google";
 import stores from "../store/stores";
-
-const lato = Lato({
-  variable: "--font-lato",
-  weight: ["400", "700"],
-  subsets: ["latin"]
-});
-
 
 const breakpoints = {
   sm: "30em",
@@ -110,6 +102,6 @@ const {
 
 export { fonts, breakpoints, components, styles };
 
-const theme = extendTheme({...themeConfig, fonts,breakpoints,components,styles});
-export { theme, lato };
+const theme = extendTheme({ ...themeConfig, fonts, breakpoints, components, styles });
+export { theme };
 export default theme;

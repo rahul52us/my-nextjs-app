@@ -14,7 +14,7 @@ export const generateFileName = (mimeType: string) => {
   const extension = mimeType.split("/")[1] || "bin";
   const timestamp = new Date()
     .toISOString()
-    .replace(/[-:.TZ]/g, "")
+    .replace(/[^\d]/g, "")
     .slice(0, 14);
   return `file_${timestamp}.${extension}`;
 };

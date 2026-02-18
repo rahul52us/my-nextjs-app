@@ -31,7 +31,7 @@ const Base64ToFile = () => {
 
   const generateFileName = (mimeType: string) => {
     const extension = mimeType.split('/')[1] || 'bin';
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const timestamp = new Date().toISOString().replace(/[^\d]/g, '').slice(0, 14);
     return `file_${timestamp}.${extension}`;
   };
 
