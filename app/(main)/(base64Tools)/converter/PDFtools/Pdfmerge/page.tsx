@@ -5,7 +5,7 @@ import {
   Box, Button, Container, VStack, HStack, Text, Heading, Icon, IconButton,
   List, ListItem, useToast, Center, Divider, Spinner, Badge, Tooltip, Image, AspectRatio
 } from '@chakra-ui/react';
-import {
+import { 
   FiFileText, FiX, FiArrowUp, FiArrowDown, FiTrash2, FiFilePlus, FiEye, FiDownload
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,19 +60,19 @@ const PdfMerger = () => {
 
   const generateMergedPdf = async () => {
     const mergedPdf = await PDFDocument.create();
-
+    
     for (const item of files) {
       const arrayBuffer = await item.file.arrayBuffer();
-
+      
       if (item.type === 'application/pdf') {
         const pdf = await PDFDocument.load(arrayBuffer);
         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       } else {
-        const image = item.file.type === 'image/png'
+        const image = item.file.type === 'image/png' 
           ? await mergedPdf.embedPng(arrayBuffer)
           : await mergedPdf.embedJpg(arrayBuffer);
-
+        
         const page = mergedPdf.addPage([image.width, image.height]);
         page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
       }
@@ -141,7 +141,7 @@ const PdfMerger = () => {
                     {files.map((item, index) => (
                       <MotionListItem key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         p={4} borderBottom="1px solid" borderColor="gray.100" display="flex" alignItems="center" justifyContent="space-between">
-
+                        
                         <HStack spacing={4} flex={1}>
                           <Text fontWeight="bold" color="gray.300" w="20px">{index + 1}</Text>
                           <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg="gray.50">
