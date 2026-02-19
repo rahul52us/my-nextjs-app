@@ -1,4 +1,4 @@
-import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette, FaFilePdf } from "react-icons/fa";
+import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette, FaFilePdf, FaEdit } from "react-icons/fa";
 export const headerHeight = "70px";
 export const childrenHeight = "860px";
 export const footerHeight = "60px";
@@ -85,5 +85,9 @@ export const features: any = {
     {name: "PDF Split", icon: FaFilePdf, path: "/converter/PDFtools/Pdfsplit" },
     {name: "PDF Rotate", icon: FaFilePdf, path: "/converter/PDFtools/Pdfrotate" },
     {name: "PDF Sign", icon: FaFilePdf, path: "/converter/PDFtools/Pdfsign" },
+  ],
+  "Image Tools": [
+    { name: "Image Compressor", icon: FaCompress, path: "/converter/Imagetools/Imagecom" },
+    { name: "Image edit", icon: FaEdit, path: "/converter/Imagetools/Imageedit" },
   ],
 };

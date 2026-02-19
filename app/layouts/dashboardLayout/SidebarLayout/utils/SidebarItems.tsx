@@ -23,6 +23,7 @@ import {
   FaFileWord,
   FaFilePdf,
   FaFileExcel,
+  FaEdit,
 } from "react-icons/fa";
 
 interface SidebarItem {
@@ -135,6 +136,16 @@ const sidebarData: SidebarItem[] = [
       { id: 614, name: "PDF Split", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsplit" },
       { id: 615, name: "PDF Rotate", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfrotate" },
       { id: 616, name: "PDF Sign", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsign" },
+    ],
+  },
+   {
+    id: 8,
+    name: "Image Tools",
+    icon: <FaImage />,
+    url: "#",
+    children: [
+      { id: 609, name: "Image Compressor", icon: <FaCompress />, url: "/converter/Imagetools/Imagecom" },
+      { id: 610, name: "Image edit", icon: <FaEdit />, url: "/converter/Imagetools/Imageedit" },
     ],
   },
 ];
