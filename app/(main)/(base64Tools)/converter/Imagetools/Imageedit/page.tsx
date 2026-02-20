@@ -5,17 +5,18 @@ import {
   Download, Sun, Droplets, Trash2, FlipHorizontal, 
   FlipVertical, RotateCw, Wand2, Sparkles,
   Zap, Camera, QrCode, Info, Eye,
-  Palette, Layers, Undo2, Wind, Focus 
+  Palette, Layers, Undo2, Wind, Focus, Crop as CropIcon
 } from 'lucide-react';
 import { removeBackground, Config } from '@imgly/background-removal';
 import { QRCodeSVG } from 'qrcode.react';
 
-// FINAL STABLE CONFIG: 1.5.5 is highly compatible with browser CDNs
+// STABLE CONFIG: Enhanced with forced caching to prevent browser blocks
 const IMG_LY_CONFIG: Config = {
   publicPath: "https://static.img.ly/packages/@imgly/background-removal/1.5.5/dist/",
-  model: "isnet_quint8", // Smallest/Fastest model to prevent timeout errors
+  model: "isnet_quint8",
   fetchArgs: {
-    mode: 'cors'
+    mode: 'cors',
+    cache: 'force-cache' 
   }
 };
 
@@ -43,6 +44,10 @@ const AIasist: React.FC = () => {
   const [qrValue, setQrValue] = useState("https://google.com");
   const [isComparing, setIsComparing] = useState(false);
   
+  // NEW: Crop States
+  const [isCropping, setIsCropping] = useState(false);
+  const [cropArea, setCropArea] = useState({ x: 10, y: 10, width: 80, height: 80 }); 
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const loadImage = (url: string): Promise<HTMLImageElement> => {
@@ -109,7 +114,11 @@ const AIasist: React.FC = () => {
     if (!image) return;
     setIsProcessing(true);
     try {
-      const blob = await removeBackground(image.src, IMG_LY_CONFIG);
+      // Logic: Using the current canvas data ensures we process what the user sees
+      const canvas = canvasRef.current;
+      const dataUrl = canvas?.toDataURL('image/png') || image.src;
+      
+      const blob = await removeBackground(dataUrl, IMG_LY_CONFIG);
       const url = URL.createObjectURL(blob);
       const resultImg = await loadImage(url);
 
@@ -122,9 +131,34 @@ const AIasist: React.FC = () => {
       }
     } catch (e) {
       console.error("AI ERROR:", e);
-      alert("AI was blocked by the browser. Try turning off ad-blockers or using Chrome.");
+      alert("AI Blocked. Please: 1. Disable Ad-blockers. 2. Use Chrome/Edge. 3. Check connection.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // NEW: Crop Function
+  const applyCrop = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !image) return;
+
+    const cropX = (cropArea.x / 100) * canvas.width;
+    const cropY = (cropArea.y / 100) * canvas.height;
+    const cropW = (cropArea.width / 100) * canvas.width;
+    const cropH = (cropArea.height / 100) * canvas.height;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = cropW;
+    tempCanvas.height = cropH;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    if (tempCtx) {
+      tempCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      const croppedImage = await loadImage(tempCanvas.toDataURL());
+      setImage(croppedImage);
+      setForegroundImage(null);
+      setIsCropping(false);
+      setFilters(DEFAULT_FILTERS);
     }
   };
 
@@ -177,6 +211,9 @@ const AIasist: React.FC = () => {
 
         {image && (
           <div className="flex items-center gap-3">
+            <button onClick={() => setIsCropping(!isCropping)} className={`p-2 transition rounded-lg ${isCropping ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-indigo-600'}`} title="Crop Tool">
+              <CropIcon size={20} />
+            </button>
             <button onClick={handleUndo} disabled={history.length === 0} className="p-2 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition" title="Undo"><Undo2 size={20} /></button>
             <button onMouseDown={() => setIsComparing(true)} onMouseUp={() => setIsComparing(false)} className="p-2 text-slate-400 hover:text-indigo-600 transition" title="Compare"><Eye size={20} /></button>
             <div className="h-6 w-px bg-slate-200 mx-1" />
@@ -194,6 +231,19 @@ const AIasist: React.FC = () => {
 
       <div className="flex h-[calc(100vh-64px)]">
         <aside className="w-85 bg-white border-r border-slate-200 overflow-y-auto p-6 space-y-8 no-scrollbar">
+          
+          {/* CROP CONTROLS - Only shows when Crop is active */}
+          {isCropping && (
+            <section className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-4">
+              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2"><CropIcon size={12}/> Crop Dimensions</h3>
+              <Slider label="Width %" value={cropArea.width} max={100} onChange={(v) => setCropArea({...cropArea, width: v})} />
+              <Slider label="Height %" value={cropArea.height} max={100} onChange={(v) => setCropArea({...cropArea, height: v})} />
+              <Slider label="X Offset %" value={cropArea.x} max={100 - cropArea.width} onChange={(v) => setCropArea({...cropArea, x: v})} />
+              <Slider label="Y Offset %" value={cropArea.y} max={100 - cropArea.height} onChange={(v) => setCropArea({...cropArea, y: v})} />
+              <button onClick={applyCrop} className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all">Apply Crop Area</button>
+            </section>
+          )}
+
           <section className="space-y-3">
              <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2"><Wand2 size={12}/> AI Intelligence</h3>
              <button 
@@ -273,8 +323,22 @@ const AIasist: React.FC = () => {
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{isComparing ? "Original" : "Live Edit"}</span>
                 </div>
               </div>
-              <div className="rounded-3xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')]">
+              
+              <div className="relative rounded-3xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')]">
                 <canvas ref={canvasRef} className="max-w-full max-h-[75vh] block ring-1 ring-black/5" />
+                
+                {/* Visual Crop Overlay */}
+                {isCropping && (
+                  <div 
+                    className="absolute border-2 border-dashed border-indigo-600 bg-indigo-600/10 pointer-events-none"
+                    style={{
+                      left: `${cropArea.x}%`,
+                      top: `${cropArea.y}%`,
+                      width: `${cropArea.width}%`,
+                      height: `${cropArea.height}%`
+                    }}
+                  />
+                )}
               </div>
 
               {isProcessing && (
