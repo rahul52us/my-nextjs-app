@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+// Added NextLink import to handle client-side routing
+import NextLink from "next/link";
 import {
     Box,
     Button,
@@ -19,6 +21,8 @@ import {
     useColorModeValue,
     Badge,
     IconButton,
+    Image,
+    HStack,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import {
@@ -29,6 +33,13 @@ import {
     FaUnlock,
     FaCogs,
     FaLightbulb,
+    FaImage,
+    FaCompress,
+    FaEdit,
+    FaEraser,
+    FaFileCode,
+    FaTerminal,
+    FaShieldAlt,
 } from "react-icons/fa";
 import { sidebarData } from "../layouts/dashboardLayout/SidebarLayout/utils/SidebarItems";
 
@@ -170,7 +181,57 @@ export default function HomeContent() {
                     </GridItem>
                 </Grid>
 
-                {/* --- CUSTOM SLIDER SECTION (No Packages) --- */}
+                {/* --- FEATURED IMAGE TOOLS CARD --- */}
+                <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    mt={20}
+                    bg={cardBg}
+                    borderRadius="3xl"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    overflow="hidden"
+                    shadow="2xl"
+                >
+                    <Flex direction={{ base: "column", md: "row" }}>
+                        <Box flex="1" bg="blue.50" p={10} display="flex" alignItems="center" justifyContent="center">
+                            <Image 
+                                src="https://www.ilovepdf.com/img/home/iloveimg@2x.webp" 
+                                alt="Image Tools" 
+                                maxW="250px"
+                            />
+                        </Box>
+                        <Box flex="1.2" p={{ base: 8, md: 12 }}>
+                            <Heading size="lg" mb={2}>Visual Image Tools</Heading>
+                            <Text color={mutedText} mb={6}>Professional grade image processing right in your browser.</Text>
+                            
+                            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                                {/* Using as={NextLink} prevents page reload */}
+                                <Link as={NextLink} href="/converter/Imagetools/Imagecom" _hover={{ textDecoration: 'none' }}>
+                                    <HStack p={4} borderRadius="xl" border="1px solid" borderColor={borderColor} _hover={{ bg: "blue.50", borderColor: "blue.300" }}>
+                                        <Icon as={FaCompress} color="blue.500" />
+                                        <Text fontWeight="bold" fontSize="sm">Image Compressor</Text>
+                                    </HStack>
+                                </Link>
+                                <Link as={NextLink} href="/converter/Imagetools/Imageedit" _hover={{ textDecoration: 'none' }}>
+                                    <HStack p={4} borderRadius="xl" border="1px solid" borderColor={borderColor} _hover={{ bg: "blue.50", borderColor: "blue.300" }}>
+                                        <Icon as={FaEdit} color="blue.500" />
+                                        <Text fontWeight="bold" fontSize="sm">Image Edit</Text>
+                                    </HStack>
+                                </Link>
+                                <Link as={NextLink} href="/converter/Imagetools/Bgremove" _hover={{ textDecoration: 'none' }}>
+                                    <HStack p={4} borderRadius="xl" border="1px solid" borderColor={borderColor} _hover={{ bg: "blue.50", borderColor: "blue.300" }}>
+                                        <Icon as={FaEraser} color="blue.500" />
+                                        <Text fontWeight="bold" fontSize="sm">Image BG Remove</Text>
+                                    </HStack>
+                                </Link>
+                            </Grid>
+                        </Box>
+                    </Flex>
+                </MotionBox>
+
+                {/* --- CUSTOM SLIDER SECTION --- */}
                 <Box mt={24} id="tools">
                     <Flex align="center" mb={8} justify="space-between">
                         <Flex align="center">
@@ -197,13 +258,55 @@ export default function HomeContent() {
                             scrollBehavior: "smooth",
                         }}
                     >
+                        {/* Static Image Tool Card */}
+                        <Box minW={{ base: "85%", sm: "45%", md: "30%", lg: "23%" }} sx={{ scrollSnapAlign: "start" }}>
+                            <Box p={6} height="280px" border="1px solid" borderColor="blue.400" borderRadius="2xl" bg={cardBg} shadow="lg" display="flex" flexDirection="column">
+                                <Flex align="center" mb={4}>
+                                    <Box fontSize="2xl" color="blue.500" p={2} bg="blue.50" borderRadius="lg" mr={3}>
+                                        <FaImage />
+                                    </Box>
+                                    <Text fontWeight="800" fontSize="md" letterSpacing="tight">Image Tools</Text>
+                                </Flex>
+                                <VStack align="start" spacing={1} mb={4} flex="1">
+                                    <Link as={NextLink} href="/converter/Imagetools/Imagecom" fontSize="xs" color={mutedText} _hover={{ color: "blue.500" }}>• Image Compressor</Link>
+                                    <Link as={NextLink} href="/converter/Imagetools/Imageedit" fontSize="xs" color={mutedText} _hover={{ color: "blue.500" }}>• Image Edit</Link>
+                                    <Link as={NextLink} href="/converter/Imagetools/Bgremove" fontSize="xs" color={mutedText} _hover={{ color: "blue.500" }}>• BG Remover</Link>
+                                </VStack>
+                                <Flex justify="space-between" align="center" mt="auto" pt={4} borderTop="1px solid" borderColor={borderColor}>
+                                    <Badge colorScheme="blue" fontSize="10px" borderRadius="full" px={2}>3 Tools</Badge>
+                                    <Icon as={FaArrowRight} boxSize={3} color="blue.500" />
+                                </Flex>
+                            </Box>
+                        </Box>
+
+                        {/* NEW: Added Coding Tools Card */}
+                        <Box minW={{ base: "85%", sm: "45%", md: "30%", lg: "23%" }} sx={{ scrollSnapAlign: "start" }}>
+                            <Box p={6} height="280px" border="1px solid" borderColor={borderColor} borderRadius="2xl" bg={cardBg} display="flex" flexDirection="column">
+                                <Flex align="center" mb={4}>
+                                    <Box fontSize="2xl" color="green.500" p={2} bg="green.50" borderRadius="lg" mr={3}>
+                                        <FaFileCode />
+                                    </Box>
+                                    <Text fontWeight="800" fontSize="md" letterSpacing="tight">Code Formatters</Text>
+                                </Flex>
+                                <VStack align="start" spacing={1} mb={4} flex="1">
+                                    <Text fontSize="xs" color={mutedText}>• JSON Beautifier</Text>
+                                    <Text fontSize="xs" color={mutedText}>• HTML Minifier</Text>
+                                    <Text fontSize="xs" color={mutedText}>• CSS Optimizer</Text>
+                                </VStack>
+                                <Flex justify="space-between" align="center" mt="auto" pt={4} borderTop="1px solid" borderColor={borderColor}>
+                                    <Badge colorScheme="green" fontSize="10px" borderRadius="full" px={2}>8 Tools</Badge>
+                                    <Icon as={FaArrowRight} boxSize={3} color="green.500" />
+                                </Flex>
+                            </Box>
+                        </Box>
+
                         {sidebarData.map((cat) => (
                             <Box
                                 key={cat.id}
                                 minW={{ base: "85%", sm: "45%", md: "30%", lg: "23%" }}
                                 sx={{ scrollSnapAlign: "start" }}
                             >
-                                <Link href={cat.children?.[0]?.url || "#"} _hover={{ textDecoration: "none" }}>
+                                <Link as={NextLink} href={cat.children?.[0]?.url || "#"} _hover={{ textDecoration: "none" }}>
                                     <Box
                                         p={6}
                                         height="280px"
@@ -245,8 +348,8 @@ export default function HomeContent() {
                 <Flex justify="center" direction="column" align="center">
                     <Text color={mutedText} fontSize="sm">Need advanced formatting?</Text>
                     <Flex mt={2} gap={4}>
-                        <Link color="blue.500" fontSize="sm" fontWeight="semibold" href="/tools/json-formatter">JSON Formatter</Link>
-                        <Link color="blue.500" fontSize="sm" fontWeight="semibold" href="/converter/unit-converter">Unit Converter</Link>
+                        <Link as={NextLink} color="blue.500" fontSize="sm" fontWeight="semibold" href="/tools/json-formatter">JSON Formatter</Link>
+                        <Link as={NextLink} color="blue.500" fontSize="sm" fontWeight="semibold" href="/converter/unit-converter">Unit Converter</Link>
                     </Flex>
                 </Flex>
             </Container>

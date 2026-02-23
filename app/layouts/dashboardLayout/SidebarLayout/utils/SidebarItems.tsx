@@ -122,32 +122,46 @@ const sidebarData: SidebarItem[] = [
       { id: 608, name: "IP Address Lookup", icon: <FaGlobe />, url: "/tools/ip-lookup" },
     ],
   },
+{
+  id: 9,
+  name: "More",
+  icon: <FaGlobe />,
+  url: "#",
+  children: [
     {
-    id: 7,
-    name: "PDF Tools",
-    icon: <FaGlobe />,
-    url: "#",
-    children: [
-      { id: 609, name: "PDF to Word", icon: <FaFileWord />, url: "/converter/PDFtools/PDFtoWord" },
-      { id: 610, name: "PDF edit", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfedit" },
-      { id: 611, name: "PDF to JPG", icon: <FaImage />, url: "/converter/PDFtools/PdftoJpg" },
-      { id: 612, name: "PDF Merge", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfmerge" },
-      { id: 613, name: "Excel To PDF", icon: <FaFileExcel />, url: "/converter/PDFtools/Excletopdf" },
-      { id: 614, name: "PDF Split", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsplit" },
-      { id: 615, name: "PDF Rotate", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfrotate" },
-      { id: 616, name: "PDF Sign", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsign" },
-    ],
-  },
-   {
-    id: 8,
-    name: "Image Tools",
-    icon: <FaImage />,
-    url: "#",
-    children: [
-      { id: 609, name: "Image Compressor", icon: <FaCompress />, url: "/converter/Imagetools/Imagecom" },
-      { id: 610, name: "Image edit", icon: <FaEdit />, url: "/converter/Imagetools/Imageedit" },
-    ],
-  },
+      id: 93,
+      name: "CV Builder",
+      icon: <FaFileAlt />,
+      url: "/converter/Cvbuilder",
+    },
+    {
+      id: 91,
+      name: "PDF Tools",
+      icon: <FaFilePdf />,
+      url: "#",
+      children: [
+        { id: 609, name: "PDF to Word", icon: <FaFileWord />, url: "/converter/PDFtools/PDFtoWord" },
+        { id: 610, name: "PDF Edit", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfedit" },
+        { id: 611, name: "PDF to JPG", icon: <FaImage />, url: "/converter/PDFtools/PdftoJpg" },
+        { id: 612, name: "PDF Merge", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfmerge" },
+        { id: 613, name: "Excel to PDF", icon: <FaFileExcel />, url: "/converter/PDFtools/Excletopdf" },
+        { id: 614, name: "PDF Split", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsplit" },
+        { id: 615, name: "PDF Rotate", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfrotate" },
+        { id: 616, name: "PDF Sign", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsign" },
+      ],
+    },
+    {
+      id: 92,
+      name: "Image Tools",
+      icon: <FaImage />,
+      url: "#",
+      children: [
+        { id: 701, name: "Image Compressor", icon: <FaCompress />, url: "/converter/Imagetools/Imagecom" },
+        { id: 702, name: "Image Edit", icon: <FaEdit />, url: "/converter/Imagetools/Imageedit" },
+      ],
+    },
+  ],
+},
 ];
 
 const filterSearchData: SidebarItem[] = [
