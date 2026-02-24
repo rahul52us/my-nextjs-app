@@ -72,7 +72,6 @@ const CVBuilder: React.FC = () => {
     }
   };
 
-  // New Handler to remove images
   const removeImage = (field: 'profileImg' | 'signatureImg') => {
     setFormData(prev => ({ ...prev, [field]: '' }));
   };
@@ -91,13 +90,23 @@ const CVBuilder: React.FC = () => {
     setFormData(prev => ({ ...prev, [category]: (prev[category] as any[]).filter((_, i) => i !== index) }));
   };
 
+  // --- Optimized PDF Function ---
   const downloadPDF = async () => {
     const element = resumeRef.current;
     if (!element) return;
-    const canvas = await html2canvas(element, { scale: 3, useCORS: true, logging: false });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+    
+    // Reduced scale from 3 to 2 for smaller file size
+    const canvas = await html2canvas(element, { 
+      scale: 2, 
+      useCORS: true, 
+      logging: false,
+      backgroundColor: "#ffffff"
+    });
+    
+    // Switched to JPEG 0.8 to dramatically reduce file size from 30MB to ~5MB
+    const imgData = canvas.toDataURL('image/jpeg', 0.8);
+    const pdf = new jsPDF('p', 'mm', 'a4', true); // Added 'true' for compression
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
     pdf.save(`${formData.fullName.replace(/\s+/g, '_')}_Professional_CV.pdf`);
   };
 
@@ -108,7 +117,7 @@ const CVBuilder: React.FC = () => {
         <VStack align="stretch" spacing={6}>
           <Box borderLeft="4px solid" borderColor="blue.500" pl={4}>
             <Heading size="md" color="gray.800" letterSpacing="tight">CV ENGINE PRO</Heading>
-            <Text fontSize="xs" color="gray.500" fontWeight="bold">v2.5 EXECUTIVE EDITION</Text>
+            <Text fontSize="xs" color="gray.500" fontWeight="bold">v2.5 EXECUTIVE EDITION (OPTIMIZED)</Text>
           </Box>
           
           <Accordion allowMultiple defaultIndex={[0]}>
@@ -122,6 +131,10 @@ const CVBuilder: React.FC = () => {
                 <VStack spacing={3} mt={2}>
                   <Input size="sm" placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value.toUpperCase()})}/>
                   <Input size="sm" placeholder="Professional Role" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}/>
+                  
+                  {/* MANUAL LOCATION INPUT ADDED HERE */}
+                  <Input size="sm" placeholder="Location (e.g. New York, NY)" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})}/>
+
                   <SimpleGrid columns={2} spacing={2} w="full">
                     <Input size="sm" type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}/>
                     <Input size="sm" type="tel" placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})}/>
@@ -283,7 +296,6 @@ const CVBuilder: React.FC = () => {
                 <Flex align="center" gap={1}><MapPin size={12} color={formData.themeColor}/> {formData.location}</Flex>
               </HStack>
             </VStack>
-            {/* Logic: Only render image if profileImg exists, else show nothing (or placeholder) */}
             {formData.profileImg && (
               <Image src={formData.profileImg} boxSize="130px" borderRadius="xl" objectFit="cover" border="4px solid" borderColor="gray.100" />
             )}
@@ -376,7 +388,6 @@ const CVBuilder: React.FC = () => {
                   ))}
                 </Box>
 
-                {/* Signature Display - only shows if exists */}
                 {formData.signatureImg && (
                   <Box mt={6} textAlign="center">
                     <Image src={formData.signatureImg} maxH="50px" mx="auto" filter="contrast(1.2) grayscale(1)"/>
