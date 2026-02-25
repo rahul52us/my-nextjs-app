@@ -4,10 +4,12 @@ import { useDropzone } from 'react-dropzone';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { useRouter, useSearchParams } from 'next/navigation';
+
 
 import {
-  Box, Button, Container, Flex, Heading, Icon, Input, 
-  Stack, Text, VStack, HStack, IconButton, Spinner, Center, 
+  Box, Button, Container, Flex, Heading, Icon, Input,
+  Stack, Text, VStack, HStack, IconButton, Spinner, Center,
   useToast, SimpleGrid, Divider, Checkbox, NumberInput, NumberInputField,
   Slider, SliderTrack, SliderFilledTrack, SliderThumb
 } from '@chakra-ui/react';
@@ -17,6 +19,9 @@ import { FaSignature, FaFont, FaFileUpload, FaRegEye, FaEraser, FaImage, FaArrow
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const ProSignatureMaker: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromCV = searchParams.get('from') === 'cv';
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'draw' | 'type' | 'upload'>('draw');
@@ -24,7 +29,7 @@ const ProSignatureMaker: React.FC = () => {
   const [uploadedSig, setUploadedSig] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
-  
+
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [scale, setScale] = useState(1);
   const [applyToAll, setApplyToAll] = useState(false);
@@ -119,30 +124,45 @@ const ProSignatureMaker: React.FC = () => {
     }
   };
   const { getRootProps: getSigProps, getInputProps: getSigInputProps } = useDropzone({
-    onDrop: onSigImageDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, multiple: false 
+    onDrop: onSigImageDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, multiple: false
   });
 
   const handleExport = async () => {
-    if (!pdfFile) return;
-    setIsProcessing(true);
     try {
       const sigDataUrl = await getSignatureImage();
       if (!sigDataUrl) throw new Error("No signature");
+
+      // ✅ If coming from CV Builder
+      if (fromCV) {
+        sessionStorage.setItem('cvSignature', sigDataUrl);
+        router.push('/converter/Cvbuilder'); // adjust if route different
+        return;
+      }
+
+      // ✅ Normal PDF signing flow
+      if (!pdfFile) return;
+
+      setIsProcessing(true);
 
       const existingBytes = await pdfFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(existingBytes);
       const pages = pdfDoc.getPages();
       const sigImage = await pdfDoc.embedPng(sigDataUrl);
 
-      const pagesToSign = applyToAll ? pages.map((_, i) => i) : [targetPage - 1];
+      const pagesToSign = applyToAll
+        ? pages.map((_, i) => i)
+        : [targetPage - 1];
 
       pagesToSign.forEach((idx) => {
         const page = pages[idx];
         const { width, height } = page.getSize();
         const scaleFactor = width / 600;
+
         const pdfX = position.x * scaleFactor;
-        const pdfY = height - (position.y * scaleFactor) - (75 * scale * scaleFactor);
-        
+        const pdfY =
+          height - (position.y * scaleFactor) -
+          (75 * scale * scaleFactor);
+
         page.drawImage(sigImage, {
           x: pdfX,
           y: pdfY,
@@ -152,18 +172,16 @@ const ProSignatureMaker: React.FC = () => {
       });
 
       const pdfBytes = await pdfDoc.save();
-      
-      /** * FIX: We wrap the results in a new Uint8Array. 
-       * This forces the type to 'Uint8Array' which is compatible with BlobPart,
-       * avoiding the SharedArrayBuffer incompatibility error.
-       */
-      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const blob = new Blob([new Uint8Array(pdfBytes)], {
+        type: 'application/pdf',
+      });
+
       saveAs(blob, `Signed_${pdfFile.name}`);
-      
-      toast({ title: "Document Signed", status: "success" });
     } catch (err) {
       toast({ title: "Export Failed", status: "error" });
-    } finally { setIsProcessing(false); }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const [liveSig, setLiveSig] = useState<string | null>(null);
@@ -175,10 +193,10 @@ const ProSignatureMaker: React.FC = () => {
     <Box minH="100vh" bg="gray.50" py={8} px={4}>
       <Container maxW="container.xl">
         <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
-          
+
           <Box gridColumn={{ lg: "span 4" }} p={6} bg="white" rounded="3xl" shadow="sm" border="1px" borderColor="gray.200">
             <VStack align="stretch" spacing={6}>
-              <Heading size="md"><Icon as={FaSignature} color="blue.500" mr={2}/> Signature Maker</Heading>
+              <Heading size="md"><Icon as={FaSignature} color="blue.500" mr={2} /> Signature Maker</Heading>
 
               <HStack bg="gray.100" p={1} rounded="xl">
                 <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
@@ -189,7 +207,7 @@ const ProSignatureMaker: React.FC = () => {
               {activeTab === 'draw' && (
                 <Box border="2px solid" borderColor="gray.100" rounded="2xl" bg="gray.50" position="relative">
                   <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
-                  <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} onClick={() => canvasRef.current?.getContext('2d')?.clearRect(0,0,400,200)} />
+                  <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} onClick={() => canvasRef.current?.getContext('2d')?.clearRect(0, 0, 400, 200)} />
                 </Box>
               )}
 
@@ -224,8 +242,16 @@ const ProSignatureMaker: React.FC = () => {
                 )}
               </VStack>
 
-              <Button colorScheme="blue" size="lg" h="60px" rounded="2xl" onClick={handleExport} isLoading={isProcessing} leftIcon={<DownloadIcon />}>
-                Export PDF
+              <Button
+                colorScheme="blue"
+                size="lg"
+                h="60px"
+                rounded="2xl"
+                onClick={handleExport}
+                isLoading={isProcessing}
+                leftIcon={<DownloadIcon />}
+              >
+                {fromCV ? "Save Signature" : "Export PDF"}
               </Button>
 
               <Box {...getRootProps()} cursor="pointer" p={3} border="1px solid" borderColor="gray.100" rounded="xl" textAlign="center">
@@ -244,21 +270,21 @@ const ProSignatureMaker: React.FC = () => {
                       {Array.from({ length: numPages }).map((_, i) => (
                         <Box key={i} shadow="2xl" bg="white" position="relative" overflow="hidden">
                           <Page pageNumber={i + 1} width={600} renderTextLayer={false} renderAnnotationLayer={false} />
-                          
+
                           {(applyToAll || targetPage === i + 1) && (
-                            <Box 
-                              position="absolute" 
-                              top={`${position.y}px`} 
-                              left={`${position.x}px`} 
-                              zIndex={100} 
-                              cursor="move" 
+                            <Box
+                              position="absolute"
+                              top={`${position.y}px`}
+                              left={`${position.x}px`}
+                              zIndex={100}
+                              cursor="move"
                               onMouseDown={handleMouseDown}
-                              border="1px dashed" 
+                              border="1px dashed"
                               borderColor="blue.400"
                               bg="whiteAlpha.400"
                             >
                               {liveSig && <Box as="img" src={liveSig} width={`${150 * scale}px`} height={`${75 * scale}px`} pointerEvents="none" opacity={0.8} />}
-                              <Icon as={FaArrowsAlt} position="absolute" top="-10px" left="-10px" color="blue.500" bg="white" rounded="full" p={1}/>
+                              <Icon as={FaArrowsAlt} position="absolute" top="-10px" left="-10px" color="blue.500" bg="white" rounded="full" p={1} />
                             </Box>
                           )}
                         </Box>

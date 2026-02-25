@@ -135,6 +135,12 @@ const sidebarData: SidebarItem[] = [
       url: "/converter/Cvbuilder",
     },
     {
+      id: 94,
+      name: "Image Extractor",
+      icon: <FaImage />,
+      url: "/converter/Imageextract",
+    },
+    {
       id: 91,
       name: "PDF Tools",
       icon: <FaFilePdf />,
@@ -148,6 +154,9 @@ const sidebarData: SidebarItem[] = [
         { id: 614, name: "PDF Split", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsplit" },
         { id: 615, name: "PDF Rotate", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfrotate" },
         { id: 616, name: "PDF Sign", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfsign" },
+        { id: 617, name: "PDF page Numbering", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfpageno" },
+        { id: 618, name: "PDF Page Rearrange", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfpagerearange" },
+        { id: 619, name: "PDF Deffrence", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfdeffrence" },
       ],
     },
     {

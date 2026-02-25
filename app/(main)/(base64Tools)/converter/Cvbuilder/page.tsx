@@ -1,19 +1,21 @@
 "use client";
-import React, { useState, useRef, ChangeEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
 import {
-  Box, Button, Flex, FormControl, FormLabel, Heading, Input, Stack, Textarea, VStack, 
-  Icon, Text, SimpleGrid, IconButton, Table, Tbody, Tr, Td, Badge, Progress, 
+  Box, Button, Flex, FormControl, FormLabel, Heading, Input, Stack, Textarea, VStack,
+  Icon, Text, SimpleGrid, IconButton, Table, Tbody, Tr, Td, Badge, Progress,
   Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon,
-  Select, Image, HStack, Center, Divider, NumberInput, NumberInputField, 
+  Select, Image, HStack, Center, Divider, NumberInput, NumberInputField,
   NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, Thead, Th,
   Slider, SliderTrack, SliderFilledTrack, SliderThumb
 } from '@chakra-ui/react';
-import { 
-  Download, Plus, Trash2, Briefcase, GraduationCap, 
+import {
+  Download, Plus, Trash2, Briefcase, GraduationCap,
   Mail, Phone, MapPin, Award, User, Type, Camera, PenTool, Layout, Star, Calendar, Languages, Zap
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useRouter } from 'next/navigation';
+
 
 // --- Types ---
 interface Achievement { title: string; date: string; issuer: string; }
@@ -24,20 +26,21 @@ interface Skill { name: string; level: number; }
 interface Language { name: string; level: string; }
 
 interface CVData {
-  fullName: string; role: string; email: string; phone: string; 
+  fullName: string; role: string; email: string; phone: string;
   location: string; summary: string;
   profileImg: string; signatureImg: string;
-  experiences: Experience[]; 
-  educations: Education[]; 
+  experiences: Experience[];
+  educations: Education[];
   achievements: Achievement[];
   customEntries: CustomEntry[];
   skills: Skill[];
-  languages: Language[]; 
+  languages: Language[];
   themeColor: string;
   fontFamily: string;
 }
 
 const CVBuilder: React.FC = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState<CVData>({
     fullName: 'JONATHAN WICK',
     role: 'Lead Systems Architect',
@@ -55,12 +58,26 @@ const CVBuilder: React.FC = () => {
     achievements: [{ title: 'Innovator of the Year', date: '2024-05', issuer: 'Tech Corp' }],
     customEntries: [{ key: 'Interests', value: 'Cybersecurity, Restoration, Philosophy' }],
     skills: [{ name: 'TypeScript', level: 95 }, { name: 'Cloud Architecture', level: 90 }],
-    languages: [{ name: 'English', level: 'Native' }, { name: 'Russian', level: 'Fluent' }], 
+    languages: [{ name: 'English', level: 'Native' }, { name: 'Russian', level: 'Fluent' }],
     themeColor: '#1A365D',
     fontFamily: 'Inter, sans-serif',
   });
 
   const resumeRef = useRef<HTMLDivElement>(null);
+
+  // 🔥 Receive signature from Signature Tool
+  useEffect(() => {
+    const savedSignature = sessionStorage.getItem('cvSignature');
+
+    if (savedSignature) {
+      setFormData(prev => ({
+        ...prev,
+        signatureImg: savedSignature
+      }));
+
+      sessionStorage.removeItem('cvSignature');
+    }
+  }, []);
 
   // --- Handlers ---
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>, field: 'profileImg' | 'signatureImg') => {
@@ -94,15 +111,15 @@ const CVBuilder: React.FC = () => {
   const downloadPDF = async () => {
     const element = resumeRef.current;
     if (!element) return;
-    
+
     // Reduced scale from 3 to 2 for smaller file size
-    const canvas = await html2canvas(element, { 
-      scale: 2, 
-      useCORS: true, 
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
       logging: false,
       backgroundColor: "#ffffff"
     });
-    
+
     // Switched to JPEG 0.8 to dramatically reduce file size from 30MB to ~5MB
     const imgData = canvas.toDataURL('image/jpeg', 0.8);
     const pdf = new jsPDF('p', 'mm', 'a4', true); // Added 'true' for compression
@@ -119,7 +136,7 @@ const CVBuilder: React.FC = () => {
             <Heading size="md" color="gray.800" letterSpacing="tight">CV ENGINE PRO</Heading>
             <Text fontSize="xs" color="gray.500" fontWeight="bold">v2.5 EXECUTIVE EDITION (OPTIMIZED)</Text>
           </Box>
-          
+
           <Accordion allowMultiple defaultIndex={[0]}>
             {/* PERSONAL & DESIGN */}
             <AccordionItem border="none" mb={4}>
@@ -129,41 +146,45 @@ const CVBuilder: React.FC = () => {
               </AccordionButton>
               <AccordionPanel pb={4}>
                 <VStack spacing={3} mt={2}>
-                  <Input size="sm" placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value.toUpperCase()})}/>
-                  <Input size="sm" placeholder="Professional Role" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}/>
-                  
+                  <Input size="sm" placeholder="Full Name" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value.toUpperCase() })} />
+                  <Input size="sm" placeholder="Professional Role" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} />
+
                   {/* MANUAL LOCATION INPUT ADDED HERE */}
-                  <Input size="sm" placeholder="Location (e.g. New York, NY)" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})}/>
+                  <Input size="sm" placeholder="Location (e.g. New York, NY)" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
 
                   <SimpleGrid columns={2} spacing={2} w="full">
-                    <Input size="sm" type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}/>
-                    <Input size="sm" type="tel" placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})}/>
+                    <Input size="sm" type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                    <Input size="sm" type="tel" placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                   </SimpleGrid>
-                  
+
                   <Divider />
-                  
+
                   <SimpleGrid columns={2} spacing={4} w="full">
                     <FormControl>
                       <FormLabel fontSize="10px" fontWeight="bold">PROFILE IMAGE</FormLabel>
                       <HStack>
-                        <Button as="label" size="xs" w="full" cursor="pointer" leftIcon={<Camera size={14}/>}>
+                        <Button as="label" size="xs" w="full" cursor="pointer" leftIcon={<Camera size={14} />}>
                           {formData.profileImg ? 'Change' : 'Upload'}
                           <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'profileImg')} />
                         </Button>
                         {formData.profileImg && (
-                          <IconButton aria-label="Remove Image" icon={<Trash2 size={14}/>} size="xs" colorScheme="red" variant="ghost" onClick={() => removeImage('profileImg')} />
+                          <IconButton aria-label="Remove Image" icon={<Trash2 size={14} />} size="xs" colorScheme="red" variant="ghost" onClick={() => removeImage('profileImg')} />
                         )}
                       </HStack>
                     </FormControl>
                     <FormControl>
                       <FormLabel fontSize="10px" fontWeight="bold">SIGNATURE</FormLabel>
                       <HStack>
-                        <Button as="label" size="xs" w="full" cursor="pointer" leftIcon={<PenTool size={14}/>}>
-                          {formData.signatureImg ? 'Change' : 'Upload'}
-                          <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'signatureImg')} />
+                        <Button
+                          size="xs"
+                          w="full"
+                          leftIcon={<PenTool size={14} />}
+                          onClick={() => router.push('/converter/PDFtools/Pdfsign?from=cv')}
+                        >
+                          {formData.signatureImg ? 'Change Signature' : 'Create Signature'}
                         </Button>
                         {formData.signatureImg && (
-                          <IconButton aria-label="Remove Signature" icon={<Trash2 size={14}/>} size="xs" colorScheme="red" variant="ghost" onClick={() => removeImage('signatureImg')} />
+                          <IconButton aria-label="Remove Signature" icon={<Trash2 size={14} />} size="xs" colorScheme="red" variant="ghost" onClick={() => removeImage('signatureImg')} />
                         )}
                       </HStack>
                     </FormControl>
@@ -172,11 +193,11 @@ const CVBuilder: React.FC = () => {
                   <SimpleGrid columns={2} spacing={4} w="full">
                     <FormControl>
                       <FormLabel fontSize="10px" fontWeight="bold">THEME COLOR</FormLabel>
-                      <Input type="color" size="sm" h="35px" value={formData.themeColor} onChange={(e) => setFormData({...formData, themeColor: e.target.value})}/>
+                      <Input type="color" size="sm" h="35px" value={formData.themeColor} onChange={(e) => setFormData({ ...formData, themeColor: e.target.value })} />
                     </FormControl>
                     <FormControl>
                       <FormLabel fontSize="10px" fontWeight="bold">FONT STYLE</FormLabel>
-                      <Select size="sm" value={formData.fontFamily} onChange={(e) => setFormData({...formData, fontFamily: e.target.value})}>
+                      <Select size="sm" value={formData.fontFamily} onChange={(e) => setFormData({ ...formData, fontFamily: e.target.value })}>
                         <option value="Inter, sans-serif">Modern Sans</option>
                         <option value="'Times New Roman', serif">Classic Serif</option>
                         <option value="'Courier New', monospace">Technical Mono</option>
@@ -191,19 +212,19 @@ const CVBuilder: React.FC = () => {
             <AccordionItem border="none" mb={4}>
               <AccordionButton bg="gray.50" borderRadius="md">
                 <HStack flex="1"><Icon as={Briefcase} /><Text fontWeight="bold" fontSize="sm">Experience</Text></HStack>
-                <IconButton aria-label="Add" icon={<Plus size={14}/>} size="xs" colorScheme="blue" onClick={(e) => { e.stopPropagation(); addItem('experiences', { company: '', role: '', start: '', end: '', desc: '' }); }} />
+                <IconButton aria-label="Add" icon={<Plus size={14} />} size="xs" colorScheme="blue" onClick={(e) => { e.stopPropagation(); addItem('experiences', { company: '', role: '', start: '', end: '', desc: '' }); }} />
               </AccordionButton>
               <AccordionPanel>
                 {formData.experiences.map((exp, i) => (
                   <VStack key={i} p={3} bg="blue.50" mb={3} borderRadius="md" spacing={2} pos="relative" border="1px solid" borderColor="blue.100">
-                    <IconButton aria-label="Remove" pos="absolute" right={-2} top={-2} size="xs" colorScheme="red" borderRadius="full" icon={<Trash2 size={12}/>} onClick={() => removeItem('experiences', i)}/>
-                    <Input size="xs" bg="white" placeholder="Company" value={exp.company} onChange={(e) => updateItem('experiences', i, 'company', e.target.value)}/>
-                    <Input size="xs" bg="white" placeholder="Role" value={exp.role} onChange={(e) => updateItem('experiences', i, 'role', e.target.value)}/>
+                    <IconButton aria-label="Remove" pos="absolute" right={-2} top={-2} size="xs" colorScheme="red" borderRadius="full" icon={<Trash2 size={12} />} onClick={() => removeItem('experiences', i)} />
+                    <Input size="xs" bg="white" placeholder="Company" value={exp.company} onChange={(e) => updateItem('experiences', i, 'company', e.target.value)} />
+                    <Input size="xs" bg="white" placeholder="Role" value={exp.role} onChange={(e) => updateItem('experiences', i, 'role', e.target.value)} />
                     <HStack w="full">
-                      <Input size="xs" bg="white" type="month" value={exp.start} onChange={(e) => updateItem('experiences', i, 'start', e.target.value)}/>
-                      <Input size="xs" bg="white" type="month" value={exp.end} onChange={(e) => updateItem('experiences', i, 'end', e.target.value)}/>
+                      <Input size="xs" bg="white" type="month" value={exp.start} onChange={(e) => updateItem('experiences', i, 'start', e.target.value)} />
+                      <Input size="xs" bg="white" type="month" value={exp.end} onChange={(e) => updateItem('experiences', i, 'end', e.target.value)} />
                     </HStack>
-                    <Textarea size="xs" bg="white" placeholder="Key Responsibilities..." value={exp.desc} onChange={(e) => updateItem('experiences', i, 'desc', e.target.value)}/>
+                    <Textarea size="xs" bg="white" placeholder="Key Responsibilities..." value={exp.desc} onChange={(e) => updateItem('experiences', i, 'desc', e.target.value)} />
                   </VStack>
                 ))}
               </AccordionPanel>
@@ -219,26 +240,26 @@ const CVBuilder: React.FC = () => {
                 <Text fontSize="10px" fontWeight="bold" mb={2} color="gray.500">TECHNICAL SKILLS</Text>
                 {formData.skills.map((skill, i) => (
                   <HStack key={i} mb={2}>
-                    <Input size="xs" placeholder="Skill" value={skill.name} onChange={(e) => updateItem('skills', i, 'name', e.target.value)}/>
+                    <Input size="xs" placeholder="Skill" value={skill.name} onChange={(e) => updateItem('skills', i, 'name', e.target.value)} />
                     <NumberInput size="xs" max={100} min={0} w="100px" value={skill.level} onChange={(_, val) => updateItem('skills', i, 'level', val)}>
                       <NumberInputField />
                     </NumberInput>
-                    <IconButton aria-label="Delete" icon={<Trash2 size={12}/>} size="xs" onClick={() => removeItem('skills', i)} />
+                    <IconButton aria-label="Delete" icon={<Trash2 size={12} />} size="xs" onClick={() => removeItem('skills', i)} />
                   </HStack>
                 ))}
-                <Button size="xs" leftIcon={<Plus size={12}/>} onClick={() => addItem('skills', { name: '', level: 50 })} mb={4}>Add Skill</Button>
+                <Button size="xs" leftIcon={<Plus size={12} />} onClick={() => addItem('skills', { name: '', level: 50 })} mb={4}>Add Skill</Button>
 
-                <Divider mb={4}/>
-                
+                <Divider mb={4} />
+
                 <Text fontSize="10px" fontWeight="bold" mb={2} color="gray.500">LANGUAGES</Text>
                 {formData.languages.map((lang, i) => (
                   <HStack key={i} mb={2}>
-                    <Input size="xs" placeholder="Language" value={lang.name} onChange={(e) => updateItem('languages', i, 'name', e.target.value)}/>
-                    <Input size="xs" placeholder="Level (e.g. Native)" value={lang.level} onChange={(e) => updateItem('languages', i, 'level', e.target.value)}/>
-                    <IconButton aria-label="Delete" icon={<Trash2 size={12}/>} size="xs" onClick={() => removeItem('languages', i)} />
+                    <Input size="xs" placeholder="Language" value={lang.name} onChange={(e) => updateItem('languages', i, 'name', e.target.value)} />
+                    <Input size="xs" placeholder="Level (e.g. Native)" value={lang.level} onChange={(e) => updateItem('languages', i, 'level', e.target.value)} />
+                    <IconButton aria-label="Delete" icon={<Trash2 size={12} />} size="xs" onClick={() => removeItem('languages', i)} />
                   </HStack>
                 ))}
-                <Button size="xs" leftIcon={<Plus size={12}/>} onClick={() => addItem('languages', { name: '', level: '' })}>Add Language</Button>
+                <Button size="xs" leftIcon={<Plus size={12} />} onClick={() => addItem('languages', { name: '', level: '' })}>Add Language</Button>
               </AccordionPanel>
             </AccordionItem>
 
@@ -246,19 +267,19 @@ const CVBuilder: React.FC = () => {
             <AccordionItem border="none" mb={4}>
               <AccordionButton bg="gray.50" borderRadius="md">
                 <HStack flex="1"><Icon as={GraduationCap} /><Text fontWeight="bold" fontSize="sm">Education History</Text></HStack>
-                <IconButton aria-label="Add" icon={<Plus size={14}/>} size="xs" colorScheme="purple" onClick={(e) => { e.stopPropagation(); addItem('educations', { school: '', degree: '', year: '', grade: '' }); }} />
+                <IconButton aria-label="Add" icon={<Plus size={14} />} size="xs" colorScheme="purple" onClick={(e) => { e.stopPropagation(); addItem('educations', { school: '', degree: '', year: '', grade: '' }); }} />
               </AccordionButton>
               <AccordionPanel>
                 {formData.educations.map((edu, i) => (
                   <VStack key={i} p={3} bg="purple.50" mb={3} borderRadius="md" spacing={2} pos="relative">
-                    <IconButton aria-label="Remove" pos="absolute" right={-2} top={-2} size="xs" colorScheme="red" borderRadius="full" icon={<Trash2 size={12}/>} onClick={() => removeItem('educations', i)}/>
-                    <Input size="xs" bg="white" placeholder="Institution" value={edu.school} onChange={(e) => updateItem('educations', i, 'school', e.target.value)}/>
-                    <Input size="xs" bg="white" placeholder="Degree / Certification" value={edu.degree} onChange={(e) => updateItem('educations', i, 'degree', e.target.value)}/>
+                    <IconButton aria-label="Remove" pos="absolute" right={-2} top={-2} size="xs" colorScheme="red" borderRadius="full" icon={<Trash2 size={12} />} onClick={() => removeItem('educations', i)} />
+                    <Input size="xs" bg="white" placeholder="Institution" value={edu.school} onChange={(e) => updateItem('educations', i, 'school', e.target.value)} />
+                    <Input size="xs" bg="white" placeholder="Degree / Certification" value={edu.degree} onChange={(e) => updateItem('educations', i, 'degree', e.target.value)} />
                     <HStack w="full">
                       <NumberInput size="xs" bg="white" w="full" min={1950} max={2100} value={edu.year} onChange={(_, val) => updateItem('educations', i, 'year', val.toString())}>
                         <NumberInputField placeholder="Year" />
                       </NumberInput>
-                      <Input size="xs" bg="white" placeholder="Grade/GPA" value={edu.grade} onChange={(e) => updateItem('educations', i, 'grade', e.target.value)}/>
+                      <Input size="xs" bg="white" placeholder="Grade/GPA" value={edu.grade} onChange={(e) => updateItem('educations', i, 'grade', e.target.value)} />
                     </HStack>
                   </VStack>
                 ))}
@@ -266,7 +287,7 @@ const CVBuilder: React.FC = () => {
             </AccordionItem>
           </Accordion>
 
-          <Button colorScheme="blue" size="lg" leftIcon={<Download/>} onClick={downloadPDF} py={8} fontSize="md" fontWeight="black" boxShadow="xl" _hover={{ transform: 'translateY(-2px)' }}>
+          <Button colorScheme="blue" size="lg" leftIcon={<Download />} onClick={downloadPDF} py={8} fontSize="md" fontWeight="black" boxShadow="xl" _hover={{ transform: 'translateY(-2px)' }}>
             GENERATE PROFESSIONAL PDF
           </Button>
         </VStack>
@@ -274,13 +295,13 @@ const CVBuilder: React.FC = () => {
 
       {/* PREVIEW PANEL */}
       <Box flex={1} bg="gray.800" overflowY="auto" display="flex" justifyContent="center" alignItems="flex-start" pt="40px" pb="100px">
-        <Box 
-          ref={resumeRef} 
-          w="210mm" 
-          minH="297mm" 
-          bg="white" 
-          p="20mm" 
-          boxShadow="dark-lg" 
+        <Box
+          ref={resumeRef}
+          w="210mm"
+          minH="297mm"
+          bg="white"
+          p="20mm"
+          boxShadow="dark-lg"
           fontFamily={formData.fontFamily}
           position="relative"
           flexShrink={0}
@@ -291,9 +312,9 @@ const CVBuilder: React.FC = () => {
               <Heading size="2xl" color={formData.themeColor} letterSpacing="-2px" lineHeight="1">{formData.fullName}</Heading>
               <Text fontSize="xl" color="gray.500" fontWeight="300" letterSpacing="3px" textTransform="uppercase">{formData.role}</Text>
               <HStack spacing={5} mt={4} fontSize="xs" fontWeight="bold" color="gray.600">
-                <Flex align="center" gap={1}><Mail size={12} color={formData.themeColor}/> {formData.email}</Flex>
-                <Flex align="center" gap={1}><Phone size={12} color={formData.themeColor}/> {formData.phone}</Flex>
-                <Flex align="center" gap={1}><MapPin size={12} color={formData.themeColor}/> {formData.location}</Flex>
+                <Flex align="center" gap={1}><Mail size={12} color={formData.themeColor} /> {formData.email}</Flex>
+                <Flex align="center" gap={1}><Phone size={12} color={formData.themeColor} /> {formData.phone}</Flex>
+                <Flex align="center" gap={1}><MapPin size={12} color={formData.themeColor} /> {formData.location}</Flex>
               </HStack>
             </VStack>
             {formData.profileImg && (
@@ -301,7 +322,7 @@ const CVBuilder: React.FC = () => {
             )}
           </Flex>
 
-          <Divider mb={8} borderColor={formData.themeColor} borderBottomWidth="3px" opacity={1}/>
+          <Divider mb={8} borderColor={formData.themeColor} borderBottomWidth="3px" opacity={1} />
 
           <SimpleGrid columns={3} spacing={12}>
             {/* Main Content (Left 2/3) */}
@@ -363,7 +384,7 @@ const CVBuilder: React.FC = () => {
                         <Text>{s.name}</Text>
                         <Text>{s.level}%</Text>
                       </Flex>
-                      <Progress value={s.level} size="xs" colorScheme="blue" bg="gray.50" borderRadius="full" h="4px"/>
+                      <Progress value={s.level} size="xs" colorScheme="blue" bg="gray.50" borderRadius="full" h="4px" />
                     </Box>
                   ))}
                 </Box>
@@ -390,8 +411,8 @@ const CVBuilder: React.FC = () => {
 
                 {formData.signatureImg && (
                   <Box mt={6} textAlign="center">
-                    <Image src={formData.signatureImg} maxH="50px" mx="auto" filter="contrast(1.2) grayscale(1)"/>
-                    <Box h="1px" bg="gray.200" w="80%" mx="auto" mt={1}/>
+                    <Image src={formData.signatureImg} maxH="50px" mx="auto" filter="contrast(1.2) grayscale(1)" />
+                    <Box h="1px" bg="gray.200" w="80%" mx="auto" mt={1} />
                     <Text fontSize="9px" color="gray.400" mt={1} fontWeight="bold">Digitally Certified</Text>
                   </Box>
                 )}
