@@ -25,6 +25,7 @@ import {
   FaFileExcel,
   FaEdit,
 } from "react-icons/fa";
+import { FaRegCircleXmark, FaRepeat } from "react-icons/fa6";
 
 interface SidebarItem {
   id: number;
@@ -141,6 +142,12 @@ const sidebarData: SidebarItem[] = [
       url: "/converter/Imageextract",
     },
     {
+      id: 95,
+      name: "Regex Tester",
+      icon: <FaRepeat />,
+      url: "/converter/Regextool",
+    },
+    {
       id: 91,
       name: "PDF Tools",
       icon: <FaFilePdf />,
@@ -157,6 +164,7 @@ const sidebarData: SidebarItem[] = [
         { id: 617, name: "PDF page Numbering", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfpageno" },
         { id: 618, name: "PDF Page Rearrange", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfpagerearange" },
         { id: 619, name: "PDF Deffrence", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfdeffrence" },
+        { id: 620, name: "PDF Watermark", icon: <FaFilePdf />, url: "/converter/PDFtools/Pdfwatermark" },
       ],
     },
     {
@@ -167,6 +175,7 @@ const sidebarData: SidebarItem[] = [
       children: [
         { id: 701, name: "Image Compressor", icon: <FaCompress />, url: "/converter/Imagetools/Imagecom" },
         { id: 702, name: "Image Edit", icon: <FaEdit />, url: "/converter/Imagetools/Imageedit" },
+        { id: 703, name: "Image Type Converter", icon: <FaImage />, url: "/converter/Imagetools/Imagetypeconvert" },
       ],
     },
   ],
