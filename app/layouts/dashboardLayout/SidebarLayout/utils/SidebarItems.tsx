@@ -24,6 +24,7 @@ import {
   FaFilePdf,
   FaFileExcel,
   FaEdit,
+  FaChartBar,
 } from "react-icons/fa";
 import { FaRegCircleXmark, FaRepeat } from "react-icons/fa6";
 
@@ -153,6 +154,17 @@ const sidebarData: SidebarItem[] = [
         name: "Regex Tester",
         icon: <FaRepeat />,
         url: "/converter/Regextool",
+      },
+      {
+        id: 96,
+        name: "Code Formatter",
+        icon: <FaCode />,
+        url: "/converter/Codeformatter",
+      },
+      { id: 97,
+        name:  "Data Visualizer",
+        icon: <FaChartBar />,
+        url: "/converter/Datavisual",
       },
       {
         id: 91,

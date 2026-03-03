@@ -76,6 +76,7 @@
     "react-slick": "^0.30.2",
     "react-spreadsheet": "^0.10.1",
     "react-to-print": "^3.1.1",
+    "recharts": "^3.7.0",
     "sass": "^1.82.0",
     "slick-carousel": "^1.8.1",
     "styled-components": "^6.1.16",
