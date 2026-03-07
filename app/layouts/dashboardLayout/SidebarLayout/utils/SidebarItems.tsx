@@ -25,6 +25,7 @@ import {
   FaFileExcel,
   FaEdit,
   FaChartBar,
+  FaRobot,
 } from "react-icons/fa";
 import { FaRegCircleXmark, FaRepeat } from "react-icons/fa6";
 
@@ -165,6 +166,11 @@ const sidebarData: SidebarItem[] = [
         name:  "Data Visualizer",
         icon: <FaChartBar />,
         url: "/converter/Datavisual",
+      },
+      { id: 98,
+        name:  "AI Chatbot",
+        icon: <FaRobot />,
+        url: "/converter/Aichatboat",
       },
       {
         id: 91,
