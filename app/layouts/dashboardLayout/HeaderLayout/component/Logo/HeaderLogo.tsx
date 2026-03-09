@@ -20,6 +20,7 @@ import {
   DrawerBody,
   VStack,
   Divider,
+  Icon
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -60,6 +61,7 @@ const HeaderLogo = observer(() => {
   const hoverBg = useColorModeValue("whiteAlpha.200", "whiteAlpha.100");
   const menuBg = useColorModeValue("white", "gray.800");
   const mobileLinkHover = useColorModeValue("blue.50", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "whiteAlpha.300");
 
   // ✅ Close drawer + desktop menu on route change
   useEffect(() => {
@@ -216,90 +218,124 @@ const HeaderLogo = observer(() => {
       )}
 
       {/* MOBILE DRAWER */}
-      <Drawer isOpen={isOpen} placement="right" onClose={onClose}>
-        <DrawerOverlay />
-        <DrawerContent bg={menuBg}>
-          <HStack p={4} justify="space-between">
-            <Text fontWeight="bold">Navigation</Text>
+      {/* MOBILE DRAWER */}
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="sm">
+        <DrawerOverlay backdropFilter="blur(4px)" />
+        <DrawerContent bg={menuBg} borderLeftRadius="2xl">
+          <HStack p={6} justify="space-between" align="center">
+            <Text fontSize="xl" fontWeight="800" letterSpacing="-0.02em">
+              Navigation
+            </Text>
             <IconButton
+              size="sm"
+              variant="ghost"
               aria-label="Close"
               icon={<CloseIcon boxSize={3} />}
               onClick={onClose}
+              borderRadius="full"
             />
           </HStack>
 
-          <DrawerBody p={0}>
-            <VStack align="stretch" spacing={0}>
+          <DrawerBody px={2} pb={8}>
+            <VStack align="stretch" spacing={1}>
+              {/* HOME LINK */}
               <Box
                 as={Link}
                 href="/"
-                p={4}
+                mx={2}
+                p={3}
+                borderRadius="xl"
                 onClick={onClose}
+                bg={pathname === "/" ? mobileLinkHover : "transparent"}
                 _hover={{ bg: mobileLinkHover }}
+                transition="0.2s"
               >
-                <HStack>
-                  <BiHomeAlt />
-                  <Text>Home</Text>
+                <HStack spacing={3}>
+                  <Icon as={BiHomeAlt} boxSize={5} color={pathname === "/" ? accentColor : "inherit"} />
+                  <Text fontWeight={pathname === "/" ? "700" : "500"}>Home</Text>
                 </HStack>
               </Box>
 
-              <Divider />
+              <Divider my={4} opacity={0.5} mx={4} w="auto" />
 
+              {/* DYNAMIC SIDEBAR DATA */}
               {(sidebarData as SidebarItem[]).map((item) => (
-                <Box key={item.id}>
+                <Box key={item.id} mb={4}>
                   <Text
-                    px={4}
-                    py={2}
-                    fontSize="xs"
-                    fontWeight="bold"
+                    px={5}
+                    mb={2}
+                    fontSize="11px"
+                    fontWeight="800"
                     textTransform="uppercase"
-                    color={themeConfig.colors.brand[300]}
+                    letterSpacing="wider"
+                    color={accentColor}
+                    opacity={0.8}
                   >
                     {item.name}
                   </Text>
 
-                  {item.children?.map((child) =>
-                    child.children ? (
+                  <VStack align="stretch" spacing={1}>
+                    {item.children?.map((child) => (
                       <Box key={child.id}>
-                        <Text px={6} py={2} fontWeight="600">
-                          {child.name}
-                        </Text>
+                        {child.children ? (
+                          <Box mb={2}>
+                            {/* Nested Group Label */}
+                            <HStack px={5} py={2} spacing={3} opacity={0.7}>
+                              {child.icon && React.cloneElement(child.icon as React.ReactElement, { size: 18 })}
+                              <Text fontSize="sm" fontWeight="700">
+                                {child.name}
+                              </Text>
+                            </HStack>
 
-                        {child.children.map((nested) => (
+                            {/* Nested Children (Sub-in-Sub) */}
+                            <VStack align="stretch" spacing={1} mt={1} ml={4} borderLeft="2px solid" borderColor={borderColor}>
+                              {child.children.map((nested) => (
+                                <Box
+                                  key={nested.id}
+                                  as={Link}
+                                  href={nested.url || "#"}
+                                  mx={2}
+                                  p={2}
+                                  pl={6}
+                                  borderRadius="lg"
+                                  onClick={onClose}
+                                  _hover={{ bg: mobileLinkHover }}
+                                  bg={pathname === nested.url ? mobileLinkHover : "transparent"}
+                                >
+                                  <HStack spacing={3}>
+                                    {nested.icon}
+                                    <Text fontSize="sm" fontWeight={pathname === nested.url ? "700" : "500"}>
+                                      {nested.name}
+                                    </Text>
+                                  </HStack>
+                                </Box>
+                              ))}
+                            </VStack>
+                          </Box>
+                        ) : (
+                          /* Standard Item */
                           <Box
-                            key={nested.id}
                             as={Link}
-                            href={nested.url || "#"}
+                            href={child.url || "#"}
+                            mx={2}
                             p={3}
-                            pl={10}
+                            borderRadius="xl"
                             onClick={onClose}
                             _hover={{ bg: mobileLinkHover }}
+                            bg={pathname === child.url ? mobileLinkHover : "transparent"}
+                            transition="0.2s"
                           >
-                            <HStack>
-                              {nested.icon}
-                              <Text>{nested.name}</Text>
+                            <HStack spacing={3}>
+                              {child.icon && React.cloneElement(child.icon as React.ReactElement, { size: 20 })}
+                              <Text fontWeight={pathname === child.url ? "700" : "500"}>
+                                {child.name}
+                              </Text>
                             </HStack>
                           </Box>
-                        ))}
+                        )}
                       </Box>
-                    ) : (
-                      <Box
-                        key={child.id}
-                        as={Link}
-                        href={child.url || "#"}
-                        p={3}
-                        pl={8}
-                        onClick={onClose}
-                        _hover={{ bg: mobileLinkHover }}
-                      >
-                        <HStack>
-                          {child.icon}
-                          <Text>{child.name}</Text>
-                        </HStack>
-                      </Box>
-                    )
-                  )}
-                  <Divider />
+                    ))}
+                  </VStack>
                 </Box>
               ))}
             </VStack>
