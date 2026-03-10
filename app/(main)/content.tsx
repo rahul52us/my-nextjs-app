@@ -181,13 +181,13 @@ export default function HomeContent() {
                     letterSpacing="tighter" 
                     lineHeight="1.1"
                 >
-                    Base64 <br />
+                    Powerful Online <br />
                     <Text 
                         as="span" 
                         bgGradient="linear(to-br, blue.400, blue.600)" 
                         bgClip="text"
                     >
-                        Encoder & Decoder
+                        Tools for Developers
                     </Text>
                 </Heading>
                 
@@ -198,7 +198,8 @@ export default function HomeContent() {
                     fontWeight="medium"
                     lineHeight="tall"
                 >
-                    The gold standard for binary-to-text conversion. 
+                    Convert files, process images, encode text,
+                    and use powerful utilities directly in your browser.
                     <Text as="span" color={useColorModeValue("gray.800", "white")}> Built for developers who value security, speed, and privacy.</Text>
                 </Text>
             </VStack>
@@ -302,7 +303,7 @@ export default function HomeContent() {
 </Box>
 
                 {/* --- Converter Workspace --- */}
-                <Grid templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }} gap={8}>
+                {/* <Grid templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }} gap={8}>
                     <GridItem colSpan={{ base: 1, lg: 2 }}>
                         <Box bg={cardBg} p={8} borderRadius="2xl" border="1px solid" borderColor={borderColor} shadow="xl">
                             <Flex justify="space-between" align="center" mb={6}>
@@ -355,7 +356,7 @@ export default function HomeContent() {
                             </Box>
                         </VStack>
                     </GridItem>
-                </Grid>
+                </Grid> */}
 
                 {/* --- FEATURED IMAGE TOOLS CARD --- */}
                 <MotionBox
