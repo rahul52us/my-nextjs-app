@@ -17,6 +17,7 @@ import JsBarcode from "jsbarcode";
 import { FaDownload, FaTrash } from "react-icons/fa";
 import html2canvas from "html2canvas";
 import Image from "next/image";
+import stores from "../../../../../store/stores";
 
 const BarcodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
@@ -25,6 +26,10 @@ const BarcodeGenerator: React.FC = () => {
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const toast = useToast(); // For showing toast notifications
+
+      const {
+  themeStore: { themeConfig },
+} = stores;
 
   // Handle download as image (PNG)
   const handleDownload = async () => {
@@ -91,7 +96,8 @@ const BarcodeGenerator: React.FC = () => {
 
   return (
     <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={6}>
         Barcode Generator
       </Heading>
 

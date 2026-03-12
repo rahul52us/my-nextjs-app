@@ -21,6 +21,8 @@ import {
 } from "@chakra-ui/react";
 import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
+
 
 const AsciiToBase64Content: React.FC = () => {
     const [asciiInput, setAsciiInput] = useState<string>("");
@@ -38,6 +40,10 @@ const AsciiToBase64Content: React.FC = () => {
             return "Invalid ASCII string";
         }
     };
+
+    const {
+  themeStore: { themeConfig },
+} = stores;
 
     const handleAsciiToBase64Conversion = () => {
         setLoading(true);
@@ -167,7 +173,7 @@ const AsciiToBase64Content: React.FC = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]} 
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

@@ -16,6 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { FaDatabase, FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
+import stores from "../../../../store/stores";
 
 // Define data size units with bit and byte distinction
 const units = [
@@ -43,6 +44,10 @@ const DataSizeConverterContent = () => {
     } | null>(null);
     const [humanReadable] = useState<boolean>(false);
     const toast = useToast();
+
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     // Debounced conversion function
     const convert = debounce(() => {
@@ -126,7 +131,7 @@ const DataSizeConverterContent = () => {
                         <FaDatabase size={32} color="teal.600" />
                         <Heading
                             size={{ base: "lg", md: "xl" }}
-                            color="teal.700"
+                            color={themeConfig.colors.brand[300]}
                             fontWeight="extrabold"
                             textShadow="0 2px 4px rgba(0, 0, 0, 0.1)"
                         >

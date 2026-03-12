@@ -21,6 +21,7 @@ import {
     ModalFooter,
     useDisclosure,
 } from "@chakra-ui/react";
+import stores from "../../../../../store/stores";
 
 const Base64PdfContent = () => {
     const [base64, setBase64] = useState<string>("");
@@ -45,7 +46,9 @@ const Base64PdfContent = () => {
         }
         return { mimeType: "application/octet-stream", base64Data: input };
     };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
     // Generate a file name based on MIME type
     const generateFileName = (mimeType: string) => {
         const extension = mimeType.split("/")[1] || "bin";
@@ -119,7 +122,7 @@ const Base64PdfContent = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

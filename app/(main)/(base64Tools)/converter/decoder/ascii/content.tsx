@@ -27,6 +27,7 @@ import {
     FaCopy,
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -35,7 +36,9 @@ const Base64ToAsciiContent: React.FC = () => {
     const [asciiOutput, setAsciiOutput] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const toast = useToast();
-
+        const {
+  themeStore: { themeConfig },
+} = stores;
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
@@ -203,7 +206,7 @@ const Base64ToAsciiContent: React.FC = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

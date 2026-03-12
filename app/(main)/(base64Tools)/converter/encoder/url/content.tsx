@@ -17,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
 
 const UrlToBase64Content = () => {
     const [base64, setBase64] = useState<string>("");
@@ -26,6 +27,9 @@ const UrlToBase64Content = () => {
     const toast = useToast();
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     const handleUrlToBase64 = async () => {
         setLoading(true); // Start loading
@@ -176,7 +180,7 @@ const UrlToBase64Content = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

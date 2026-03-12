@@ -29,6 +29,7 @@ import {
 import JSZip from "jszip";
 import { FaUpload, FaEye, FaDownload, FaTrash } from "react-icons/fa";
 import Image from "next/image";
+import stores from "../../../../../store/stores";
 
 const ZipDecompression: React.FC = () => {
   const [zipFile, setZipFile] = useState<File | null>(null);
@@ -47,7 +48,9 @@ const ZipDecompression: React.FC = () => {
       setZipFile(selectedFile);
     }
   };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
   const handleDecompressZip = async () => {
     if (!zipFile) {
       toast({
@@ -156,7 +159,8 @@ const ZipDecompression: React.FC = () => {
 
   return (
     <Box p={6} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={6}>
         Decompress ZIP File
       </Heading>
       <Text fontSize="lg" color="gray.500" textAlign="center" mb={6}>

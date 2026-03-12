@@ -22,6 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
+import stores from "../../../../store/stores";
 
 // Helper function to handle time conversion
 const convertTime = (value: number, fromUnit: string, toUnit: string): number => {
@@ -165,6 +166,10 @@ export default function TimeConverterContent() {
         setToUnit(fromUnit);
     };
 
+        const {
+  themeStore: { themeConfig },
+} = stores;
+
     const handleCopy = () => {
         if (result) {
             navigator.clipboard.writeText(result.value);
@@ -192,7 +197,8 @@ export default function TimeConverterContent() {
             >
                 <VStack spacing={{ base: 6, md: 8 }} align="stretch">
                     {/* Header */}
-                    <Heading as="h1" size="xl" color="teal.500" textAlign="center">
+                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center">
                         Time Converter
                     </Heading>
                     <Text textAlign="center" fontSize="md" color="gray.600" maxW="600px" mx="auto">

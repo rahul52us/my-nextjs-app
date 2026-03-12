@@ -15,6 +15,7 @@ import {
     FormLabel,
 } from "@chakra-ui/react";
 import { performConversion, ConversionCategory, unitConversionMap } from "./conversionLogic";
+import stores from "../../../../store/stores";
 
 export default function UnitConverterContent() {
     const [type, setType] = useState<ConversionCategory>("Weight");
@@ -52,9 +53,14 @@ export default function UnitConverterContent() {
 
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr 1fr" });
 
+        const {
+  themeStore: { themeConfig },
+} = stores;
+
     return (
         <Box p={4} bg={bgColor} color={textColor} minH="78vh">
-            <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+            <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={6}>
                 Unit Converter
             </Heading>
             <Divider borderColor="blue.300" mb={6} />

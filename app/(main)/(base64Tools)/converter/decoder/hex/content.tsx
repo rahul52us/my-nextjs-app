@@ -20,6 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { FaExchangeAlt, FaTrashAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
 
 const Base64ToHexContent: React.FC = () => {
     const [base64Input, setBase64Input] = useState<string>("");
@@ -86,13 +87,16 @@ const Base64ToHexContent: React.FC = () => {
         setHexOutput("");
         setLoading(false); // Reset loading state when clearing
     };
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     return (
         <Box p={4} bg={bgColor} color={textColor} borderRadius="md" boxShadow="lg">
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

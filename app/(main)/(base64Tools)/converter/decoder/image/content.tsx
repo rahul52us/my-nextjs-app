@@ -23,6 +23,7 @@ import {
     Input,
     HStack,
 } from "@chakra-ui/react";
+import stores from "../../../../../store/stores";
 
 const Base64ImageContent = () => {
     const [base64, setBase64] = useState<string>("");
@@ -45,7 +46,9 @@ const Base64ImageContent = () => {
         }
         return { mimeType: "application/octet-stream", base64Data: input };
     };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
     const generateFileName = (mimeType: string) => {
         const extension = mimeType.split("/")[1] || "bin";
         const timestamp = new Date()
@@ -169,7 +172,7 @@ const Base64ImageContent = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

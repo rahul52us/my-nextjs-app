@@ -46,6 +46,7 @@ import * as XLSX from "xlsx";
 import ReactSelect, { MultiValue } from "react-select";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
+import stores from "../../../../store/stores";
 // import "./excelViewer.css"; // Ensure this CSS file exists or style directly
 
 // Register AG Grid Community modules
@@ -71,7 +72,9 @@ const CustomHeader = ({ displayName }: IHeaderParams) => {
         </Text>
     );
 };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
 // MIME type detection and utility functions
 const detectMimeTypeFromBase64 = (base64: string): string | null => {
     try {
@@ -943,7 +946,7 @@ export default function ExcelToJsonContent() {
                 <Heading
                     as="h1"
                     size="xl"
-                    color={accentColor}
+                    color={themeConfig.colors.brand[300]}
                     textAlign="center"
                     fontWeight="extrabold"
                     mb={6}

@@ -16,6 +16,7 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { FaCopy, FaDownload, FaUpload } from "react-icons/fa";
+import stores from "../../../../store/stores";
 
 // Utility function to download text as a .txt file
 const downloadTextFile = (text: string, filename: string) => {
@@ -47,6 +48,10 @@ const TextFormatter = () => {
   const handleRemoveExtraSpaces = () => {
     setFormattedText(inputText.replace(/\s+/g, " ").trim());
   };
+
+      const {
+  themeStore: { themeConfig },
+} = stores;
 
   // Capitalize text
   const handleCapitalizeText = () => {
@@ -97,7 +102,7 @@ const TextFormatter = () => {
       <Heading
         as="h1"
         size="xl"
-        color="teal.500"
+        color={themeConfig.colors.brand[300]}
         textAlign="center"
         fontWeight="bold"
         mb={6}

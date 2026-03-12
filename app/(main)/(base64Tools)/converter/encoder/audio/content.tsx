@@ -17,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
 
 const AudioToBase64Content = () => {
     const [base64, setBase64] = useState<string>("");
@@ -58,6 +59,10 @@ const AudioToBase64Content = () => {
             reader.readAsDataURL(file);
         }
     };
+    
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     const handleCopyToClipboard = () => {
         navigator.clipboard
@@ -151,7 +156,7 @@ const AudioToBase64Content = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

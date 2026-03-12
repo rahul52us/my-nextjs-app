@@ -17,6 +17,7 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { FaKey } from "react-icons/fa";
+import stores from "../../../../../store/stores";
 
 const FileEncryption = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -33,7 +34,9 @@ const FileEncryption = () => {
   const handleSecretKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSecretKey(e.target.value);
   };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
   const encryptFile = () => {
     if (file && secretKey) {
       const reader = new FileReader();
@@ -65,7 +68,8 @@ const FileEncryption = () => {
 
   return (
     <Box p={8} bg={bgColor} color={textColor} minH={"80vh"} borderRadius="lg" boxShadow="md">
-      <Heading as="h1" size="2xl" color="teal.500" textAlign="center" mb={4}>
+      <Heading as="h1" size="2xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={4}>
         Secure Your File with AES Encryption
       </Heading>
       <Text fontSize="lg" textAlign="center" mb={8}>

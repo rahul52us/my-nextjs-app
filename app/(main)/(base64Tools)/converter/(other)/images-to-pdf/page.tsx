@@ -19,6 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FaFilePdf, FaTrashAlt, FaTrash, FaCode, FaClipboard } from "react-icons/fa";
+import stores from "../../../../../store/stores";
 
 const ImagesToPdf: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -34,6 +35,9 @@ const ImagesToPdf: React.FC = () => {
       setFiles((prev) => [...prev, ...newFiles]);
     }
   };
+  const {
+    themeStore: { themeConfig },
+  } = stores;
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -224,7 +228,8 @@ const ImagesToPdf: React.FC = () => {
 
   return (
     <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+        textAlign="center" mb={6}>
         Images to PDF & Base64 Converter
       </Heading>
 

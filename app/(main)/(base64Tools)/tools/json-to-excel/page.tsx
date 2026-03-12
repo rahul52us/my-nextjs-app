@@ -47,6 +47,7 @@ import ReactSelect, { MultiValue } from "react-select";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./excelViewer.css";
+import stores from "../../../../store/stores";
 
 // Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -130,7 +131,9 @@ const JsonToExcel = () => {
       }
     }, 300);
   };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
   // Clear search input
   const clearSearch = () => {
     setSearchQuery("");
@@ -539,7 +542,7 @@ const JsonToExcel = () => {
         <Heading
           as="h1"
           size={{ base: "lg", md: "xl" }}
-          color={accentColor}
+          color={themeConfig.colors.brand[300]}
           textAlign="center"
           fontWeight="extrabold"
           mb={6}

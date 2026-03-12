@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { FaDownload } from "react-icons/fa";
 import JSZip from "jszip";
+import stores from "../../../../../store/stores";
 
 const ZipCompression: React.FC = () => {
   const [files, setFiles] = useState<FileList | null>(null);
@@ -29,7 +30,9 @@ const ZipCompression: React.FC = () => {
       setFiles(selectedFiles);
     }
   };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
   // Compress files into a ZIP
   const handleCompressFiles = async () => {
     if (!files || files.length === 0) {
@@ -78,7 +81,8 @@ const ZipCompression: React.FC = () => {
 
   return (
     <Box p={8} bg={bgColor} color={textColor} minH={"78vh"} borderRadius="lg" boxShadow="md">
-      <Heading as="h1" size="2xl" color="teal.500" textAlign="center" mb={4}>
+      <Heading as="h1" size="2xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={4}>
         Compress Files into a ZIP
       </Heading>
       <Text fontSize="lg" textAlign="center" mb={6}>

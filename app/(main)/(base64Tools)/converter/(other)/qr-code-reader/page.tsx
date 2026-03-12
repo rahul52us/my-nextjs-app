@@ -18,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { BiCopy } from "react-icons/bi";
+import stores from "../../../../../store/stores";
 
 const QRCodeReaderComponent: React.FC = () => {
   const [scannedText, setScannedText] = useState<string | null>(null);
@@ -89,6 +90,10 @@ const QRCodeReaderComponent: React.FC = () => {
     };
   };
 
+      const {
+  themeStore: { themeConfig },
+} = stores;
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -116,7 +121,8 @@ const QRCodeReaderComponent: React.FC = () => {
 
   return (
     <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={4}>
+      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={4}>
         QR Code Reader
         <Text fontSize="lg" color="gray.500" mt={2}>
           Scan QR codes from images and extract the data easily

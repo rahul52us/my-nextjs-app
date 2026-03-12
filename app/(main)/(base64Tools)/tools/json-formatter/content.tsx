@@ -36,6 +36,7 @@ import {
 import Editor from "@monaco-editor/react";
 import JSON5 from "json5";
 import { FaAdjust } from "react-icons/fa";
+import stores from "../../../../store/stores";
 
 // Dynamically import ReactJson to ensure it's only used on the client-side (not server-side)
 const ReactJson = dynamic(() => import("react-json-view"), { ssr: false });
@@ -55,6 +56,9 @@ const JsonFormatterContent = () => {
     const textColor = useColorModeValue("gray.800", "gray.100");
     const cardBgColor = useColorModeValue("white", "gray.700");
     const buttonColor = useColorModeValue("teal", "blue");
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -135,7 +139,7 @@ const JsonFormatterContent = () => {
 
     return (
         <Box p={1} bg={bgColor} color={textColor} minH="80vh">
-            <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={4}>
+            <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]} textAlign="center" mb={4}>
                 JSON Formatter & Validator
             </Heading>
 

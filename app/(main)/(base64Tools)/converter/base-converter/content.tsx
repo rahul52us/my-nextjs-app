@@ -15,6 +15,7 @@ import {
     FormLabel,
     Tooltip,
 } from "@chakra-ui/react";
+import stores from "../../../../store/stores";
 
 // Helper function for base conversion
 const convertBase = (value: string, fromBase: number, toBase: number): string => {
@@ -32,6 +33,9 @@ export default function BaseConverterContent() {
     const [value, setValue] = useState("");
     const [result, setResult] = useState("");
     const [error, setError] = useState("");
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
@@ -61,7 +65,8 @@ export default function BaseConverterContent() {
 
     return (
         <Box p={4} bg={bgColor} color={textColor} minH="85vh">
-            <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+            <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+ textAlign="center" mb={6}>
                 Base Converter
             </Heading>
             <Divider borderColor="blue.300" mb={6} />

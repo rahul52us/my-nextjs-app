@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { saveAs } from "file-saver";
 import { FaDownload, FaShareAlt } from "react-icons/fa";
+import stores from "../../../../../store/stores";
 
 const Base64ToAudioContent = () => {
     const [base64Input, setBase64Input] = useState<string>(""); // For the Base64 input string
@@ -22,6 +23,9 @@ const Base64ToAudioContent = () => {
     const toast = useToast();
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
+        const {
+  themeStore: { themeConfig },
+} = stores;
 
     const handleBase64Input = () => {
         // Check if the input string is a valid Base64 string
@@ -130,7 +134,7 @@ const Base64ToAudioContent = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"

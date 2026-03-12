@@ -36,6 +36,7 @@ import * as XLSX from "xlsx";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./excelViewer.css";
+import stores from "../../../../../store/stores";
 
 // Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -119,7 +120,9 @@ const mimeToExtension: Record<string, string> = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
     "text/plain": "txt",
 };
-
+    const {
+  themeStore: { themeConfig },
+} = stores;
 const detectMimeTypeFromSuffix = (input: string): string | null => {
     const match = input.match(/\.([a-zA-Z0-9]+)$/);
     if (match) {
@@ -615,7 +618,7 @@ const Base64ToFileContent = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 mb={6}

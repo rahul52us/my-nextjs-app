@@ -16,6 +16,7 @@ import {
 import QRCode from "react-qr-code";
 import { FaDownload, FaTrash } from "react-icons/fa";
 import html2canvas from "html2canvas";
+import stores from "../../../../../store/stores";
 
 const QRCodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
@@ -24,6 +25,10 @@ const QRCodeGenerator: React.FC = () => {
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const toast = useToast(); // For showing toast notifications
+
+  const {
+    themeStore: { themeConfig },
+  } = stores;
 
   // Handle download as image (PNG)
   const handleDownload = async () => {
@@ -78,7 +83,8 @@ const QRCodeGenerator: React.FC = () => {
 
   return (
     <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color="teal.500" textAlign="center" mb={6}>
+      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
+        textAlign="center" mb={6}>
         QR Code Generator
         <Text fontSize="lg" color="gray.500" mt={2}>
           Create and download custom QR codes from any text or URL

@@ -21,6 +21,7 @@ import {
 } from "@chakra-ui/react";
 import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import stores from "../../../../../store/stores";
 
 const HexToBase64Content: React.FC = () => {
     const [hexInput, setHexInput] = useState<string>("");
@@ -49,6 +50,9 @@ const HexToBase64Content: React.FC = () => {
             return `Error: ${error.message}`;
         }
     };
+    const {
+  themeStore: { themeConfig },
+} = stores;
 
     // Handle conversion when user clicks the button
     const handleConversion = () => {
@@ -181,7 +185,7 @@ const HexToBase64Content: React.FC = () => {
             <Heading
                 as="h1"
                 size="xl"
-                color="teal.500"
+                color={themeConfig.colors.brand[300]}
                 textAlign="center"
                 fontWeight="bold"
                 letterSpacing="wider"
