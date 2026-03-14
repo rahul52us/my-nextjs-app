@@ -102,6 +102,7 @@ const sidebarData: SidebarItem[] = [
       { id: 402, name: "Files to ZIP Compress", icon: <FaCompress />, url: "/converter/files-to-zip" },
       { id: 403, name: "ZIP to Files Decompress", icon: <FaFileArchive />, url: "/converter/decompress-zip" },
       { id: 404, name: "Encrypt File", icon: <FaLock />, url: "/converter/encrypt-file" },
+      {id: 405, name: "Excel to  CSV", icon: <FaFileExcel />, url: "/converter/Exceltocsv"},
     ],
   },
   {
