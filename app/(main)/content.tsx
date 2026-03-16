@@ -256,7 +256,7 @@ export default function HomeContent() {
                 transform="rotate3d(1, 1, 1, -5deg)"
             >
                 <Image 
-                    src="https://www.ilovepdf.com/img/home/premium@2x.webp" 
+                    src="https://static.vecteezy.com/system/resources/previews/019/018/890/non_2x/pdf-converter-from-jpeg-word-document-concept-screen-with-changing-or-converting-process-of-document-to-another-format-flat-illustration-for-app-website-banner-vector.jpg" 
                     alt="Code Preview"
                     borderRadius="2xl"
                     objectFit="cover"
@@ -374,7 +374,7 @@ export default function HomeContent() {
                     <Flex direction={{ base: "column", md: "row" }}>
                         <Box flex="1" bg="blue.50" p={10} display="flex" alignItems="center" justifyContent="center">
                             <Image 
-                                src="https://www.ilovepdf.com/img/home/iloveimg@2x.webp" 
+                                src="https://media.istockphoto.com/id/1158584831/vector/photo-or-graphic-editor-on-tablet-vector-illustration-flat-cartoon-graphics-tablet-screen.jpg?s=612x612&w=0&k=20&c=ugL91d3Kav24OKmvFW_WXhbhn3RFCTFJ4yP29unOdx4=" 
                                 alt="Image Tools" 
                                 maxW="250px"
                             />

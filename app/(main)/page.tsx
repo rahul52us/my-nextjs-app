@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import HomeContent from './content';
 
 export const metadata: Metadata = {
-  title: 'Base64 Encoder & Decoder | Developer Toolkit',
+  title: 'Toolsahayata | Developer Toolkit',
   description: 'Simple Base64 encoding and decoding tool for developers.',
 };
 

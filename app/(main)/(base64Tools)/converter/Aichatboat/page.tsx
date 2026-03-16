@@ -195,7 +195,7 @@ export default function UniversalChatbot() {
             <HStack spacing={3}>
               <Zap size={24} />
               <Text fontWeight="bold">Studio AI</Text>
-              <Badge colorScheme="purple">Basify</Badge>
+              <Badge colorScheme="purple">Toolsahayta</Badge>
             </HStack>
 
             <Button
