@@ -2,12 +2,24 @@
 
 import React, { useState, useRef } from 'react';
 import { 
-  Box, Button, Heading, VStack, Text, Input, 
-  useToast, Divider, Container, Center 
+  Box, 
+  Button, 
+  Heading, 
+  VStack, 
+  Text, 
+  Input, 
+  useToast, 
+  Divider, 
+  Container, 
+  Center,
+  useColorModeValue, // Added for dark mode support
+  Icon,
+  Badge,
+  HStack
 } from '@chakra-ui/react';
 import mammoth from 'mammoth';
 import { jsPDF } from 'jspdf';
-import { FileText, Download, Eye } from 'lucide-react';
+import { FileText, Download, Eye, CheckCircle } from 'lucide-react';
 
 const WordToPdf = () => {
   const [htmlPreview, setHtmlPreview] = useState<string>("");
@@ -16,7 +28,14 @@ const WordToPdf = () => {
   const previewRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  // 1. Handle File Upload and Preview
+  // --- Dark Mode Colors ---
+  const pageBg = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const cardBorder = useColorModeValue("gray.200", "gray.700");
+  const textColor = useColorModeValue("gray.500", "gray.400");
+  const previewPaperBg = "white"; // Always white for realistic document feel
+  const dropzoneHoverBg = useColorModeValue("blue.50", "whiteAlpha.50");
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -31,7 +50,6 @@ const WordToPdf = () => {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      // mammoth preserves styles like headings, lists, and tables
       const result = await mammoth.convertToHtml({ arrayBuffer });
       setHtmlPreview(result.value);
       
@@ -44,7 +62,6 @@ const WordToPdf = () => {
     }
   };
 
-  // 2. Generate and Download PDF
   const downloadPdf = async () => {
     if (!previewRef.current) return;
 
@@ -54,8 +71,6 @@ const WordToPdf = () => {
       format: 'a4',
     });
 
-    // We use the html method of jspdf to preserve the structure
-    // Adding margins to look like a real document
     doc.html(previewRef.current, {
       callback: function (doc) {
         doc.save(`${fileName || 'document'}.pdf`);
@@ -64,83 +79,127 @@ const WordToPdf = () => {
       autoPaging: 'text',
       x: 0,
       y: 0,
-      width: 515, // A4 width (595) minus margins
-      windowWidth: 800 // Scale the html for better resolution
+      width: 515,
+      windowWidth: 800
     });
   };
 
   return (
-    <Container maxW="container.md" py={10}>
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading mb={2}>Word to PDF Converter</Heading>
-          <Text color="gray.500">Upload a .docx file to preview and convert</Text>
-        </Box>
+    <Box minH="100vh" bg={pageBg} transition="background 0.2s">
+      <Container maxW="container.md" py={10}>
+        <VStack spacing={6} align="stretch">
+          
+          <VStack spacing={2} textAlign="center">
+            <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full">
+              Premium Word Engine
+            </Badge>
+            <Heading size="xl" fontWeight="900" letterSpacing="tight">
+              Word <Text as="span" color="blue.500">to PDF</Text>
+            </Heading>
+            <Text color={textColor}>Upload a .docx file to preview and convert</Text>
+          </VStack>
 
-        <Box 
-          p={10} 
-          border="2px dashed" 
-          borderColor="gray.200" 
-          borderRadius="xl" 
-          textAlign="center"
-        >
-          <Input 
-            type="file" 
-            accept=".docx" 
-            onChange={handleFileChange} 
-            display="none" 
-            id="file-upload" 
-          />
-          <label htmlFor="file-upload">
-            <Button as="span" leftIcon={<FileText />} colorScheme="blue" cursor="pointer" isLoading={loading}>
-              Choose Word Document
-            </Button>
-          </label>
-          {fileName && <Text mt={3} fontSize="sm" fontWeight="bold">{fileName}.docx</Text>}
-        </Box>
+          <Box 
+            p={10} 
+            bg={cardBg}
+            border="2px dashed" 
+            borderColor={cardBorder} 
+            borderRadius="3xl" 
+            textAlign="center"
+            transition="all 0.3s"
+            _hover={{ borderColor: 'blue.500', bg: dropzoneHoverBg, shadow: 'xl' }}
+            shadow="sm"
+          >
+            <Input 
+              type="file" 
+              accept=".docx" 
+              onChange={handleFileChange} 
+              display="none" 
+              id="file-upload" 
+            />
+            <label htmlFor="file-upload">
+              <Button 
+                as="span" 
+                leftIcon={<FileText size={18} />} 
+                colorScheme="blue" 
+                cursor="pointer" 
+                isLoading={loading}
+                borderRadius="full"
+                size="lg"
+                boxShadow="md"
+              >
+                Choose Word Document
+              </Button>
+            </label>
+            {fileName && (
+              <Text mt={4} fontSize="sm" fontWeight="bold" color="blue.500">
+                {fileName}.docx
+              </Text>
+            )}
+          </Box>
 
-        {htmlPreview && (
-          <>
-            <Divider />
+          {htmlPreview && (
             <Box>
-              <Heading size="md" mb={4} display="flex" alignItems="center">
-                <Eye size={20} style={{ marginRight: '8px' }} /> Live Preview
-              </Heading>
+              <HStack justify="space-between" mb={4}>
+                <Heading size="md" display="flex" alignItems="center">
+                  <Eye size={20} style={{ marginRight: '8px' }} /> Live Preview
+                </Heading>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setHtmlPreview("")}
+                    colorScheme="red"
+                >
+                    Clear
+                </Button>
+              </HStack>
               
-              {/* This Box mimics a physical A4 page */}
               <Box 
-                bg="white" 
-                boxShadow="xl" 
+                bg={previewPaperBg} 
+                boxShadow="2xl" 
                 p={12} 
-                borderRadius="md" 
-                maxH="500px" 
+                borderRadius="xl" 
+                maxH="600px" 
                 overflowY="auto"
                 border="1px solid"
-                borderColor="gray.100"
+                borderColor={cardBorder}
+                position="relative"
               >
                 <div 
                   ref={previewRef}
-                  className="prose" // If you use Tailwind, this handles typography
                   dangerouslySetInnerHTML={{ __html: htmlPreview }} 
-                  style={{ fontSize: '12pt', lineHeight: '1.5', color: '#000' }}
+                  style={{ 
+                    fontSize: '12pt', 
+                    lineHeight: '1.6', 
+                    color: '#1A202C', // Standard dark text for document readability
+                    fontFamily: 'serif' 
+                  }}
                 />
               </Box>
 
-              <Center mt={6}>
+              <Center mt={8}>
                 <Button 
                   size="lg" 
                   colorScheme="green" 
-                  leftIcon={<Download />} 
+                  leftIcon={<Download size={20} />} 
                   onClick={downloadPdf}
+                  borderRadius="full"
+                  px={10}
+                  boxShadow="0 4px 14px 0 rgba(72, 187, 120, 0.39)"
                 >
                   Download as PDF
                 </Button>
               </Center>
             </Box>
-          </>
-        )}
-      </VStack>
-    </Container>
+          )}
+
+          <HStack justify="center" opacity={0.5} pt={4}>
+            <Icon as={CheckCircle} color="green.500" size={14} />
+            <Text fontSize="xs" fontWeight="bold">Local browser processing</Text>
+          </HStack>
+        </VStack>
+      </Container>
+    </Box>
   );
 };
 

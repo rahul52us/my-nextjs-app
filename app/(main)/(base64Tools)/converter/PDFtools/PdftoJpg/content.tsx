@@ -16,6 +16,7 @@ import {
     useToast,
     Center,
     Tooltip,
+    useColorModeValue, // Added for theme support
 } from '@chakra-ui/react';
 import {
     FiUpload,
@@ -26,12 +27,10 @@ import {
     FiCheckCircle
 } from 'react-icons/fi';
 
-// pdfjs-dist is a dependency of react-pdf
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-// Configure the worker using the CDN version compatible with your react-pdf version
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface ImageResult {
@@ -47,6 +46,14 @@ const PdfToJpgContent = () => {
     const [fileName, setFileName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+
+    // Semantic colors for Dark Mode
+    const bgColor = useColorModeValue('white', 'gray.800');
+    const cardBg = useColorModeValue('gray.50', 'gray.700');
+    const borderColor = useColorModeValue('gray.100', 'gray.700');
+    const textColor = useColorModeValue('gray.500', 'gray.400');
+    const dropzoneHoverBg = useColorModeValue('blue.50', 'gray.700');
+    const iconContainerBg = useColorModeValue('blue.50', 'blue.900');
 
     const clearImages = () => {
         images.forEach((img) => URL.revokeObjectURL(img.url));
@@ -73,7 +80,7 @@ const PdfToJpgContent = () => {
 
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 2.0 }); // High quality
+                const viewport = page.getViewport({ scale: 2.0 });
 
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
@@ -104,7 +111,7 @@ const PdfToJpgContent = () => {
             console.error("Conversion error:", error);
             toast({
                 title: "Error",
-                description: "Failed to process PDF. The file might be corrupted or encrypted.",
+                description: "Failed to process PDF.",
                 status: "error",
                 duration: 5000,
             });
@@ -118,7 +125,6 @@ const PdfToJpgContent = () => {
         images.forEach((img) => {
             zip.file(`${fileName}-page-${img.pageNumber}.jpg`, img.blob);
         });
-
         const content = await zip.generateAsync({ type: 'blob' });
         saveAs(content, `${fileName}-images.zip`);
     };
@@ -134,7 +140,7 @@ const PdfToJpgContent = () => {
                         </Box>
                         <Heading size="lg" letterSpacing="tight">PDF to JPG</Heading>
                     </HStack>
-                    <Text color="gray.500" fontWeight="medium">Convert document pages to high-quality images</Text>
+                    <Text color={textColor} fontWeight="medium">Convert document pages to high-quality images</Text>
                 </VStack>
 
                 {images.length > 0 && (
@@ -161,11 +167,11 @@ const PdfToJpgContent = () => {
 
             {/* Main Area */}
             <Box
-                bg="white"
+                bg={bgColor}
                 borderRadius="3xl"
                 p={8}
                 border="1px solid"
-                borderColor="gray.100"
+                borderColor={borderColor}
                 shadow="xl"
             >
                 {!loading && images.length === 0 ? (
@@ -174,15 +180,15 @@ const PdfToJpgContent = () => {
                         htmlFor="pdf-upload"
                         cursor="pointer"
                         border="3px dashed"
-                        borderColor="gray.200"
+                        borderColor={useColorModeValue('gray.200', 'gray.600')}
                         borderRadius="2xl"
                         h="300px"
                         transition="all 0.2s"
-                        _hover={{ borderColor: 'blue.400', bg: 'blue.50' }}
+                        _hover={{ borderColor: 'blue.400', bg: dropzoneHoverBg }}
                         flexDirection="column"
                     >
                         <VStack spacing={4}>
-                            <Box bg="blue.50" color="blue.600" p={4} borderRadius="full">
+                            <Box bg={iconContainerBg} color="blue.600" p={4} borderRadius="full">
                                 <Icon as={FiUpload} boxSize={8} />
                             </Box>
                             <VStack spacing={1}>
@@ -202,19 +208,17 @@ const PdfToJpgContent = () => {
                 ) : loading ? (
                     <Center h="300px" flexDirection="column">
                         <VStack spacing={6} w="full" maxW="md">
-                            <Box position="relative" display="inline-flex">
-                                <Progress
-                                    value={progress}
-                                    size="xs"
-                                    width="200px"
-                                    borderRadius="full"
-                                    colorScheme="blue"
-                                    isAnimated
-                                />
-                            </Box>
+                            <Progress
+                                value={progress}
+                                size="xs"
+                                width="200px"
+                                borderRadius="full"
+                                colorScheme="blue"
+                                isAnimated
+                            />
                             <VStack>
                                 <Text fontSize="lg" fontWeight="bold">Processing Pages...</Text>
-                                <Text fontSize="sm" color="gray.500">{progress}% complete</Text>
+                                <Text fontSize="sm" color={textColor}>{progress}% complete</Text>
                             </VStack>
                         </VStack>
                     </Center>
@@ -223,25 +227,24 @@ const PdfToJpgContent = () => {
                         {images.map((img) => (
                             <Box
                                 key={img.pageNumber}
-                                bg="gray.50"
+                                bg={cardBg}
                                 p={3}
                                 borderRadius="2xl"
                                 border="1px solid"
-                                borderColor="gray.100"
+                                borderColor={borderColor}
                                 role="group"
                                 position="relative"
                             >
                                 <Box
                                     borderRadius="xl"
                                     overflow="hidden"
-                                    bg="white"
+                                    bg={useColorModeValue('white', 'gray.900')}
                                     position="relative"
                                     transition="transform 0.2s"
                                     _groupHover={{ transform: 'translateY(-4px)' }}
                                 >
                                     <Image src={img.url} alt={`Page ${img.pageNumber}`} />
 
-                                    {/* Hover Overlay */}
                                     <Center
                                         position="absolute"
                                         inset={0}

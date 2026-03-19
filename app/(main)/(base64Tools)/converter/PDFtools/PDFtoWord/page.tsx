@@ -1,234 +1,276 @@
 "use client";
-import type { Metadata } from 'next';
-import PDFToWordContent from './content';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-  Box, Button, Container, Heading, Text, VStack, useToast,
-  Icon, Progress, HStack, ScaleFade, Flex, Badge, Divider,
-  Center, SimpleGrid, Card, CardBody
+    Box, Button, Container, Heading, Text, VStack, useToast,
+    Icon, Progress, HStack, ScaleFade, Flex, Divider,
+    Center, SimpleGrid, Card, CardBody, useColorModeValue
 } from '@chakra-ui/react';
-import { FiUploadCloud, FiFileText, FiShield, FiZap, FiCheckCircle, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiUploadCloud, FiFileText, FiShield, FiZap, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import * as pdfjs from 'pdfjs-dist';
+import stores from "../../../../../store/stores"; // Assuming the same store path
 
 // Updated Worker Path for v4.x Compatibility
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const MotionBox = motion(Box);
+const PDFToWordContent = () => {
+    const [isConverting, setIsConverting] = useState(false);
+    const [fileName, setFileName] = useState<string | null>(null);
+    const [fileData, setFileData] = useState<Uint8Array | null>(null);
+    const toast = useToast();
 
-const PDFToWordConverter = () => {
-  const [isConverting, setIsConverting] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [fileData, setFileData] = useState<Uint8Array | null>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const toast = useToast();
+    // Color Mode Values based on Ref Code
+    const bgColor = useColorModeValue("gray.50", "gray.800");
+    const cardBg = useColorModeValue("white", "gray.700");
+    const textColor = useColorModeValue("gray.800", "gray.100");
+    const subTextColor = useColorModeValue("gray.500", "gray.400");
+    const dropzoneBg = useColorModeValue("gray.50", "gray.600");
+    const dropzoneActiveBg = useColorModeValue("blue.50", "blue.900");
 
-  const renderPDFPreview = async (data: Uint8Array) => {
-    // We use .slice() to create a copy so the buffer isn't detached for the main converter
-    const loadingTask = pdfjs.getDocument({ data: data.slice() });
-    const pdf = await loadingTask.promise;
+    const { themeStore: { themeConfig } } = stores;
 
-    if (canvasContainerRef.current) {
-      canvasContainerRef.current.innerHTML = '';
-      const pagesToRender = Math.min(pdf.numPages, 3);
-
-      for (let i = 1; i <= pagesToRender; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.0 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        canvas.style.width = "100%";
-        canvas.style.marginBottom = "15px";
-        canvas.style.borderRadius = "4px";
-
-        if (context) {
-          await page.render({ canvasContext: context, viewport }).promise;
-          canvasContainerRef.current.appendChild(canvas);
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && file.type === 'application/pdf') {
+            setFileName(file.name);
+            const arrayBuffer = await file.arrayBuffer();
+            setFileData(new Uint8Array(arrayBuffer));
+        } else {
+            toast({
+                title: "Selection Error",
+                description: "Please select a valid PDF file.",
+                status: "warning",
+                variant: "subtle",
+            });
         }
-      }
-    }
-  };
+    };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      setFileName(file.name);
-      const arrayBuffer = await file.arrayBuffer();
-      const uintArray = new Uint8Array(arrayBuffer);
-      setFileData(uintArray);
-      // Pass a slice to the preview so the original uintArray remains valid for conversion
-      renderPDFPreview(uintArray.slice());
-    } else {
-      toast({
-        title: "Selection Error",
-        description: "Please select a valid PDF file.",
-        status: "warning",
-        variant: "subtle",
-      });
-    }
-  };
+    const convertToWord = async () => {
+        if (!fileData) return;
+        setIsConverting(true);
 
-  const convertToWord = async () => {
-    if (!fileData) return;
-    setIsConverting(true);
+        try {
+            const loadingTask = pdfjs.getDocument({ data: fileData });
+            const pdf = await loadingTask.promise;
+            const docSections: Paragraph[] = [];
 
-    try {
-      // Use .slice() here as well to be safe
-      const loadingTask = pdfjs.getDocument({ data: fileData.slice() });
-      const pdf = await loadingTask.promise;
-      const docSections: Paragraph[] = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const lines: Record<number, string> = {};
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const lines: Record<number, string> = {};
+                textContent.items.forEach((item: any) => {
+                    const y = Math.round(item.transform[5]);
+                    if (!lines[y]) lines[y] = "";
+                    lines[y] += item.str + " ";
+                });
 
-        textContent.items.forEach((item: any) => {
-          const y = Math.round(item.transform[5]);
-          if (!lines[y]) lines[y] = "";
-          lines[y] += item.str + " ";
-        });
+                const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
 
-        const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
+                sortedY.forEach(y => {
+                    const text = lines[y].trim();
+                    if (text) {
+                        docSections.push(
+                            new Paragraph({
+                                children: [new TextRun({ text, size: 24 })],
+                                spacing: { after: 200 }
+                            })
+                        );
+                    }
+                });
+            }
 
-        sortedY.forEach(y => {
-          const text = lines[y].trim();
-          if (text) {
-            docSections.push(
-              new Paragraph({
-                children: [new TextRun({ text, size: 24 })],
-                spacing: { after: 200 }
-              })
-            );
-          }
-        });
-      }
+            const doc = new Document({
+                sections: [{ properties: {}, children: docSections }],
+            });
 
-      const doc = new Document({
-        sections: [{ properties: {}, children: docSections }],
-      });
+            const blob = await Packer.toBlob(doc);
+            saveAs(blob, fileName?.replace('.pdf', '.docx') || 'converted-doc.docx');
 
-      const blob = await Packer.toBlob(doc);
-      saveAs(blob, fileName?.replace('.pdf', '.docx') || 'converted-doc.docx');
+            toast({
+                title: "Conversion Successful",
+                description: "Your document is downloading...",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+            });
+        } catch (error: any) {
+            console.error("Conversion Error:", error);
+            toast({
+                title: "Conversion Failed",
+                description: error.message || "An error occurred while processing the PDF.",
+                status: "error",
+            });
+        } finally {
+            setIsConverting(false);
+        }
+    };
 
-      toast({
-        title: "Conversion Successful",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (error: any) {
-      console.error("Conversion Error:", error);
-      toast({
-        title: "Conversion Failed",
-        description: error.message,
-        status: "error",
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
+    return (
+        <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
+            <Container maxW="container.md">
+                <VStack spacing={12} align="stretch">
 
-  return (
-    <Box bg="gray.50" minH="100vh" py={20}>
-      <Container maxW="container.lg">
-        <VStack spacing={12} align="stretch">
-
-          <VStack spacing={4} textAlign="center">
-            <Heading color="gray.800" size="2xl" fontWeight="900">
-              PDF to <Text as="span" color="blue.500">Word</Text>
-            </Heading>
-            <Text color="gray.500">Secure, fast, and local browser-based conversion.</Text>
-          </VStack>
-
-          <SimpleGrid columns={{ base: 1, md: fileName ? 2 : 1 }} spacing={8}>
-            <Card variant="outline" borderRadius="3xl" boxShadow="2xl" border="none" bg="white">
-              <CardBody p={8}>
-                <VStack spacing={8}>
-                  <Box
-                    w="full" position="relative" p={10} border="2px dashed"
-                    borderColor={fileName ? "blue.400" : "gray.200"}
-                    borderRadius="2xl" bg={fileName ? "blue.50" : "gray.50"}
-                  >
-                    <input
-                      type="file" accept="application/pdf"
-                      onChange={handleFileChange}
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 1 }}
-                    />
-                    <VStack spacing={4}>
-                      <Center boxSize="60px" bg={fileName ? "blue.500" : "blue.50"} color={fileName ? "white" : "blue.500"} borderRadius="xl">
-                        <Icon as={fileName ? FiCheckCircle : FiUploadCloud} boxSize={8} />
-                      </Center>
-                      <Text fontSize="xl" fontWeight="bold">{fileName ? fileName : "Upload your PDF"}</Text>
+                    {/* Header Section using Ref Style */}
+                    <VStack spacing={4} textAlign="center">
+                        <Heading 
+                            color={themeConfig.colors.brand[300]} 
+                            size="2xl" 
+                            fontWeight="900" 
+                            letterSpacing="tight"
+                            textTransform="uppercase"
+                        >
+                            PDF to <Text as="span" color="blue.400">Word</Text>
+                        </Heading>
+                        <Text color={subTextColor} fontSize="lg" maxW="lg">
+                            High-fidelity conversion powered by your browser. No files are ever sent to a server.
+                        </Text>
                     </VStack>
-                  </Box>
 
-                  {isConverting && (
-                    <Progress size="xs" isIndeterminate colorScheme="blue" w="full" borderRadius="full" />
-                  )}
+                    {/* Main Dropzone Area */}
+                    <Card
+                        borderRadius="3xl"
+                        boxShadow="2xl"
+                        overflow="hidden"
+                        border="none"
+                        bg={cardBg}
+                    >
+                        <CardBody p={8}>
+                            <VStack spacing={8}>
+                                <Box
+                                    w="full"
+                                    position="relative"
+                                    p={10}
+                                    border="2px dashed"
+                                    borderColor={fileName ? "blue.400" : "gray.500"}
+                                    borderRadius="2xl"
+                                    bg={fileName ? dropzoneActiveBg : dropzoneBg}
+                                    transition="all 0.3s"
+                                    _hover={{ borderColor: "blue.300", bg: useColorModeValue("white", "gray.600") }}
+                                >
+                                    <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        onChange={handleFileChange}
+                                        style={{
+                                            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                                            opacity: 0, cursor: 'pointer', zIndex: 1
+                                        }}
+                                    />
+                                    <VStack spacing={4}>
+                                        <Center
+                                            boxSize="60px"
+                                            bg={fileName ? "blue.500" : "blue.900"}
+                                            color="white"
+                                            borderRadius="xl"
+                                        >
+                                            <Icon as={fileName ? FiCheckCircle : FiUploadCloud} boxSize={8} />
+                                        </Center>
+                                        <VStack spacing={1}>
+                                            <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                                                {fileName ? fileName : "Upload your PDF"}
+                                            </Text>
+                                            <Text fontSize="sm" color={subTextColor}>
+                                                Click or drag and drop your file here
+                                            </Text>
+                                        </VStack>
+                                    </VStack>
+                                </Box>
 
-                  <ScaleFade in={!!fileName} unmountOnExit style={{ width: '100%' }}>
-                    <HStack spacing={4}>
-                      <Button leftIcon={<FiFileText />} colorScheme="blue" w="full" size="lg" height="60px" onClick={convertToWord} isLoading={isConverting}>
-                        Convert to .docx
-                      </Button>
-                      <Button size="lg" height="60px" variant="ghost" colorScheme="red" onClick={() => { setFileName(null); setFileData(null); }}>
-                        <FiTrash2 />
-                      </Button>
-                    </HStack>
-                  </ScaleFade>
+                                {isConverting && (
+                                    <Box w="full">
+                                        <Flex justify="space-between" mb={2}>
+                                            <Text fontSize="xs" fontWeight="bold" color="blue.400" textTransform="uppercase">
+                                                Reconstructing Document...
+                                            </Text>
+                                            <Text fontSize="xs" color={subTextColor}>Local processing active</Text>
+                                        </Flex>
+                                        <Progress size="xs" isIndeterminate colorScheme="blue" borderRadius="full" />
+                                    </Box>
+                                )}
+
+                                <ScaleFade in={!!fileName} unmountOnExit style={{ width: '100%' }}>
+                                    <HStack spacing={4}>
+                                        <Button
+                                            leftIcon={<FiFileText />}
+                                            colorScheme="blue"
+                                            w="full"
+                                            size="lg"
+                                            height="60px"
+                                            onClick={convertToWord}
+                                            isLoading={isConverting}
+                                            borderRadius="xl"
+                                        >
+                                            Convert to .docx
+                                        </Button>
+                                        <Button
+                                            size="lg"
+                                            height="60px"
+                                            variant="ghost"
+                                            colorScheme="red"
+                                            onClick={() => { setFileName(null); setFileData(null); }}
+                                            borderRadius="xl"
+                                        >
+                                            <FiTrash2 />
+                                        </Button>
+                                    </HStack>
+                                </ScaleFade>
+                            </VStack>
+                        </CardBody>
+                    </Card>
+
+                    {/* Feature Highlight Section */}
+                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
+                        <FeatureIcon
+                            icon={FiZap}
+                            title="Instant"
+                            desc="Fast extraction right in your browser."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
+                        />
+                        <FeatureIcon
+                            icon={FiShield}
+                            title="Secure"
+                            desc="Your data never leaves your device."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
+                        />
+                        <FeatureIcon
+                            icon={FiCheckCircle}
+                            title="Clean"
+                            desc="Optimized line-by-line reconstruction."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
+                        />
+                    </SimpleGrid>
+
+                    <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
+
+                    <Text textAlign="center" color={subTextColor} fontSize="sm">
+                        Powered by PDF.js & Docx Engine
+                    </Text>
                 </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Visual PDF View */}
-            {fileName && (
-              <Box>
-                <HStack mb={4} color="gray.600">
-                  <Icon as={FiEye} />
-                  <Text fontWeight="bold">Visual Preview</Text>
-                </HStack>
-                <Box
-                  ref={canvasContainerRef}
-                  bg="gray.100"
-                  p={4}
-                  borderRadius="2xl"
-                  h="450px"
-                  overflowY="auto"
-                  border="1px solid"
-                  borderColor="gray.200"
-                />
-              </Box>
-            )}
-          </SimpleGrid>
-
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            <FeatureIcon icon={FiZap} title="Instant" desc="Fast extraction." />
-            <FeatureIcon icon={FiShield} title="Secure" desc="Local device only." />
-            <FeatureIcon icon={FiCheckCircle} title="Clean" desc="Optimized layout." />
-          </SimpleGrid>
-        </VStack>
-      </Container>
-    </Box>
-  );
+            </Container>
+        </Box>
+    );
 };
 
-const FeatureIcon = ({ icon, title, desc }: { icon: any, title: string, desc: string }) => (
-  <HStack spacing={4} align="start">
-    <Center boxSize="40px" bg="white" borderRadius="lg" shadow="sm" color="blue.500" flexShrink={0}>
-      <Icon as={icon} />
-    </Center>
-    <VStack align="start" spacing={0}>
-      <Text fontWeight="bold" color="gray.700">{title}</Text>
-      <Text fontSize="xs" color="gray.500">{desc}</Text>
-    </VStack>
-  </HStack>
+const FeatureIcon = ({ icon, title, desc, textColor, subTextColor, cardBg }: any) => (
+    <HStack spacing={4} align="start">
+        <Center boxSize="40px" bg={cardBg} borderRadius="lg" shadow="md" color="blue.400" flexShrink={0}>
+            <Icon as={icon} />
+        </Center>
+        <VStack align="start" spacing={0}>
+            <Text fontWeight="bold" color={textColor}>{title}</Text>
+            <Text fontSize="xs" color={subTextColor}>{desc}</Text>
+        </VStack>
+    </HStack>
 );
 
-export default PDFToWordConverter;
+export default PDFToWordContent;
