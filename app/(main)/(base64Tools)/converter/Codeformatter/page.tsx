@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Flex, Heading, Select, useToast, 
-  HStack, Text, VStack, Container, Divider, Tooltip
+  HStack, Text, VStack, Container, Divider, Tooltip,
+  useColorModeValue
 } from '@chakra-ui/react';
 import Editor from '@monaco-editor/react';
 import prettier from 'prettier/standalone';
@@ -47,6 +48,16 @@ const StudioFormatter = () => {
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
   const toast = useToast();
 
+  // Color mode values
+  const bgColor = useColorModeValue("#F4F7F9", "gray.900");
+  const containerBg = useColorModeValue("white", "gray.800");
+  const headerBg = useColorModeValue("white", "gray.800");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+  const secondaryTextColor = useColorModeValue("gray.500", "gray.400");
+  const borderColor = useColorModeValue("gray.100", "gray.700");
+  const footerBg = useColorModeValue("gray.50", "gray.700");
+  const buttonBg = useColorModeValue("white", "gray.800");
+
   const handleFormat = async () => {
     try {
       const formatted = await prettier.format(code, {
@@ -90,20 +101,20 @@ const StudioFormatter = () => {
   };
 
   return (
-    <Box minH="100vh" bg="#F4F7F9" py={8} px={4}>
-      <Container maxW="1200px" bg="white" borderRadius="3xl" p={0} boxShadow="0 25px 50px -12px rgba(0,0,0,0.1)" overflow="hidden">
+    <Box minH="100vh" bg={bgColor} py={8} px={4}>
+      <Container maxW="1200px" bg={containerBg} borderRadius="3xl" p={0} boxShadow="0 25px 50px -12px rgba(0,0,0,0.1)" overflow="hidden">
         
         {/* Header Section */}
-        <Flex bg="white" p={6} borderBottom="1px solid" borderColor="gray.100" justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
+        <Flex bg={headerBg} p={6} borderBottom="1px solid" borderColor={borderColor} justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
           <HStack spacing={4}>
             <Box bg="blue.600" p={2.5} borderRadius="2xl" boxShadow="0 4px 12px rgba(37, 99, 235, 0.3)">
               <Code2 color="white" size={28} />
             </Box>
             <VStack align="start" spacing={0}>
-              <Heading size="md" color="gray.800" letterSpacing="-0.5px">StudioFormat Pro</Heading>
+              <Heading size="md" color={textColor} letterSpacing="-0.5px">StudioFormat Pro</Heading>
               <HStack>
                 <Sparkles size={12} color="#3182ce" />
-                <Text fontSize="xs" color="gray.500" fontWeight="bold">v2.1 • ALL PLUGINS LOADED</Text>
+                <Text fontSize="xs" color={secondaryTextColor} fontWeight="bold">v2.1 • ALL PLUGINS LOADED</Text>
               </HStack>
             </VStack>
           </HStack>
@@ -133,10 +144,10 @@ const StudioFormatter = () => {
 
         {/* Editor Wrapper */}
         <Box p={6}>
-          <Box borderRadius="2xl" overflow="hidden" border="1px solid" borderColor="gray.200" boxShadow="inner">
+          <Box borderRadius="2xl" overflow="hidden" border="1px solid" borderColor={borderColor} boxShadow="inner">
             <Editor
               height="55vh"
-              theme="light"
+              theme={useColorModeValue("light", "vs-dark")}
               language={selectedLang.value}
               value={code}
               onChange={(v) => setCode(v || '')}
@@ -153,11 +164,11 @@ const StudioFormatter = () => {
         </Box>
 
         {/* Action Footer */}
-        <Flex p={6} bg="gray.50" justify="center" gap={4} borderTop="1px solid" borderColor="gray.100">
-          <Button leftIcon={<Download size={18} />} onClick={downloadFile} variant="outline" colorScheme="gray" bg="white" px={8} borderRadius="full">
+        <Flex p={6} bg={footerBg} justify="center" gap={4} borderTop="1px solid" borderColor={borderColor}>
+          <Button leftIcon={<Download size={18} />} onClick={downloadFile} variant="outline" colorScheme="gray" bg={buttonBg} px={8} borderRadius="full">
             Download
           </Button>
-          <Button leftIcon={<Copy size={18} />} onClick={copyCode} variant="outline" colorScheme="blue" bg="white" px={8} borderRadius="full">
+          <Button leftIcon={<Copy size={18} />} onClick={copyCode} variant="outline" colorScheme="blue" bg={buttonBg} px={8} borderRadius="full">
             Copy
           </Button>
           <Button 

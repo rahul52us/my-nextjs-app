@@ -20,7 +20,8 @@ import {
   SimpleGrid,
   Spinner,
   Badge,
-  useToast
+  useToast,
+  useColorModeValue
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -48,6 +49,16 @@ const AICompressor: React.FC = () => {
   const [targetSizeMB, setTargetSizeMB] = useState<number>(0.5);
   
   const toast = useToast();
+
+  const bg = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const cardBorder = useColorModeValue("gray.100", "gray.700");
+  const secondaryBg = useColorModeValue("gray.100", "gray.700");
+  const textMuted = useColorModeValue("gray.400", "gray.500");
+  const dropBg = useColorModeValue("white", "gray.800");
+  const dropInnerBg = useColorModeValue("gray.50", "gray.700");
+  const dropBorder = useColorModeValue("gray.200", "gray.600");
+  const hoverBg = useColorModeValue("blue.50/30", "blue.900/30");
 
   useEffect(() => {
     return () => {
@@ -142,7 +153,7 @@ const AICompressor: React.FC = () => {
     : 0;
 
   return (
-    <Box minH="100vh" bg="gray.50" py={{ base: 6, md: 12 }}>
+    <Box minH="100vh" bg={bg} py={{ base: 6, md: 12 }}>
       <Container maxW="container.xl">
         
         {/* Header */}
@@ -176,8 +187,8 @@ const AICompressor: React.FC = () => {
           {/* Sidebar Controls */}
           <Box gridColumn={{ lg: "span 4" }}>
             <VStack spacing={6} align="stretch">
-              <Box bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px" borderColor="gray.100">
-                <HStack bg="gray.100" p={1} borderRadius="2xl" mb={6}>
+              <Box bg={cardBg} p={6} borderRadius="3xl" shadow="sm" border="1px" borderColor={cardBorder}>
+                <HStack bg={secondaryBg} p={1} borderRadius="2xl" mb={6}>
                   <Button
                     flex={1}
                     size="sm"
@@ -205,7 +216,7 @@ const AICompressor: React.FC = () => {
                 {mode === "auto" ? (
                   <VStack align="stretch" spacing={4}>
                     <Flex justify="space-between" align="end">
-                      <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase">Strength</Text>
+                      <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase">Strength</Text>
                       <Text fontSize="2xl" fontWeight="900" color="blue.600">{Math.round(quality * 100)}%</Text>
                     </Flex>
                     <Slider aria-label="quality-slider" min={0.1} max={1} step={0.1} value={quality} onChange={(v) => setQuality(v)}>
@@ -271,22 +282,22 @@ const AICompressor: React.FC = () => {
               <Box
                 {...getRootProps()}
                 h="500px"
-                bg="white"
+                bg={dropBg}
                 border="2px dashed"
-                borderColor={isDragActive ? "blue.400" : "gray.200"}
+                borderColor={isDragActive ? "blue.400" : dropBorder}
                 borderRadius="3rem"
                 transition="all 0.2s"
                 cursor="pointer"
-                _hover={{ borderColor: "blue.300", bg: "blue.50/30" }}
+                _hover={{ borderColor: "blue.300", bg: hoverBg }}
               >
                 <input {...getInputProps()} />
                 <VStack h="full" justify="center" spacing={4}>
-                  <Box p={6} bg="gray.50" borderRadius="2xl" color="gray.300">
+                  <Box p={6} bg={dropInnerBg} borderRadius="2xl" color={useColorModeValue("gray.300", "gray.500")}>
                     <MdCloudUpload size="48px" />
                   </Box>
                   <VStack spacing={1}>
                     <Text fontSize="xl" fontWeight="bold">Drop image here</Text>
-                    <Text color="gray.400">PNG, JPG or WebP (Max 10MB)</Text>
+                    <Text color={textMuted}>PNG, JPG or WebP (Max 10MB)</Text>
                   </VStack>
                 </VStack>
               </Box>
@@ -294,27 +305,27 @@ const AICompressor: React.FC = () => {
               <VStack spacing={6}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="full">
                   {/* Original Card */}
-                  <Box bg="white" p={4} borderRadius="3xl" border="1px" borderColor="gray.100">
+                  <Box bg={cardBg} p={4} borderRadius="3xl" border="1px" borderColor={cardBorder}>
                     <HStack justify="space-between" mb={3} px={2}>
                       <Badge variant="subtle">Original</Badge>
-                      <Text fontSize="xs" fontWeight="bold" color="gray.400">
+                      <Text fontSize="xs" fontWeight="bold" color={textMuted}>
                         {(originalFile.size / 1024).toFixed(1)} KB
                       </Text>
                     </HStack>
-                    <Box borderRadius="2xl" overflow="hidden" height="300px" bg="gray.50">
+                    <Box borderRadius="2xl" overflow="hidden" height="300px" bg={dropInnerBg}>
                       <Image src={originalUrl || ""} alt="original" w="full" h="full" objectFit="contain" />
                     </Box>
                   </Box>
 
                   {/* Optimized Card */}
-                  <Box bg="white" p={4} borderRadius="3xl" border="1px" borderColor="blue.100" shadow="sm">
+                  <Box bg={cardBg} p={4} borderRadius="3xl" border="1px" borderColor={useColorModeValue("blue.100", "blue.600")} shadow="sm">
                     <HStack justify="space-between" mb={3} px={2}>
                       <Badge colorScheme="blue">Optimized</Badge>
-                      <Text fontSize="xs" fontWeight="bold" color="blue.400">
+                      <Text fontSize="xs" fontWeight="bold" color={useColorModeValue("blue.400", "blue.200")}>
                         {compressedFile ? (compressedFile.size / 1024).toFixed(1) : "0"} KB
                       </Text>
                     </HStack>
-                    <Box borderRadius="2xl" overflow="hidden" height="300px" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
+                    <Box borderRadius="2xl" overflow="hidden" height="300px" bg={dropInnerBg} display="flex" alignItems="center" justifyContent="center">
                       {loading ? (
                         <Spinner color="blue.500" size="xl" />
                       ) : (
@@ -335,7 +346,7 @@ const AICompressor: React.FC = () => {
                         w="full"
                         h="70px"
                         colorScheme="gray"
-                        bg="gray.900"
+                        bg={useColorModeValue("gray.900", "gray.700")}
                         _hover={{ bg: "blue.600" }}
                         color="white"
                         borderRadius="2xl"

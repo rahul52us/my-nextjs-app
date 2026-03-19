@@ -29,6 +29,7 @@ import {
   Tab,
   Tooltip,
   Divider,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -97,6 +98,19 @@ export default function RegexTool() {
   const [error, setError] = useState("");
   const toast = useToast();
 
+  // Color mode values
+  const bgColor = useColorModeValue("gray.50", "gray.900");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const secondaryTextColor = useColorModeValue("gray.500", "gray.400");
+  const headerBg = useColorModeValue("white", "gray.800");
+  const inputBg = useColorModeValue("gray.50", "gray.700");
+  const outputBg = useColorModeValue("gray.900", "gray.800");
+  const outputTextColor = useColorModeValue("gray.100", "gray.200");
+  const tableBg = useColorModeValue("gray.50", "gray.700");
+  const hoverBg = useColorModeValue("purple.50", "purple.900");
+
   const { highlighted, matches } = useMemo(() => {
     if (!pattern || !testString) return { highlighted: testString, matches: [] as RegExpMatchArray[] };
     try {
@@ -135,8 +149,8 @@ export default function RegexTool() {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50" color="gray.800" pb={20}>
-      <Box bg="white" borderBottom="1px" borderColor="gray.200" px={8} py={4} position="sticky" top={0} zIndex={10} shadow="sm">
+    <Box minH="100vh" bg={bgColor} color={textColor} pb={20}>
+      <Box bg={headerBg} borderBottom="1px" borderColor={borderColor} px={8} py={4} position="sticky" top={0} zIndex={10} shadow="sm">
         <Container maxW="container.xl">
           <Flex justify="space-between" align="center">
             <HStack spacing={3}>
@@ -149,7 +163,7 @@ export default function RegexTool() {
               </VStack>
             </HStack>
 
-            <HStack spacing={1} bg="gray.100" p={1} borderRadius="xl">
+            <HStack spacing={1} bg={inputBg} p={1} borderRadius="xl">
               {[
                 { id: "tester", label: "Tester", icon: Search },
                 { id: "generator", label: "Library", icon: FileCode },
@@ -190,7 +204,7 @@ export default function RegexTool() {
                     <VStack spacing={6}>
                       <HStack w="100%" spacing={4}>
                         <Box flex={1}>
-                          <Text fontSize="xs" fontWeight="black" color="gray.400" mb={2} textTransform="uppercase">Regular Expression</Text>
+                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Regular Expression</Text>
                           <Input
                             placeholder="/ ^[a-z]+$ /"
                             value={pattern}
@@ -217,7 +231,7 @@ export default function RegexTool() {
                       </HStack>
 
                       <Box w="100%">
-                        <Text fontSize="xs" fontWeight="black" color="gray.400" mb={2} textTransform="uppercase">Test String</Text>
+                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Test String</Text>
                         <Textarea
                           placeholder="Type or paste text here to test matches..."
                           value={testString}

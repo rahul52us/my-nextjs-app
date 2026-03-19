@@ -2,7 +2,8 @@
 import React from 'react';
 import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid, Divider, 
-  Progress, Badge, Image, Circle, Grid, GridItem, Square, Icon
+  Progress, Badge, Image, Circle, Grid, GridItem, Square, Icon,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { 
   Mail, Phone, MapPin, Globe, Award, BookOpen, Briefcase, 
@@ -12,8 +13,13 @@ import {
 // --- Additional 7 Templates to complete the 10 ---
 
 // 4. THE CREATIVE BOLD (High Impact / Design Oriented)
-export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
-  <Box p="0" fontFamily={data.fontFamily} bg="white" minH="297mm">
+export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => {
+  const bgColor = useColorModeValue("white", "gray.900");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+  const cardBg = useColorModeValue("gray.50", "gray.700");
+
+  return (
+  <Box p="0" fontFamily={data.fontFamily} bg={bgColor} minH="297mm">
     <Box bg={data.themeColor} color="white" p="15mm" pb="25mm" clipPath="polygon(0 0, 100% 0, 100% 85%, 0 100%)">
       <Flex justify="space-between" align="center">
         <VStack align="flex-start" spacing={0}>
@@ -31,7 +37,7 @@ export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
     <Grid templateColumns="repeat(12, 1fr)" gap={10} px="15mm" mt="-10mm">
       <GridItem colSpan={4}>
         <VStack align="stretch" spacing={8}>
-          <Box bg="gray.50" p={6} borderRadius="2xl" shadow="xl">
+          <Box bg={cardBg} p={6} borderRadius="2xl" shadow="xl">
             <Heading size="sm" mb={4} color={data.themeColor}>EXPERTISE</Heading>
             <Flex wrap="wrap" gap={2}>
               {data.skills.map((s: any, i: number) => (
@@ -47,7 +53,7 @@ export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
               <Box key={i} mb={4}>
                 <Text fontWeight="bold" fontSize="sm">{edu.degree}</Text>
                 <Text fontSize="xs">{edu.school}</Text>
-                <Text fontSize="xs" color="gray.500">{edu.year}</Text>
+                <Text fontSize="xs" color={useColorModeValue("gray.500", "gray.400")}>{edu.year}</Text>
               </Box>
             ))}
           </Box>
@@ -60,7 +66,7 @@ export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
             <Heading size="md" mb={4} display="flex" alignItems="center" gap={2}>
               <Icon as={User} size={20} /> PROFILE
             </Heading>
-            <Text fontSize="md" color="gray.700" lineHeight="1.8">{data.summary}</Text>
+            <Text fontSize="md" color={useColorModeValue("gray.700", "gray.300")} lineHeight="1.8">{data.summary}</Text>
           </Box>
           <Box>
             <Heading size="md" mb={6} display="flex" alignItems="center" gap={2}>
@@ -71,9 +77,9 @@ export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
                 <Text fontWeight="900" fontSize="lg" color={data.themeColor}>{exp.role}</Text>
                 <HStack justify="space-between" mb={2}>
                   <Text fontWeight="bold" fontSize="sm">{exp.company}</Text>
-                  <Text fontSize="xs" bg="gray.100" px={2} borderRadius="md">{exp.start} - {exp.end}</Text>
+                  <Text fontSize="xs" bg={useColorModeValue("gray.100", "gray.600")} px={2} borderRadius="md">{exp.start} - {exp.end}</Text>
                 </HStack>
-                <Text fontSize="sm" color="gray.600">{exp.desc}</Text>
+                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>{exp.desc}</Text>
               </Box>
             ))}
           </Box>
@@ -81,7 +87,8 @@ export const CreativeBoldTemplate: React.FC<{ data: any }> = ({ data }) => (
       </GridItem>
     </Grid>
   </Box>
-);
+  );
+};
 
 // 5. THE MONOLITH (Dark, Elegant, Single Column Focus)
 export const MonolithTemplate: React.FC<{ data: any }> = ({ data }) => (
@@ -113,7 +120,7 @@ export const MonolithTemplate: React.FC<{ data: any }> = ({ data }) => (
                     <Text fontSize="lg" fontWeight="bold">{exp.role}</Text>
                     <Text fontSize="sm" color={data.themeColor}>{exp.start} — {exp.end}</Text>
                   </HStack>
-                  <Text color="whiteAlpha.600" mb={4} fontWeight="bold" fontSize="xs" textTransform="uppercase">{exp.company}</Text>
+                  <Text color={useColorModeValue("whiteAlpha.600", "gray.400")} mb={4} fontWeight="bold" fontSize="xs" textTransform="uppercase">{exp.company}</Text>
                   <Text fontSize="sm" opacity={0.8} lineHeight="1.7">{exp.desc}</Text>
                 </Box>
               ))}
@@ -129,7 +136,7 @@ export const MonolithTemplate: React.FC<{ data: any }> = ({ data }) => (
                 {data.skills.map((s: any, i: number) => (
                   <Box key={i}>
                     <Text fontSize="xs" mb={1} fontWeight="bold">{s.name}</Text>
-                    <Progress value={s.level} size="xxs" colorScheme="whiteAlpha" bg="whiteAlpha.100" />
+                    <Progress value={s.level} size="xxs" colorScheme="whiteAlpha" bg={useColorModeValue("whiteAlpha.100", "gray.600")} />
                   </Box>
                 ))}
               </VStack>
@@ -319,8 +326,13 @@ export const StartupTemplate: React.FC<{ data: any }> = ({ data }) => (
 );
 
 // 9. THE ACADEMIC (Traditional, Text-Dense, Trustworthy)
-export const AcademicTemplate: React.FC<{ data: any }> = ({ data }) => (
-  <Box p="20mm" bg="white" color="black" fontFamily="'Times New Roman', serif">
+export const AcademicTemplate: React.FC<{ data: any }> = ({ data }) => {
+  const bgColor = useColorModeValue("white", "gray.900");
+  const textColor = useColorModeValue("black", "white");
+  const borderColor = useColorModeValue("black", "white");
+
+  return (
+  <Box p="20mm" bg={bgColor} color={textColor} fontFamily="'Times New Roman', serif">
     <VStack spacing={2} mb={10}>
       <Heading size="xl" fontWeight="normal" textTransform="uppercase" letterSpacing="2px">{data.fullName}</Heading>
       <HStack divider={<Text>|</Text>} spacing={3} fontSize="sm">
@@ -332,12 +344,12 @@ export const AcademicTemplate: React.FC<{ data: any }> = ({ data }) => (
 
     <VStack align="stretch" spacing={8}>
       <Box>
-        <Heading size="xs" borderBottom="1px solid black" pb={1} mb={3}>RESEARCH & SUMMARY</Heading>
+        <Heading size="xs" borderBottom={`1px solid ${borderColor}`} pb={1} mb={3}>RESEARCH & SUMMARY</Heading>
         <Text fontSize="sm" textAlign="justify">{data.summary}</Text>
       </Box>
 
       <Box>
-        <Heading size="xs" borderBottom="1px solid black" pb={1} mb={4}>PROFESSIONAL APPOINTMENTS</Heading>
+        <Heading size="xs" borderBottom={`1px solid ${borderColor}`} pb={1} mb={4}>PROFESSIONAL APPOINTMENTS</Heading>
         {data.experiences.map((exp: any, i: number) => (
           <Grid templateColumns="150px 1fr" gap={6} key={i} mb={4}>
             <Text fontSize="sm" fontWeight="bold">{exp.start} — {exp.end}</Text>
@@ -351,7 +363,7 @@ export const AcademicTemplate: React.FC<{ data: any }> = ({ data }) => (
       </Box>
 
       <Box>
-        <Heading size="xs" borderBottom="1px solid black" pb={1} mb={4}>EDUCATION</Heading>
+        <Heading size="xs" borderBottom={`1px solid ${borderColor}`} pb={1} mb={4}>EDUCATION</Heading>
         {data.educations.map((edu: any, i: number) => (
           <Grid templateColumns="150px 1fr" gap={6} key={i} mb={2}>
             <Text fontSize="sm" fontWeight="bold">{edu.year}</Text>
@@ -364,7 +376,8 @@ export const AcademicTemplate: React.FC<{ data: any }> = ({ data }) => (
       </Box>
     </VStack>
   </Box>
-);
+  );
+};
 
 // 10. THE MINIMAL CARD (Modern, Centered, Card-based)
 export const MinimalCardTemplate: React.FC<{ data: any }> = ({ data }) => (

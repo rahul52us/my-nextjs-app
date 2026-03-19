@@ -42,6 +42,12 @@ const SkyBlueExtractor: React.FC = () => {
   const bgColor = useColorModeValue("blue.50", "gray.900");
   const cardColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("blue.100", "gray.700");
+  const textColor = useColorModeValue("blue.800", "blue.200");
+  const accentColor = useColorModeValue("blue.500", "blue.300");
+  const secondaryTextColor = useColorModeValue("blue.600", "blue.400");
+  const lightBgColor = useColorModeValue("blue.50", "gray.800");
+  const hoverBorderColor = useColorModeValue("blue.400", "blue.500");
+  const badgeBgColor = useColorModeValue("gray.50", "gray.700");
 
   const processWord = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer();
@@ -209,10 +215,10 @@ const SkyBlueExtractor: React.FC = () => {
               <Badge colorScheme="blue" variant="solid" px={3} py={1} borderRadius="full">PDF</Badge>
               <Badge colorScheme="cyan" variant="solid" px={3} py={1} borderRadius="full">DOCX</Badge>
             </ChakraHStack>
-            <Heading size="2xl" color="blue.800" fontWeight="900" mb={3} letterSpacing="tight">
-              SkyBlue <Text as="span" color="blue.500">Asset Studio</Text>
+            <Heading size="2xl" color={textColor} fontWeight="900" mb={3} letterSpacing="tight">
+              SkyBlue <Text as="span" color={accentColor}>Asset Studio</Text>
             </Heading>
-            <Text fontSize="lg" color="blue.600" maxW="2xl">
+            <Text fontSize="lg" color={secondaryTextColor} maxW="2xl">
               Professional document deconstruction. Extract every embedded image layer with zero quality loss.
             </Text>
           </Flex>
@@ -232,14 +238,14 @@ const SkyBlueExtractor: React.FC = () => {
           >
             <input {...getInputProps()} />
             <VStack spacing={6}>
-              <Box p={5} bg="blue.50" borderRadius="full" border="1px solid" borderColor="blue.100">
+              <Box p={5} bg={lightBgColor} borderRadius="full" border="1px solid" borderColor="blue.100">
                 <Icon as={FileUp} w={10} h={10} color="blue.500" />
               </Box>
               <VStack spacing={1}>
-                <Text fontSize="xl" fontWeight="bold" color="blue.900">
+                <Text fontSize="xl" fontWeight="bold" color={textColor}>
                   {isDragActive ? "Release to Scan" : "Drag & Drop Document"}
                 </Text>
-                <Text color="blue.400">Supports .PDF and .DOCX formats</Text>
+                <Text color={secondaryTextColor}>Supports .PDF and .DOCX formats</Text>
               </VStack>
             </VStack>
           </Box>
@@ -254,8 +260,8 @@ const SkyBlueExtractor: React.FC = () => {
           {isProcessing && (
             <Center py={10} flexDirection="column">
               <Spinner size="xl" thickness="4px" speed="0.8s" color="blue.500" mb={4} />
-              <Text fontWeight="bold" color="blue.700">Analyzing Document Layers...</Text>
-              <Text fontSize="sm" color="blue.400">Isolating bitmap assets</Text>
+              <Text fontWeight="bold" color={textColor}>Analyzing Document Layers...</Text>
+              <Text fontSize="sm" color={secondaryTextColor}>Isolating bitmap assets</Text>
             </Center>
           )}
 
