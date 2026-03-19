@@ -663,7 +663,7 @@ export default function HomeContent() {
                             </VStack>
 
                             <Box p={6} bg={useColorModeValue("gray.50", "gray.900")} borderRadius="2xl" border="1px dashed" borderColor="blue.300">
-                                <Heading color={headingColor} size="xs" mb={3} color={useColorModeValue("blue.600", "blue.300")}>Pro Tip: Character Set</Heading>
+                                <Heading size="xs" mb={3} color={useColorModeValue("blue.600", "blue.300")}>Pro Tip: Character Set</Heading>
                                 <Text fontSize="xs" color={mutedText} lineHeight="tall">
                                     Base64 uses the characters <b>A-Z</b>, <b>a-z</b>, <b>0-9</b>, <b>+</b>, and <b>/</b>. The <b>=</b> sign is used for padding at the end of the string to ensure the encoded data is a multiple of 4 bytes.
                                 </Text>
