@@ -141,7 +141,7 @@ const HeaderLogo = observer(() => {
 
       {/* DESKTOP NAV */}
       {isDesktop ? (
-        <Flex flex={1} justify="center">
+        <Flex flex="0 1 auto" minW={0} justify="center">
           <HStack 
             spacing={1} 
             bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"} 
@@ -187,7 +187,7 @@ const HeaderLogo = observer(() => {
               >
                 <MenuButton
                   as={Box}
-                  px={5}
+                  px={3}
                   py={2}
                   borderRadius="full"
                   cursor="pointer"

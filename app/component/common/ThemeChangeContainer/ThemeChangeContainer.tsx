@@ -3,7 +3,7 @@
 import { observer } from "mobx-react-lite";
 import CustomDrawer from "../Drawer/CustomDrawer";
 import { Box, Button, Flex, Grid, SystemStyleObject, Text } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa";
 import stores from "../../../store/stores";
 import ColorPickerComponent from "../ColorPicker/ColorPicker";
@@ -159,7 +159,15 @@ const ThemeChangeContainer: React.FC = observer(() => {
     },
   ];
 
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>("Blue");
+
+  useEffect(() => {
+  const defaultColor = colors.find(c => c.name === "Blue");
+  if (defaultColor) {
+    theme.colors.brand = defaultColor.palette;
+    setThemeConfig("colors.brand", defaultColor.palette);
+  }
+}, []);
 
 
   const handleColorSelect = (color: ColorOption) => {

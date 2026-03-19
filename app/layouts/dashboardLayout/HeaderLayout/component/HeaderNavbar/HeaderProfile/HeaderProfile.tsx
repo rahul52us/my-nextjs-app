@@ -32,7 +32,7 @@ import { themeStore } from "../../../../../../store/themeStore/themeStore";
 
 
 const HeaderProfile = observer(() => {
-  const {auth : {doLogout}} = stores
+  const { auth: { doLogout } } = stores
   const pathname = usePathname(); // Replace useLocation
   const router = useRouter(); // Replace useNavigate
   const {
@@ -92,10 +92,9 @@ const HeaderProfile = observer(() => {
             <MenuItem display="none" onClick={() => router.push(main.changePassword)}>
               <FaLock style={{ marginRight: "8px" }} /> Change Password
             </MenuItem>
-<MenuItem onClick={() => themeStore.setOpenThemeDrawer()}>
-  <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
-</MenuItem>
-
+            <MenuItem onClick={() => themeStore.setOpenThemeDrawer()}>
+              <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
+            </MenuItem>
             <Divider />
             <MenuItem
               display="none"

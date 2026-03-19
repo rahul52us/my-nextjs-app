@@ -16,10 +16,13 @@ import {
   Avatar,
   Image,
   Badge,
+  useColorModeValue,
+  Heading,
 } from "@chakra-ui/react";
-import { Send, Upload, FileText, Table, Zap } from "lucide-react";
+import { Send, Upload, FileText, Zap } from "lucide-react";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import stores from "../../../../store/stores";
 
 const API_URL = "http://localhost:5000/api/chat";
 
@@ -35,6 +38,15 @@ export default function UniversalChatbot() {
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // --- Color Logic Starts Here ---
+  const { themeStore: { themeConfig } } = stores;
+  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const textColor = useColorModeValue("black", "white");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const botBubbleBg = useColorModeValue("gray.100", "gray.600");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  // --- Color Logic Ends Here ---
 
   const applyRegexPipeline = (text: string, patterns: RegExp[]) => {
     let processed = text;
@@ -187,18 +199,19 @@ export default function UniversalChatbot() {
   };
 
   return (
-    <Box bg="gray.50" minH="100vh">
+    <Box bg={bgColor} color={textColor} minH="100vh">
       <Container maxW="container.xl" py={6}>
         <VStack spacing={6} h="100vh">
           {/* Header */}
           <Flex w="full" justify="space-between" align="center">
             <HStack spacing={3}>
-              <Zap size={24} />
-              <Text fontWeight="bold">Studio AI</Text>
+              <Zap size={24} color={themeConfig.colors.brand[300]} />
+              <Heading as="h1" size="md" color={themeConfig.colors.brand[300]}>Studio AI</Heading>
               <Badge colorScheme="purple">Toolsahayta</Badge>
             </HStack>
 
             <Button
+              colorScheme="teal"
               leftIcon={<Upload size={16} />}
               onClick={() => fileInputRef.current?.click()}
               isLoading={isProcessing}
@@ -215,16 +228,17 @@ export default function UniversalChatbot() {
             />
           </Flex>
 
-          {/* File Preview + Chat */}
-          <VStack flex={1} w="full" bg="white" borderRadius="xl" boxShadow="md" overflow="hidden">
-            {/* Preview */}
+          {/* File Preview + Chat Container */}
+          <VStack flex={1} w="full" bg={cardBg} borderRadius="xl" boxShadow="md" overflow="hidden" border="1px" borderColor={borderColor}>
+            {/* Preview Section */}
             {filePreview && (
-              <Box w="full" p={4} borderBottom="1px" borderColor="gray.200">
+              <Box w="full" p={4} borderBottom="1px" borderColor={borderColor}>
                 <HStack justify="space-between">
                   <Text fontWeight="bold">{filePreview.name}</Text>
                   <Button
                     size="sm"
                     colorScheme="red"
+                    variant="ghost"
                     onClick={() => {
                       setFilePreview(null);
                       setMessages([]);
@@ -241,7 +255,7 @@ export default function UniversalChatbot() {
                   )}
 
                   {filePreview.type === "application/pdf" && (
-                    <Flex bg="gray.100" h="100px" align="center" justify="center" borderRadius="md">
+                    <Flex bg={bgColor} h="100px" align="center" justify="center" borderRadius="md">
                       <FileText size={48} color="#E53E3E" />
                       <Text ml={2}>PDF Preview</Text>
                     </Flex>
@@ -249,7 +263,7 @@ export default function UniversalChatbot() {
 
                   {(filePreview.type.includes("excel") || filePreview.type.includes("csv")) &&
                     filePreview.excelPreview && (
-                      <Box maxH="150px" overflowY="auto" p={2} bg="gray.50" borderRadius="md">
+                      <Box maxH="150px" overflowY="auto" p={2} bg={bgColor} borderRadius="md">
                         <pre style={{ fontSize: "10px" }}>{filePreview.excelPreview}</pre>
                       </Box>
                     )}
@@ -261,18 +275,18 @@ export default function UniversalChatbot() {
             <Box flex={1} w="full" p={6} overflowY="auto" ref={scrollRef}>
               {messages.length === 0 && (
                 <Flex align="center" justify="center" h="full">
-                  <Text color="gray.400">Upload a file to start chatting with AI</Text>
+                  <Text color="gray.500">Upload a file to start chatting with AI</Text>
                 </Flex>
               )}
 
               {messages.map((msg, i) => (
                 <Flex key={i} justify={msg.role === "user" ? "flex-end" : "flex-start"} mb={4}>
                   <HStack align="start">
-                    {msg.role === "bot" && <Avatar size="xs" name="AI" bg="purple.500" />}
+                    {msg.role === "bot" && <Avatar size="xs" name="AI" bg="teal.500" />}
                     <Box
                       p={3}
-                      bg={msg.role === "user" ? "purple.500" : "gray.100"}
-                      color={msg.role === "user" ? "white" : "black"}
+                      bg={msg.role === "user" ? "teal.500" : botBubbleBg}
+                      color={msg.role === "user" ? "white" : textColor}
                       borderRadius="lg"
                       maxW="500px"
                     >
@@ -284,22 +298,24 @@ export default function UniversalChatbot() {
 
               {isTyping && (
                 <HStack>
-                  <Spinner size="sm" />
+                  <Spinner size="sm" color="teal.500" />
                   <Text fontSize="xs">AI is thinking...</Text>
                 </HStack>
               )}
             </Box>
 
-            {/* Input */}
-            <Box p={4} w="full">
+            {/* Input Footer */}
+            <Box p={4} w="full" bg={useColorModeValue("gray.50", "gray.800")}>
               <HStack>
                 <Input
                   placeholder="Ask about the file..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  bg={useColorModeValue("white", "gray.700")}
                 />
                 <IconButton
+                  colorScheme="teal"
                   aria-label="send"
                   icon={<Send size={18} />}
                   onClick={sendMessage}
