@@ -6,11 +6,12 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// Chakra UI & React Icons (Already in your package.json)
 import {
   Box, Button, Container, Flex, Heading, Icon, Input, 
-  Stack, Text, VStack, HStack, IconButton, Spinner, Center, useToast
+  Stack, Text, VStack, HStack, IconButton, Spinner, Center, useToast,
+  useColorModeValue
 } from '@chakra-ui/react';
+
 import { 
   DeleteIcon, DownloadIcon, RepeatIcon 
 } from '@chakra-ui/icons';
@@ -27,6 +28,18 @@ const AIRotator: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
   const toast = useToast();
+
+  // ✅ DARK MODE COLORS
+  const bgMain = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderClr = useColorModeValue("gray.200", "gray.700");
+  const borderLight = useColorModeValue("gray.100", "gray.600");
+  const textGray = useColorModeValue("gray.500", "gray.400");
+  const textLight = useColorModeValue("gray.400", "gray.500");
+  const previewBg = useColorModeValue("gray.200", "gray.700");
+  const topBarBg = useColorModeValue("gray.50", "gray.700");
+  const uploadBg = useColorModeValue("white", "gray.800");
+  const uploadInner = useColorModeValue("blue.50", "blue.900");
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'application/pdf': ['.pdf'] },
@@ -77,9 +90,8 @@ const AIRotator: React.FC = () => {
       });
 
       const pdfBytes: Uint8Array = await pdfDoc.save();
-
-      // FIXED: Using Uint8Array constructor to satisfy BlobPart requirement
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+
       saveAs(blob, `rotated-${file.name}`);
       
       toast({ title: "Success", description: "PDF rotated and saved.", status: "success" });
@@ -91,14 +103,14 @@ const AIRotator: React.FC = () => {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50" py={10}>
+    <Box minH="100vh" bg={bgMain} py={10}>
       <Container maxW="container.xl">
         <Flex justify="space-between" align="center" mb={8}>
           <VStack align="start" spacing={0}>
             <Heading size="lg" color="blue.600" display="flex" alignItems="center" gap={3}>
               <Icon as={FaSyncAlt} /> PDF Rotator
             </Heading>
-            <Text color="gray.500">Rotate specific pages or the entire document</Text>
+            <Text color={textGray}>Rotate specific pages or the entire document</Text>
           </VStack>
           {file && (
             <Button leftIcon={<DeleteIcon />} colorScheme="red" variant="ghost" onClick={() => { setFile(null); setFileUrl(''); }}>
@@ -110,29 +122,31 @@ const AIRotator: React.FC = () => {
         {!file ? (
           <Center 
             {...getRootProps()} 
-            p={20} border="3px dashed" borderColor={isDragActive ? "blue.400" : "gray.200"}
-            rounded="3xl" bg="white" cursor="pointer" transition="all 0.2s" _hover={{ borderColor: "blue.300" }}
+            p={20} border="3px dashed" borderColor={isDragActive ? "blue.400" : borderClr}
+            rounded="3xl" bg={uploadBg} cursor="pointer" transition="all 0.2s" _hover={{ borderColor: "blue.300" }}
           >
             <input {...getInputProps()} />
             <VStack spacing={4}>
-              <Box p={6} bg="blue.50" rounded="2xl">
+              <Box p={6} bg={uploadInner} rounded="2xl">
                 <Icon as={FaUpload} w={10} h={10} color="blue.500" />
               </Box>
               <Text fontWeight="bold" fontSize="xl">Drop your PDF here</Text>
-              <Text color="gray.400">or click to browse files</Text>
+              <Text color={textLight}>or click to browse files</Text>
             </VStack>
           </Center>
         ) : (
           <Flex direction={{ base: "column", lg: "row" }} gap={8}>
+            
             {/* Preview Section */}
-            <Box flex={2} bg="white" rounded="2xl" shadow="sm" border="1px" borderColor="gray.100" overflow="hidden">
-              <Box p={4} borderBottom="1px" borderColor="gray.100" bg="gray.50">
+            <Box flex={2} bg={cardBg} rounded="2xl" shadow="sm" border="1px" borderColor={borderLight} overflow="hidden">
+              <Box p={4} borderBottom="1px" borderColor={borderLight} bg={topBarBg}>
                 <HStack>
                   <Icon as={FaFilePdf} color="red.500" />
                   <Text fontWeight="bold" fontSize="sm" isTruncated>{file.name}</Text>
                 </HStack>
               </Box>
-              <Box h="70vh" overflowY="auto" p={6} bg="gray.200">
+
+              <Box h="70vh" overflowY="auto" p={6} bg={previewBg}>
                 <Center>
                   <Document 
                     file={fileUrl} 
@@ -141,7 +155,7 @@ const AIRotator: React.FC = () => {
                   >
                     <Stack spacing={8}>
                       {Array.from({ length: numPages }).map((_, i) => (
-                        <Box key={i} shadow="2xl" bg="white">
+                        <Box key={i} shadow="2xl" bg={cardBg}>
                           <Page pageNumber={i + 1} width={500} renderTextLayer={false} renderAnnotationLayer={false} />
                         </Box>
                       ))}
@@ -151,10 +165,10 @@ const AIRotator: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Controls Section */}
+            {/* Controls */}
             <Box flex={1}>
               <VStack spacing={6} align="stretch" position="sticky" top="20px">
-                <Box bg="white" p={6} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
+                <Box bg={cardBg} p={6} rounded="2xl" shadow="sm" border="1px" borderColor={borderLight}>
                   <VStack align="stretch" spacing={5}>
                     <HStack>
                       <Icon as={FaTools} color="blue.500" />
@@ -162,7 +176,7 @@ const AIRotator: React.FC = () => {
                     </HStack>
                     
                     <Box>
-                      <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>ROTATION</Text>
+                      <Text fontSize="xs" fontWeight="bold" color={textLight} mb={2}>ROTATION</Text>
                       <HStack>
                         <Button leftIcon={<RepeatIcon />} flex={1} onClick={handleRotate} colorScheme="blue" variant="outline">
                           +90°
@@ -174,14 +188,16 @@ const AIRotator: React.FC = () => {
                     </Box>
 
                     <Box>
-                      <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>APPLY TO PAGES</Text>
+                      <Text fontSize="xs" fontWeight="bold" color={textLight} mb={2}>APPLY TO PAGES</Text>
                       <Input 
                         placeholder="all, 1-3, 5" 
                         value={pageSelection} 
                         onChange={(e) => setPageSelection(e.target.value)} 
                         focusBorderColor="blue.400"
                       />
-                      <Text fontSize="10px" color="gray.400" mt={1}>Example: "all" or "1, 2-5, 8"</Text>
+                      <Text fontSize="10px" color={textLight} mt={1}>
+                        Example: "all" or "1, 2-5, 8"
+                      </Text>
                     </Box>
 
                     <Button 
@@ -194,10 +210,12 @@ const AIRotator: React.FC = () => {
                     >
                       {isProcessing ? "Processing..." : "Save & Download"}
                     </Button>
+
                   </VStack>
                 </Box>
               </VStack>
             </Box>
+
           </Flex>
         )}
       </Container>

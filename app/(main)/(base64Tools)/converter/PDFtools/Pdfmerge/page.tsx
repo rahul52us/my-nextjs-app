@@ -3,19 +3,18 @@
 import React, { useState, useRef } from 'react';
 import {
   Box, Button, Container, VStack, HStack, Text, Heading, Icon, IconButton,
-  List, ListItem, useToast, Center, Divider, Spinner, Badge, Tooltip, Image, AspectRatio
+  List, ListItem, useToast, Center, Spinner, Badge, Tooltip, Image, AspectRatio,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { 
-  FiFileText, FiX, FiArrowUp, FiArrowDown, FiTrash2, FiFilePlus, FiEye, FiDownload
+  FiFileText, FiX, FiArrowUp, FiArrowDown, FiFilePlus, FiEye, FiDownload
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 
-const MotionBox = motion(Box);
 const MotionListItem = motion(ListItem);
 
-// Define the type strictly
 type FileDocType = 'application/pdf' | 'image';
 
 interface FileWithId {
@@ -31,13 +30,20 @@ const PdfMerger = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
+  /* ✅ COLOR MODE FIX */
+  const pageBg = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const textPrimary = useColorModeValue("gray.800", "gray.100");
+  const textSecondary = useColorModeValue("gray.500", "gray.400");
+  const hoverBg = useColorModeValue("blue.50", "gray.700");
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles: FileWithId[] = Array.from(e.target.files).map((file) => ({
         id: Math.random().toString(36).substring(7),
         file,
         preview: URL.createObjectURL(file),
-        // Fix 1: Cast the string to our specific union type
         type: (file.type.includes('pdf') ? 'application/pdf' : 'image') as FileDocType,
       }));
       setFiles((prev) => [...prev, ...newFiles]);
@@ -85,7 +91,6 @@ const PdfMerger = () => {
     setIsProcessing(true);
     try {
       const pdfBytes = await generateMergedPdf();
-      // Fix 2: Explicitly wrapping in Uint8Array to satisfy BlobPart requirements
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
 
@@ -104,13 +109,15 @@ const PdfMerger = () => {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50" py={10} px={4}>
+    <Box minH="100vh" bg={pageBg} py={10} px={4}>
       <Container maxW="container.md">
         <VStack spacing={8} align="stretch">
           <VStack spacing={2} textAlign="center">
             <Badge colorScheme="purple" borderRadius="full" px={3}>All-in-One</Badge>
-            <Heading size="xl">PDF & Image <Text as="span" color="blue.500">Converter</Text></Heading>
-            <Text color="gray.500">Combine PDFs and Images into a single document</Text>
+            <Heading size="xl" color={textPrimary}>
+              PDF & Image <Text as="span" color="blue.500">Converter</Text>
+            </Heading>
+            <Text color={textSecondary}>Combine PDFs and Images into a single document</Text>
           </VStack>
 
           <Center
@@ -121,14 +128,14 @@ const PdfMerger = () => {
             border="2px dashed"
             borderColor="blue.300"
             borderRadius="2xl"
-            bg="white"
-            _hover={{ bg: 'blue.50', borderColor: 'blue.500' }}
+            bg={cardBg}
+            _hover={{ bg: hoverBg, borderColor: 'blue.500' }}
             transition="all 0.2s"
           >
             <VStack>
               <Icon as={FiFilePlus} boxSize={10} color="blue.500" />
-              <Text fontWeight="bold">Click to upload PDFs or Images</Text>
-              <Text fontSize="xs" color="gray.400">Supports PDF, PNG, JPG</Text>
+              <Text fontWeight="bold" color={textPrimary}>Click to upload PDFs or Images</Text>
+              <Text fontSize="xs" color={textSecondary}>Supports PDF, PNG, JPG</Text>
             </VStack>
             <input id="file-upload" type="file" multiple accept="application/pdf,image/*" hidden onChange={handleFileChange} ref={fileInputRef} />
           </Center>
@@ -136,15 +143,20 @@ const PdfMerger = () => {
           <AnimatePresence>
             {files.length > 0 && (
               <VStack align="stretch" spacing={4}>
-                <Box bg="white" shadow="xl" borderRadius="2xl" overflow="hidden">
+                <Box bg={cardBg} shadow="xl" borderRadius="2xl" overflow="hidden">
                   <List>
                     {files.map((item, index) => (
-                      <MotionListItem key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        p={4} borderBottom="1px solid" borderColor="gray.100" display="flex" alignItems="center" justifyContent="space-between">
-                        
+                      <MotionListItem key={item.id} layout
+                        p={4}
+                        borderBottom="1px solid"
+                        borderColor={borderColor}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
                         <HStack spacing={4} flex={1}>
-                          <Text fontWeight="bold" color="gray.300" w="20px">{index + 1}</Text>
-                          <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg="gray.50">
+                          <Text fontWeight="bold" color={textSecondary} w="20px">{index + 1}</Text>
+                          <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg={useColorModeValue("gray.50", "gray.700")}>
                             {item.type === 'image' ? (
                               <Image src={item.preview} alt="preview" objectFit="cover" />
                             ) : (
@@ -152,13 +164,19 @@ const PdfMerger = () => {
                             )}
                           </AspectRatio>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="sm" fontWeight="bold" noOfLines={1}>{item.file.name}</Text>
-                            <Text fontSize="xs" color="gray.400">{(item.file.size / 1024).toFixed(0)} KB</Text>
+                            <Text fontSize="sm" fontWeight="bold" noOfLines={1} color={textPrimary}>
+                              {item.file.name}
+                            </Text>
+                            <Text fontSize="xs" color={textSecondary}>
+                              {(item.file.size / 1024).toFixed(0)} KB
+                            </Text>
                           </VStack>
                         </HStack>
 
                         <HStack>
-                          <Tooltip label="Preview File"><IconButton aria-label="view" icon={<FiEye />} size="sm" variant="ghost" onClick={() => window.open(item.preview, '_blank')} /></Tooltip>
+                          <Tooltip label="Preview File">
+                            <IconButton aria-label="view" icon={<FiEye />} size="sm" variant="ghost" onClick={() => window.open(item.preview, '_blank')} />
+                          </Tooltip>
                           <IconButton aria-label="up" icon={<FiArrowUp />} size="sm" variant="ghost" isDisabled={index === 0} onClick={() => moveFile(index, 'up')} />
                           <IconButton aria-label="down" icon={<FiArrowDown />} size="sm" variant="ghost" isDisabled={index === files.length - 1} onClick={() => moveFile(index, 'down')} />
                           <IconButton aria-label="remove" icon={<FiX />} size="sm" variant="ghost" colorScheme="red" onClick={() => removeFile(item.id, item.preview)} />

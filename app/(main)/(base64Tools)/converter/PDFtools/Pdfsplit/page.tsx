@@ -21,6 +21,7 @@ import {
   Divider,
   Spinner,
   Center,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { 
   DeleteIcon, 
@@ -51,7 +52,11 @@ const PdfSplitter: React.FC = () => {
   const [range, setRange] = useState({ from: '', to: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const toast = useToast();
-
+  const bgPage = useColorModeValue("gray.50", "gray.900");
+const bgCard = useColorModeValue("white", "gray.800");
+const borderColor = useColorModeValue("gray.100", "gray.700");
+const textMuted = useColorModeValue("gray.500", "gray.400");
+const previewBg = useColorModeValue("gray.100", "gray.700");
   useEffect(() => {
     return () => {
       if (fileData?.url) URL.revokeObjectURL(fileData.url);
@@ -211,7 +216,7 @@ const PdfSplitter: React.FC = () => {
                   </VStack>
                 </Center>
               ) : (
-                <Box bg="white" p={6} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
+                <Box bg={bgCard} p={6} rounded="2xl" shadow="sm" border="1px" borderColor={borderColor}>
                   <Flex justify="space-between" align="center" mb={4}>
                     <HStack overflow="hidden">
                       <Icon as={FaFilePdf} color="red.500" />
@@ -294,7 +299,7 @@ const PdfSplitter: React.FC = () => {
           </GridItem>
 
           <GridItem colSpan={{ base: 12, lg: 8 }}>
-            <Box bg="white" rounded="2xl" shadow="sm" border="1px" borderColor="gray.100" h={{ base: "600px", lg: "85vh" }} overflow="hidden" display="flex" flexDirection="column">
+            <Box bg={bgCard} rounded="2xl" shadow="sm" border="1px" borderColor={borderColor} h={{ base: "600px", lg: "85vh" }} overflow="hidden" display="flex" flexDirection="column">
               <Flex p={4} borderBottom="1px" borderColor="gray.100" justify="space-between">
                 <HStack color="gray.600">
                   <Icon as={FaEye} />
@@ -302,7 +307,7 @@ const PdfSplitter: React.FC = () => {
                 </HStack>
               </Flex>
               
-              <Box flex={1} bg="gray.100" overflowY="auto" p={4}>
+              <Box flex={1} bg={previewBg} overflowY="auto" p={4}>
                 {fileData ? (
                   <Center>
                     <Document file={fileData.url}>

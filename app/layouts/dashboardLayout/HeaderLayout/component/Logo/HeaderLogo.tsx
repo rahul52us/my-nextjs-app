@@ -60,6 +60,7 @@ const HeaderLogo = observer(() => {
   // Colors & Styles
   const textColor = "white";
   const accentColor = themeConfig.colors.brand[300];
+  const menuTextColor = useColorModeValue("gray.800", "white");
   const hoverBg = "whiteAlpha.200";
   const menuBg = useColorModeValue("white", "gray.800");
   const mobileLinkHover = useColorModeValue("blue.50", "gray.700");
@@ -85,7 +86,7 @@ const HeaderLogo = observer(() => {
     } else {
       setScrolled(false);
     }
-    
+
     // Close desktop menu if user scrolls
     if (openMenu !== null) {
       setOpenMenu(null);
@@ -142,12 +143,12 @@ const HeaderLogo = observer(() => {
       {/* DESKTOP NAV */}
       {isDesktop ? (
         <Flex flex="0 1 auto" minW={0} justify="center">
-          <HStack 
-            spacing={1} 
-            bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"} 
-            p={1.5} 
-            borderRadius="full" 
-            border="1px solid" 
+          <HStack
+            spacing={1}
+            bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"}
+            p={1.5}
+            borderRadius="full"
+            border="1px solid"
             borderColor="whiteAlpha.200"
             backdropFilter="blur(12px)"
             boxShadow={scrolled ? "xl" : "none"}
@@ -205,8 +206,8 @@ const HeaderLogo = observer(() => {
                     >
                       {mainItem.name}
                     </Text>
-                    <ChevronDownIcon 
-                      color={textColor} 
+                    <ChevronDownIcon
+                      color={textColor}
                       transition="transform 0.3s"
                       transform={openMenu === mainItem.id ? "rotate(180deg)" : "rotate(0deg)"}
                     />
@@ -214,9 +215,10 @@ const HeaderLogo = observer(() => {
                 </MenuButton>
 
                 <Portal>
-                  <MenuList 
-                    bg={menuBg} 
-                    minW="240px" 
+                  <MenuList
+                    bg={menuBg}
+                    color={menuTextColor}
+                    minW="240px"
                     zIndex={1500}
                     border="1px solid"
                     borderColor={borderColor}
@@ -234,9 +236,9 @@ const HeaderLogo = observer(() => {
                           closeOnSelect={false}
                           offset={[0, 10]}
                         >
-                          <MenuButton 
-                            as={MenuItem} 
-                            borderRadius="xl" 
+                          <MenuButton
+                            as={MenuItem}
+                            borderRadius="xl"
                             transition="all 0.2s ease"
                             _hover={{ bg: mobileLinkHover, transform: "translateX(6px)" }}
                             py={3}
@@ -251,10 +253,11 @@ const HeaderLogo = observer(() => {
                           </MenuButton>
 
                           <Portal>
-                            <MenuList 
-                              bg={menuBg} 
-                              p={2} 
-                              borderRadius="2xl" 
+                            <MenuList
+                              bg={menuBg}
+                              color={menuTextColor}
+                              p={2}
+                              borderRadius="2xl"
                               boxShadow={shadowColor}
                               border="1px solid"
                               borderColor={borderColor}

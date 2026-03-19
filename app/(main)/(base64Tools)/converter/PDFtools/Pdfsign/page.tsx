@@ -11,7 +11,8 @@ import {
   Box, Button, Container, Flex, Heading, Icon, Input,
   Stack, Text, VStack, HStack, IconButton, Spinner, Center,
   useToast, SimpleGrid, Divider, Checkbox, NumberInput, NumberInputField,
-  Slider, SliderTrack, SliderFilledTrack, SliderThumb
+  Slider, SliderTrack, SliderFilledTrack, SliderThumb,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { DownloadIcon, EditIcon } from '@chakra-ui/icons';
 import { FaSignature, FaFont, FaFileUpload, FaRegEye, FaEraser, FaImage, FaArrowsAlt } from 'react-icons/fa';
@@ -29,6 +30,13 @@ const ProSignatureMaker: React.FC = () => {
   const [uploadedSig, setUploadedSig] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
+
+  const bgMain = useColorModeValue("gray.50", "gray.900");
+const cardBg = useColorModeValue("white", "gray.800");
+const borderColor = useColorModeValue("gray.200", "gray.700");
+const previewBg = useColorModeValue("gray.200", "gray.900");
+const textColor = useColorModeValue("gray.800", "gray.100");
+const subText = useColorModeValue("gray.500", "gray.400");
 
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [scale, setScale] = useState(1);
@@ -190,22 +198,22 @@ const ProSignatureMaker: React.FC = () => {
   }, [activeTab, typedName, uploadedSig, isDrawing, getSignatureImage]);
 
   return (
-    <Box minH="100vh" bg="gray.50" py={8} px={4}>
+    <Box minH="100vh" bg={bgMain} py={8} px={4} color={textColor}>
       <Container maxW="container.xl">
         <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
 
-          <Box gridColumn={{ lg: "span 4" }} p={6} bg="white" rounded="3xl" shadow="sm" border="1px" borderColor="gray.200">
+          <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
             <VStack align="stretch" spacing={6}>
               <Heading size="md"><Icon as={FaSignature} color="blue.500" mr={2} /> Signature Maker</Heading>
 
-              <HStack bg="gray.100" p={1} rounded="xl">
+              <HStack bg={useColorModeValue("gray.100", "gray.700")} p={1} rounded="xl">
                 <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
                 <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'blue' : 'gray'} onClick={() => setActiveTab('type')}>Type</Button>
                 <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'blue' : 'gray'} onClick={() => setActiveTab('upload')}>Image</Button>
               </HStack>
 
               {activeTab === 'draw' && (
-                <Box border="2px solid" borderColor="gray.100" rounded="2xl" bg="gray.50" position="relative">
+                <Box border="2px solid" borderColor={borderColor} rounded="2xl" bg={useColorModeValue("gray.50", "gray.700")} position="relative">
                   <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
                   <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} onClick={() => canvasRef.current?.getContext('2d')?.clearRect(0, 0, 400, 200)} />
                 </Box>
@@ -214,7 +222,7 @@ const ProSignatureMaker: React.FC = () => {
               {activeTab === 'type' && <Input placeholder="Type name..." value={typedName} onChange={(e) => setTypedName(e.target.value)} />}
 
               {activeTab === 'upload' && (
-                <Box {...getSigProps()} p={4} border="2px dashed" borderColor="gray.200" rounded="xl" textAlign="center" cursor="pointer">
+                <Box {...getSigProps()} p={4} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer">
                   <input {...getSigInputProps()} />
                   {uploadedSig ? <Box as="img" src={uploadedSig} maxH="60px" mx="auto" /> : <Text fontSize="xs">Upload Signature Image</Text>}
                 </Box>
@@ -254,7 +262,7 @@ const ProSignatureMaker: React.FC = () => {
                 {fromCV ? "Save Signature" : "Export PDF"}
               </Button>
 
-              <Box {...getRootProps()} cursor="pointer" p={3} border="1px solid" borderColor="gray.100" rounded="xl" textAlign="center">
+              <Box {...getRootProps()} cursor="pointer" p={3} border="1px solid" borderColor={borderColor} rounded="xl" textAlign="center">
                 <input {...getInputProps()} />
                 <Text fontSize="xs" color="gray.500">Change Document</Text>
               </Box>
@@ -268,7 +276,7 @@ const ProSignatureMaker: React.FC = () => {
                   <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
                     <Stack spacing={6} position="relative">
                       {Array.from({ length: numPages }).map((_, i) => (
-                        <Box key={i} shadow="2xl" bg="white" position="relative" overflow="hidden">
+                        <Box key={i} shadow="2xl" bg={cardBg} position="relative" overflow="hidden">
                           <Page pageNumber={i + 1} width={600} renderTextLayer={false} renderAnnotationLayer={false} />
 
                           {(applyToAll || targetPage === i + 1) && (
@@ -284,7 +292,7 @@ const ProSignatureMaker: React.FC = () => {
                               bg="whiteAlpha.400"
                             >
                               {liveSig && <Box as="img" src={liveSig} width={`${150 * scale}px`} height={`${75 * scale}px`} pointerEvents="none" opacity={0.8} />}
-                              <Icon as={FaArrowsAlt} position="absolute" top="-10px" left="-10px" color="blue.500" bg="white" rounded="full" p={1} />
+                              <Icon as={FaArrowsAlt} position="absolute" top="-10px" left="-10px" color="blue.500" bg={cardBg} rounded="full" p={1} />
                             </Box>
                           )}
                         </Box>

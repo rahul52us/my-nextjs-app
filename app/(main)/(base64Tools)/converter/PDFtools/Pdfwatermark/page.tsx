@@ -2,6 +2,7 @@
 import React, { useState, ChangeEvent, useRef } from 'react';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { Upload, Download, Type, RotateCw, Maximize, Droplet, Trash2, ShieldCheck, Move } from 'lucide-react';
+import { useColorModeValue } from "@chakra-ui/react";
 
 const PDFWatermarker: React.FC = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -11,6 +12,10 @@ const PDFWatermarker: React.FC = () => {
   const [rotation, setRotation] = useState<number>(-45);
   const [opacity, setOpacity] = useState<number>(0.3);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const pageBg = useColorModeValue("bg-slate-50", "bg-slate-900");
+  const cardBg = useColorModeValue("bg-white", "bg-slate-800");
+  const previewBg = useColorModeValue("bg-white", "bg-slate-700");
+  const watermarkColor = useColorModeValue("#334155", "#ffffff");
   
   // position.x and position.y are 0-100 percentages of the container
   const [position, setPosition] = useState({ x: 50, y: 50 });
@@ -118,12 +123,12 @@ const PDFWatermarker: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 lg:p-12 font-sans text-slate-900">
+    <div className={`min-h-screen ${pageBg} p-4 md:p-8 lg:p-12 font-sans`}>
       <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-8">
         
         {/* Left Control Panel */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 sticky top-8">
+          <div className={`${cardBg} p-6 rounded-3xl shadow-xl border border-slate-200 sticky top-8`}>
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-blue-600 p-2 rounded-xl text-white">
                 <ShieldCheck size={24} />
@@ -200,11 +205,11 @@ const PDFWatermarker: React.FC = () => {
 
         {/* Right Preview Panel */}
         <div className="lg:col-span-8">
-          <div className="bg-slate-200/40 rounded-[2.5rem] p-6 lg:p-10 border-4 border-white shadow-inner min-h-[700px] flex flex-col items-center">
+          <div className={`${previewBg} rounded-[2.5rem] p-6 lg:p-10 border-4 border-slate-200 shadow-inner min-h-[700px] flex flex-col items-center`}>
             <div className="w-full flex justify-between items-end mb-6">
               <div>
-                <h3 className="text-2xl font-black text-slate-800 tracking-tight">Live Preview</h3>
-                <p className="text-slate-500 font-medium">Click and drag text to set position</p>
+                <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Live Preview</h3>
+                <p className="text-slate-500 dark:text-slate-300 font-medium">Click and drag text to set position</p>
               </div>
               <div className="hidden md:block bg-white px-4 py-2 rounded-full border border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 A4 Canvas Standard
@@ -213,7 +218,7 @@ const PDFWatermarker: React.FC = () => {
 
             <div 
               ref={previewRef}
-              className="relative w-full max-w-2xl aspect-[1/1.414] bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-300 cursor-crosshair group select-none touch-none"
+              className={`relative w-full max-w-2xl aspect-[1/1.414] ${previewBg} shadow-2xl rounded-lg overflow-hidden border border-slate-300 cursor-crosshair group select-none touch-none`}
               onMouseMove={(e) => e.buttons === 1 && handleDrag(e)}
               onMouseDown={handleDrag}
               onTouchMove={handleDrag}
@@ -250,7 +255,7 @@ const PDFWatermarker: React.FC = () => {
                       className="font-black whitespace-nowrap leading-none transition-colors"
                       style={{ 
                         fontSize: `${fontSize * 0.55}px`, // Preview visual scaling
-                        color: '#334155' 
+                        color: watermarkColor 
                       }}
                     >
                       {watermarkText || "PREVIEW"}
@@ -259,7 +264,7 @@ const PDFWatermarker: React.FC = () => {
               </div>
             </div>
             
-            <p className="mt-6 text-slate-400 text-sm font-medium italic">
+            <p className="mt-6 text-slate-400 dark:text-slate-500 text-sm font-medium italic">
               * Note: Watermark will be applied to all pages at this exact position.
             </p>
           </div>

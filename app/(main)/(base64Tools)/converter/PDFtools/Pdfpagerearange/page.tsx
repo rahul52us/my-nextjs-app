@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Flex, Text, Heading, Spinner, IconButton,
-  VStack, HStack, Badge, useToast, Icon, Container
+  VStack, HStack, Badge, useToast, Icon, Container,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -25,6 +26,12 @@ const RearrangePages = () => {
   const [pages, setPages] = useState<PageItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const bgMain = useColorModeValue("gray.50", "gray.900");
+const cardBg = useColorModeValue("white", "gray.800");
+const borderClr = useColorModeValue("gray.200", "gray.700");
+const textGray = useColorModeValue("gray.500", "gray.400");
+const boxBg = useColorModeValue("white", "gray.800");
+const hoverBg = useColorModeValue("gray.100", "gray.700");
   const toast = useToast();
 
   useEffect(() => {
@@ -105,23 +112,24 @@ const RearrangePages = () => {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" color="gray.800" py={10}>
+    <Box minH="100vh" bg={bgMain} py={10}>
       <Container maxW="container.xl">
         <VStack spacing={8} align="stretch">
           {/* Header */}
           <Flex
             justify="space-between"
             align="center"
-            bg="white"
+            bg={cardBg}
+
             p={6}
             borderRadius="xl"
             shadow="sm"
             border="1px solid"
-            borderColor="gray.200"
+            borderColor={borderClr}
           >
             <Box>
               <Heading size="lg" color="blue.600">PDF Architect</Heading>
-              <Text color="gray.500" fontSize="sm">Rearrange or remove pages with ease</Text>
+              <Text color={textGray} fontSize="sm">Rearrange or remove pages with ease</Text>
             </Box>
             {file && (
               <HStack spacing={3}>
@@ -148,7 +156,7 @@ const RearrangePages = () => {
               h="400px"
               border="2px dashed"
               borderColor={isDragActive ? "blue.400" : "gray.300"}
-              bg={isDragActive ? "blue.50" : "white"}
+              bg={isDragActive ? "blue.50" : boxBg}
               borderRadius="2xl"
               display="flex"
               flexDirection="column"
@@ -156,7 +164,7 @@ const RearrangePages = () => {
               justifyContent="center"
               cursor="pointer"
               transition="all 0.3s"
-              _hover={{ borderColor: "blue.500", bg: "gray.100" }}
+              _hover={{ borderColor: "blue.500", bg: hoverBg }}
             >
               <input {...getInputProps()} />
               <Icon as={AddIcon} w={10} h={10} mb={4} color="blue.500" />
@@ -164,7 +172,8 @@ const RearrangePages = () => {
               <Text color="gray.400">Support for files up to 50MB</Text>
             </Box>
           ) : (
-            <Box bg="white" p={10} borderRadius="2xl" border="1px solid" borderColor="gray.200" shadow="inner">
+            <Box bg={cardBg}
+ p={10} borderRadius="2xl" border="1px solid" borderColor={borderClr} shadow="inner">
               <Document
                 file={file}
                 onLoadSuccess={onDocumentLoadSuccess}
@@ -227,7 +236,8 @@ const RearrangePages = () => {
                                 />
 
                                 <Box
-                                  bg="white"
+                                  bg={cardBg}
+
                                   borderRadius="lg"
                                   overflow="hidden"
                                   border="2px solid"
@@ -242,7 +252,7 @@ const RearrangePages = () => {
                                     renderTextLayer={false}
                                     renderAnnotationLayer={false}
                                   />
-                                  <Box py={2} bg="gray.50" borderTop="1px solid" borderColor="gray.100">
+                                  <Box py={2} bg={bgMain} borderTop="1px solid" borderColor={borderClr}>
                                     <Text fontSize="xs" fontWeight="bold" textAlign="center" color="gray.500">
                                       ORIGINAL: {pageItem.originalIndex + 1}
                                     </Text>

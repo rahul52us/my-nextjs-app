@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Button, Container, Heading, VStack, HStack, Select, SimpleGrid,
   Text, useToast, FormControl, FormLabel, Card, Icon, Input, Badge, IconButton,
-  Slider, SliderTrack, SliderFilledTrack, SliderThumb, Divider, InputGroup, InputLeftElement
+  Slider, SliderTrack, SliderFilledTrack, SliderThumb, Divider, InputGroup, InputLeftElement,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -30,6 +31,13 @@ const PDFNumberingPage: React.FC = () => {
   const [color, setColor] = useState<string>('#4A5568'); // Professional Slate Gray
   const [fontSize, setFontSize] = useState<number>(11);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const pageBg = useColorModeValue("gray.50", "gray.900");
+const cardBg = useColorModeValue("white", "gray.800");
+const headerBg = useColorModeValue("gray.50", "gray.700");
+const textPrimary = useColorModeValue("gray.700", "gray.100");
+const textSecondary = useColorModeValue("gray.500", "gray.400");
+const borderColor = useColorModeValue("gray.200", "gray.600");
+const previewBg = useColorModeValue("white", "gray.800");
 
   const toast = useToast();
 
@@ -135,17 +143,17 @@ const PDFNumberingPage: React.FC = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={10}>
+    <Container maxW="container.xl" py={10} bg={pageBg}>
       <VStack align="start" spacing={1} mb={8}>
-        <Heading size="lg" fontWeight="extrabold" color="gray.700">PDF Editor</Heading>
-        <Text color="gray.500">Configure page numbering and branding for your documents</Text>
+        <Heading size="lg" fontWeight="extrabold" color={textPrimary}>PDF Editor</Heading>
+<Text color={textSecondary}>Configure page numbering...</Text>
       </VStack>
 
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={10}>
         {/* LEFT: SETTINGS */}
         <VStack spacing={6} align="stretch">
-          <Card p={0} variant="outline" borderRadius="xl" shadow="sm" overflow="hidden">
-            <Box p={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.100">
+          <Card p={0} variant="outline" borderRadius="xl" shadow="sm" overflow="hidden" bg={cardBg} borderColor={borderColor}>
+            <Box p={4} bg={headerBg} borderBottom="1px solid" borderColor={borderColor}>
               <HStack>
                 <Icon as={Settings2} size={18} />
                 <Text fontWeight="bold">Configuration</Text>
@@ -157,8 +165,8 @@ const PDFNumberingPage: React.FC = () => {
                 <Box
                   {...getRootProps()}
                   w="full" py={10} border="2px dashed" borderColor="gray.200"
-                  borderRadius="lg" bg="white" cursor="pointer" textAlign="center"
-                  _hover={{ borderColor: "blue.400", bg: "blue.50" }} transition="all 0.2s"
+                  borderRadius="lg" bg={cardBg} cursor="pointer" textAlign="center"
+                  _hover={{ borderColor: "blue.400", bg: useColorModeValue("blue.50", "gray.700") }} transition="all 0.2s"
                 >
                   <input {...getInputProps()} />
                   <Icon as={FileUp} w={8} h={8} color="gray.400" mb={3} />
@@ -238,7 +246,7 @@ const PDFNumberingPage: React.FC = () => {
         {/* RIGHT: PREVIEW */}
         <VStack spacing={4} align="stretch">
           <Card variant="outline" borderRadius="xl" bg="gray.50" h="full" minH="650px" shadow="inner" borderStyle="dashed">
-            <HStack p={4} bg="white" borderBottom="1px solid" borderColor="gray.100" justifyContent="space-between">
+            <HStack p={4} bg={cardBg} borderBottom="1px solid" borderColor="gray.100" justifyContent="space-between">
               <HStack>
                 <Icon as={Eye} size={16} color="blue.500" />
                 <Text fontSize="sm" fontWeight="bold" color="gray.700">Visual Preview</Text>
@@ -253,7 +261,7 @@ const PDFNumberingPage: React.FC = () => {
             </HStack>
             <Box flex={1} display="flex" justifyContent="center" alignItems="center" p={10} position="relative" overflow="hidden">
               {previewUrl ? (
-                <Box position="relative" bg="white" shadow="2xl" border="1px solid" borderColor="gray.200">
+                <Box position="relative" bg={cardBg} shadow="2xl" border="1px solid" borderColor="gray.200">
                   <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
                     <Page
                       pageNumber={currPreviewPage}
@@ -269,7 +277,7 @@ const PDFNumberingPage: React.FC = () => {
                 </Box>
               ) : (
                 <VStack spacing={4} color="gray.400">
-                  <Box p={6} borderRadius="full" bg="white" border="1px solid" borderColor="gray.100">
+                  <Box p={6} borderRadius="full" bg={cardBg} border="1px solid" borderColor="gray.100">
                     <Icon as={FileText} size={40} strokeWidth={1.5} />
                   </Box>
                   <Text fontSize="sm" fontWeight="medium">No document active</Text>
