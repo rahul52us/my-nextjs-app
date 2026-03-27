@@ -5,12 +5,13 @@ import {
   Box, Button, Container, Flex, Heading, Input, Select, Stack, Text, 
   IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, useToast, 
   HStack, Badge, SimpleGrid, Stat, StatLabel, StatNumber,
-  useColorModeValue, Divider, Tooltip as ChakraTooltip,
-  VStack
+  useColorModeValue, Divider, VStack, Center, Icon,
+  Tooltip as ChakraTooltip
 } from '@chakra-ui/react';
 import { 
   FiUploadCloud, FiBarChart2, FiPieChart, FiDownload, 
-  FiPlus, FiSettings, FiTrendingUp, FiTrash2, FiFileText, FiDatabase
+  FiTrendingUp, FiDatabase, FiArrowRight, FiEdit3, 
+  FiMaximize2, FiActivity, FiLayers, FiCheckCircle
 } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 import { 
@@ -23,6 +24,8 @@ import html2canvas from 'html2canvas';
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4'];
 
 const DataVizStudio = () => {
+  // WORKFLOW STATE
+  const [step, setStep] = useState(1); 
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [mapping, setMapping] = useState({ label: '', value: '' });
@@ -32,27 +35,20 @@ const DataVizStudio = () => {
   const chartRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  // Dynamic Theme Colors
-  const bgColor = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const textColor = useColorModeValue("gray.800", "white");
-  const secondaryTextColor = useColorModeValue("gray.500", "gray.400");
-  const editorTheme = useColorModeValue("vs-light", "vs-dark");
-  const chartGridColor = useColorModeValue("#f1f5f9", "#2D3748");
-  const tooltipCursorColor = useColorModeValue('gray.50', 'whiteAlpha.50');
-  
-  // FIX: Dynamic Gradient Stops to prevent the black box in light mode
-  const stopColorStop1 = useColorModeValue("#818cf8", "#6366f1");
-  const stopColorStop2 = useColorModeValue("#a5b4fc", "#8b5cf6");
+  // Enhanced Theme Colors
+  const bgColor = useColorModeValue("gray.25", "#0a0a0c");
+  const glassBg = useColorModeValue("rgba(255, 255, 255, 0.8)", "rgba(23, 23, 28, 0.7)");
+  const cardBorder = useColorModeValue("gray.200", "whiteAlpha.200");
+  const secondaryText = useColorModeValue("gray.500", "gray.400");
+  const accentColor = "indigo.500";
 
   const stats = useMemo(() => {
     if (!data.length || !mapping.value) return { avg: 0, max: 0, count: 0 };
     const values = data.map(d => Number(d[mapping.value])).filter(v => !isNaN(v));
     return {
-      avg: values.length ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1) : 0,
-      max: values.length ? Math.max(...values) : 0,
-      count: data.length
+      avg: values.length ? (values.reduce((a, b) => a + b, 0) / values.length).toLocaleString(undefined, {maximumFractionDigits: 1}) : 0,
+      max: values.length ? Math.max(...values).toLocaleString() : 0,
+      count: data.length.toLocaleString()
     };
   }, [data, mapping.value]);
 
@@ -79,9 +75,9 @@ const DataVizStudio = () => {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const json: any[] = XLSX.utils.sheet_to_json(ws);
         syncColumns(json);
-        toast({ title: "Import Successful", status: "success", position: 'top-right' });
+        toast({ title: "Dataset Loaded", status: "success", position: 'top-right', variant: 'subtle' });
       } catch (err) {
-        toast({ title: "Excel format error", status: "error" });
+        toast({ title: "Format error", status: "error" });
       }
     };
     reader.readAsBinaryString(file);
@@ -91,16 +87,16 @@ const DataVizStudio = () => {
     try {
       const parsed = JSON.parse(jsonValue);
       syncColumns(parsed);
-      toast({ title: "JSON Workspace Synced", status: "success", variant: 'subtle' });
+      toast({ title: "JSON Synced", status: "success", variant: 'subtle' });
     } catch (err) {
-      toast({ title: "Invalid JSON structure", status: "error" });
+      toast({ title: "Invalid JSON", status: "error" });
     }
   };
 
   const downloadImage = async () => {
     if (!chartRef.current) return;
     const canvas = await html2canvas(chartRef.current, { 
-        backgroundColor: useColorModeValue("#ffffff", "#1A202C"),
+        backgroundColor: useColorModeValue("#ffffff", "#0a0a0c"),
         scale: 2 
     });
     const link = document.createElement('a');
@@ -110,225 +106,200 @@ const DataVizStudio = () => {
   };
 
   return (
-    <Box bg={bgColor} minH="100vh" pb={10} color={textColor} transition="background 0.2s">
-      <Container maxW="container.xl" py={8}>
+    <Box bg={bgColor} minH="100vh" py={12} px={4} transition="all 0.3s">
+      <Container maxW="container.xl">
         
-        {/* Header */}
-        <Flex justify="space-between" align="center" mb={10} direction={{ base: "column", md: "row" }} gap={4}>
+        {/* HEADER SECTION */}
+        <Flex justify="space-between" align="center" mb={12}>
           <HStack spacing={4}>
-            <Box bgGradient="linear(to-br, indigo.500, purple.600)" p={2.5} borderRadius="xl" shadow="lg">
-              <FiTrendingUp size={24} color="white" />
-            </Box>
-            <Box>
-              <Heading size="md" fontWeight="800" letterSpacing="tight">VizPro Studio</Heading>
-              <Text fontSize="xs" color={secondaryTextColor} fontWeight="800">DATA ENGINE v2.0</Text>
-            </Box>
+            {/* <Center p={2} bg="indigo.500" borderRadius="12px" color="white" shadow="0 8px 20px -4px rgba(99, 102, 241, 0.6)">
+                <FiActivity size={24} />
+            </Center> */}
+            <VStack align="start" spacing={0}>
+              <Heading size="md" fontWeight="800" letterSpacing="-0.5px">VizPro <Text as="span" color="indigo.500">Studio</Text></Heading>
+              <HStack spacing={2} fontSize="xs" color={secondaryText} fontWeight="bold">
+                <Text color={step === 1 ? "indigo.500" : "inherit"}>1. INGESTION</Text>
+                <Icon as={FiArrowRight} />
+                <Text color={step === 2 ? "indigo.500" : "inherit"}>2. VISUALIZATION</Text>
+              </HStack>
+            </VStack>
           </HStack>
-          <HStack spacing={3}>
-            <Button variant="ghost" size="sm" leftIcon={<FiTrash2 />} onClick={() => setData([])}>Reset</Button>
-            <Button colorScheme="indigo" size="md" shadow="xl" leftIcon={<FiDownload />} onClick={downloadImage}>Export Image</Button>
-          </HStack>
+          
+          {step === 2 && (
+            <Button leftIcon={<FiEdit3 />} variant="ghost" colorScheme="indigo" onClick={() => setStep(1)} size="sm" borderRadius="full">
+              Switch Data Source
+            </Button>
+          )}
         </Flex>
 
-        {/* Stats Grid */}
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
-          <StatBox label="Total Records" value={stats.count} icon={<FiDatabase />} color="indigo.400" bg={cardBg} border={borderColor} />
-          <StatBox label="Mean Value" value={stats.avg} icon={<FiTrendingUp />} color="purple.400" bg={cardBg} border={borderColor} />
-          <StatBox label="Peak Measurement" value={stats.max} icon={<FiSettings />} color="pink.400" bg={cardBg} border={borderColor} />
-        </SimpleGrid>
-
-        <Flex direction={{ base: "column", lg: "row" }} gap={8}>
-          {/* Controls Panel */}
-          <Box flex="1.2">
-            <Stack spacing={6}>
-              <Box bg={cardBg} p={6} shadow="sm" borderRadius="2xl" border="1px solid" borderColor={borderColor}>
-                <Text fontSize="xs" fontWeight="800" mb={4} color={secondaryTextColor} letterSpacing="widest">INGESTION ENGINE</Text>
-                
-                <Tabs variant="soft-rounded" colorScheme="indigo" size="sm">
-                  {/* FIX: customTab now handles selected state text color */}
-                  <TabList bg={useColorModeValue("gray.100", "gray.700")} p={1} borderRadius="xl" mb={6}>
-                    <CustomTab label="EXCEL" />
-                    <CustomTab label="JSON" />
-                    <CustomTab label="MANUAL" />
+        {/* STEP 1: INGESTION */}
+        {step === 1 && (
+          <Center minH="50vh">
+            <VStack spacing={8} w="full" maxW="700px">
+              <Box 
+                bg={glassBg} 
+                backdropFilter="blur(10px)"
+                p={10} 
+                shadow="2xl" 
+                borderRadius="40px" 
+                border="1px solid" 
+                borderColor={cardBorder} 
+                w="full"
+              >
+                <Tabs variant="unstyled">
+                  <TabList bg={useColorModeValue("gray.100", "whiteAlpha.100")} p={1.5} borderRadius="20px" mb={10}>
+                    <Tab w="50%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: "white", color: "indigo.500", shadow: "sm" }}>
+                        <Icon as={FiUploadCloud} mr={2}/> FILE UPLOAD
+                    </Tab>
+                    <Tab w="50%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: "white", color: "indigo.500", shadow: "sm" }}>
+                        <Icon as={FiLayers} mr={2}/> RAW JSON
+                    </Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel p={0}>
-                      <Box border="2px dashed" borderColor={borderColor} borderRadius="xl" p={10} textAlign="center" position="relative" _hover={{ bg: useColorModeValue('indigo.50', 'whiteAlpha.50') }} transition="0.2s">
-                        <FiUploadCloud size={32} style={{ margin: '0 auto 12px' }} color="#6366f1" />
+                      <Box 
+                        border="2px dashed" borderColor="indigo.200" borderRadius="30px" p={16} textAlign="center" position="relative" 
+                        _hover={{ bg: "indigo.50", borderColor: "indigo.400" }} transition="all 0.3s ease" cursor="pointer"
+                      >
+                        <FiUploadCloud size={48} style={{ margin: '0 auto 20px' }} color="#6366f1" />
                         <Input type="file" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleFileUpload} />
-                        <Text fontSize="sm" fontWeight="700">Drop XLSX file here</Text>
-                        <Text fontSize="xs" color={secondaryTextColor}>or click to browse local files</Text>
+                        <Heading size="sm" mb={2}>Drop your dataset here</Heading>
+                        <Text fontSize="sm" color={secondaryText}>Supports XLSX, CSV, XLS</Text>
                       </Box>
                     </TabPanel>
                     <TabPanel p={0}>
-                      <Box borderRadius="xl" overflow="hidden" border="1px solid" borderColor={borderColor}>
-                        <Editor 
-                            height="240px" 
-                            defaultLanguage="json" 
-                            theme={editorTheme} 
-                            value={jsonValue} 
-                            onChange={(val) => setJsonValue(val || '')} 
-                            options={{ minimap: { enabled: false }, fontSize: 13, padding: { top: 10 } }} 
-                        />
+                      <Box borderRadius="24px" overflow="hidden" border="1px solid" borderColor={cardBorder}>
+                        <Editor height="220px" defaultLanguage="json" theme={useColorModeValue("light", "vs-dark")} value={jsonValue} onChange={(val) => setJsonValue(val || '')} />
                       </Box>
-                      <Button mt={3} w="100%" colorScheme="indigo" onClick={handleJsonApply} size="sm" borderRadius="lg">Apply Workspace Changes</Button>
-                    </TabPanel>
-                    <TabPanel p={0}>
-                      <VStack align="stretch">
-                        <Button leftIcon={<FiPlus />} variant="outline" onClick={() => setData([{ "label": "New Segment", "value": 0 }, ...data])}>Add New Row</Button>
-                        <Text fontSize="xs" color={secondaryTextColor} textAlign="center">Manual editing is best for small adjustments.</Text>
-                      </VStack>
+                      <Button mt={6} w="full" colorScheme="indigo" borderRadius="18px" h="50px" onClick={handleJsonApply} shadow="lg">
+                        Parse JSON Data
+                      </Button>
                     </TabPanel>
                   </TabPanels>
                 </Tabs>
-              </Box>
 
-              {columns.length > 0 && (
-                <Box bg={cardBg} p={6} shadow="sm" borderRadius="2xl" border="1px solid" borderColor={borderColor}>
-                  <Text fontSize="xs" fontWeight="800" mb={5} color={secondaryTextColor} letterSpacing="widest">AXIS MAPPING</Text>
-                  <Stack spacing={4}>
-                    <Box>
-                      <Text fontSize="xs" mb={1.5} color={secondaryTextColor} fontWeight="bold">DIMENSION (X-AXIS)</Text>
-                      <Select borderRadius="xl" bg={bgColor} value={mapping.label} onChange={(e) => setMapping({ ...mapping, label: e.target.value })}>
-                        {columns.map(c => <option key={c} value={c}>{c}</option>)}
-                      </Select>
-                    </Box>
-                    <Box>
-                      <Text fontSize="xs" mb={1.5} color={secondaryTextColor} fontWeight="bold">MEASURE (Y-AXIS)</Text>
-                      <Select borderRadius="xl" bg={bgColor} value={mapping.value} onChange={(e) => setMapping({ ...mapping, value: e.target.value })}>
-                        {columns.map(c => <option key={c} value={c}>{c}</option>)}
-                      </Select>
-                    </Box>
+                {columns.length > 0 && (
+                  <Stack spacing={8} mt={12} pt={10} borderTop="1px solid" borderColor={cardBorder}>
+                    <HStack spacing={2}>
+                        <Icon as={FiCheckCircle} color="green.400" />
+                        <Heading size="xs" letterSpacing="1px" color={secondaryText}>MAPPING CONFIGURATION</Heading>
+                    </HStack>
+                    <SimpleGrid columns={2} spacing={6}>
+                      <Box>
+                        <Text fontSize="xs" fontWeight="bold" mb={3} ml={1} color={secondaryText}>LABEL (X-AXIS)</Text>
+                        <Select h="55px" bg={useColorModeValue("white", "whiteAlpha.50")} borderRadius="18px" value={mapping.label} onChange={(e) => setMapping({ ...mapping, label: e.target.value })}>
+                          {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                        </Select>
+                      </Box>
+                      <Box>
+                        <Text fontSize="xs" fontWeight="bold" mb={3} ml={1} color={secondaryText}>VALUE (Y-AXIS)</Text>
+                        <Select h="55px" bg={useColorModeValue("white", "whiteAlpha.50")} borderRadius="18px" value={mapping.value} onChange={(e) => setMapping({ ...mapping, value: e.target.value })}>
+                          {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                        </Select>
+                      </Box>
+                    </SimpleGrid>
+                    <Button 
+                      size="lg" h="65px" colorScheme="indigo" borderRadius="22px" rightIcon={<FiMaximize2 />} shadow="0 15px 30px -10px rgba(99, 102, 241, 0.5)"
+                      onClick={() => setStep(2)} isDisabled={!mapping.label || !mapping.value}
+                    >
+                      Generate Workspace
+                    </Button>
                   </Stack>
-                </Box>
-              )}
-            </Stack>
-          </Box>
-
-          {/* Visualization Panel */}
-          <Box flex="2">
-            <Box ref={chartRef} bg={cardBg} p={{ base: 4, md: 8 }} shadow="2xl" borderRadius="3xl" border="1px solid" borderColor={borderColor}>
-              <Flex justify="space-between" align="center" mb={10} direction={{ base: "column", sm: "row" }} gap={4}>
-                <HStack>
-                    <Badge colorScheme="indigo" px={3} py={1} borderRadius="md" variant="subtle">STAGING</Badge>
-                    <Divider orientation="vertical" h="20px" />
-                    <Text fontSize="sm" fontWeight="700" color={secondaryTextColor}>{mapping.label} vs {mapping.value}</Text>
-                </HStack>
-                <HStack bg={useColorModeValue("gray.50", "gray.700")} p={1} borderRadius="xl">
-                  <IconButton 
-                    aria-label="Bar Chart" 
-                    icon={<FiBarChart2 />} 
-                    size="sm" 
-                    onClick={() => setChartType('bar')}
-                    colorScheme={chartType === 'bar' ? "indigo" : "gray"}
-                    variant={chartType === 'bar' ? "solid" : "ghost"} 
-                    borderRadius="lg"
-                  />
-                  <IconButton 
-                    aria-label="Pie Chart" 
-                    icon={<FiPieChart />} 
-                    size="sm" 
-                    onClick={() => setChartType('pie')}
-                    colorScheme={chartType === 'pie' ? "indigo" : "gray"}
-                    variant={chartType === 'pie' ? "solid" : "ghost"} 
-                    borderRadius="lg"
-                  />
-                </HStack>
-              </Flex>
-              
-              <Box h="450px" w="100%">
-                {data.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    {chartType === 'bar' ? (
-                      <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
-                        <XAxis dataKey={mapping.label} fontSize={10} axisLine={false} tickLine={false} tick={{ fill: secondaryTextColor }} dy={10} />
-                        <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: secondaryTextColor }} />
-                        {/* FIX: Tooltip colors and cursor are now dynamic */}
-                        <Tooltip 
-                            cursor={{ fill: tooltipCursorColor }}
-                            contentStyle={{ 
-                                borderRadius: '12px', 
-                                border: 'none', 
-                                boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-                                background: cardBg,
-                                color: textColor 
-                            }} 
-                        />
-                        {/* FIX: Bar now uses dynamic gradient definition to eliminate black box */}
-                        <Bar dataKey={mapping.value} fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={32}>
-                          <defs>
-                            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor={stopColorStop1} />
-                              <stop offset="100%" stopColor={stopColorStop2} />
-                            </linearGradient>
-                          </defs>
-                        </Bar>
-                      </BarChart>
-                    ) : (
-                      <PieChart>
-                        <Pie 
-                            data={data} 
-                            dataKey={mapping.value} 
-                            nameKey={mapping.label} 
-                            cx="50%" cy="50%" 
-                            innerRadius={70} 
-                            outerRadius={140}
-                            paddingAngle={5}
-                            stroke="none"
-                        >
-                          {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip />
-                        <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                      </PieChart>
-                    )}
-                  </ResponsiveContainer>
-                ) : (
-                  <Flex direction="column" align="center" justify="center" h="100%" color="gray.400" border="2px dashed" borderColor={borderColor} borderRadius="2xl">
-                    <FiFileText size={48} />
-                    <Text mt={4} fontWeight="800" fontSize="lg">No Data Active</Text>
-                    <Text fontSize="sm">Import an Excel or JSON file to generate visuals</Text>
-                  </Flex>
                 )}
               </Box>
+            </VStack>
+          </Center>
+        )}
+
+        {/* STEP 2: STUDIO */}
+        {step === 2 && (
+          <Stack spacing={10}>
+            {/* STATS ROW */}
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                <MetricCard label="Total Records" value={stats.count} icon={FiDatabase} />
+                <MetricCard label="Average Value" value={stats.avg} icon={FiTrendingUp} />
+                <MetricCard label="Peak Value" value={stats.max} icon={FiMaximize2} />
+            </SimpleGrid>
+
+            {/* CHART CANVAS */}
+            <Box 
+              bg={glassBg} backdropFilter="blur(15px)" p={{base: 6, md: 10}} shadow="2xl" borderRadius="40px" border="1px solid" borderColor={cardBorder}
+            >
+              <Flex justify="space-between" align="center" mb={12} direction={{ base: "column", sm: "row" }} gap={4}>
+                <VStack align="start" spacing={1}>
+                    <Badge colorScheme="indigo" variant="subtle" px={3} borderRadius="full">Active View</Badge>
+                    <Heading size="md">{mapping.label} vs {mapping.value}</Heading>
+                </VStack>
+                
+                <HStack bg={useColorModeValue("white", "whiteAlpha.100")} p={1.5} borderRadius="20px" border="1px solid" borderColor={cardBorder}>
+                    <IconButton 
+                        aria-label="Bar" icon={<FiBarChart2 />} borderRadius="14px"
+                        variant={chartType === 'bar' ? "solid" : "ghost"} 
+                        colorScheme="indigo" onClick={() => setChartType('bar')} 
+                    />
+                    <IconButton 
+                        aria-label="Pie" icon={<FiPieChart />} borderRadius="14px"
+                        variant={chartType === 'pie' ? "solid" : "ghost"} 
+                        colorScheme="indigo" onClick={() => setChartType('pie')} 
+                    />
+                    <Divider orientation="vertical" h="20px" mx={2} />
+                    <Button leftIcon={<FiDownload />} colorScheme="indigo" variant="solid" borderRadius="14px" size="sm" onClick={downloadImage}>Export PNG</Button>
+                </HStack>
+              </Flex>
+
+              <Box ref={chartRef} h="500px" w="100%">
+                <ResponsiveContainer width="100%" height="100%">
+                    {chartType === 'bar' ? (
+                        <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={useColorModeValue("#f0f0f0", "#2d2d3d")} />
+                        <XAxis dataKey={mapping.label} fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} dy={10} />
+                        <YAxis fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        <Bar dataKey={mapping.value} radius={[10, 10, 0, 0]} barSize={35}>
+                            {data.map((_, i) => <Cell key={i} fill="url(#indigoGradient)" />)}
+                            <defs>
+                            <linearGradient id="indigoGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#818cf8" />
+                                <stop offset="100%" stopColor="#6366f1" />
+                            </linearGradient>
+                            </defs>
+                        </Bar>
+                        </BarChart>
+                    ) : (
+                        <PieChart>
+                        <Pie 
+                            data={data} dataKey={mapping.value} nameKey={mapping.label} 
+                            cx="50%" cy="50%" innerRadius={80} outerRadius={150} paddingAngle={5} stroke="none"
+                        >
+                            {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip />
+                        <Legend iconType="circle" />
+                        </PieChart>
+                    )}
+                </ResponsiveContainer>
+              </Box>
             </Box>
-          </Box>
-        </Flex>
+          </Stack>
+        )}
       </Container>
     </Box>
   );
 };
 
-// --- Helper Components ---
-
-// FIX: customTab now handles dynamic text color for selected state in light mode
-const CustomTab = ({ label }: { label: string }) => {
-    const selectedTextColor = useColorModeValue("indigo.600", "white");
-    return (
-        <Tab 
-            fontWeight="700" 
-            px={8} 
-            flex="1" 
-            borderRadius="lg"
-            _selected={{ bg: 'white', color: selectedTextColor, shadow: 'sm' }} 
-            _active={{ bg: 'white' }}
-        >
-            {label}
-        </Tab>
-    );
-};
-
-const StatBox = ({ label, value, icon, color, bg, border }: any) => (
-  <Stat bg={bg} p={5} borderRadius="2xl" shadow="sm" border="1px solid" borderColor={border}>
-    <HStack spacing={4}>
-      <Box p={3} bg={useColorModeValue("gray.50", "whiteAlpha.100")} borderRadius="xl" color={color}>{icon}</Box>
-      <Box>
-        <StatLabel color="gray.500" fontWeight="800" fontSize="xs" letterSpacing="widest">{label}</StatLabel>
-        <StatNumber fontSize="2xl" fontWeight="900">{value}</StatNumber>
-      </Box>
-    </HStack>
-  </Stat>
+// Helper Components
+const MetricCard = ({ label, value, icon }: any) => (
+    <Box bg={useColorModeValue("white", "whiteAlpha.100")} p={6} borderRadius="24px" border="1px solid" borderColor={useColorModeValue("gray.100", "whiteAlpha.100")} shadow="sm">
+        <Flex align="center" gap={4}>
+            <Center p={3} bg="indigo.50" color="indigo.500" borderRadius="15px">
+                <Icon as={icon} size={22} />
+            </Center>
+            <Box>
+                <Text fontSize="xs" fontWeight="bold" color="gray.500" letterSpacing="0.5px" textTransform="uppercase">{label}</Text>
+                <Text fontSize="2xl" fontWeight="800" letterSpacing="-1px">{value}</Text>
+            </Box>
+        </Flex>
+    </Box>
 );
 
 export default DataVizStudio;

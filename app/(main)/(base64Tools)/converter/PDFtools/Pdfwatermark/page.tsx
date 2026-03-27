@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, ChangeEvent, useRef } from 'react';
+import React, { useState, ChangeEvent, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
-import { Upload, Download, Type, RotateCw, Maximize, Droplet, Trash2, ShieldCheck, Move } from 'lucide-react';
+import { Upload, Download, Type, Trash2, ShieldCheck, Move } from 'lucide-react';
 import { useColorModeValue } from "@chakra-ui/react";
 
 const PDFWatermarker: React.FC = () => {
@@ -12,20 +12,30 @@ const PDFWatermarker: React.FC = () => {
   const [rotation, setRotation] = useState<number>(-45);
   const [opacity, setOpacity] = useState<number>(0.3);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [containerWidth, setContainerWidth] = useState(600);
+  
   const pageBg = useColorModeValue("bg-slate-50", "bg-slate-900");
   const cardBg = useColorModeValue("bg-white", "bg-slate-800");
   const previewBg = useColorModeValue("bg-white", "bg-slate-700");
   const watermarkColor = useColorModeValue("#334155", "#ffffff");
   
-  // position.x and position.y are 0-100 percentages of the container
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Sync preview scale with actual container size
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    observer.observe(previewRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setPdfFile(file);
-      // Clean up old URL if it exists
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       setPdfUrl(URL.createObjectURL(file));
     }
@@ -68,27 +78,22 @@ const PDFWatermarker: React.FC = () => {
       pages.forEach((page) => {
         const { width, height } = page.getSize();
 
-        // Calculate text metrics for alignment
+        // 1. Precise PDF measurements
         const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
         const textHeight = helveticaFont.heightAtSize(fontSize);
 
-        // MAP PREVIEW TO PDF
-        // PDF X = % of width
-        // PDF Y = Height minus % of height (because PDF starts from bottom)
+        // 2. Map coordinates: PDF (0,0) is Bottom-Left, CSS (0,0) is Top-Left
         const pdfCenterX = (position.x / 100) * width;
         const pdfCenterY = height - ((position.y / 100) * height);
 
-        // pdf-lib rotates text around the origin (the lower-left of the text box).
-        // To rotate around the text center (to match the preview which uses translate(-50%,-50%)),
-        // compute the lower-left origin so that after rotation the text center is at the intended point.
-        const cx = textWidth / 2;
-        const cy = textHeight / 2;
+        // 3. Rotation Pivot Correction
+        // We calculate the vector from center to bottom-left to adjust the origin
         const rad = (rotation * Math.PI) / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
+        const centerXOffset = textWidth / 2;
+        const centerYOffset = textHeight / 2;
 
-        const originX = pdfCenterX - (cx * cos - cy * sin);
-        const originY = pdfCenterY - (cx * sin + cy * cos);
+        const originX = pdfCenterX - (centerXOffset * Math.cos(rad) - centerYOffset * Math.sin(rad));
+        const originY = pdfCenterY - (centerXOffset * Math.sin(rad) + centerYOffset * Math.cos(rad));
 
         page.drawText(watermarkText, {
           x: originX,
@@ -97,14 +102,12 @@ const PDFWatermarker: React.FC = () => {
           font: helveticaFont,
           rotate: degrees(rotation),
           opacity: opacity,
-          color: rgb(0.4, 0.4, 0.4),
+          color: rgb(0.2, 0.27, 0.35),
         });
       });
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([new Uint8Array(pdfBytes)], {
-        type: 'application/pdf',
-      });
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
@@ -137,7 +140,6 @@ const PDFWatermarker: React.FC = () => {
             </div>
             
             <div className="space-y-6">
-              {/* File Selection */}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Select Document</label>
                 {!pdfFile ? (
@@ -157,10 +159,8 @@ const PDFWatermarker: React.FC = () => {
                 )}
               </div>
 
-              {/* Watermark Config */}
               <div className="space-y-4">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. Customize Style</label>
-                
                 <div className="relative">
                   <Type className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   <input 
@@ -223,7 +223,6 @@ const PDFWatermarker: React.FC = () => {
               onMouseDown={handleDrag}
               onTouchMove={handleDrag}
             >
-              {/* PDF Renderer */}
               {pdfUrl ? (
                 <iframe 
                   src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
@@ -237,7 +236,6 @@ const PDFWatermarker: React.FC = () => {
                 </div>
               )}
 
-              {/* Watermark Interactive Overlay */}
               <div 
                 className="absolute z-50 pointer-events-none flex items-center justify-center"
                 style={{
@@ -254,7 +252,8 @@ const PDFWatermarker: React.FC = () => {
                     <span 
                       className="font-black whitespace-nowrap leading-none transition-colors"
                       style={{ 
-                        fontSize: `${fontSize * 0.55}px`, // Preview visual scaling
+                        // Formula to keep font size visual-accurate regardless of screen width
+                        fontSize: `${(fontSize * containerWidth) / 595}px`, 
                         color: watermarkColor 
                       }}
                     >
@@ -263,7 +262,6 @@ const PDFWatermarker: React.FC = () => {
                 </div>
               </div>
             </div>
-            
             <p className="mt-6 text-slate-400 dark:text-slate-500 text-sm font-medium italic">
               * Note: Watermark will be applied to all pages at this exact position.
             </p>

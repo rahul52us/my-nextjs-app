@@ -68,10 +68,12 @@ export const ExecutiveTemplate: React.FC<{ data: any }> = ({ data }) => (
                 <Circle size="10px" bg={data.themeColor} position="absolute" left="-6px" top="6px" />
                 <Flex justify="space-between" align="baseline">
                   <Text fontWeight="800" fontSize="md">{exp.role}</Text>
-                  <Badge variant="subtle" colorScheme="gray" fontSize="10px">{exp.start} — {exp.end}</Badge>
+                  <Badge variant="subtle" colorScheme="gray" fontSize="10px">{exp.start} — {exp.isPresent ? 'PRESENT' : exp.end}</Badge>
                 </Flex>
                 <Text fontSize="sm" color={data.themeColor} fontWeight="700" mb={2}>{exp.company}</Text>
-                <Text fontSize="xs" color="gray.600" lineHeight="1.6">{exp.desc}</Text>
+                <Text fontSize="xs" color="gray.600" lineHeight="1.6" whiteSpace="pre-line">
+  {exp.desc}
+</Text>
               </Box>
             ))}
           </Box>
@@ -265,7 +267,7 @@ const CVTemplates = () => {
 
 // --- Types ---
 interface Achievement { title: string; date: string; issuer: string; }
-interface Experience { company: string; role: string; start: string; end: string; desc: string; }
+interface Experience { company: string; role: string; start: string; end: string; desc: string; isPresent?: boolean; }
 interface Education { school: string; degree: string; year: string; grade: string; }
 interface CustomEntry { key: string; value: string; }
 interface Skill { name: string; level: number; }
@@ -298,7 +300,7 @@ const CVBuilder: React.FC = () => {
     summary: 'Strategic technology leader with 10+ years of experience in designing high-availability distributed systems. Proven track record in reducing operational costs and leading cross-functional engineering teams.',
     profileImg: '',
     signatureImg: '',
-    experiences: [{ company: 'Global Solutions', role: 'Senior Architect', start: '2021-01', end: '2026-02', desc: 'Led the migration of legacy infrastructure to a multi-cloud environment.' }],
+    experiences: [{ company: 'Global Solutions', role: 'Senior Architect', start: '2021-01', end: '2026-02', desc: 'Led the migration of legacy infrastructure to a multi-cloud environment.', isPresent: false }],
     educations: [
       { school: 'Stanford University', degree: 'B.Sc. Computer Science', year: '2019', grade: '4.0 GPA' },
       { school: 'MIT', degree: 'M.Sc. Systems Engineering', year: '2021', grade: 'Distinction' }
@@ -381,13 +383,13 @@ const CVBuilder: React.FC = () => {
           // Additional safety: find the element in the clone and ensure it's visible
           const clonedElement = clonedDoc.body.querySelector('[ref="resumeRef"]') as HTMLElement;
           if (clonedElement) {
-             clonedElement.style.width = '794px';
+            clonedElement.style.width = '794px';
           }
         }
       });
 
       const imgData = canvas.toDataURL('image/png', 1.0);
-      
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -523,6 +525,17 @@ const CVBuilder: React.FC = () => {
                     <HStack w="full">
                       <Input size="xs" bg="white" type="month" value={exp.start} onChange={(e) => updateItem('experiences', i, 'start', e.target.value)} />
                       <Input size="xs" bg="white" type="month" value={exp.end} onChange={(e) => updateItem('experiences', i, 'end', e.target.value)} />
+                    </HStack>
+                    <HStack w="full" justify="flex-end" mt={1}>
+                      <input
+                        type="checkbox"
+                        id={`present-${i}`}
+                        checked={exp.isPresent || false}
+                        onChange={(e) => updateItem('experiences', i, 'isPresent', e.target.checked)}
+                      />
+                      <label htmlFor={`present-${i}`} style={{ fontSize: '10px', color: '#4A5568', fontWeight: 'bold', cursor: 'pointer' }}>
+                        I CURRENTLY WORK HERE
+                      </label>
                     </HStack>
                     <Textarea size="xs" bg="white" placeholder="Key Responsibilities..." value={exp.desc} onChange={(e) => updateItem('experiences', i, 'desc', e.target.value)} />
                   </VStack>

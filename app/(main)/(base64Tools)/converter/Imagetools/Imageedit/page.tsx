@@ -25,6 +25,12 @@ interface Filters {
   flipX: number; flipY: number; bgBlur: number; 
 }
 
+interface HistoryState {
+  image: HTMLImageElement | null;
+  foregroundImage: HTMLImageElement | null;
+  filters: Filters;
+}
+
 const DEFAULT_FILTERS: Filters = {
   brightness: 100, contrast: 100, saturate: 100, 
   sepia: 0, gray: 0, hue: 0, blur: 0,
@@ -63,7 +69,7 @@ const AIasist: React.FC = () => {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [foregroundImage, setForegroundImage] = useState<HTMLImageElement | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [history, setHistory] = useState<Filters[]>([]);
+  const [history, setHistory] = useState<HistoryState[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrValue, setQrValue] = useState("https://google.com");
@@ -141,20 +147,23 @@ const AIasist: React.FC = () => {
 
   useEffect(() => { renderCanvas(isComparing); }, [renderCanvas, isComparing]);
 
+  const saveToHistory = useCallback(() => {
+    setHistory(prev => [...prev.slice(-19), { image, foregroundImage, filters }]);
+  }, [image, foregroundImage, filters]);
+
   const updateFilters = (newFilters: Filters) => {
-    setHistory(prev => [...prev.slice(-19), filters]); 
+    saveToHistory();
     setFilters(newFilters);
   };
 
-  // --- REPLACED WITH EXTERNAL API LOGIC ---
   const processAI = async (mode: 'remove' | 'portrait') => {
     if (!image) return;
+    saveToHistory();
     setIsProcessing(true);
     try {
       const canvas = canvasRef.current;
       const dataUrl = canvas?.toDataURL('image/png') || image.src;
       
-      // Convert current canvas state to a blob for the API
       const blobRes = await fetch(dataUrl);
       const blob = await blobRes.blob();
 
@@ -179,11 +188,11 @@ const AIasist: React.FC = () => {
 
       if (mode === 'portrait') {
         setForegroundImage(resultImg);
-        updateFilters({ ...filters, bgBlur: 15 });
+        setFilters(prev => ({ ...prev, bgBlur: 15 }));
       } else {
         setImage(resultImg);
         setForegroundImage(null);
-        updateFilters({ ...filters, bgBlur: 0 });
+        setFilters(prev => ({ ...prev, bgBlur: 0 }));
       }
     } catch (e: any) {
       alert(`AI Error: ${e.message}`);
@@ -194,6 +203,7 @@ const AIasist: React.FC = () => {
 
   const applyCrop = async () => {
     if (!completedCrop || !imgRef.current) return;
+    saveToHistory();
     const canvas = document.createElement('canvas');
     const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
     const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
@@ -232,7 +242,12 @@ const AIasist: React.FC = () => {
 
   const handleUndo = () => {
     if (history.length === 0) return;
-    setFilters(history[history.length - 1]);
+    const prevState = history[history.length - 1];
+    
+    setImage(prevState.image);
+    setForegroundImage(prevState.foregroundImage);
+    setFilters(prevState.filters);
+    
     setHistory(prev => prev.slice(0, -1));
   };
 

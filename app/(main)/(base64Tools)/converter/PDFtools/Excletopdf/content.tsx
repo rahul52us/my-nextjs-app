@@ -112,8 +112,20 @@ const ExcelToPdfContent = () => {
                 body: data.slice(1) as any[][],
                 startY: 30,
                 theme: 'striped',
-                headStyles: { fillColor: [49, 130, 206], textColor: 255 },
-                styles: { fontSize: 8, cellPadding: 3 },
+
+                styles: {
+                    fontSize: 6,
+                    cellPadding: 2,
+                    overflow: 'linebreak'
+                },
+
+                headStyles: {
+                    fillColor: [49, 130, 206],
+                    textColor: 255,
+                    fontSize: 7
+                },
+
+                horizontalPageBreak: true // ⭐ FIX
             });
             doc.save(`${fileName.split('.')[0]}_Export.pdf`);
         } catch (error) {
