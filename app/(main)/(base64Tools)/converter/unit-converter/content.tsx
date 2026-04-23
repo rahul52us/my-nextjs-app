@@ -7,6 +7,7 @@ import {
     Divider,
     Box,
     Alert,
+    AlertIcon,
     Grid,
     useBreakpointValue,
     Heading,
@@ -25,8 +26,33 @@ export default function UnitConverterContent() {
     const [result, setResult] = useState("");
     const [error, setError] = useState("");
 
-    const bgColor = useColorModeValue("gray.100", "gray.800");
+    // ✅ All colors via useColorModeValue — dark + light dono sahi
+    const bgColor = useColorModeValue("gray.100", "gray.900");
     const textColor = useColorModeValue("gray.800", "gray.100");
+
+    const cardBg = useColorModeValue("white", "gray.800");
+    const cardBorderColor = useColorModeValue("gray.200", "gray.600");
+
+    const selectBg = useColorModeValue("white", "gray.700");
+    const selectColor = useColorModeValue("gray.800", "gray.100");
+    const selectBorderColor = useColorModeValue("gray.300", "gray.500");
+    const selectHoverBorderColor = useColorModeValue("blue.400", "blue.300");
+    const selectFocusBorderColor = useColorModeValue("blue.500", "blue.300");
+
+    const inputBg = useColorModeValue("white", "gray.700");
+    const inputColor = useColorModeValue("gray.800", "gray.100");
+    const inputBorderColor = useColorModeValue("gray.300", "gray.500");
+    const placeholderColor = useColorModeValue("gray.400", "gray.400");
+
+    const resultBg = useColorModeValue("blue.50", "blue.900");
+    const resultBorderColor = useColorModeValue("blue.200", "blue.600");
+    const resultTextColor = useColorModeValue("blue.800", "blue.100");
+
+    const labelColor = useColorModeValue("gray.700", "gray.200");
+
+    const {
+        themeStore: { themeConfig },
+    } = stores;
 
     const handleConversion = useCallback(() => {
         const numericValue = parseFloat(value);
@@ -39,7 +65,7 @@ export default function UnitConverterContent() {
 
         try {
             const convertedValue = performConversion(type, fromUnit, toUnit, numericValue);
-            setResult(convertedValue.toFixed(2));
+            setResult(convertedValue.toFixed(4));
             setError("");
         } catch {
             setError("Invalid conversion options.");
@@ -53,31 +79,42 @@ export default function UnitConverterContent() {
 
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr 1fr" });
 
-        const {
-  themeStore: { themeConfig },
-} = stores;
-
     return (
-        <Box p={4} bg={bgColor} color={textColor} minH="78vh">
-            <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
- textAlign="center" mb={6}>
+        <Box p={{ base: 4, md: 6 }} bg={bgColor} color={textColor} minH="78vh">
+            {/* Header */}
+            <Heading
+                as="h1"
+                size="xl"
+                color={themeConfig.colors.brand[300]}
+                textAlign="center"
+                mb={2}
+            >
                 Unit Converter
             </Heading>
-            <Divider borderColor="blue.300" mb={6} />
+            <Divider borderColor={useColorModeValue("blue.300", "blue.500")} mb={6} />
 
-            {/* Dropdown Section */}
-            <Grid templateColumns={responsiveGridColumns} gap={6}>
-                {/* Category Dropdown */}
+            {/* Dropdowns Grid */}
+            <Grid templateColumns={responsiveGridColumns} gap={4} mb={4}>
+                {/* Category */}
                 <Box
                     p={4}
-                    shadow="md"
-                    bg="gray.50"
-                    borderRadius="md"
-                    _hover={{ boxShadow: "lg" }}
+                    bg={cardBg}
+                    border="1px solid"
+                    borderColor={cardBorderColor}
+                    borderRadius="lg"
+                    boxShadow="sm"
+                    _hover={{ boxShadow: "md" }}
                     transition="all 0.2s ease-in-out"
                 >
                     <FormControl>
-                        <FormLabel fontWeight="bold">Category</FormLabel>
+                        <FormLabel
+                            fontWeight="600"
+                            fontSize="sm"
+                            color={labelColor}
+                            mb={2}
+                        >
+                            Category
+                        </FormLabel>
                         <Select
                             value={type}
                             onChange={(e) => {
@@ -86,12 +123,14 @@ export default function UnitConverterContent() {
                                 setToUnit("");
                             }}
                             placeholder="Select category"
-                            bg="white"
-                            border="1px"
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "blue.400" }}
-                            _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                            bg={selectBg}
+                            color={selectColor}
+                            border="1px solid"
+                            borderColor={selectBorderColor}
+                            _hover={{ borderColor: selectHoverBorderColor }}
+                            _focus={{ borderColor: selectFocusBorderColor, boxShadow: "outline" }}
                             transition="all 0.2s ease-in-out"
+                            iconColor={selectColor}
                         >
                             {Object.keys(unitConversionMap).map((cat) => (
                                 <option key={cat} value={cat}>
@@ -102,17 +141,26 @@ export default function UnitConverterContent() {
                     </FormControl>
                 </Box>
 
-                {/* From Unit Dropdown */}
+                {/* From Unit */}
                 <Box
                     p={4}
-                    shadow="md"
-                    bg="gray.50"
-                    borderRadius="md"
-                    _hover={{ boxShadow: "lg" }}
+                    bg={cardBg}
+                    border="1px solid"
+                    borderColor={cardBorderColor}
+                    borderRadius="lg"
+                    boxShadow="sm"
+                    _hover={{ boxShadow: "md" }}
                     transition="all 0.2s ease-in-out"
                 >
                     <FormControl>
-                        <FormLabel fontWeight="bold">From Unit</FormLabel>
+                        <FormLabel
+                            fontWeight="600"
+                            fontSize="sm"
+                            color={labelColor}
+                            mb={2}
+                        >
+                            From Unit
+                        </FormLabel>
                         <Select
                             value={fromUnit}
                             onChange={(e) => {
@@ -120,12 +168,14 @@ export default function UnitConverterContent() {
                                 setToUnit("");
                             }}
                             placeholder="Select starting unit"
-                            bg="white"
-                            border="1px"
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "blue.400" }}
-                            _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                            bg={selectBg}
+                            color={selectColor}
+                            border="1px solid"
+                            borderColor={selectBorderColor}
+                            _hover={{ borderColor: selectHoverBorderColor }}
+                            _focus={{ borderColor: selectFocusBorderColor, boxShadow: "outline" }}
                             transition="all 0.2s ease-in-out"
+                            iconColor={selectColor}
                         >
                             {Object.keys(unitConversionMap[type] || {}).map((unit) => (
                                 <option key={unit} value={unit}>
@@ -136,27 +186,38 @@ export default function UnitConverterContent() {
                     </FormControl>
                 </Box>
 
-                {/* To Unit Dropdown */}
+                {/* To Unit */}
                 <Box
                     p={4}
-                    shadow="md"
-                    bg="gray.50"
-                    borderRadius="md"
-                    _hover={{ boxShadow: "lg" }}
+                    bg={cardBg}
+                    border="1px solid"
+                    borderColor={cardBorderColor}
+                    borderRadius="lg"
+                    boxShadow="sm"
+                    _hover={{ boxShadow: "md" }}
                     transition="all 0.2s ease-in-out"
                 >
                     <FormControl>
-                        <FormLabel fontWeight="bold">To Unit</FormLabel>
+                        <FormLabel
+                            fontWeight="600"
+                            fontSize="sm"
+                            color={labelColor}
+                            mb={2}
+                        >
+                            To Unit
+                        </FormLabel>
                         <Select
                             value={toUnit}
                             onChange={(e) => setToUnit(e.target.value)}
                             placeholder="Select target unit"
-                            bg="white"
-                            border="1px"
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "blue.400" }}
-                            _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                            bg={selectBg}
+                            color={selectColor}
+                            border="1px solid"
+                            borderColor={selectBorderColor}
+                            _hover={{ borderColor: selectHoverBorderColor }}
+                            _focus={{ borderColor: selectFocusBorderColor, boxShadow: "outline" }}
                             transition="all 0.2s ease-in-out"
+                            iconColor={selectColor}
                         >
                             {Object.keys(unitConversionMap[type]?.[fromUnit] || {}).map((unit) => (
                                 <option key={unit} value={unit}>
@@ -168,28 +229,63 @@ export default function UnitConverterContent() {
                 </Box>
             </Grid>
 
-            {/* Input for Value */}
+            {/* Value Input */}
             <Input
                 placeholder="Enter value to convert"
                 type="number"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                mt={6}
-                bg="white"
-                border="1px"
-                borderColor="gray.300"
-                _hover={{ borderColor: "blue.400" }}
-                _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+                bg={inputBg}
+                color={inputColor}
+                border="1px solid"
+                borderColor={inputBorderColor}
+                _hover={{ borderColor: selectHoverBorderColor }}
+                _focus={{ borderColor: selectFocusBorderColor, boxShadow: "outline" }}
+                _placeholder={{ color: placeholderColor }}
                 transition="all 0.2s ease-in-out"
+                borderRadius="lg"
+                size="md"
+                mb={2}
             />
 
             {/* Error Alert */}
-            {error && value?.length > 0 && <Alert status="error" mt={2}>{error}</Alert>}
+            {error && value?.length > 0 && (
+                <Alert status="error" borderRadius="lg" mt={1} mb={2}>
+                    <AlertIcon />
+                    {error}
+                </Alert>
+            )}
 
-            {/* Converted Value Display */}
-            <Box mt={6} p={4} bg="blue.50" borderRadius="md" shadow="md">
-                <Text fontSize="xl" fontWeight="bold" textAlign="center">
-                    Converted Value: {result || "---"}
+            {/* Result Box */}
+            <Box
+                mt={4}
+                p={5}
+                bg={resultBg}
+                border="1px solid"
+                borderColor={resultBorderColor}
+                borderRadius="lg"
+                boxShadow="sm"
+            >
+                <Text
+                    fontSize="xs"
+                    fontWeight="600"
+                    color={resultTextColor}
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    mb={1}
+                    opacity={0.7}
+                >
+                    Converted Value
+                </Text>
+                <Text
+                    fontSize="2xl"
+                    fontWeight="700"
+                    color={resultTextColor}
+                    textAlign="center"
+                >
+                    {result
+                        ? `${result} ${toUnit}`
+                        : "---"}
                 </Text>
             </Box>
         </Box>

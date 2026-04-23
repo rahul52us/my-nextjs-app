@@ -24,50 +24,17 @@ import { FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
 import stores from "../../../../store/stores";
 
-// Helper function to handle time conversion
 const convertTime = (value: number, fromUnit: string, toUnit: string): number => {
     const conversionRates: Record<string, Record<string, number>> = {
-        seconds: {
-            seconds: 1,
-            minutes: 1 / 60,
-            hours: 1 / 3600,
-            days: 1 / 86400,
-            weeks: 1 / 604800,
-        },
-        minutes: {
-            seconds: 60,
-            minutes: 1,
-            hours: 1 / 60,
-            days: 1 / 1440,
-            weeks: 1 / 10080,
-        },
-        hours: {
-            seconds: 3600,
-            minutes: 60,
-            hours: 1,
-            days: 1 / 24,
-            weeks: 1 / 168,
-        },
-        days: {
-            seconds: 86400,
-            minutes: 1440,
-            hours: 24,
-            days: 1,
-            weeks: 1 / 7,
-        },
-        weeks: {
-            seconds: 604800,
-            minutes: 10080,
-            hours: 168,
-            days: 7,
-            weeks: 1,
-        },
+        seconds: { seconds: 1, minutes: 1/60, hours: 1/3600, days: 1/86400, weeks: 1/604800 },
+        minutes: { seconds: 60, minutes: 1, hours: 1/60, days: 1/1440, weeks: 1/10080 },
+        hours: { seconds: 3600, minutes: 60, hours: 1, days: 1/24, weeks: 1/168 },
+        days: { seconds: 86400, minutes: 1440, hours: 24, days: 1, weeks: 1/7 },
+        weeks: { seconds: 604800, minutes: 10080, hours: 168, days: 7, weeks: 1 },
     };
-
     if (!conversionRates[fromUnit] || !conversionRates[fromUnit][toUnit]) {
         throw new Error("Invalid conversion units");
     }
-
     return value * conversionRates[fromUnit][toUnit];
 };
 
@@ -84,22 +51,51 @@ export default function TimeConverterContent() {
     const [toUnit, setToUnit] = useState("minutes");
     const [value, setValue] = useState("");
     const [precision, setPrecision] = useState<number>(2);
-    const [result, setResult] = useState<{
-        value: string;
-        steps: string[];
-    } | any>(null);
+    const [result, setResult] = useState<{ value: string; steps: string[] } | null>(null);
     const [humanReadable] = useState<boolean>(false);
     const [history, setHistory] = useState<string[]>([]);
     const [error, setError] = useState("");
     const toast = useToast();
 
-    const bgColor = useColorModeValue("gray.50", "gray.800");
+    // ✅ All colors dark-mode aware
+    const bgColor = useColorModeValue("gray.50", "gray.900");
     const textColor = useColorModeValue("gray.800", "gray.100");
-    const cardBg = useColorModeValue("white", "gray.700");
+    const cardBg = useColorModeValue("white", "gray.800");
+    const subtitleColor = useColorModeValue("gray.600", "gray.400");
+    const labelColor = useColorModeValue("teal.600", "teal.300");
+    const inputBg = useColorModeValue("white", "gray.700");
+    const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+    const inputHoverBorder = useColorModeValue("teal.300", "teal.400");
+    const inputTextColor = useColorModeValue("gray.800", "gray.100");
+    const placeholderColor = useColorModeValue("gray.400", "gray.500");
+
+    // Result box
+    const resultBg = useColorModeValue("teal.50", "teal.900");
+    const resultBorder = useColorModeValue("teal.200", "teal.700");
+    const resultHeadingColor = useColorModeValue("teal.800", "teal.100");
+    const resultValueColor = useColorModeValue("teal.900", "white");
+    const resultStepLabelColor = useColorModeValue("teal.700", "teal.300");
+    const resultStepTextColor = useColorModeValue("gray.600", "gray.300");
+
+    // History box
+    const historyBg = useColorModeValue("gray.50", "gray.700");
+    const historyBorder = useColorModeValue("gray.200", "gray.600");
+    const historyItemBg = useColorModeValue("white", "gray.600");
+    const historyItemHoverBg = useColorModeValue("gray.100", "gray.500");
+    const historyTextColor = useColorModeValue("gray.600", "gray.200");
+    const historyLabelColor = useColorModeValue("teal.700", "teal.300");
+
+    // Overview box
+    const overviewBg = useColorModeValue("blue.50", "blue.900");
+    const overviewHeadingColor = useColorModeValue("blue.700", "blue.200");
+    const overviewTextColor = useColorModeValue("gray.700", "gray.200");
+
+    // Swap button
+    const swapBg = useColorModeValue("white", "gray.700");
+    const swapHoverBg = useColorModeValue("teal.50", "teal.800");
 
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
 
-    // Debounced conversion function
     const handleConversion = useCallback(
         debounce(() => {
             if (value.trim() === "") {
@@ -107,19 +103,16 @@ export default function TimeConverterContent() {
                 setError("Please enter a value.");
                 return;
             }
-
             const parsedValue = parseFloat(value);
             if (isNaN(parsedValue)) {
                 setError("Please enter a valid number.");
-                setResult("");
+                setResult(null);
                 return;
             }
-
             try {
                 let convertedValue = convertTime(parsedValue, fromUnit, toUnit);
                 let displayValue = convertedValue.toFixed(precision);
 
-                // Human-readable formatting
                 if (humanReadable && convertedValue >= 60) {
                     const sizes = ["s", "min", "hr", "d", "wk"];
                     const thresholds = [1, 60, 3600, 86400, 604800];
@@ -131,22 +124,14 @@ export default function TimeConverterContent() {
                     displayValue = `${convertedValue.toFixed(2)} ${sizes[index]}`;
                 }
 
-                const fromFactor = 1 / convertTime(1, toUnit, fromUnit); // Inverse for step clarity
+                const fromFactor = 1 / convertTime(1, toUnit, fromUnit);
                 const steps = [
-                    `1. Convert to Base (Seconds): ${parsedValue} ${fromUnit} × ${fromFactor} = ${parsedValue * fromFactor
-                    } Seconds`,
-                    `2. Convert to ${toUnit}: ${parsedValue * fromFactor} Seconds × ${convertTime(
-                        1,
-                        "seconds",
-                        toUnit
-                    )} = ${convertedValue.toFixed(precision)} ${toUnit}`,
+                    `1. Convert to Base (Seconds): ${parsedValue} ${fromUnit} × ${fromFactor} = ${parsedValue * fromFactor} Seconds`,
+                    `2. Convert to ${toUnit}: ${parsedValue * fromFactor} Seconds × ${convertTime(1, "seconds", toUnit)} = ${convertedValue.toFixed(precision)} ${toUnit}`,
                 ];
 
                 setResult({ value: displayValue, steps });
-                setHistory((prev) => [
-                    `${parsedValue} ${fromUnit} = ${displayValue}`,
-                    ...prev.slice(0, 4),
-                ]);
+                setHistory((prev) => [`${parsedValue} ${fromUnit} = ${displayValue}`, ...prev.slice(0, 4)]);
                 setError("");
             } catch {
                 setError("Invalid conversion units.");
@@ -166,9 +151,7 @@ export default function TimeConverterContent() {
         setToUnit(fromUnit);
     };
 
-        const {
-  themeStore: { themeConfig },
-} = stores;
+    const { themeStore: { themeConfig } } = stores;
 
     const handleCopy = () => {
         if (result) {
@@ -196,55 +179,53 @@ export default function TimeConverterContent() {
                 _hover={{ boxShadow: "0 12px 32px rgba(0, 0, 0, 0.2)" }}
             >
                 <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+
                     {/* Header */}
-                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
- textAlign="center">
+                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]} textAlign="center">
                         Time Converter
                     </Heading>
-                    <Text textAlign="center" fontSize="md" color="gray.600" maxW="600px" mx="auto">
+                    <Text textAlign="center" fontSize="md" color={subtitleColor} maxW="600px" mx="auto">
                         Convert time units instantly with detailed steps and history.
                     </Text>
 
                     {/* Input Section */}
                     <Grid templateColumns={responsiveGridColumns} gap={6}>
                         <FormControl>
-                            <FormLabel fontWeight="bold" color="teal.600">From Unit</FormLabel>
+                            <FormLabel fontWeight="bold" color={labelColor}>From Unit</FormLabel>
                             <Select
                                 value={fromUnit}
                                 onChange={(e) => setFromUnit(e.target.value)}
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                                 transition="all 0.2s ease"
                             >
                                 {timeUnits.map((unit) => (
-                                    <option key={unit.value} value={unit.value}>
-                                        {unit.label}
-                                    </option>
+                                    <option key={unit.value} value={unit.value}>{unit.label}</option>
                                 ))}
                             </Select>
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel fontWeight="bold" color="teal.600">To Unit</FormLabel>
+                            <FormLabel fontWeight="bold" color={labelColor}>To Unit</FormLabel>
                             <Select
                                 value={toUnit}
                                 onChange={(e) => setToUnit(e.target.value)}
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                                 transition="all 0.2s ease"
                             >
                                 {timeUnits.map((unit) => (
-                                    <option key={unit.value} value={unit.value}>
-                                        {unit.label}
-                                    </option>
+                                    <option key={unit.value} value={unit.value}>{unit.label}</option>
                                 ))}
                             </Select>
                         </FormControl>
@@ -255,18 +236,20 @@ export default function TimeConverterContent() {
                             placeholder="Enter value to convert (e.g., 3600)"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
-                            bg="white"
+                            bg={inputBg}
+                            color={inputTextColor}
+                            _placeholder={{ color: placeholderColor }}
                             border="2px solid"
-                            borderColor="gray.200"
+                            borderColor={inputBorderColor}
                             borderRadius="md"
-                            _hover={{ borderColor: "teal.300" }}
+                            _hover={{ borderColor: inputHoverBorder }}
                             _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                             transition="all 0.2s ease"
                             flex="1"
                             py={6}
                         />
                         <HStack spacing={3}>
-                            <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                            <Text fontSize="sm" color={subtitleColor} whiteSpace="nowrap">
                                 Precision:
                             </Text>
                             <Input
@@ -276,10 +259,11 @@ export default function TimeConverterContent() {
                                 min={0}
                                 max={10}
                                 w="80px"
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
-                                _hover={{ borderColor: "teal.300" }}
+                                borderColor={inputBorderColor}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400" }}
                                 transition="all 0.2s ease"
                             />
@@ -296,8 +280,8 @@ export default function TimeConverterContent() {
                                 variant="outline"
                                 onClick={handleSwap}
                                 borderRadius="full"
-                                bg="white"
-                                _hover={{ bg: "teal.50" }}
+                                bg={swapBg}
+                                _hover={{ bg: swapHoverBg }}
                             />
                         </Tooltip>
                     </Flex>
@@ -314,17 +298,17 @@ export default function TimeConverterContent() {
                         <Fade in={!!result}>
                             <Box
                                 p={{ base: 4, md: 6 }}
-                                bg="teal.50"
+                                bg={resultBg}
                                 borderRadius="lg"
                                 border="1px solid"
-                                borderColor="teal.200"
+                                borderColor={resultBorder}
                                 boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
                             >
                                 <VStack spacing={4} align="stretch">
                                     <Flex justify="space-between" align="center">
-                                        <Text fontSize={{ base: "lg", md: "xl" }} color="teal.800" fontWeight="semibold">
+                                        <Text fontSize={{ base: "lg", md: "xl" }} color={resultHeadingColor} fontWeight="semibold">
                                             {value} {fromUnit} ={" "}
-                                            <Text as="span" fontWeight="bold" color="teal.900">
+                                            <Text as="span" fontWeight="bold" color={resultValueColor}>
                                                 {result.value}
                                             </Text>
                                         </Text>
@@ -336,16 +320,16 @@ export default function TimeConverterContent() {
                                                 colorScheme="teal"
                                                 variant="ghost"
                                                 onClick={handleCopy}
-                                                _hover={{ bg: "teal.100" }}
+                                                _hover={{ bg: useColorModeValue("teal.100", "teal.800") }}
                                             />
                                         </Tooltip>
                                     </Flex>
                                     <Box>
-                                        <Text fontSize="sm" color="teal.700" fontWeight="medium">
+                                        <Text fontSize="sm" color={resultStepLabelColor} fontWeight="medium">
                                             Calculation Steps:
                                         </Text>
-                                        {result?.steps?.map((step: any, index: number) => (
-                                            <Text key={index} fontSize="sm" color="gray.600" mt={1} fontFamily="monospace">
+                                        {result?.steps?.map((step: string, index: number) => (
+                                            <Text key={index} fontSize="sm" color={resultStepTextColor} mt={1} fontFamily="monospace">
                                                 {step}
                                             </Text>
                                         ))}
@@ -358,19 +342,27 @@ export default function TimeConverterContent() {
                     {/* History */}
                     {history.length > 0 && (
                         <Box mt={6}>
-                            <Text fontSize="sm" color="teal.700" fontWeight="medium" mb={2} textAlign="center">
+                            <Text fontSize="sm" color={historyLabelColor} fontWeight="medium" mb={2} textAlign="center">
                                 Recent Conversions:
                             </Text>
-                            <VStack align="stretch" spacing={2} p={4} bg="gray.50" borderRadius="lg" border="1px solid" borderColor="gray.200">
+                            <VStack
+                                align="stretch"
+                                spacing={2}
+                                p={4}
+                                bg={historyBg}
+                                borderRadius="lg"
+                                border="1px solid"
+                                borderColor={historyBorder}
+                            >
                                 {history.map((entry, index) => (
                                     <Text
                                         key={index}
                                         fontSize="sm"
-                                        color="gray.600"
+                                        color={historyTextColor}
                                         p={2}
-                                        bg="white"
+                                        bg={historyItemBg}
                                         borderRadius="md"
-                                        _hover={{ bg: "gray.100" }}
+                                        _hover={{ bg: historyItemHoverBg }}
                                     >
                                         {entry}
                                     </Text>
@@ -380,18 +372,19 @@ export default function TimeConverterContent() {
                     )}
 
                     {/* Overview */}
-                    <Box mt={6} p={4} bg="blue.50" borderRadius="lg" shadow="md">
-                        <Text fontSize="lg" fontWeight="bold" color="blue.700" mb={2}>
+                    <Box mt={6} p={4} bg={overviewBg} borderRadius="lg" shadow="md">
+                        <Text fontSize="lg" fontWeight="bold" color={overviewHeadingColor} mb={2}>
                             Time Conversion Overview:
                         </Text>
                         <VStack align="start" spacing={2}>
-                            <Text><strong>Seconds (s):</strong> Base unit; 1 min = 60s.</Text>
-                            <Text><strong>Minutes (min):</strong> 1 hr = 60 min, 1 min = 60s.</Text>
-                            <Text><strong>Hours (hr):</strong> 1 day = 24 hr, 1 hr = 3600s.</Text>
-                            <Text><strong>Days (d):</strong> 1 week = 7 days, 1 day = 86400s.</Text>
-                            <Text><strong>Weeks (wk):</strong> 1 week = 604800s.</Text>
+                            <Text color={overviewTextColor}><strong>Seconds (s):</strong> Base unit; 1 min = 60s.</Text>
+                            <Text color={overviewTextColor}><strong>Minutes (min):</strong> 1 hr = 60 min, 1 min = 60s.</Text>
+                            <Text color={overviewTextColor}><strong>Hours (hr):</strong> 1 day = 24 hr, 1 hr = 3600s.</Text>
+                            <Text color={overviewTextColor}><strong>Days (d):</strong> 1 week = 7 days, 1 day = 86400s.</Text>
+                            <Text color={overviewTextColor}><strong>Weeks (wk):</strong> 1 week = 604800s.</Text>
                         </VStack>
                     </Box>
+
                 </VStack>
             </Box>
         </Flex>

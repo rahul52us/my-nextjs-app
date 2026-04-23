@@ -69,53 +69,74 @@ const AICompressor: React.FC = () => {
 
   // Native Compression Logic using Canvas
   const compressImage = async (file: File) => {
-    setLoading(true);
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.src = event.target?.result as string;
-      
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
+  setLoading(true);
 
-        // Simple resizing logic if image is huge
-        const MAX_WIDTH = 1920;
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+
+  reader.onload = (event) => {
+    const img = new window.Image();
+    img.src = event.target?.result as string;
+
+    img.onload = async () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      const MAX_WIDTH = 1920;
+      if (width > MAX_WIDTH) {
+        height *= MAX_WIDTH / width;
+        width = MAX_WIDTH;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      // 🎯 TARGET SIZE (bytes)
+      const targetBytes = targetSizeMB * 1024 * 1024;
+
+      let minQ = 0.1;
+      let maxQ = 1;
+      let bestBlob: Blob | null = null;
+
+      // 🔁 Binary search loop
+      for (let i = 0; i < 10; i++) {
+        const midQ = (minQ + maxQ) / 2;
+
+        const blob: Blob | null = await new Promise(resolve => {
+          canvas.toBlob(resolve, "image/jpeg", midQ);
+        });
+
+        if (!blob) continue;
+
+        if (blob.size > targetBytes) {
+          maxQ = midQ; // size bada hai → quality kam karo
+        } else {
+          minQ = midQ;
+          bestBlob = blob; // best candidate
         }
+      }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
+      if (bestBlob) {
+        if (compressedUrl) URL.revokeObjectURL(compressedUrl);
 
-        // Calculate quality based on mode
-        let finalQuality = quality;
-        if (mode === "manual") {
-          const targetBytes = targetSizeMB * 1024 * 1024;
-          finalQuality = Math.min(0.9, targetBytes / file.size);
-        }
+        setCompressedFile(bestBlob);
+        setCompressedUrl(URL.createObjectURL(bestBlob));
 
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              if (compressedUrl) URL.revokeObjectURL(compressedUrl);
-              setCompressedFile(blob);
-              setCompressedUrl(URL.createObjectURL(blob));
-              setLoading(false);
-            }
-          },
-          "image/jpeg",
-          finalQuality
-        );
-      };
+        toast({
+          title: "Compressed",
+          description: `Final size: ${(bestBlob.size / 1024).toFixed(1)} KB`,
+          status: "success"
+        });
+      }
+
+      setLoading(false);
     };
   };
+};
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];

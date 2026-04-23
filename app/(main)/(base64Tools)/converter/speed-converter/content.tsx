@@ -25,20 +25,18 @@ import { FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
 import stores from "../../../../store/stores";
 
-// Define speed units with conversion rates relative to meters per second (m/s)
 const speedUnits = [
     { label: "Meters per Second (m/s)", value: "m/s", factor: 1 },
-    { label: "Kilometers per Hour (km/h)", value: "km/h", factor: 0.277778 }, // 1 km/h = 0.277778 m/s
-    { label: "Miles per Hour (mph)", value: "mph", factor: 0.44704 }, // 1 mph = 0.44704 m/s
-    { label: "Feet per Second (ft/s)", value: "ft/s", factor: 0.3048 }, // 1 ft/s = 0.3048 m/s
-    { label: "Knots (kn)", value: "kn", factor: 0.514444 }, // 1 knot = 0.514444 m/s
+    { label: "Kilometers per Hour (km/h)", value: "km/h", factor: 0.277778 },
+    { label: "Miles per Hour (mph)", value: "mph", factor: 0.44704 },
+    { label: "Feet per Second (ft/s)", value: "ft/s", factor: 0.3048 },
+    { label: "Knots (kn)", value: "kn", factor: 0.514444 },
 ];
 
-// Helper function to handle speed conversion
 const convertSpeed = (value: number, fromUnit: string, toUnit: string): number => {
     const fromFactor = speedUnits.find((u) => u.value === fromUnit)?.factor || 1;
     const toFactor = speedUnits.find((u) => u.value === toUnit)?.factor || 1;
-    return (value * fromFactor) / toFactor; // Convert to m/s first, then to target
+    return (value * fromFactor) / toFactor;
 };
 
 export default function SpeedConverterContent() {
@@ -46,22 +44,47 @@ export default function SpeedConverterContent() {
     const [toUnit, setToUnit] = useState("km/h");
     const [value, setValue] = useState("");
     const [precision, setPrecision] = useState<number>(2);
-    const [result, setResult] = useState<{
-        value: string;
-        steps: string[];
-    } | null>(null);
+    const [result, setResult] = useState<{ value: string; steps: string[] } | null>(null);
     const [humanReadable, setHumanReadable] = useState<boolean>(false);
     const [history, setHistory] = useState<string[]>([]);
     const [error, setError] = useState("");
     const toast = useToast();
 
-    const bgColor = useColorModeValue("gray.50", "gray.800");
+    // ✅ All colors now respond to color mode
+    const bgColor = useColorModeValue("gray.50", "gray.900");
     const textColor = useColorModeValue("gray.800", "gray.100");
-    const cardBg = useColorModeValue("white", "gray.700");
+    const cardBg = useColorModeValue("white", "gray.800");
+    const subtitleColor = useColorModeValue("gray.600", "gray.400");
+    const labelColor = useColorModeValue("teal.600", "teal.300");
+    const inputBg = useColorModeValue("white", "gray.700");
+    const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+    const inputHoverBorder = useColorModeValue("teal.300", "teal.400");
+    const inputTextColor = useColorModeValue("gray.800", "gray.100");
+    const placeholderColor = useColorModeValue("gray.400", "gray.500");
+
+    // Result box
+    const resultBg = useColorModeValue("teal.50", "teal.900");
+    const resultBorder = useColorModeValue("teal.200", "teal.700");
+    const resultHeadingColor = useColorModeValue("teal.800", "teal.100");
+    const resultValueColor = useColorModeValue("teal.900", "white");
+    const resultStepLabelColor = useColorModeValue("teal.700", "teal.300");
+    const resultStepTextColor = useColorModeValue("gray.600", "gray.300");
+
+    // History box
+    const historyBg = useColorModeValue("gray.50", "gray.700");
+    const historyBorder = useColorModeValue("gray.200", "gray.600");
+    const historyItemBg = useColorModeValue("white", "gray.600");
+    const historyItemHoverBg = useColorModeValue("gray.100", "gray.500");
+    const historyTextColor = useColorModeValue("gray.600", "gray.200");
+    const historyLabelColor = useColorModeValue("teal.700", "teal.300");
+
+    // Overview box
+    const overviewBg = useColorModeValue("blue.50", "blue.900");
+    const overviewHeadingColor = useColorModeValue("blue.700", "blue.200");
+    const overviewTextColor = useColorModeValue("gray.700", "gray.200");
 
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
 
-    // Debounced conversion function
     const handleConversion = useCallback(
         debounce(() => {
             if (value.trim() === "") {
@@ -81,7 +104,6 @@ export default function SpeedConverterContent() {
                 const convertedValue = convertSpeed(parsedValue, fromUnit, toUnit);
                 let displayValue = convertedValue.toFixed(precision);
 
-                // Human-readable formatting (e.g., large speeds in higher units)
                 if (humanReadable && convertedValue >= 1000) {
                     const suffixes = ["", "k", "M"];
                     let index = 0;
@@ -124,9 +146,9 @@ export default function SpeedConverterContent() {
         setToUnit(fromUnit);
     };
 
-        const {
-  themeStore: { themeConfig },
-} = stores;
+    const {
+        themeStore: { themeConfig },
+    } = stores;
 
     const handleCopy = () => {
         if (result) {
@@ -155,26 +177,26 @@ export default function SpeedConverterContent() {
             >
                 <VStack spacing={{ base: 6, md: 8 }} align="stretch">
                     {/* Header */}
-                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
- textAlign="center">
+                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]} textAlign="center">
                         Speed Converter
                     </Heading>
-                    <Text textAlign="center" fontSize="md" color="gray.600" maxW="600px" mx="auto">
+                    <Text textAlign="center" fontSize="md" color={subtitleColor} maxW="600px" mx="auto">
                         Convert speed units instantly with detailed steps and history.
                     </Text>
 
                     {/* Input Section */}
                     <Grid templateColumns={responsiveGridColumns} gap={6}>
                         <FormControl>
-                            <FormLabel fontWeight="bold" color="teal.600">From Unit</FormLabel>
+                            <FormLabel fontWeight="bold" color={labelColor}>From Unit</FormLabel>
                             <Select
                                 value={fromUnit}
                                 onChange={(e) => setFromUnit(e.target.value)}
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                                 transition="all 0.2s ease"
                             >
@@ -187,15 +209,16 @@ export default function SpeedConverterContent() {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel fontWeight="bold" color="teal.600">To Unit</FormLabel>
+                            <FormLabel fontWeight="bold" color={labelColor}>To Unit</FormLabel>
                             <Select
                                 value={toUnit}
                                 onChange={(e) => setToUnit(e.target.value)}
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                                 transition="all 0.2s ease"
                             >
@@ -213,18 +236,20 @@ export default function SpeedConverterContent() {
                             placeholder="Enter speed (e.g., 100)"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
-                            bg="white"
+                            bg={inputBg}
+                            color={inputTextColor}
+                            _placeholder={{ color: placeholderColor }}
                             border="2px solid"
-                            borderColor="gray.200"
+                            borderColor={inputBorderColor}
                             borderRadius="md"
-                            _hover={{ borderColor: "teal.300" }}
+                            _hover={{ borderColor: inputHoverBorder }}
                             _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
                             transition="all 0.2s ease"
                             flex="1"
                             py={6}
                         />
                         <HStack spacing={3}>
-                            <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                            <Text fontSize="sm" color={subtitleColor} whiteSpace="nowrap">
                                 Precision:
                             </Text>
                             <Input
@@ -234,10 +259,11 @@ export default function SpeedConverterContent() {
                                 min={0}
                                 max={10}
                                 w="80px"
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
-                                _hover={{ borderColor: "teal.300" }}
+                                borderColor={inputBorderColor}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 _focus={{ borderColor: "teal.400" }}
                                 transition="all 0.2s ease"
                             />
@@ -252,7 +278,7 @@ export default function SpeedConverterContent() {
                             colorScheme="teal"
                             display="none"
                         />
-                        <Text display="none" fontSize="sm" color="gray.600">Human-Readable Format</Text>
+                        <Text display="none" fontSize="sm" color={subtitleColor}>Human-Readable Format</Text>
                         <Tooltip label="Swap Units" placement="top">
                             <IconButton
                                 aria-label="Swap units"
@@ -262,8 +288,8 @@ export default function SpeedConverterContent() {
                                 variant="outline"
                                 onClick={handleSwap}
                                 borderRadius="full"
-                                bg="white"
-                                _hover={{ bg: "teal.50" }}
+                                bg={inputBg}
+                                _hover={{ bg: useColorModeValue("teal.50", "teal.800") }}
                             />
                         </Tooltip>
                     </Flex>
@@ -280,17 +306,17 @@ export default function SpeedConverterContent() {
                         <Fade in={!!result}>
                             <Box
                                 p={{ base: 4, md: 6 }}
-                                bg="teal.50"
+                                bg={resultBg}
                                 borderRadius="lg"
                                 border="1px solid"
-                                borderColor="teal.200"
+                                borderColor={resultBorder}
                                 boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
                             >
                                 <VStack spacing={4} align="stretch">
                                     <Flex justify="space-between" align="center">
-                                        <Text fontSize={{ base: "lg", md: "xl" }} color="teal.800" fontWeight="semibold">
+                                        <Text fontSize={{ base: "lg", md: "xl" }} color={resultHeadingColor} fontWeight="semibold">
                                             {value} {fromUnit} ={" "}
-                                            <Text as="span" fontWeight="bold" color="teal.900">
+                                            <Text as="span" fontWeight="bold" color={resultValueColor}>
                                                 {result.value}
                                             </Text>
                                         </Text>
@@ -302,16 +328,16 @@ export default function SpeedConverterContent() {
                                                 colorScheme="teal"
                                                 variant="ghost"
                                                 onClick={handleCopy}
-                                                _hover={{ bg: "teal.100" }}
+                                                _hover={{ bg: useColorModeValue("teal.100", "teal.800") }}
                                             />
                                         </Tooltip>
                                     </Flex>
                                     <Box>
-                                        <Text fontSize="sm" color="teal.700" fontWeight="medium">
+                                        <Text fontSize="sm" color={resultStepLabelColor} fontWeight="medium">
                                             Calculation Steps:
                                         </Text>
                                         {result.steps.map((step, index) => (
-                                            <Text key={index} fontSize="sm" color="gray.600" mt={1} fontFamily="monospace">
+                                            <Text key={index} fontSize="sm" color={resultStepTextColor} mt={1} fontFamily="monospace">
                                                 {step}
                                             </Text>
                                         ))}
@@ -324,19 +350,27 @@ export default function SpeedConverterContent() {
                     {/* History */}
                     {history.length > 0 && (
                         <Box mt={6}>
-                            <Text fontSize="sm" color="teal.700" fontWeight="medium" mb={2} textAlign="center">
+                            <Text fontSize="sm" color={historyLabelColor} fontWeight="medium" mb={2} textAlign="center">
                                 Recent Conversions:
                             </Text>
-                            <VStack align="stretch" spacing={2} p={4} bg="gray.50" borderRadius="lg" border="1px solid" borderColor="gray.200">
+                            <VStack
+                                align="stretch"
+                                spacing={2}
+                                p={4}
+                                bg={historyBg}
+                                borderRadius="lg"
+                                border="1px solid"
+                                borderColor={historyBorder}
+                            >
                                 {history.map((entry, index) => (
                                     <Text
                                         key={index}
                                         fontSize="sm"
-                                        color="gray.600"
+                                        color={historyTextColor}
                                         p={2}
-                                        bg="white"
+                                        bg={historyItemBg}
                                         borderRadius="md"
-                                        _hover={{ bg: "gray.100" }}
+                                        _hover={{ bg: historyItemHoverBg }}
                                     >
                                         {entry}
                                     </Text>
@@ -346,16 +380,16 @@ export default function SpeedConverterContent() {
                     )}
 
                     {/* Overview */}
-                    <Box mt={6} p={4} bg="blue.50" borderRadius="lg" shadow="md">
-                        <Text fontSize="lg" fontWeight="bold" color="blue.700" mb={2}>
+                    <Box mt={6} p={4} bg={overviewBg} borderRadius="lg" shadow="md">
+                        <Text fontSize="lg" fontWeight="bold" color={overviewHeadingColor} mb={2}>
                             Speed Units Overview:
                         </Text>
                         <VStack align="start" spacing={2}>
-                            <Text><strong>m/s:</strong> Meters per second, base SI unit.</Text>
-                            <Text><strong>km/h:</strong> Kilometers per hour, 1 km/h = 0.277778 m/s.</Text>
-                            <Text><strong>mph:</strong> Miles per hour, 1 mph = 0.44704 m/s.</Text>
-                            <Text><strong>ft/s:</strong> Feet per second, 1 ft/s = 0.3048 m/s.</Text>
-                            <Text><strong>kn:</strong> Knots, 1 kn = 0.514444 m/s (used in aviation/nautical).</Text>
+                            <Text color={overviewTextColor}><strong>m/s:</strong> Meters per second, base SI unit.</Text>
+                            <Text color={overviewTextColor}><strong>km/h:</strong> Kilometers per hour, 1 km/h = 0.277778 m/s.</Text>
+                            <Text color={overviewTextColor}><strong>mph:</strong> Miles per hour, 1 mph = 0.44704 m/s.</Text>
+                            <Text color={overviewTextColor}><strong>ft/s:</strong> Feet per second, 1 ft/s = 0.3048 m/s.</Text>
+                            <Text color={overviewTextColor}><strong>kn:</strong> Knots, 1 kn = 0.514444 m/s (used in aviation/nautical).</Text>
                         </VStack>
                     </Box>
                 </VStack>

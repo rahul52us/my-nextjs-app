@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Button,
   Input,
@@ -22,9 +22,11 @@ import {
   CardHeader,
   CardBody,
   IconButton,
-  HStack,
+  Wrap,
+  WrapItem,
   Heading,
   useColorModeValue,
+  Icon,
 } from "@chakra-ui/react";
 import JSZip from "jszip";
 import { FaUpload, FaEye, FaDownload, FaTrash } from "react-icons/fa";
@@ -37,20 +39,23 @@ const ZipDecompression: React.FC = () => {
   const [output, setOutput] = useState<any[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [fileToView, setFileToView] = useState<any | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const bgColor = useColorModeValue("gray.50", "gray.900");
   const textColor = useColorModeValue("gray.800", "gray.200");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.300", "gray.600");
 
   const toast = useToast();
+  const {
+    themeStore: { themeConfig },
+  } = stores;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
-    if (selectedFile) {
-      setZipFile(selectedFile);
-    }
+    if (selectedFile) setZipFile(selectedFile);
   };
-    const {
-  themeStore: { themeConfig },
-} = stores;
+
   const handleDecompressZip = async () => {
     if (!zipFile) {
       toast({
@@ -89,7 +94,6 @@ const ZipDecompression: React.FC = () => {
       );
 
       setOutput(extractedFiles);
-
       toast({
         title: "ZIP Decompression Successful",
         description: "ZIP file has been decompressed successfully.",
@@ -116,28 +120,12 @@ const ZipDecompression: React.FC = () => {
     const fileURL = URL.createObjectURL(file.content);
 
     if (fileType === "pdf") {
-      setFileToView({
-        type: "pdf",
-        url: fileURL,
-        name: file.name,
-        content: file.content,
-      });
+      setFileToView({ type: "pdf", url: fileURL, name: file.name, content: file.content });
     } else if (["jpg", "jpeg", "png", "gif"].includes(fileType || "")) {
-      setFileToView({
-        type: "image",
-        url: fileURL,
-        name: file.name,
-        content: file.content,
-      });
+      setFileToView({ type: "image", url: fileURL, name: file.name, content: file.content });
     } else {
-      setFileToView({
-        type: "download",
-        url: fileURL,
-        name: file.name,
-        content: file.content,
-      });
+      setFileToView({ type: "download", url: fileURL, name: file.name, content: file.content });
     }
-
     onOpen();
   };
 
@@ -150,7 +138,6 @@ const ZipDecompression: React.FC = () => {
     });
   };
 
-  // Clear All Functionality
   const handleClearAll = () => {
     setZipFile(null);
     setOutput([]);
@@ -158,38 +145,94 @@ const ZipDecompression: React.FC = () => {
   };
 
   return (
-    <Box p={6} bg={bgColor} color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
- textAlign="center" mb={6}>
+    <Box p={{ base: 4, md: 6 }} bg={bgColor} color={textColor} minH="78vh">
+      <Heading
+        as="h1"
+        size={{ base: "lg", md: "xl" }}
+        color={themeConfig.colors.brand[300]}
+        textAlign="center"
+        mb={4}
+      >
         Decompress ZIP File
       </Heading>
-      <Text fontSize="lg" color="gray.500" textAlign="center" mb={6}>
+      <Text
+        fontSize={{ base: "sm", md: "lg" }}
+        color="gray.500"
+        textAlign="center"
+        mb={6}
+      >
         Upload a ZIP file to extract its contents and download individual files.
       </Text>
-      {/* File Input */}
+
+      {/* ✅ Hidden file input */}
       <Input
+        ref={fileInputRef}
         type="file"
         onChange={handleFileChange}
         accept=".zip"
-        mb={4}
-        borderColor="blue.500"
-        focusBorderColor="blue.700"
-        size="lg"
-        fontSize="md"
-        borderRadius="md"
-        _hover={{ borderColor: "blue.700" }}
+        display="none"
+        id="zip-upload-input"
       />
 
-      {/* Decompress Button */}
+      {/* ✅ Custom styled upload box */}
+      <Box
+        as="label"
+        htmlFor="zip-upload-input"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        flexDirection="column"
+        gap={3}
+        p={8}
+        mb={6}
+        border="2px dashed"
+        borderColor={zipFile ? "blue.400" : borderColor}
+        borderRadius="xl"
+        bg={zipFile ? useColorModeValue("blue.50", "blue.900") : cardBg}
+        cursor="pointer"
+        transition="all 0.2s"
+        _hover={{
+          borderColor: "blue.400",
+          bg: useColorModeValue("blue.50", "blue.900"),
+        }}
+      >
+        <Icon
+          as={FaUpload}
+          boxSize={8}
+          color={zipFile ? "blue.500" : "gray.400"}
+        />
+        <Text
+          fontWeight={zipFile ? "semibold" : "normal"}
+          color={zipFile ? "blue.600" : "gray.500"}
+          fontSize="sm"
+          textAlign="center"
+        >
+          {zipFile ? `✓ ${zipFile.name}` : "Click to choose ZIP file or drag & drop"}
+        </Text>
+        {zipFile && (
+          <Text fontSize="xs" color="blue.400">
+            {(zipFile.size / 1024).toFixed(1)} KB
+          </Text>
+        )}
+        {!zipFile && (
+          <Text fontSize="xs" color="gray.400">
+            Supported format: .zip
+          </Text>
+        )}
+      </Box>
 
       {/* Loading Spinner */}
-      {isLoading && <Spinner size="lg" color="green.500" />}
+      {isLoading && (
+        <Box display="flex" justifyContent="center" mb={4}>
+          <Spinner size="lg" color="green.500" />
+        </Box>
+      )}
 
       {/* Extracted Files List */}
       {!isLoading && output.length > 0 && (
         <>
-          <Text mt={3} fontSize="lg" fontWeight="bold">
-            Extracted Files:
+          <Text mt={3} mb={2} fontSize="lg" fontWeight="bold">
+            Extracted Files ({output.length}):
           </Text>
           {output.map((file, index) => (
             <Card
@@ -198,46 +241,48 @@ const ZipDecompression: React.FC = () => {
               borderWidth="1px"
               borderRadius="lg"
               shadow="md"
+              bg={cardBg}
               _hover={{ boxShadow: "lg" }}
             >
-              <CardHeader>
-                <Text fontWeight="bold" fontSize="lg">
-                  {file.name}
+              <CardHeader pb={1}>
+                <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }} isTruncated>
+                  📄 {file.name}
                 </Text>
               </CardHeader>
-              <CardBody>
+              <CardBody pt={1}>
                 <VStack spacing={0} align="start">
-                  <HStack spacing={2}>
-                    <Link
-                      href={URL.createObjectURL(file.content)}
-                      download={file.name}
-                      color="blue.500"
-                      isExternal
-                    >
-                      <IconButton
-                        icon={<FaDownload />}
-                        aria-label="Download file"
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                      />
-                    </Link>
-
-                    {/* Show View button only for images */}
+                  <Wrap spacing={2}>
+                    <WrapItem>
+                      <Link
+                        href={URL.createObjectURL(file.content)}
+                        download={file.name}
+                        isExternal
+                      >
+                        <IconButton
+                          icon={<FaDownload />}
+                          aria-label="Download file"
+                          size="sm"
+                          variant="outline"
+                          colorScheme="blue"
+                        />
+                      </Link>
+                    </WrapItem>
                     {["jpg", "jpeg", "png", "gif"].includes(
                       file.name.split(".").pop()?.toLowerCase() || ""
                     ) && (
-                      <Button
-                        colorScheme="blue"
-                        onClick={() => handleViewFile(file)}
-                        leftIcon={<FaEye />}
-                        size="sm"
-                        variant="outline"
-                      >
-                        View
-                      </Button>
+                      <WrapItem>
+                        <Button
+                          colorScheme="blue"
+                          onClick={() => handleViewFile(file)}
+                          leftIcon={<FaEye />}
+                          size="sm"
+                          variant="outline"
+                        >
+                          View
+                        </Button>
+                      </WrapItem>
                     )}
-                  </HStack>
+                  </Wrap>
                 </VStack>
               </CardBody>
             </Card>
@@ -245,92 +290,93 @@ const ZipDecompression: React.FC = () => {
         </>
       )}
 
-      {/* Download All Button */}
-      <HStack mt={4}>
-        <Button
-          colorScheme="green"
-          onClick={handleDecompressZip}
-          leftIcon={<FaUpload />}
-          isLoading={isLoading}
-          width="100%"
-          size="lg"
-          fontSize="lg"
-          borderRadius="md"
-          boxShadow="md"
-          _hover={{ boxShadow: "lg" }}
-        >
-          Decompress ZIP File
-        </Button>
+      {/* ✅ Action Buttons — Wrap for mobile */}
+      <Wrap spacing={3} mt={6} justify={{ base: "stretch", md: "flex-start" }}>
+        <WrapItem flex={{ base: "1 1 100%", md: "0 1 auto" }}>
+          <Button
+            colorScheme="green"
+            onClick={handleDecompressZip}
+            leftIcon={<FaUpload />}
+            isLoading={isLoading}
+            width="100%"
+            size="lg"
+            fontSize={{ base: "md", md: "lg" }}
+            borderRadius="full"
+            bgGradient="linear(to-r, green.400, green.600)"
+            _hover={{ bgGradient: "linear(to-r, green.500, green.700)" }}
+            boxShadow="md"
+            isDisabled={!zipFile}
+          >
+            Decompress ZIP
+          </Button>
+        </WrapItem>
 
-        <Button
-          colorScheme="blue"
-          onClick={handleDownloadAll}
-          isDisabled={output.length === 0}
-          width="100%"
-          size="lg"
-          fontSize="lg"
-          borderRadius="md"
-          boxShadow="md"
-          _hover={{ boxShadow: "lg" }}
-        >
-          Download All Files
-        </Button>
+        <WrapItem flex={{ base: "1 1 100%", md: "0 1 auto" }}>
+          <Button
+            colorScheme="blue"
+            onClick={handleDownloadAll}
+            leftIcon={<FaDownload />}
+            isDisabled={output.length === 0}
+            width="100%"
+            size="lg"
+            fontSize={{ base: "md", md: "lg" }}
+            borderRadius="full"
+            bgGradient="linear(to-r, blue.400, blue.600)"
+            _hover={{ bgGradient: "linear(to-r, blue.500, blue.700)" }}
+            boxShadow="md"
+          >
+            Download All
+          </Button>
+        </WrapItem>
 
-        {/* Clear All Button */}
-        <Button
-          colorScheme="red"
-          onClick={handleClearAll}
-          leftIcon={<FaTrash />}
-          isDisabled={output.length === 0}
-          width="100%"
-          size="lg"
-          fontSize="lg"
-          borderRadius="md"
-          boxShadow="md"
-          _hover={{ boxShadow: "lg" }}
-        >
-          Clear All
-        </Button>
-      </HStack>
-      {/* Modal to View File Content */}
+        <WrapItem flex={{ base: "1 1 100%", md: "0 1 auto" }}>
+          <Button
+            colorScheme="red"
+            onClick={handleClearAll}
+            leftIcon={<FaTrash />}
+            isDisabled={!zipFile && output.length === 0}
+            width="100%"
+            size="lg"
+            fontSize={{ base: "md", md: "lg" }}
+            borderRadius="full"
+            bgGradient="linear(to-r, red.400, red.500)"
+            _hover={{ bgGradient: "linear(to-r, red.500, red.600)" }}
+            boxShadow="md"
+          >
+            Clear All
+          </Button>
+        </WrapItem>
+      </Wrap>
+
+      {/* Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>File Content</ModalHeader>
+          <ModalHeader>File Preview</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {fileToView?.type === "pdf" && (
               <iframe
                 src={fileToView.url}
                 width="100%"
-                height="100%"
-                style={{ border: "none", maxHeight: "80vh" }}
+                height="500px"
+                style={{ border: "none" }}
                 title="PDF View"
               />
             )}
-
             {fileToView?.type === "image" && (
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "auto",
-                  aspectRatio: "16 / 9",
-                }}
-              >
+              <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }}>
                 <Image
                   src={fileToView.url}
-                  alt="Preview Image"
+                  alt="Preview"
                   fill
                   style={{ objectFit: "contain", borderRadius: "8px" }}
                 />
               </div>
             )}
-
             {fileToView?.type === "download" && (
               <Text>
-                The file format is not supported for direct viewing. You can
-                download it instead.
+                This file format is not supported for preview. Please download it.
               </Text>
             )}
           </ModalBody>
@@ -342,7 +388,6 @@ const ZipDecompression: React.FC = () => {
               <Link
                 href={URL.createObjectURL(fileToView.content)}
                 download={fileToView.name}
-                color="blue.500"
                 isExternal
               >
                 <Button colorScheme="green">Download File</Button>

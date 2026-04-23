@@ -13,12 +13,12 @@ import {
     IconButton,
     Tooltip,
     HStack,
+    useColorModeValue,
 } from "@chakra-ui/react";
 import { FaDatabase, FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
 import stores from "../../../../store/stores";
 
-// Define data size units with bit and byte distinction
 const units = [
     { group: "Bits", label: "Bits (b)", value: "b", factor: 1 / 8 },
     { group: "Bits", label: "Kilobits (Kb)", value: "Kb", factor: 1024 / 8 },
@@ -45,11 +45,34 @@ const DataSizeConverterContent = () => {
     const [humanReadable] = useState<boolean>(false);
     const toast = useToast();
 
-        const {
-  themeStore: { themeConfig },
-} = stores;
+    const { themeStore: { themeConfig } } = stores;
 
-    // Debounced conversion function
+    // ✅ All colors dark-mode aware
+    const pageBg = useColorModeValue("gray.50", "gray.900");
+    const cardBg = useColorModeValue("white", "gray.800");
+    const subtitleColor = useColorModeValue("gray.600", "gray.400");
+    const toTextColor = useColorModeValue("teal.600", "teal.300");
+
+    const inputBg = useColorModeValue("white", "gray.700");
+    const inputTextColor = useColorModeValue("gray.800", "gray.100");
+    const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+    const inputHoverBorder = useColorModeValue("teal.300", "teal.400");
+    const placeholderColor = useColorModeValue("gray.400", "gray.500");
+
+    const swapBg = useColorModeValue("white", "gray.700");
+    const swapHoverBg = useColorModeValue("teal.50", "teal.800");
+
+    const precisionLabelColor = useColorModeValue("gray.600", "gray.400");
+
+    // Result box
+    const resultBg = useColorModeValue("teal.50", "teal.900");
+    const resultBorder = useColorModeValue("teal.200", "teal.700");
+    const resultHeadingColor = useColorModeValue("teal.800", "teal.100");
+    const resultValueColor = useColorModeValue("teal.900", "white");
+    const resultStepLabelColor = useColorModeValue("teal.700", "teal.300");
+    const resultStepTextColor = useColorModeValue("gray.600", "gray.300");
+    const copyHoverBg = useColorModeValue("teal.100", "teal.800");
+
     const convert = debounce(() => {
         if (!inputValue || isNaN(Number(inputValue))) {
             setResult(null);
@@ -76,9 +99,7 @@ const DataSizeConverterContent = () => {
 
         const steps = [
             `1. Convert to Bytes: ${value} ${fromUnit} × ${fromFactor} = ${bytes} Bytes`,
-            `2. Convert to ${toUnit}: ${bytes} Bytes ÷ ${toFactor} = ${convertedValue.toFixed(
-                precision
-            )} ${toUnit}`,
+            `2. Convert to ${toUnit}: ${bytes} Bytes ÷ ${toFactor} = ${convertedValue.toFixed(precision)} ${toUnit}`,
         ];
         setResult({ value: displayValue, bytes, steps });
     }, 300);
@@ -109,26 +130,26 @@ const DataSizeConverterContent = () => {
     return (
         <Flex
             minH="100vh"
-            bgGradient="linear(to-b, teal.50, gray.100)"
+            bg={pageBg}
             p={{ base: 4, md: 2 }}
             w="100%"
             justify="center"
-        //   align="center"
         >
             <Box
-                bg="white"
+                bg={cardBg}
                 p={{ base: 6, md: 10 }}
                 borderRadius="2xl"
                 boxShadow="0 8px 24px rgba(0, 0, 0, 0.15)"
                 w="100%"
-                maxW="1200px" // Optional max width for large screens
+                maxW="1200px"
                 transition="all 0.3s ease"
                 _hover={{ boxShadow: "0 12px 32px rgba(0, 0, 0, 0.2)" }}
             >
                 <VStack spacing={{ base: 6, md: 4 }} align="stretch" w="100%">
+
                     {/* Header */}
                     <Flex align="center" justify="center" gap={4} mb={2}>
-                        <FaDatabase size={32} color="teal.600" />
+                        <FaDatabase size={32} color="teal" />
                         <Heading
                             size={{ base: "lg", md: "xl" }}
                             color={themeConfig.colors.brand[300]}
@@ -140,7 +161,7 @@ const DataSizeConverterContent = () => {
                     </Flex>
                     <Text
                         textAlign="center"
-                        color="gray.600"
+                        color={subtitleColor}
                         fontSize={{ base: "sm", md: "md" }}
                         maxW="600px"
                         mx="auto"
@@ -162,30 +183,33 @@ const DataSizeConverterContent = () => {
                                 onChange={(e) => setInputValue(e.target.value)}
                                 placeholder="Enter value (e.g., 1024)"
                                 size="lg"
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
+                                _placeholder={{ color: placeholderColor }}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
                                 px={4}
                                 py={6}
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 transition="all 0.2s ease"
                                 fontSize="md"
                                 fontWeight="medium"
                                 step="any"
-                                flex="1" // Stretch to fill available space
+                                flex="1"
                             />
                             <Select
                                 value={fromUnit}
                                 onChange={(e) => setFromUnit(e.target.value)}
                                 size="lg"
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 transition="all 0.2s ease"
                                 fontSize="md"
                                 w={{ base: "100%", md: "30%" }}
@@ -201,7 +225,7 @@ const DataSizeConverterContent = () => {
                         <Flex align="center" justify="center" gap={4}>
                             <Text
                                 fontSize={{ base: "lg", md: "xl" }}
-                                color="teal.600"
+                                color={toTextColor}
                                 fontWeight="bold"
                                 textTransform="uppercase"
                                 letterSpacing="wide"
@@ -217,8 +241,8 @@ const DataSizeConverterContent = () => {
                                     variant="outline"
                                     onClick={handleSwap}
                                     borderRadius="full"
-                                    bg="white"
-                                    _hover={{ bg: "teal.50" }}
+                                    bg={swapBg}
+                                    _hover={{ bg: swapHoverBg }}
                                 />
                             </Tooltip>
                         </Flex>
@@ -233,12 +257,13 @@ const DataSizeConverterContent = () => {
                                 value={toUnit}
                                 onChange={(e) => setToUnit(e.target.value)}
                                 size="lg"
-                                bg="white"
+                                bg={inputBg}
+                                color={inputTextColor}
                                 border="2px solid"
-                                borderColor="gray.200"
+                                borderColor={inputBorderColor}
                                 borderRadius="md"
                                 _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                                _hover={{ borderColor: "teal.300" }}
+                                _hover={{ borderColor: inputHoverBorder }}
                                 transition="all 0.2s ease"
                                 fontSize="md"
                                 w={{ base: "100%", md: "30%" }}
@@ -251,7 +276,7 @@ const DataSizeConverterContent = () => {
                                 ))}
                             </Select>
                             <HStack spacing={3} w={{ base: "100%", md: "auto" }}>
-                                <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                                <Text fontSize="sm" color={precisionLabelColor} whiteSpace="nowrap">
                                     Precision:
                                 </Text>
                                 <Input
@@ -264,11 +289,12 @@ const DataSizeConverterContent = () => {
                                     max={10}
                                     w="80px"
                                     size="md"
-                                    bg="white"
+                                    bg={inputBg}
+                                    color={inputTextColor}
                                     border="2px solid"
-                                    borderColor="gray.200"
+                                    borderColor={inputBorderColor}
                                     _focus={{ borderColor: "teal.400" }}
-                                    _hover={{ borderColor: "teal.300" }}
+                                    _hover={{ borderColor: inputHoverBorder }}
                                     transition="all 0.2s ease"
                                 />
                             </HStack>
@@ -280,10 +306,10 @@ const DataSizeConverterContent = () => {
                         <Fade in={!!result}>
                             <Box
                                 p={{ base: 4, md: 6 }}
-                                bg="teal.50"
+                                bg={resultBg}
                                 borderRadius="lg"
                                 border="1px solid"
-                                borderColor="teal.200"
+                                borderColor={resultBorder}
                                 boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
                                 w="100%"
                             >
@@ -291,11 +317,11 @@ const DataSizeConverterContent = () => {
                                     <Flex justify="space-between" align="center">
                                         <Text
                                             fontSize={{ base: "lg", md: "xl" }}
-                                            color="teal.800"
+                                            color={resultHeadingColor}
                                             fontWeight="semibold"
                                         >
                                             {inputValue} {fromUnit} ={" "}
-                                            <Text as="span" fontWeight="bold" color="teal.900">
+                                            <Text as="span" fontWeight="bold" color={resultValueColor}>
                                                 {result.value} {toUnit}
                                             </Text>
                                         </Text>
@@ -307,19 +333,19 @@ const DataSizeConverterContent = () => {
                                                 colorScheme="teal"
                                                 variant="ghost"
                                                 onClick={handleCopy}
-                                                _hover={{ bg: "teal.100" }}
+                                                _hover={{ bg: copyHoverBg }}
                                             />
                                         </Tooltip>
                                     </Flex>
                                     <Box>
-                                        <Text fontSize="sm" color="teal.700" fontWeight="medium">
+                                        <Text fontSize="sm" color={resultStepLabelColor} fontWeight="medium">
                                             Calculation Steps:
                                         </Text>
                                         {result.steps.map((step, index) => (
                                             <Text
                                                 key={index}
                                                 fontSize="sm"
-                                                color="gray.600"
+                                                color={resultStepTextColor}
                                                 mt={1}
                                                 fontFamily="monospace"
                                             >

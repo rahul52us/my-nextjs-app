@@ -1,5 +1,12 @@
 "use client";
-import { useState, useCallback, ChangeEvent, useMemo, useEffect, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  ChangeEvent,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
 import { saveAs } from "file-saver";
 import {
   Box,
@@ -38,7 +45,14 @@ import {
   InputRightElement,
   CloseButton,
 } from "@chakra-ui/react";
-import { DownloadIcon, ViewIcon, ViewOffIcon, RepeatIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
+import {
+  DownloadIcon,
+  ViewIcon,
+  ViewOffIcon,
+  RepeatIcon,
+  InfoOutlineIcon,
+  SearchIcon,
+} from "@chakra-ui/icons";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, IHeaderParams, GridApi } from "ag-grid-community";
 import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
@@ -76,14 +90,18 @@ const CustomHeader = ({ displayName }: IHeaderParams) => {
 
 const JsonToExcel = () => {
   const [jsonInput, setJsonInput] = useState<string>("");
-  const [previewContent, setPreviewContent] = useState<SheetData[] | null>(null);
+  const [previewContent, setPreviewContent] = useState<SheetData[] | null>(
+    null,
+  );
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [showPreview, setShowPreview] = useState<boolean>(false);
-  const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>({});
+  const [selectedColumns, setSelectedColumns] = useState<
+    Record<string, string[]>
+  >({});
   const [selectAllColumns, setSelectAllColumns] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startRow, setStartRow] = useState<string>("1");
@@ -131,9 +149,9 @@ const JsonToExcel = () => {
       }
     }, 300);
   };
-    const {
-  themeStore: { themeConfig },
-} = stores;
+  const {
+    themeStore: { themeConfig },
+  } = stores;
   // Clear search input
   const clearSearch = () => {
     setSearchQuery("");
@@ -197,9 +215,12 @@ const JsonToExcel = () => {
       // Ensure unique headers
       const headerCounts: Record<string, number> = {};
       const uniqueHeaders = headers.map((header) => {
-        const baseHeader = String(header) || `Column ${headerCounts[header] || 1}`;
+        const baseHeader =
+          String(header) || `Column ${headerCounts[header] || 1}`;
         headerCounts[baseHeader] = (headerCounts[baseHeader] || 0) + 1;
-        return headerCounts[baseHeader] > 1 ? `${baseHeader}_${headerCounts[baseHeader] - 1}` : baseHeader;
+        return headerCounts[baseHeader] > 1
+          ? `${baseHeader}_${headerCounts[baseHeader] - 1}`
+          : baseHeader;
       });
 
       // Convert JSON to row data for AG Grid
@@ -218,7 +239,10 @@ const JsonToExcel = () => {
       // Create sheet data
       const sheetData: SheetData = {
         sheetName: "Sheet1",
-        data: [uniqueHeaders, ...rowData.map((row) => uniqueHeaders.map((header) => row[header]))],
+        data: [
+          uniqueHeaders,
+          ...rowData.map((row) => uniqueHeaders.map((header) => row[header])),
+        ],
         rowData,
       };
 
@@ -243,7 +267,7 @@ const JsonToExcel = () => {
       setError(
         error instanceof Error
           ? `Invalid JSON: ${error.message}`
-          : "Failed to parse JSON. Ensure it is a valid JSON array or object."
+          : "Failed to parse JSON. Ensure it is a valid JSON array or object.",
       );
       setPreviewContent(null);
       setSelectedSheet("");
@@ -344,7 +368,7 @@ const JsonToExcel = () => {
     }
 
     const selectedSheetData = previewContent.find(
-      (sheet) => sheet.sheetName === sheetName
+      (sheet) => sheet.sheetName === sheetName,
     );
     if (!selectedSheetData || !selectedSheetData.rowData) {
       setError("No data available for the selected sheet.");
@@ -383,11 +407,17 @@ const JsonToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
     const blob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-    saveAs(blob, `${sheetName}_rows_${range.start + 1}-${range.end + 1}_selected_columns.xlsx`);
+    saveAs(
+      blob,
+      `${sheetName}_rows_${range.start + 1}-${range.end + 1}_selected_columns.xlsx`,
+    );
     setError(null);
     toast({
       title: "Excel downloaded",
@@ -441,7 +471,7 @@ const JsonToExcel = () => {
 
   const columnDefs = useMemo<ColDef[]>(() => {
     const selectedSheetData = previewContent?.find(
-      (sheet) => sheet.sheetName === selectedSheet
+      (sheet) => sheet.sheetName === selectedSheet,
     );
     if (
       !selectedSheetData ||
@@ -495,14 +525,17 @@ const JsonToExcel = () => {
 
   const columnOptions = useMemo<SelectOption[]>(() => {
     const selectedSheetData = previewContent?.find(
-      (sheet) => sheet.sheetName === selectedSheet
+      (sheet) => sheet.sheetName === selectedSheet,
     );
     if (!selectedSheetData || !selectedSheetData.data?.[0]) return [];
     const headerCounts: Record<string, number> = {};
     const options = selectedSheetData.data[0].map((header, index) => {
       const baseLabel = header || `Column ${index + 1}`;
       headerCounts[baseLabel] = (headerCounts[baseLabel] || 0) + 1;
-      const value = headerCounts[baseLabel] > 1 ? `${baseLabel}_${headerCounts[baseLabel] - 1}` : baseLabel;
+      const value =
+        headerCounts[baseLabel] > 1
+          ? `${baseLabel}_${headerCounts[baseLabel] - 1}`
+          : baseLabel;
       return {
         value,
         label: baseLabel,
@@ -529,7 +562,7 @@ const JsonToExcel = () => {
   // Update endRow when sheet changes
   useEffect(() => {
     const selectedSheetData = previewContent?.find(
-      (sheet) => sheet.sheetName === selectedSheet
+      (sheet) => sheet.sheetName === selectedSheet,
     );
     if (selectedSheetData?.rowData.length) {
       setEndRow(String(selectedSheetData.rowData.length));
@@ -582,7 +615,12 @@ const JsonToExcel = () => {
             justifyContent="center"
             flexDirection="column"
           >
-            <Spinner size="xl" color={accentColor} thickness="4px" speed="0.65s" />
+            <Spinner
+              size="xl"
+              color={accentColor}
+              thickness="4px"
+              speed="0.65s"
+            />
             <Progress
               value={loadingProgress}
               size="sm"
@@ -606,7 +644,12 @@ const JsonToExcel = () => {
                 hasArrow
                 placement="top"
               >
-                <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                <Icon
+                  as={InfoOutlineIcon}
+                  ml={2}
+                  color="gray.500"
+                  fontSize="sm"
+                />
               </Tooltip>
             </FormLabel>
             <Skeleton isLoaded={!isLoading}>
@@ -621,7 +664,10 @@ const JsonToExcel = () => {
                 borderRadius="md"
                 fontFamily="'Courier New', monospace"
                 fontSize="sm"
-                _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
+                _focus={{
+                  borderColor: accentColor,
+                  boxShadow: `0 0 0 2px ${accentColor}`,
+                }}
                 _hover={{ borderColor: "teal.400" }}
                 transition="all 0.2s"
                 aria-label="JSON input"
@@ -641,31 +687,91 @@ const JsonToExcel = () => {
                 hasArrow
                 placement="top"
               >
-                <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                <Icon
+                  as={InfoOutlineIcon}
+                  ml={2}
+                  color="gray.500"
+                  fontSize="sm"
+                />
               </Tooltip>
             </FormLabel>
+
+            {/* Hidden actual input */}
+            <Input
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              display="none"
+              id="json-file-upload"
+            />
+
+            {/* Custom styled upload box */}
             <Skeleton isLoaded={!isLoading}>
-              <Input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                bg={cardBg}
-                borderColor={borderColor}
+              <Box
+                as="label"
+                htmlFor="json-file-upload"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                flexDirection="column"
+                gap={2}
+                p={5}
+                border="2px dashed"
+                borderColor={
+                  jsonInput && previewContent ? "teal.400" : borderColor
+                }
                 borderRadius="md"
-                p={2}
-                _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
-                _hover={{ borderColor: "teal.400" }}
+                bg={
+                  jsonInput && previewContent
+                    ? useColorModeValue("teal.50", "teal.900")
+                    : cardBg
+                }
+                cursor="pointer"
                 transition="all 0.2s"
-                aria-label="JSON file upload"
-              />
+                _hover={{
+                  borderColor: "teal.400",
+                  bg: useColorModeValue("teal.50", "teal.900"),
+                }}
+                width="100%"
+              >
+                {/* Upload Icon */}
+                <Box
+                  as="span"
+                  fontSize="2xl"
+                  color={jsonInput && previewContent ? "teal.500" : "gray.400"}
+                >
+                  ↑
+                </Box>
+
+                <Text
+                  color={jsonInput && previewContent ? "teal.600" : "gray.500"}
+                  fontWeight={
+                    jsonInput && previewContent ? "semibold" : "normal"
+                  }
+                  fontSize="sm"
+                  textAlign="center"
+                >
+                  {jsonInput && previewContent
+                    ? "✓ File loaded successfully"
+                    : "Click to choose .json file"}
+                </Text>
+
+                <Text fontSize="xs" color="gray.400">
+                  or drag & drop here
+                </Text>
+              </Box>
             </Skeleton>
+
             <FormHelperText color={textColor} fontSize="xs">
               Supported format: .json (Max 100MB)
             </FormHelperText>
           </FormControl>
 
           <Flex justify="space-between" flexWrap="wrap" gap={3}>
-            <Tooltip label="Convert selected columns and rows to Excel" hasArrow>
+            <Tooltip
+              label="Convert selected columns and rows to Excel"
+              hasArrow
+            >
               <Button
                 colorScheme="teal"
                 onClick={() => handleDownloadExcel("Sheet1")}
@@ -687,7 +793,9 @@ const JsonToExcel = () => {
               </Button>
             </Tooltip>
             <Tooltip
-              label={showPreview ? "Hide data preview" : "Preview data in a table"}
+              label={
+                showPreview ? "Hide data preview" : "Preview data in a table"
+              }
               hasArrow
             >
               <Button
@@ -714,7 +822,11 @@ const JsonToExcel = () => {
                 flex={1}
                 minW="120px"
                 leftIcon={showPreview ? <ViewOffIcon /> : <ViewIcon />}
-                bgGradient={showPreview ? "linear(to-r, orange.400, orange.500)" : "linear(to-r, teal.500, teal.600)"}
+                bgGradient={
+                  showPreview
+                    ? "linear(to-r, orange.400, orange.500)"
+                    : "linear(to-r, teal.500, teal.600)"
+                }
                 _hover={
                   showPreview
                     ? { bgGradient: "linear(to-r, orange.500, orange.600)" }
@@ -754,7 +866,8 @@ const JsonToExcel = () => {
           </Flex>
 
           <Text fontSize="xs" color="gray.500" textAlign="center" mt={2}>
-            Paste a JSON string or upload a .json file to preview and convert to Excel format.
+            Paste a JSON string or upload a .json file to preview and convert to
+            Excel format.
           </Text>
         </VStack>
       </Card>
@@ -773,7 +886,12 @@ const JsonToExcel = () => {
         size={{ base: "full", md: "xl" }}
       >
         <DrawerOverlay />
-        <DrawerContent bg={cardBg} css={{ minWidth: "90vw" }} borderLeft="1px" borderColor={borderColor}>
+        <DrawerContent
+          bg={cardBg}
+          css={{ minWidth: "90vw" }}
+          borderLeft="1px"
+          borderColor={borderColor}
+        >
           <DrawerHeader
             bgGradient="linear(to-r, teal.500, teal.600)"
             color="white"
@@ -786,18 +904,25 @@ const JsonToExcel = () => {
             justifyContent="space-between"
           >
             <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold">
-              Data Preview ({previewContent?.length || 0} sheet{previewContent?.length !== 1 ? "s" : ""})
+              Data Preview ({previewContent?.length || 0} sheet
+              {previewContent?.length !== 1 ? "s" : ""})
             </Text>
             {selectedColumns[selectedSheet]?.length > 0 && (
               <Text fontSize="sm" opacity={0.8}>
-                {selectedColumns[selectedSheet].length} column{selectedColumns[selectedSheet].length > 1 ? "s" : ""} selected
+                {selectedColumns[selectedSheet].length} column
+                {selectedColumns[selectedSheet].length > 1 ? "s" : ""} selected
               </Text>
             )}
           </DrawerHeader>
           <DrawerBody p={{ base: 4, md: 6 }} overflowY="auto">
             {isLoading ? (
               <VStack spacing={4} py={10} align="center">
-                <Spinner size="xl" color={accentColor} thickness="4px" speed="0.65s" />
+                <Spinner
+                  size="xl"
+                  color={accentColor}
+                  thickness="4px"
+                  speed="0.65s"
+                />
                 <Progress
                   value={loadingProgress}
                   size="sm"
@@ -805,21 +930,32 @@ const JsonToExcel = () => {
                   width="300px"
                   borderRadius="md"
                 />
-                <Text color={textColor}>Loading data... {Math.round(loadingProgress)}%</Text>
+                <Text color={textColor}>
+                  Loading data... {Math.round(loadingProgress)}%
+                </Text>
               </VStack>
             ) : previewContent ? (
               <VStack spacing={5} align="stretch">
                 <Card p={4} borderRadius="lg" boxShadow="sm" bg={cardBg}>
                   <VStack spacing={4} align="stretch">
                     <FormControl>
-                      <FormLabel fontWeight="semibold" color={textColor} fontSize="sm">
+                      <FormLabel
+                        fontWeight="semibold"
+                        color={textColor}
+                        fontSize="sm"
+                      >
                         Select Sheet
                         <Tooltip
                           label="Choose a sheet to preview its data."
                           hasArrow
                           placement="top"
                         >
-                          <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                          <Icon
+                            as={InfoOutlineIcon}
+                            ml={2}
+                            color="gray.500"
+                            fontSize="sm"
+                          />
                         </Tooltip>
                       </FormLabel>
                       <Select
@@ -828,13 +964,19 @@ const JsonToExcel = () => {
                           setSelectedSheet(e.target.value);
                           setSearchQuery("");
                           if (gridApiRef.current) {
-                            gridApiRef.current.setGridOption("quickFilterText", "");
+                            gridApiRef.current.setGridOption(
+                              "quickFilterText",
+                              "",
+                            );
                           }
                         }}
                         bg={cardBg}
                         borderColor={borderColor}
                         borderRadius="md"
-                        _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
+                        _focus={{
+                          borderColor: accentColor,
+                          boxShadow: `0 0 0 2px ${accentColor}`,
+                        }}
                         _hover={{ borderColor: "teal.400" }}
                         transition="all 0.2s"
                         fontSize="sm"
@@ -848,14 +990,23 @@ const JsonToExcel = () => {
                       </Select>
                     </FormControl>
                     <FormControl>
-                      <FormLabel fontWeight="semibold" color={textColor} fontSize="sm">
+                      <FormLabel
+                        fontWeight="semibold"
+                        color={textColor}
+                        fontSize="sm"
+                      >
                         Select Columns to Export
                         <Tooltip
                           label="Choose columns to include in the Excel file."
                           hasArrow
                           placement="top"
                         >
-                          <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                          <Icon
+                            as={InfoOutlineIcon}
+                            ml={2}
+                            color="gray.500"
+                            fontSize="sm"
+                          />
                         </Tooltip>
                       </FormLabel>
                       <ReactSelect
@@ -863,16 +1014,18 @@ const JsonToExcel = () => {
                         isSearchable
                         options={columnOptions}
                         value={columnOptions.filter((opt) =>
-                          selectedColumns[selectedSheet]?.includes(opt.value)
+                          selectedColumns[selectedSheet]?.includes(opt.value),
                         )}
                         onChange={(selected: MultiValue<SelectOption>) => {
-                          const uniqueValues = [...new Set(selected.map((opt) => opt.value))];
+                          const uniqueValues = [
+                            ...new Set(selected.map((opt) => opt.value)),
+                          ];
                           setSelectedColumns((prev) => ({
                             ...prev,
                             [selectedSheet]: uniqueValues,
                           }));
                           setSelectAllColumns(
-                            uniqueValues.length === columnOptions.length
+                            uniqueValues.length === columnOptions.length,
                           );
                         }}
                         placeholder="Search and select columns..."
@@ -886,7 +1039,7 @@ const JsonToExcel = () => {
                             padding: "4px",
                             boxShadow: useColorModeValue(
                               "0 1px 3px rgba(0,0,0,0.1)",
-                              "none"
+                              "none",
                             ),
                             transition: "all 0.2s",
                             fontSize: "14px",
@@ -907,8 +1060,8 @@ const JsonToExcel = () => {
                             backgroundColor: state.isSelected
                               ? accentColor
                               : state.isFocused
-                              ? useColorModeValue("#E6FFFA", "#2D3748")
-                              : undefined,
+                                ? useColorModeValue("#E6FFFA", "#2D3748")
+                                : undefined,
                             color: state.isSelected
                               ? "white"
                               : useColorModeValue("gray.800", "white"),
@@ -923,7 +1076,10 @@ const JsonToExcel = () => {
                           }),
                           multiValue: (provided) => ({
                             ...provided,
-                            backgroundColor: useColorModeValue("teal.100", "teal.700"),
+                            backgroundColor: useColorModeValue(
+                              "teal.100",
+                              "teal.700",
+                            ),
                           }),
                           multiValueLabel: (provided) => ({
                             ...provided,
@@ -935,14 +1091,23 @@ const JsonToExcel = () => {
                     </FormControl>
                     <HStack spacing={4}>
                       <FormControl maxW="150px">
-                        <FormLabel fontWeight="semibold" color={textColor} fontSize="sm">
+                        <FormLabel
+                          fontWeight="semibold"
+                          color={textColor}
+                          fontSize="sm"
+                        >
                           Start Row
                           <Tooltip
                             label="Enter the first row to include (minimum 1)."
                             hasArrow
                             placement="top"
                           >
-                            <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                            <Icon
+                              as={InfoOutlineIcon}
+                              ml={2}
+                              color="gray.500"
+                              fontSize="sm"
+                            />
                           </Tooltip>
                         </FormLabel>
                         <NumberInput
@@ -952,7 +1117,10 @@ const JsonToExcel = () => {
                           bg={cardBg}
                           borderColor={borderColor}
                           borderRadius="md"
-                          _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
+                          _focus={{
+                            borderColor: accentColor,
+                            boxShadow: `0 0 0 2px ${accentColor}`,
+                          }}
                           _hover={{ borderColor: "teal.400" }}
                           transition="all 0.2s"
                           size="sm"
@@ -969,14 +1137,23 @@ const JsonToExcel = () => {
                         </FormHelperText>
                       </FormControl>
                       <FormControl maxW="150px">
-                        <FormLabel fontWeight="semibold" color={textColor} fontSize="sm">
+                        <FormLabel
+                          fontWeight="semibold"
+                          color={textColor}
+                          fontSize="sm"
+                        >
                           End Row
                           <Tooltip
                             label="Enter the last row to include (leave blank for last row)."
                             hasArrow
                             placement="top"
                           >
-                            <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                            <Icon
+                              as={InfoOutlineIcon}
+                              ml={2}
+                              color="gray.500"
+                              fontSize="sm"
+                            />
                           </Tooltip>
                         </FormLabel>
                         <NumberInput
@@ -986,7 +1163,10 @@ const JsonToExcel = () => {
                           bg={cardBg}
                           borderColor={borderColor}
                           borderRadius="md"
-                          _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
+                          _focus={{
+                            borderColor: accentColor,
+                            boxShadow: `0 0 0 2px ${accentColor}`,
+                          }}
                           _hover={{ borderColor: "teal.400" }}
                           transition="all 0.2s"
                           size="sm"
@@ -1027,7 +1207,9 @@ const JsonToExcel = () => {
                         onClick={handleResetColumns}
                         isDisabled={!selectedColumns[selectedSheet]?.length}
                         bgGradient="linear(to-r, orange.400, orange.600)"
-                        _hover={{ bgGradient: "linear(to-r, orange.500, orange.700)" }}
+                        _hover={{
+                          bgGradient: "linear(to-r, orange.500, orange.700)",
+                        }}
                         borderRadius="full"
                         transition="all 0.2s"
                         fontSize="sm"
@@ -1038,14 +1220,23 @@ const JsonToExcel = () => {
                     </Tooltip>
                   </HStack>
                   <FormControl maxW={{ base: "100%", md: "300px" }}>
-                    <FormLabel fontWeight="semibold" color={textColor} fontSize="sm">
+                    <FormLabel
+                      fontWeight="semibold"
+                      color={textColor}
+                      fontSize="sm"
+                    >
                       Search Data
                       <Tooltip
                         label="Search within the table data."
                         hasArrow
                         placement="top"
                       >
-                        <Icon as={InfoOutlineIcon} ml={2} color="gray.500" fontSize="sm" />
+                        <Icon
+                          as={InfoOutlineIcon}
+                          ml={2}
+                          color="gray.500"
+                          fontSize="sm"
+                        />
                       </Tooltip>
                     </FormLabel>
                     <InputGroup size="sm">
@@ -1056,7 +1247,10 @@ const JsonToExcel = () => {
                         bg={cardBg}
                         borderColor={borderColor}
                         borderRadius="md"
-                        _focus={{ borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` }}
+                        _focus={{
+                          borderColor: accentColor,
+                          boxShadow: `0 0 0 2px ${accentColor}`,
+                        }}
                         _hover={{ borderColor: "teal.400" }}
                         transition="all 0.2s"
                         fontSize="sm"
@@ -1077,13 +1271,18 @@ const JsonToExcel = () => {
 
                 <Card p={4} borderRadius="lg" boxShadow="sm" bg={cardBg}>
                   <HStack spacing={3} flexWrap="wrap" justify="space-between">
-                    <Tooltip label={`Download Excel for ${selectedSheet}`} hasArrow>
+                    <Tooltip
+                      label={`Download Excel for ${selectedSheet}`}
+                      hasArrow
+                    >
                       <Button
                         colorScheme="teal"
                         onClick={() => handleDownloadExcel(selectedSheet)}
                         isDisabled={!selectedColumns[selectedSheet]?.length}
                         bgGradient="linear(to-r, teal.500, teal.600)"
-                        _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+                        _hover={{
+                          bgGradient: "linear(to-r, teal.600, teal.700)",
+                        }}
                         size="sm"
                         borderRadius="full"
                         transition="all 0.2s"
@@ -1098,26 +1297,70 @@ const JsonToExcel = () => {
                 </Card>
 
                 {previewContent.find(
-                  (sheet) => sheet.sheetName === selectedSheet
+                  (sheet) => sheet.sheetName === selectedSheet,
                 )?.rowData.length > 0 ? (
                   <Card
                     className="excel-grid-container"
-                    overflow="auto"
+                    overflow="hidden"
                     borderRadius="lg"
                     border="1px"
                     borderColor={borderColor}
-                    boxShadow="sm"
+                    boxShadow="md"
                     bg={cardBg}
                   >
+                    {/* ✅ Grid scroll hoga, pagination neeche fixed rahega */}
                     <Box
                       className={`ag-theme-alpine${useColorModeValue("", "-dark")}`}
                       h={{ base: "50vh", md: "60vh" }}
                       w="100%"
+                      sx={{
+                        // ✅ Pagination bar responsive fix
+                        "& .ag-paging-panel": {
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "4px",
+                          justifyContent: "center",
+                          padding: "8px 4px",
+                          fontSize: { base: "11px", md: "13px" },
+                          minHeight: "auto",
+                          height: "auto !important",
+                        },
+                        "& .ag-paging-page-summary-panel": {
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "2px",
+                          justifyContent: "center",
+                          margin: "0",
+                        },
+                        "& .ag-paging-button": {
+                          minWidth: "28px",
+                          minHeight: "28px",
+                          padding: "2px",
+                        },
+                        "& .ag-paging-row-summary-panel": {
+                          fontSize: { base: "10px", md: "13px" },
+                          whiteSpace: "nowrap",
+                        },
+                        // ✅ Page size dropdown fix
+                        "& .ag-paging-page-size": {
+                          fontSize: { base: "10px", md: "13px" },
+                        },
+                        // ✅ Header fix for mobile
+                        "& .ag-header-cell": {
+                          padding: { base: "4px", md: "8px" },
+                          fontSize: { base: "11px", md: "14px" },
+                        },
+                        // ✅ Cell fix for mobile
+                        "& .ag-cell": {
+                          padding: { base: "4px", md: "8px" },
+                          fontSize: { base: "11px", md: "14px" },
+                        },
+                      }}
                     >
                       <AgGridReact
                         rowData={
                           previewContent.find(
-                            (sheet) => sheet.sheetName === selectedSheet
+                            (sheet) => sheet.sheetName === selectedSheet,
                           )?.rowData || []
                         }
                         columnDefs={columnDefs}
@@ -1125,18 +1368,17 @@ const JsonToExcel = () => {
                         enableCellTextSelection={true}
                         suppressRowClickSelection={true}
                         pagination={true}
-                        paginationPageSize={20}
+                        paginationPageSize={10} // ✅ Mobile pe 10 rows better hai
+                        paginationPageSizeSelector={[10, 20, 50]} // ✅ Options kam karo
                         noRowsOverlayComponent={() => (
-                          <Text color={textColor} fontSize="sm">
+                          <Text color={textColor}>
                             No data available for this sheet.
                           </Text>
                         )}
                         headerHeight={40}
-                        rowHeight={48}
-                        animateRows={true}
+                        rowHeight={40} // ✅ Mobile pe thoda kam
                         onGridReady={(params) => {
                           gridApiRef.current = params.api;
-                          params.api.sizeColumnsToFit();
                         }}
                       />
                     </Box>
