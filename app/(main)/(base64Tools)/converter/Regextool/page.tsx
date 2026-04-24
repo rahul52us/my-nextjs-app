@@ -7,6 +7,7 @@ import {
   Heading,
   VStack,
   HStack,
+  Stack,
   Button,
   Input,
   Textarea,
@@ -95,7 +96,6 @@ export default function RegexTool() {
   const [pattern, setPattern] = useState("");
   const [flags, setFlags] = useState("g");
   const [testString, setTestString] = useState("");
-  const [error, setError] = useState("");
   const toast = useToast();
 
   // Color mode values
@@ -104,15 +104,20 @@ export default function RegexTool() {
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const secondaryTextColor = useColorModeValue("gray.500", "gray.400");
-  const headerBg = useColorModeValue("white", "gray.800");
+  const headerBg = useColorModeValue("white", "gray.900");
+  const headerText = useColorModeValue("gray.800", "gray.100");
   const inputBg = useColorModeValue("gray.50", "gray.700");
-  const outputBg = useColorModeValue("gray.900", "gray.800");
-  const outputTextColor = useColorModeValue("gray.100", "gray.200");
+  const codeBg = useColorModeValue("gray.50", "gray.700");
+  const outputBg = useColorModeValue("gray.100", "gray.800");
+  const outputTextColor = useColorModeValue("gray.900", "gray.100");
   const tableBg = useColorModeValue("gray.50", "gray.700");
-  const hoverBg = useColorModeValue("purple.50", "purple.900");
+  const hoverBg = useColorModeValue("purple.50", "purple.700");
+  const highlightBg = useColorModeValue("purple.200", "purple.500");
+  const highlightText = useColorModeValue("purple.900", "white");
 
-  const { highlighted, matches } = useMemo(() => {
-    if (!pattern || !testString) return { highlighted: testString, matches: [] as RegExpMatchArray[] };
+  const { highlighted, matches, error } = useMemo(() => {
+    if (!pattern || !testString) return { highlighted: testString, matches: [] as RegExpMatchArray[], error: "" };
+
     try {
       const safeFlags = flags.replace(/[^gimsuy]/g, "");
       const regex = new RegExp(pattern, safeFlags);
@@ -126,7 +131,7 @@ export default function RegexTool() {
         const end = start + match[0].length;
         parts.push(testString.slice(lastIndex, start));
         parts.push(
-          <Box as="mark" key={i} bg="purple.200" color="purple.900" px="1" borderRadius="sm" fontWeight="bold">
+          <Box as="mark" key={i} bg={highlightBg} color={highlightText} px="1" borderRadius="sm" fontWeight="bold">
             {match[0]}
           </Box>
         );
@@ -134,11 +139,9 @@ export default function RegexTool() {
       });
 
       parts.push(testString.slice(lastIndex));
-      setError("");
-      return { highlighted: parts, matches: foundMatches };
+      return { highlighted: parts, matches: foundMatches, error: "" };
     } catch (e) {
-      setError("Invalid Regex Pattern");
-      return { highlighted: testString, matches: [] };
+      return { highlighted: testString, matches: [], error: "Invalid Regex Pattern" };
     }
   }, [pattern, flags, testString]);
 
@@ -159,11 +162,11 @@ export default function RegexTool() {
               </Box>
               <VStack align="start" spacing={0}>
                 <Heading size="md" letterSpacing="tight">Regex Studio</Heading>
-                <Text fontSize="xs" color="gray.500" fontWeight="bold">v2.1 PRO</Text>
+                <Text fontSize="xs" color={secondaryTextColor} fontWeight="bold">v2.1 PRO</Text>
               </VStack>
             </HStack>
 
-            <HStack spacing={1} bg={inputBg} p={1} borderRadius="xl">
+            <Stack direction={{ base: "column", md: "row" }} spacing={2} bg={inputBg} p={2} borderRadius="2xl" w="full">
               {[
                 { id: "tester", label: "Tester", icon: Search },
                 { id: "generator", label: "Library", icon: FileCode },
@@ -172,18 +175,18 @@ export default function RegexTool() {
                 <Button
                   key={tab.id}
                   size="sm"
-                  variant={activeTab === tab.id ? "white" : "ghost"}
-                  shadow={activeTab === tab.id ? "md" : "none"}
-                  bg={activeTab === tab.id ? "white" : "transparent"}
+                  variant={activeTab === tab.id ? "solid" : "ghost"}
+                  colorScheme="purple"
                   leftIcon={<Icon as={tab.icon} size={16} />}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   px={6}
                   borderRadius="lg"
+                  w={{ base: "100%", md: "auto" }}
                 >
                   {tab.label}
                 </Button>
               ))}
-            </HStack>
+            </Stack>
           </Flex>
         </Container>
       </Box>
@@ -200,9 +203,9 @@ export default function RegexTool() {
             {activeTab === "tester" && (
               <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
                 <VStack align="stretch" spacing={6} gridColumn={{ lg: "span 2" }}>
-                  <Box bg="white" p={8} borderRadius="3xl" shadow="xl" border="1px" borderColor="gray.100">
+                  <Box bg={cardBg} p={8} borderRadius="3xl" shadow="xl" border="1px" borderColor={borderColor}>
                     <VStack spacing={6}>
-                      <HStack w="100%" spacing={4}>
+                      <Stack direction={{ base: "column", md: "row" }} w="100%" spacing={4}>
                         <Box flex={1}>
                           <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Regular Expression</Text>
                           <Input
@@ -211,34 +214,34 @@ export default function RegexTool() {
                             onChange={(e) => setPattern(e.target.value)}
                             fontFamily="mono"
                             size="lg"
-                            bg="gray.50"
+                            bg={inputBg}
                             focusBorderColor="purple.500"
                             borderRadius="xl"
                           />
                         </Box>
-                        <Box w="120px">
-                          <Text fontSize="xs" fontWeight="black" color="gray.400" mb={2} textTransform="uppercase">Flags</Text>
+                        <Box w={{ base: "100%", md: "160px" }}>
+                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Flags</Text>
                           <Input
                             placeholder="gim"
                             value={flags}
                             onChange={(e) => setFlags(e.target.value)}
                             size="lg"
                             textAlign="center"
-                            bg="gray.50"
+                            bg={inputBg}
                             borderRadius="xl"
                           />
                         </Box>
-                      </HStack>
+                      </Stack>
 
                       <Box w="100%">
-                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Test String</Text>
+                        <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Test String</Text>
                         <Textarea
                           placeholder="Type or paste text here to test matches..."
                           value={testString}
                           onChange={(e) => setTestString(e.target.value)}
                           minH="250px"
                           size="lg"
-                          bg="gray.50"
+                          bg={inputBg}
                           focusBorderColor="purple.500"
                           borderRadius="xl"
                         />
@@ -255,14 +258,14 @@ export default function RegexTool() {
                         {matches.length} matches
                       </Badge>
                     </HStack>
-                    <Box bg="gray.900" color="gray.100" p={8} borderRadius="3xl" minH="150px" whiteSpace="pre-wrap" fontFamily="mono" fontSize="lg" boxShadow="2xl">
-                      {highlighted || <Text color="gray.600" fontStyle="italic">No matches to display</Text>}
+                    <Box bg={outputBg} color={outputTextColor} p={8} borderRadius="3xl" minH="150px" whiteSpace="pre-wrap" fontFamily="mono" fontSize="lg" boxShadow="2xl">
+                      {highlighted || <Text color={secondaryTextColor} fontStyle="italic">No matches to display</Text>}
                     </Box>
                   </Box>
                 </VStack>
 
                 <VStack align="stretch" spacing={6}>
-                  <Box bg="purple.600" color="white" p={6} borderRadius="3xl" shadow="lg">
+                  <Box bg={useColorModeValue("purple.600", "purple.700")} color="white" p={6} borderRadius="3xl" shadow="lg">
                     <Heading size="sm" mb={4}>Quick Help</Heading>
                     <VStack align="start" spacing={3} fontSize="sm">
                       <HStack><Badge colorScheme="whiteAlpha">g</Badge><Text>Global search</Text></HStack>
@@ -283,11 +286,11 @@ export default function RegexTool() {
               <VStack align="stretch" spacing={8}>
                 <Box textAlign="center" mb={4}>
                   <Heading size="xl" mb={2}>Regex Library</Heading>
-                  <Text color="gray.500">Battle-tested patterns for everyday development tasks.</Text>
+                  <Text color={secondaryTextColor}>Battle-tested patterns for everyday development tasks.</Text>
                 </Box>
                 
                 <Tabs variant="soft-rounded" colorScheme="purple" align="center">
-                  <TabList bg="white" p={2} borderRadius="2xl" shadow="sm" border="1px" borderColor="gray.100">
+                  <TabList bg={cardBg} p={2} borderRadius="2xl" shadow="sm" border="1px" borderColor={borderColor}>
                     <Tab px={8}><Icon as={UserCheck} mr={2} /> Validation</Tab>
                     <Tab px={8}><Icon as={Globe} mr={2} /> Web & Network</Tab>
                     <Tab px={8}><Icon as={Database} mr={2} /> Data Extraction</Tab>
@@ -298,10 +301,10 @@ export default function RegexTool() {
                       <TabPanel key={category} p={0}>
                         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
                           {items.map((item) => (
-                            <Box key={item.name} p={6} bg="white" borderRadius="2xl" border="1px" borderColor="gray.200" shadow="sm" _hover={{ shadow: "xl", transform: "translateY(-4px)" }} transition="all 0.3s">
+                            <Box key={item.name} p={6} bg={cardBg} borderRadius="2xl" border="1px" borderColor={borderColor} shadow="sm" _hover={{ shadow: "xl", transform: "translateY(-4px)" }} transition="all 0.3s">
                               <Heading size="xs" mb={1} color="purple.600" textTransform="uppercase" letterSpacing="widest">{item.name}</Heading>
-                              <Text fontSize="xs" color="gray.500" mb={4}>{item.desc}</Text>
-                              <Code p={3} borderRadius="xl" w="100%" mb={4} display="block" overflowX="auto" fontSize="xs" bg="gray.50">{item.pattern}</Code>
+                              <Text fontSize="xs" color={secondaryTextColor} mb={4}>{item.desc}</Text>
+                              <Code p={3} borderRadius="xl" w="100%" mb={4} display="block" overflowX="auto" fontSize="xs" bg={codeBg}>{item.pattern}</Code>
                               <HStack>
                                 <Button size="sm" variant="solid" colorScheme="purple" flex={1} onClick={() => { setPattern(item.pattern); setActiveTab("tester"); }} borderRadius="lg">
                                   Use in Tester
@@ -326,22 +329,22 @@ export default function RegexTool() {
               <VStack align="stretch" spacing={6}>
                 <Box textAlign="center" mb={4}>
                   <Heading size="xl" mb={2}>Cheat Sheet</Heading>
-                  <Text color="gray.500">Quick reference for Regular Expression syntax.</Text>
+                  <Text color={secondaryTextColor}>Quick reference for Regular Expression syntax.</Text>
                 </Box>
-                <Box bg="white" borderRadius="3xl" shadow="xl" border="1px" borderColor="gray.100" overflow="hidden">
+                <Box bg={cardBg} borderRadius="3xl" shadow="xl" border="1px" borderColor={borderColor} overflow="hidden">
                   <Table variant="simple">
-                    <Thead bg="gray.50">
+                    <Thead bg={tableBg}>
                       <Tr>
-                        <Th py={5} fontSize="xs" color="gray.400">Syntax</Th>
-                        <Th py={5} fontSize="xs" color="gray.400">Description</Th>
+                        <Th py={5} fontSize="xs" color={secondaryTextColor}>Syntax</Th>
+                        <Th py={5} fontSize="xs" color={secondaryTextColor}>Description</Th>
                         <Th py={5} textAlign="right"></Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       {cheatSheet.map((item, idx) => (
-                        <Tr key={idx} _hover={{ bg: "purple.50" }} transition="bg 0.2s">
+                        <Tr key={idx} _hover={{ bg: hoverBg }} transition="bg 0.2s">
                           <Td><Code colorScheme="purple" px={3} py={1} borderRadius="md" fontSize="md" fontWeight="bold">{item.symbol}</Code></Td>
-                          <Td color="gray.600" fontSize="md" fontWeight="medium">{item.meaning}</Td>
+                          <Td color={secondaryTextColor} fontSize="md" fontWeight="medium">{item.meaning}</Td>
                           <Td textAlign="right">
                             <Button size="xs" variant="ghost" onClick={() => copyToClipboard(item.symbol)}>Copy</Button>
                           </Td>

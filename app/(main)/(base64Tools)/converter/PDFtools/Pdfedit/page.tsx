@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Box, Flex, VStack, useToast, HStack, Badge, Center, IconButton, Heading } from "@chakra-ui/react";
-import { FileUp, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useRef } from "react";
+import {
+  Box, Flex, VStack, useToast, HStack, Badge, Center,
+  IconButton, Heading, useColorModeValue, useDisclosure,
+  Button, useBreakpointValue,
+} from "@chakra-ui/react";
+import { FileUp, ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
@@ -12,8 +16,6 @@ import { jsPDF } from "jspdf";
 import Toolbar from "./Toolbar";
 import PropertiesSidebar from "./PropertiesSidebar";
 import TextEditor from "./TextEditor";
-
-
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -28,20 +30,34 @@ const PDFProEditor = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [resizingId, setResizingId] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, w: 0, h: 0 });
-
-  // Text editor state
   const [activeTextEditor, setActiveTextEditor] = useState<{
-    id: string | null; // null = new element
+    id: string | null;
     text: string;
     style: React.CSSProperties;
     position: { x: number; y: number; width: number; height: number };
-    fromPdfText?: boolean;
-    targetElement?: HTMLElement | null;
   } | null>(null);
 
   const pdfExportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
+
+  // Mobile sidebar drawer
+  const { isOpen: isSidebarOpen, onOpen: onSidebarOpen, onClose: onSidebarClose } = useDisclosure();
+  const isMobile = useBreakpointValue({ base: true, lg: false });
+
+  // ✅ Dark/light theme colors
+  const pageBg = useColorModeValue("#F0F2F5", "gray.900");
+  const pdfBg = useColorModeValue("white", "gray.800");
+  const pdfShadow = useColorModeValue("2xl", "dark-lg");
+  const paginationBg = useColorModeValue("white", "gray.700");
+  const uploadBorderColor = useColorModeValue("#CBD5E0", "#4A5568");
+  const uploadHeadingColor = useColorModeValue("gray.700", "gray.200");
+  const uploadIconColor = useColorModeValue("#3182CE", "#63B3ED");
+  const pageTextColor = useColorModeValue("gray.600", "gray.300");
+  const elementOutlineColor = useColorModeValue("#3182CE", "#63B3ED");
+  const resizeHandleBg = useColorModeValue("blue.500", "blue.300");
+
+  const pdfScale = useBreakpointValue({ base: 0.8, sm: 1.0, md: 1.2, lg: 1.5 }) || 1.5;
 
   const updateElementStyle = (id: string, newStyle: React.CSSProperties) => {
     setHistory(prev =>
@@ -55,11 +71,7 @@ const PDFProEditor = () => {
     );
   };
 
-  const handleMouseDown = (
-    e: React.MouseEvent,
-    id: string,
-    action: "drag" | "resize" = "drag"
-  ) => {
+  const handleMouseDown = (e: React.MouseEvent, id: string, action: "drag" | "resize" = "drag") => {
     if (activeTool !== "select" || isExporting) return;
     e.stopPropagation();
     setSelectedId(id);
@@ -97,7 +109,7 @@ const PDFProEditor = () => {
 
   const handleDocumentClick = (e: React.MouseEvent) => {
     if (!file || activeTool === "select" || isExporting) return;
-    if (activeTextEditor) return; // Don't create new while editing
+    if (activeTextEditor) return;
 
     const container = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - container.left;
@@ -105,7 +117,6 @@ const PDFProEditor = () => {
     const target = e.target as HTMLElement;
 
     if (activeTool === "text") {
-      // Clicked on existing PDF text span → edit it
       if (
         target.tagName === "SPAN" ||
         target.classList.contains("react-pdf__Page__textContent__item")
@@ -114,13 +125,9 @@ const PDFProEditor = () => {
         const rect = target.getBoundingClientRect();
         const parentRect = pdfExportRef.current!.getBoundingClientRect();
         setActiveTextEditor({
-          id: null, // new overlay element
+          id: null,
           text: target.innerText,
-          style: {
-            fontSize: styles.fontSize,
-            fontFamily: styles.fontFamily,
-            color: "#000000",
-          },
+          style: { fontSize: styles.fontSize, fontFamily: styles.fontFamily, color: "#000000" },
           position: {
             x: rect.left - parentRect.left,
             y: rect.top - parentRect.top,
@@ -128,10 +135,8 @@ const PDFProEditor = () => {
             height: Math.max(rect.height, 40),
           },
         });
-        // Hide the original span
         (target as HTMLElement).style.visibility = "hidden";
       } else {
-        // Clicked on blank area → new text box
         setActiveTextEditor({
           id: null,
           text: "",
@@ -166,7 +171,6 @@ const PDFProEditor = () => {
     }
   };
 
-  // Double-click on existing text element to re-edit
   const handleElementDoubleClick = (e: React.MouseEvent, mod: any) => {
     if (mod.type !== "text") return;
     e.stopPropagation();
@@ -178,12 +182,9 @@ const PDFProEditor = () => {
     });
   };
 
-  // Commit text from editor
   const handleTextCommit = (text: string, style: React.CSSProperties) => {
     if (!activeTextEditor) return;
-
     if (activeTextEditor.id) {
-      // Update existing element
       setHistory(prev =>
         prev.map(m =>
           m.id === activeTextEditor.id
@@ -192,7 +193,6 @@ const PDFProEditor = () => {
         )
       );
     } else {
-      // Create new element
       if (text.trim()) {
         setHistory(prev => [
           ...prev,
@@ -205,14 +205,7 @@ const PDFProEditor = () => {
             width: Math.max(activeTextEditor.position.width, 200),
             height: Math.max(activeTextEditor.position.height, 40),
             content: text,
-            style: {
-              ...style,
-              zIndex: 1001,
-              display: "flex",
-              alignItems: "flex-start",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            },
+            style: { ...style, zIndex: 1001, display: "flex", alignItems: "flex-start", whiteSpace: "pre-wrap", wordBreak: "break-word" },
           },
         ]);
       }
@@ -227,7 +220,6 @@ const PDFProEditor = () => {
     setActiveTool("select");
   };
 
-  // Reset all
   const handleReset = () => {
     setHistory([]);
     setSelectedId(null);
@@ -263,7 +255,7 @@ const PDFProEditor = () => {
     <VStack
       h="100vh"
       spacing={0}
-      bg="#F0F2F5"
+      bg={pageBg}
       onMouseMove={handleMouseMove}
       onMouseUp={() => { setDraggingId(null); setResizingId(null); }}
     >
@@ -289,10 +281,7 @@ const PDFProEditor = () => {
                   id: Math.random().toString(36).substr(2, 9),
                   page: pageNumber,
                   type: "image",
-                  x: 100,
-                  y: 100,
-                  width: 150,
-                  height: 100,
+                  x: 100, y: 100, width: 150, height: 100,
                   content: ev.target?.result,
                   style: { zIndex: 1000 },
                 },
@@ -303,14 +292,30 @@ const PDFProEditor = () => {
       />
 
       <Flex flex={1} w="full" overflow="hidden">
-        <Box flex={1} overflow="auto" p={10} display="flex" flexDirection="column" alignItems="center">
+        {/* Main Canvas Area */}
+        <Box flex={1} overflow="auto" p={{ base: 4, md: 10 }} display="flex" flexDirection="column" alignItems="center">
+          {/* Mobile: Properties button */}
+          {isMobile && (
+            <Flex w="full" justify="flex-end" mb={2}>
+              <Button
+                size="sm"
+                leftIcon={<Settings size={14} />}
+                onClick={onSidebarOpen}
+                colorScheme="blue"
+                variant="outline"
+              >
+                Properties
+              </Button>
+            </Flex>
+          )}
+
           {file && (
-            <HStack mb={6} bg="white" p={1} rounded="full" shadow="sm">
+            <HStack mb={4} bg={paginationBg} p={1} rounded="full" shadow="sm">
               <IconButton
                 size="sm" icon={<ChevronLeft />} aria-label="prev"
                 isDisabled={pageNumber <= 1} onClick={() => setPageNumber(p => p - 1)} variant="ghost"
               />
-              <Badge variant="subtle" colorScheme="blue">
+              <Badge variant="subtle" colorScheme="blue" color={pageTextColor}>
                 Page {pageNumber} / {numPages}
               </Badge>
               <IconButton
@@ -323,20 +328,25 @@ const PDFProEditor = () => {
           <Box
             ref={pdfExportRef}
             position="relative"
-            bg="white"
-            shadow="2xl"
+            bg={pdfBg}
+            shadow={pdfShadow}
             onClick={handleDocumentClick}
             cursor={activeTool === "text" ? "text" : activeTool === "select" ? "default" : "crosshair"}
+            maxW="100%"
+            overflowX="auto"
           >
             {!file ? (
               <Center
-                w="600px" h="800px" border="3px dashed #CBD5E0"
-                rounded="3xl" flexDir="column"
+                w={{ base: "320px", sm: "480px", md: "600px" }}
+                h={{ base: "450px", md: "800px" }}
+                border={`3px dashed ${uploadBorderColor}`}
+                rounded="3xl"
+                flexDir="column"
                 onClick={() => document.getElementById("upload")?.click()}
                 cursor="pointer"
               >
-                <FileUp size={40} color="#3182CE" />
-                <Heading size="md" mt={4}>Upload PDF</Heading>
+                <FileUp size={40} color={uploadIconColor} />
+                <Heading size="md" mt={4} color={uploadHeadingColor}>Upload PDF</Heading>
                 <input
                   id="upload" type="file" hidden accept="application/pdf"
                   onChange={e => e.target.files && setFile(e.target.files[0])}
@@ -345,10 +355,14 @@ const PDFProEditor = () => {
             ) : (
               <Box position="relative">
                 <Document file={file} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                  <Page pageNumber={pageNumber} scale={1.5} renderAnnotationLayer={false} renderTextLayer={true} />
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={pdfScale}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={true}
+                  />
                 </Document>
 
-                {/* Rendered history elements */}
                 {history
                   .filter(m => m.page === pageNumber)
                   .map(mod => (
@@ -363,19 +377,13 @@ const PDFProEditor = () => {
                         width: mod.width,
                         height: mod.height,
                         position: "absolute",
-                        outline:
-                          selectedId === mod.id && !isExporting
-                            ? "2px solid #3182CE"
-                            : "none",
+                        outline: selectedId === mod.id && !isExporting ? `2px solid ${elementOutlineColor}` : "none",
                         userSelect: "none",
                         cursor: activeTool === "select" ? "move" : "default",
                       }}
                     >
                       {mod.type === "image" ? (
-                        <img
-                          src={mod.content}
-                          style={{ width: "100%", height: "100%", pointerEvents: "none" }}
-                        />
+                        <img src={mod.content} style={{ width: "100%", height: "100%", pointerEvents: "none" }} />
                       ) : mod.type === "text" ? (
                         <Box
                           style={{
@@ -401,7 +409,7 @@ const PDFProEditor = () => {
                           right="-5px"
                           w="12px"
                           h="12px"
-                          bg="blue.500"
+                          bg={resizeHandleBg}
                           cursor="nwse-resize"
                           rounded="full"
                           border="2px solid white"
@@ -411,7 +419,6 @@ const PDFProEditor = () => {
                     </Box>
                   ))}
 
-                {/* Active Text Editor Overlay */}
                 {activeTextEditor && (
                   <TextEditor
                     initialText={activeTextEditor.text}
@@ -426,6 +433,7 @@ const PDFProEditor = () => {
           </Box>
         </Box>
 
+        {/* Sidebar — desktop only inline, mobile as drawer */}
         <PropertiesSidebar
           selectedElement={selectedElement}
           updateElementStyle={updateElementStyle}
@@ -442,6 +450,8 @@ const PDFProEditor = () => {
               position: { x: mod.x, y: mod.y, width: mod.width, height: mod.height },
             });
           }}
+          isOpen={isSidebarOpen}
+          onClose={onSidebarClose}
         />
       </Flex>
     </VStack>

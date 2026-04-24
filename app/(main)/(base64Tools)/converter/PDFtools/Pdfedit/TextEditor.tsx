@@ -2,12 +2,12 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import {
-  Box, VStack, HStack, IconButton, Tooltip, Select,
-  Divider, Text, Button, Input
+  Box, HStack, IconButton, Tooltip, Select,
+  Divider, Text, useColorModeValue,
 } from "@chakra-ui/react";
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter,
-  AlignRight, Check, X, Type
+  AlignRight, Check, X, Type,
 } from "lucide-react";
 
 interface TextEditorProps {
@@ -48,16 +48,24 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [isUnderline, setIsUnderline] = useState(false);
   const [align, setAlign] = useState<"left" | "center" | "right">("left");
 
+  // ✅ Dark/light theme colors
+  const toolbarBg = useColorModeValue("white", "gray.800");
+  const toolbarBorder = useColorModeValue("#CBD5E0", "#4A5568");
+  const selectBg = useColorModeValue("white", "gray.700");
+  const selectColor = useColorModeValue("gray.800", "gray.100");
+  const selectBorderColor = useColorModeValue("gray.200", "gray.600");
+  const editorBg = useColorModeValue("white", "gray.700");
+  const editorColor = useColorModeValue("gray.800", "gray.100");
+  const hintColor = useColorModeValue("gray.400", "gray.500");
+
   useEffect(() => {
     if (editorRef.current) {
-      // Convert plain text newlines to <br> for contenteditable
       const html = initialText
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/\n/g, "<br>");
       editorRef.current.innerHTML = html;
-      // Focus and select all
       editorRef.current.focus();
       const range = document.createRange();
       range.selectNodeContents(editorRef.current);
@@ -82,10 +90,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const handleFontSize = (size: string) => {
     setFontSize(size);
-    // execCommand fontSize uses 1-7 scale — use inline style instead
-    if (editorRef.current) {
-      editorRef.current.style.fontSize = `${size}px`;
-    }
+    if (editorRef.current) editorRef.current.style.fontSize = `${size}px`;
   };
 
   const handleFontFamily = (ff: string) => {
@@ -100,9 +105,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const handleCommit = () => {
     if (!editorRef.current) return;
-    // Get text with newlines preserved
     const html = editorRef.current.innerHTML;
-    // Convert <br> and block elements back to \n for storage
     const text = html
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/div>/gi, "\n")
@@ -132,12 +135,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
       left={position.x - 2}
       top={position.y - 44}
       zIndex={2000}
-      minW="320px"
+      minW={{ base: "260px", md: "320px" }}
     >
       {/* Toolbar */}
       <Box
-        bg="white"
-        border="1px solid #CBD5E0"
+        bg={toolbarBg}
+        border={`1px solid ${toolbarBorder}`}
         borderBottom="none"
         borderTopRadius="lg"
         px={2}
@@ -145,26 +148,30 @@ const TextEditor: React.FC<TextEditorProps> = ({
         shadow="md"
       >
         <HStack spacing={1} wrap="wrap">
-          {/* Font Family */}
           <Select
             size="xs"
             w="110px"
             value={fontFamily}
             onChange={e => handleFontFamily(e.target.value)}
             fontSize="11px"
+            bg={selectBg}
+            color={selectColor}
+            borderColor={selectBorderColor}
           >
             {FONT_FAMILIES.map(f => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
           </Select>
 
-          {/* Font Size */}
           <Select
             size="xs"
             w="58px"
             value={fontSize}
             onChange={e => handleFontSize(e.target.value)}
             fontSize="11px"
+            bg={selectBg}
+            color={selectColor}
+            borderColor={selectBorderColor}
           >
             {FONT_SIZES.map(s => (
               <option key={s} value={s}>{s}</option>
@@ -214,7 +221,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
             <Box position="relative">
               <Box
                 w="22px" h="22px" borderRadius="md"
-                bg={textColor} border="2px solid #CBD5E0"
+                bg={textColor} border={`2px solid ${toolbarBorder}`}
                 cursor="pointer" overflow="hidden"
                 display="flex" alignItems="center" justifyContent="center"
               >
@@ -225,7 +232,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
                   onChange={e => handleColor(e.target.value)}
                   style={{
                     position: "absolute", opacity: 0,
-                    width: "100%", height: "100%", cursor: "pointer"
+                    width: "100%", height: "100%", cursor: "pointer",
                   }}
                 />
               </Box>
@@ -234,8 +241,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
           <Divider orientation="vertical" h="20px" />
 
-          {/* Commit / Cancel */}
-          <Tooltip label="Apply (Enter)">
+          <Tooltip label="Apply (Ctrl+Enter)">
             <IconButton size="xs" aria-label="commit" icon={<Check size={13} />}
               colorScheme="green" onClick={handleCommit} />
           </Tooltip>
@@ -254,12 +260,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
         minW={`${Math.max(position.width, 200)}px`}
         minH={`${Math.max(position.height, 40)}px`}
         border="2px solid #3182CE"
-        bg="white"
+        bg={editorBg}
+        color={editorColor}
         px={2}
         py={1}
         fontSize={`${fontSize}px`}
         fontFamily={fontFamily}
-        color={textColor}
         outline="none"
         whiteSpace="pre-wrap"
         wordBreak="break-word"
@@ -269,14 +275,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
         onKeyDown={e => {
           if (e.key === "Escape") onCancel();
           if (e.key === "Enter" && e.ctrlKey) handleCommit();
-          // Allow normal Enter for newlines (default contenteditable behavior)
         }}
         sx={{
           "&:focus": { outline: "none" },
           "& br": { display: "block", content: '""', marginBottom: "0" },
         }}
       />
-      <Text fontSize="10px" color="gray.400" mt={1} textAlign="right">
+      <Text fontSize="10px" color={hintColor} mt={1} textAlign="right">
         Enter = new line &nbsp;|&nbsp; Ctrl+Enter = apply &nbsp;|&nbsp; Esc = cancel
       </Text>
     </Box>

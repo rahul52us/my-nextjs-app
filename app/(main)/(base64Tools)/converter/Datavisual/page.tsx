@@ -36,11 +36,18 @@ const DataVizStudio = () => {
   const toast = useToast();
 
   // Enhanced Theme Colors
-  const bgColor = useColorModeValue("gray.25", "#0a0a0c");
-  const glassBg = useColorModeValue("rgba(255, 255, 255, 0.8)", "rgba(23, 23, 28, 0.7)");
+  const bgColor = useColorModeValue("gray.50", "gray.950");
+  const glassBg = useColorModeValue("rgba(255, 255, 255, 0.85)", "rgba(26, 32, 44, 0.78)");
   const cardBorder = useColorModeValue("gray.200", "whiteAlpha.200");
   const secondaryText = useColorModeValue("gray.500", "gray.400");
-  const accentColor = "indigo.500";
+  const tabBg = useColorModeValue("gray.100", "whiteAlpha.100");
+  const tabSelectedBg = useColorModeValue("white", "gray.700");
+  const tabHoverBg = useColorModeValue("gray.200", "whiteAlpha.200");
+  const inputBg = useColorModeValue("white", "whiteAlpha.50");
+  const iconColor = useColorModeValue("indigo.500", "indigo.200");
+  const uploadHoverBg = useColorModeValue("indigo.50", "indigo.900");
+  const downloadImageBg = useColorModeValue("#ffffff", "#0a0a0c");
+  const chartGridStroke = useColorModeValue("#e2e8f0", "#2d2d3d");
 
   const stats = useMemo(() => {
     if (!data.length || !mapping.value) return { avg: 0, max: 0, count: 0 };
@@ -96,7 +103,7 @@ const DataVizStudio = () => {
   const downloadImage = async () => {
     if (!chartRef.current) return;
     const canvas = await html2canvas(chartRef.current, { 
-        backgroundColor: useColorModeValue("#ffffff", "#0a0a0c"),
+        backgroundColor: downloadImageBg,
         scale: 2 
     });
     const link = document.createElement('a');
@@ -135,11 +142,11 @@ const DataVizStudio = () => {
         {/* STEP 1: INGESTION */}
         {step === 1 && (
           <Center minH="50vh">
-            <VStack spacing={8} w="full" maxW="700px">
+            <VStack spacing={8} w="full" maxW="720px">
               <Box 
                 bg={glassBg} 
                 backdropFilter="blur(10px)"
-                p={10} 
+                p={{ base: 6, md: 10 }} 
                 shadow="2xl" 
                 borderRadius="40px" 
                 border="1px solid" 
@@ -147,21 +154,21 @@ const DataVizStudio = () => {
                 w="full"
               >
                 <Tabs variant="unstyled">
-                  <TabList bg={useColorModeValue("gray.100", "whiteAlpha.100")} p={1.5} borderRadius="20px" mb={10}>
-                    <Tab w="50%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: "white", color: "indigo.500", shadow: "sm" }}>
-                        <Icon as={FiUploadCloud} mr={2}/> FILE UPLOAD
+                  <TabList bg={tabBg} p={1.5} borderRadius="20px" mb={10} display="grid" gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={2}>
+                    <Tab w="100%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: tabSelectedBg, color: iconColor, shadow: "sm" }} _hover={{ bg: tabHoverBg }}>
+                        <Icon as={FiUploadCloud} mr={2} color={iconColor} /> FILE UPLOAD
                     </Tab>
-                    <Tab w="50%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: "white", color: "indigo.500", shadow: "sm" }}>
-                        <Icon as={FiLayers} mr={2}/> RAW JSON
+                    <Tab w="100%" borderRadius="15px" fontWeight="bold" fontSize="sm" _selected={{ bg: tabSelectedBg, color: iconColor, shadow: "sm" }} _hover={{ bg: tabHoverBg }}>
+                        <Icon as={FiLayers} mr={2} color={iconColor} /> RAW JSON
                     </Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel p={0}>
                       <Box 
-                        border="2px dashed" borderColor="indigo.200" borderRadius="30px" p={16} textAlign="center" position="relative" 
-                        _hover={{ bg: "indigo.50", borderColor: "indigo.400" }} transition="all 0.3s ease" cursor="pointer"
+                        border="2px dashed" borderColor={useColorModeValue("indigo.200", "whiteAlpha.200")} borderRadius="30px" p={{ base: 10, md: 16 }} textAlign="center" position="relative" 
+                        _hover={{ bg: uploadHoverBg, borderColor: useColorModeValue("indigo.400", "indigo.300") }} transition="all 0.3s ease" cursor="pointer"
                       >
-                        <FiUploadCloud size={48} style={{ margin: '0 auto 20px' }} color="#6366f1" />
+                        <FiUploadCloud size={48} style={{ margin: '0 auto 20px' }} color={iconColor} />
                         <Input type="file" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleFileUpload} />
                         <Heading size="sm" mb={2}>Drop your dataset here</Heading>
                         <Text fontSize="sm" color={secondaryText}>Supports XLSX, CSV, XLS</Text>
@@ -180,20 +187,20 @@ const DataVizStudio = () => {
 
                 {columns.length > 0 && (
                   <Stack spacing={8} mt={12} pt={10} borderTop="1px solid" borderColor={cardBorder}>
-                    <HStack spacing={2}>
+                    <HStack spacing={2} flexWrap="wrap">
                         <Icon as={FiCheckCircle} color="green.400" />
                         <Heading size="xs" letterSpacing="1px" color={secondaryText}>MAPPING CONFIGURATION</Heading>
                     </HStack>
-                    <SimpleGrid columns={2} spacing={6}>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                       <Box>
                         <Text fontSize="xs" fontWeight="bold" mb={3} ml={1} color={secondaryText}>LABEL (X-AXIS)</Text>
-                        <Select h="55px" bg={useColorModeValue("white", "whiteAlpha.50")} borderRadius="18px" value={mapping.label} onChange={(e) => setMapping({ ...mapping, label: e.target.value })}>
+                        <Select h="55px" bg={inputBg} borderRadius="18px" value={mapping.label} onChange={(e) => setMapping({ ...mapping, label: e.target.value })}>
                           {columns.map(c => <option key={c} value={c}>{c}</option>)}
                         </Select>
                       </Box>
                       <Box>
                         <Text fontSize="xs" fontWeight="bold" mb={3} ml={1} color={secondaryText}>VALUE (Y-AXIS)</Text>
-                        <Select h="55px" bg={useColorModeValue("white", "whiteAlpha.50")} borderRadius="18px" value={mapping.value} onChange={(e) => setMapping({ ...mapping, value: e.target.value })}>
+                        <Select h="55px" bg={inputBg} borderRadius="18px" value={mapping.value} onChange={(e) => setMapping({ ...mapping, value: e.target.value })}>
                           {columns.map(c => <option key={c} value={c}>{c}</option>)}
                         </Select>
                       </Box>
@@ -226,12 +233,12 @@ const DataVizStudio = () => {
               bg={glassBg} backdropFilter="blur(15px)" p={{base: 6, md: 10}} shadow="2xl" borderRadius="40px" border="1px solid" borderColor={cardBorder}
             >
               <Flex justify="space-between" align="center" mb={12} direction={{ base: "column", sm: "row" }} gap={4}>
-                <VStack align="start" spacing={1}>
+                <VStack align="start" spacing={1} w="full" maxW={{ base: "100%", md: "auto" }}>
                     <Badge colorScheme="indigo" variant="subtle" px={3} borderRadius="full">Active View</Badge>
                     <Heading size="md">{mapping.label} vs {mapping.value}</Heading>
                 </VStack>
                 
-                <HStack bg={useColorModeValue("white", "whiteAlpha.100")} p={1.5} borderRadius="20px" border="1px solid" borderColor={cardBorder}>
+                <Stack direction={{ base: "column", sm: "row" }} bg={tabBg} p={2} borderRadius="20px" border="1px solid" borderColor={cardBorder} spacing={2} w={{ base: "full", sm: "auto" }}>
                     <IconButton 
                         aria-label="Bar" icon={<FiBarChart2 />} borderRadius="14px"
                         variant={chartType === 'bar' ? "solid" : "ghost"} 
@@ -242,16 +249,16 @@ const DataVizStudio = () => {
                         variant={chartType === 'pie' ? "solid" : "ghost"} 
                         colorScheme="indigo" onClick={() => setChartType('pie')} 
                     />
-                    <Divider orientation="vertical" h="20px" mx={2} />
-                    <Button leftIcon={<FiDownload />} colorScheme="indigo" variant="solid" borderRadius="14px" size="sm" onClick={downloadImage}>Export PNG</Button>
-                </HStack>
+                    <Divider orientation="vertical" h="20px" mx={2} display={{ base: "none", sm: "block" }} />
+                    <Button leftIcon={<FiDownload />} colorScheme="indigo" variant="solid" borderRadius="14px" size="sm" onClick={downloadImage} w={{ base: "100%", sm: "auto" }}>Export PNG</Button>
+                </Stack>
               </Flex>
 
-              <Box ref={chartRef} h="500px" w="100%">
+              <Box ref={chartRef} h={{ base: "360px", md: "500px" }} w="100%">
                 <ResponsiveContainer width="100%" height="100%">
                     {chartType === 'bar' ? (
                         <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={useColorModeValue("#f0f0f0", "#2d2d3d")} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
                         <XAxis dataKey={mapping.label} fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} dy={10} />
                         <YAxis fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
@@ -288,18 +295,24 @@ const DataVizStudio = () => {
 };
 
 // Helper Components
-const MetricCard = ({ label, value, icon }: any) => (
-    <Box bg={useColorModeValue("white", "whiteAlpha.100")} p={6} borderRadius="24px" border="1px solid" borderColor={useColorModeValue("gray.100", "whiteAlpha.100")} shadow="sm">
+const MetricCard = ({ label, value, icon }: any) => {
+  const cardBg = useColorModeValue("white", "gray.800");
+  const cardBorder = useColorModeValue("gray.100", "whiteAlpha.100");
+  const labelColor = useColorModeValue("gray.500", "gray.400");
+
+  return (
+    <Box bg={cardBg} p={6} borderRadius="24px" border="1px solid" borderColor={cardBorder} shadow="sm">
         <Flex align="center" gap={4}>
-            <Center p={3} bg="indigo.50" color="indigo.500" borderRadius="15px">
+            <Center p={3} bg={useColorModeValue("indigo.50", "indigo.900")} color={useColorModeValue("indigo.500", "indigo.200")} borderRadius="15px">
                 <Icon as={icon} size={22} />
             </Center>
             <Box>
-                <Text fontSize="xs" fontWeight="bold" color="gray.500" letterSpacing="0.5px" textTransform="uppercase">{label}</Text>
+                <Text fontSize="xs" fontWeight="bold" color={labelColor} letterSpacing="0.5px" textTransform="uppercase">{label}</Text>
                 <Text fontSize="2xl" fontWeight="800" letterSpacing="-1px">{value}</Text>
             </Box>
         </Flex>
     </Box>
-);
+  );
+};
 
 export default DataVizStudio;

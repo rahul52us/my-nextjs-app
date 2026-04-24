@@ -3,7 +3,10 @@
 import React from "react";
 import {
   VStack, Heading, Text, Input, Button, Divider, HStack,
-  FormControl, FormLabel, Select, Badge, Box, Center
+  FormControl, FormLabel, Select, Badge, Box, Center,
+  useColorModeValue, Drawer, DrawerBody, DrawerHeader,
+  DrawerOverlay, DrawerContent, DrawerCloseButton,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { Trash2, Download, RotateCcw, Pencil } from "lucide-react";
 
@@ -16,9 +19,11 @@ interface PropertiesSidebarProps {
   isExporting: boolean;
   onReset: () => void;
   onEditText: (mod: any) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-const PropertiesSidebar = ({
+const SidebarContent = ({
   selectedElement,
   updateElementStyle,
   updateElementSize,
@@ -27,7 +32,16 @@ const PropertiesSidebar = ({
   isExporting,
   onReset,
   onEditText,
-}: PropertiesSidebarProps) => {
+}: Omit<PropertiesSidebarProps, "isOpen" | "onClose">) => {
+  const sidebarBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("#E2E8F0", "#2D3748");
+  const headingColor = useColorModeValue("gray.500", "gray.400");
+  const labelColor = useColorModeValue("gray.700", "gray.300");
+  const inputBg = useColorModeValue("white", "gray.700");
+  const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+  const inputTextColor = useColorModeValue("gray.800", "gray.100");
+  const emptyBorderColor = useColorModeValue("#E2E8F0", "#4A5568");
+  const emptyTextColor = useColorModeValue("gray.400", "gray.500");
 
   const handleStyleChange = (key: string, value: string) => {
     if (!selectedElement) return;
@@ -36,16 +50,17 @@ const PropertiesSidebar = ({
 
   return (
     <VStack
-      w="320px"
-      bg="white"
-      borderLeft="1px solid #E2E8F0"
+      w="full"
+      bg={sidebarBg}
+      borderLeft={`1px solid ${borderColor}`}
       p={6}
       align="stretch"
       spacing={6}
       shadow="sm"
       overflowY="auto"
+      h="full"
     >
-      <Heading size="xs" letterSpacing="widest" color="gray.500">
+      <Heading size="xs" letterSpacing="widest" color={headingColor}>
         PROPERTIES
       </Heading>
 
@@ -55,7 +70,6 @@ const PropertiesSidebar = ({
             {selectedElement.type.toUpperCase()}
           </Badge>
 
-          {/* Edit Text Button - only for text elements */}
           {selectedElement.type === "text" && (
             <Button
               size="sm"
@@ -70,10 +84,13 @@ const PropertiesSidebar = ({
           {/* Size Controls */}
           <HStack>
             <FormControl>
-              <FormLabel fontSize="xs">Width</FormLabel>
+              <FormLabel fontSize="xs" color={labelColor}>Width</FormLabel>
               <Input
                 size="sm"
                 type="number"
+                bg={inputBg}
+                color={inputTextColor}
+                borderColor={inputBorderColor}
                 value={Math.round(selectedElement.width)}
                 onChange={e =>
                   updateElementSize(
@@ -85,10 +102,13 @@ const PropertiesSidebar = ({
               />
             </FormControl>
             <FormControl>
-              <FormLabel fontSize="xs">Height</FormLabel>
+              <FormLabel fontSize="xs" color={labelColor}>Height</FormLabel>
               <Input
                 size="sm"
                 type="number"
+                bg={inputBg}
+                color={inputTextColor}
+                borderColor={inputBorderColor}
                 value={Math.round(selectedElement.height)}
                 onChange={e =>
                   updateElementSize(
@@ -105,10 +125,12 @@ const PropertiesSidebar = ({
           {(selectedElement.type === "rect" || selectedElement.type === "circle") && (
             <>
               <FormControl>
-                <FormLabel fontSize="xs">Fill Color</FormLabel>
+                <FormLabel fontSize="xs" color={labelColor}>Fill Color</FormLabel>
                 <Input
                   size="sm"
                   type="color"
+                  bg={inputBg}
+                  borderColor={inputBorderColor}
                   value={
                     selectedElement.style?.backgroundColor?.toString().startsWith("rgba")
                       ? "#ffffff"
@@ -118,9 +140,12 @@ const PropertiesSidebar = ({
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="xs">Border Thickness</FormLabel>
+                <FormLabel fontSize="xs" color={labelColor}>Border Thickness</FormLabel>
                 <Select
                   size="sm"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  borderColor={inputBorderColor}
                   onChange={e =>
                     handleStyleChange("border", `${e.target.value}px solid #3182CE`)
                   }
@@ -133,7 +158,7 @@ const PropertiesSidebar = ({
             </>
           )}
 
-          <Divider />
+          <Divider borderColor={borderColor} />
 
           <Button
             size="sm"
@@ -146,17 +171,16 @@ const PropertiesSidebar = ({
           </Button>
         </VStack>
       ) : (
-        <Center flex={0.2} border="1px dashed #E2E8F0" rounded="lg" p={4}>
-          <Text fontSize="xs" color="gray.400" textAlign="center">
+        <Center flex={0.2} border={`1px dashed ${emptyBorderColor}`} rounded="lg" p={4}>
+          <Text fontSize="xs" color={emptyTextColor} textAlign="center">
             Select an element to edit its style
           </Text>
         </Center>
       )}
 
-      <Divider />
+      <Divider borderColor={borderColor} />
 
       <VStack spacing={3} mt="auto">
-        {/* Reset Button */}
         <Button
           w="full"
           colorScheme="red"
@@ -167,8 +191,6 @@ const PropertiesSidebar = ({
         >
           Reset All
         </Button>
-
-        {/* Download Button */}
         <Button
           w="full"
           colorScheme="blue"
@@ -181,6 +203,36 @@ const PropertiesSidebar = ({
         </Button>
       </VStack>
     </VStack>
+  );
+};
+
+const PropertiesSidebar = ({
+  isOpen = false,
+  onClose = () => {},
+  ...props
+}: PropertiesSidebarProps) => {
+  const isMobile = useBreakpointValue({ base: true, lg: false });
+  const drawerBg = useColorModeValue("white", "gray.800");
+
+  if (isMobile) {
+    return (
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="xs">
+        <DrawerOverlay />
+        <DrawerContent bg={drawerBg}>
+          <DrawerCloseButton />
+          <DrawerHeader fontSize="sm" letterSpacing="widest">PROPERTIES</DrawerHeader>
+          <DrawerBody p={0}>
+            <SidebarContent {...props} />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Box w="300px" flexShrink={0} display={{ base: "none", lg: "block" }} h="full">
+      <SidebarContent {...props} />
+    </Box>
   );
 };
 
