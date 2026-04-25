@@ -20,6 +20,7 @@ import {
   FaDollarSign,
   FaDatabase,
   FaThermometerHalf,
+  FaPalette,
   FaFileWord,
   FaFilePdf,
   FaFileExcel,
@@ -73,6 +74,7 @@ const sidebarData: SidebarItem[] = [
           { id: 205, name: "Base64 to PDF", icon: <FaFileAlt />, url: "/converter/decoder/pdf" },
           { id: 206, name: "Base64 to Hex", icon: <FaCode />, url: "/converter/decoder/hex" },
           { id: 207, name: "Base64 to JSON", icon: <FaCode />, url: "/converter/decoder/json" },
+          { id: 209, name: "JWT Decoder", icon: <FaLock />, url: "/converter/decoder/jwt" },
           { id: 208, name: "Binary to Text", icon: <FaTextHeight />, url: "/converter/decoder/binary" },
         ],
       },
@@ -133,7 +135,18 @@ const sidebarData: SidebarItem[] = [
       { id: 608, name: "IP Address Lookup", icon: <FaGlobe />, url: "/tools/ip-lookup" },
     ],
   },
-{
+  {
+    id: 7,
+    name: "Converter Tools",
+    icon: <FaPalette />,
+    url: "#",
+    children: [
+      { id: 701, name: "Unix Timestamp Converter", icon: <FaClock />, url: "/converter/unix-timestamp" },
+      { id: 702, name: "Color Converter", icon: <FaPalette />, url: "/converter/color-converter" },
+      { id: 703, name: "Text Case Converter", icon: <FaTextHeight />, url: "/converter/text-case-converter" },
+    ],
+  },
+  {
     id: 91,
     name: "PDF Tools",
     icon: <FaFilePdf />,
@@ -231,6 +244,7 @@ const filterSearchData: SidebarItem[] = [
   { id: 205, name: "Base64 to PDF", icon: <FaFileAlt />, url: "/converter/decoder/pdf" },
   { id: 206, name: "Base64 to Hex", icon: <FaCode />, url: "/converter/decoder/hex" },
   { id: 207, name: "Base64 to JSON", icon: <FaCode />, url: "/converter/decoder/json" },
+  { id: 209, name: "JWT Decoder", icon: <FaLock />, url: "/converter/decoder/jwt" },
   { id: 208, name: "Binary to Text", icon: <FaTextHeight />, url: "/converter/decoder/binary" },
 
   { id: 3, name: "Formatters", icon: <FaPencilAlt />, url: "#" },
@@ -262,6 +276,10 @@ const filterSearchData: SidebarItem[] = [
   { id: 606, name: "Temperature Converter", icon: <FaThermometerHalf />, url: "/converter/temperature-converter" },
   { id: 607, name: "Data Size Converter", icon: <FaDatabase />, url: "/converter/data-size-converter" },
   { id: 608, name: "IP Address Lookup", icon: <FaGlobe />, url: "/tools/ip-lookup" },
+  { id: 7, name: "Converter Tools", icon: <FaPalette />, url: "#" },
+  { id: 701, name: "Unix Timestamp Converter", icon: <FaClock />, url: "/converter/unix-timestamp" },
+  { id: 702, name: "Color Converter", icon: <FaPalette />, url: "/converter/color-converter" },
+  { id: 703, name: "Text Case Converter", icon: <FaTextHeight />, url: "/converter/text-case-converter" },
 ];
 
 export const sidebarFooterData: SidebarItem[] = [

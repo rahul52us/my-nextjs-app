@@ -20,6 +20,7 @@ export const features: any = {
     // New Additions
     { name: "JSON to Base64", icon: FaCode, path: "/converter/encoder/json" },
     { name: "Base64 to JSON", icon: FaCode, path: "/converter/decoder/json" },
+    { name: "JWT Decoder", icon: FaLock, path: "/converter/decoder/jwt" },
     { name: "Binary to Text", icon: FaTextHeight, path: "/converter/decoder/binary" },
     { name: "Text to Binary", icon: FaCode, path: "/converter/encoder/binary" },
   ],
@@ -76,7 +77,12 @@ export const features: any = {
     { name: "Data Size Converter", icon: FaDatabase, path: "/converter/data-size-converter" },
     { name: "IP Address Lookup", icon: FaGlobe, path: "/tools/ip-lookup" },
   ],
-    "PDF Tools": [
+  "Converter Utilities": [
+    { name: "Unix Timestamp Converter", icon: FaClock, path: "/converter/unix-timestamp" },
+    { name: "Color Converter", icon: FaPalette, path: "/converter/color-converter" },
+    { name: "Text Case Converter", icon: FaTextHeight, path: "/converter/text-case-converter" },
+  ],
+  "PDF Tools": [
     { name: "PDF to Word", icon: FaFileAlt, path: "/converter/PDFtools/PDFtoWord" },
     { name: "PDF Edit", icon: FaFileAlt, path: "/converter/PDFtools/Pdfedit" },
     {name: "Excel To PDF", icon: FaFileAlt, path: "/converter/PDFtools/Excletopdf" },  
