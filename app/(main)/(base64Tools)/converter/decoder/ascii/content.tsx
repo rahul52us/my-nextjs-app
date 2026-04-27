@@ -238,18 +238,46 @@ const Base64ToAsciiContent: React.FC = () => {
                 </FormControl>
 
                 <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Upload File with Base64 Content
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept=".txt"
-                        onChange={handleFileUpload}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _hover={{ cursor: "pointer" }}
-                    />
-                </FormControl>
+  <FormLabel fontSize="lg" fontWeight="semibold">
+    Upload File with Base64 Content
+  </FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="base64-file-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("teal.300", "teal.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("teal.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "teal.500",
+      bg: useColorModeValue("teal.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaExchangeAlt} boxSize={8} color="teal.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      Click to upload Base64 file
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      .txt files only • Max 2MB
+    </Text>
+    <Input
+      id="base64-file-upload"
+      type="file"
+      accept=".txt"
+      onChange={handleFileUpload}
+      display="none"
+    />
+  </Box>
+</FormControl>
 
                 <Stack spacing={4} direction={["column", "row"]} justify="space-between">
                     <Button

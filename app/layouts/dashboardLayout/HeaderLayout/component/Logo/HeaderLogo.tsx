@@ -50,7 +50,7 @@ const HeaderLogo = observer(() => {
     themeStore: { themeConfig },
   } = stores;
 
-  const isDesktop = useBreakpointValue({ base: false, lg: true });
+  const isDesktop = useBreakpointValue({ base: false, md: true });
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
 
@@ -111,10 +111,12 @@ const HeaderLogo = observer(() => {
     <HStack
       spacing={8}
       width="100%"
-      pr={6}
+      minW={0}
+      px={{ base: 2, md: 6 }}
       height="70px"
       alignItems="center"
       justify="space-between"
+      overflow="hidden"
       position="sticky"
       top={0}
       zIndex={1000}
@@ -142,9 +144,23 @@ const HeaderLogo = observer(() => {
 
       {/* DESKTOP NAV */}
       {isDesktop ? (
-        <Flex flex="0 1 auto" minW={0} justify="center">
+        <Flex
+          flex="1 1 auto"
+          minW={0}
+          maxW="100%"
+          justify="center"
+          overflowX="auto"
+          sx={{
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           <HStack
             spacing={1}
+            minW={0}
+            flexWrap="nowrap"
+            whiteSpace="nowrap"
             bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"}
             p={1.5}
             borderRadius="full"

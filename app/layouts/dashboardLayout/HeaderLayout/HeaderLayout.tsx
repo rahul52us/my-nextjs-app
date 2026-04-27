@@ -17,11 +17,13 @@ const HeaderLayout = observer(() => {
   return (
     <Flex
       as="header"
+      width="full"
       direction="row"
       alignItems="center"
       justifyContent="space-between"
       height={headerHeight}
       px={headerPadding} // Use horizontal padding only
+      overflowX="hidden"
       // Glassmorphism effect
       backdropFilter="blur(10px)"
       borderBottom="1px solid"
@@ -36,14 +38,14 @@ const HeaderLayout = observer(() => {
         We use a fixed width or min-width to prevent 
         the center links from shifting.
       */}
-      <Flex flex={1} justify="flex-start" alignItems="center">
+      <Flex flex={1} minW={0} justify="flex-start" alignItems="center">
         <HeaderLogo />
       </Flex>
 
       {/* RIGHT: User Actions, Search, Profile 
-        Wrapped in a Flex to ensure it stays pinned.
+        Wrapped in a Flex to allow shrinking instead of overflowing.
       */}
-      <Flex flexShrink={0} alignItems="center">
+      <Flex flex="0 1 auto" minW={0} alignItems="center">
         <HeaderNavbar />
       </Flex>
 

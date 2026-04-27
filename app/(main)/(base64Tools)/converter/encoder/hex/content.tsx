@@ -19,7 +19,7 @@ import {
     Spinner,
     Input,
 } from "@chakra-ui/react";
-import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy } from "react-icons/fa";
+import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy , FaCode} from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
 
@@ -219,18 +219,46 @@ const HexToBase64Content: React.FC = () => {
 
                 {/* File Upload Section */}
                 <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Upload File with Hex Content
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept=".txt"
-                        onChange={handleFileUpload}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _hover={{ cursor: "pointer" }}
-                    />
-                </FormControl>
+  <FormLabel fontSize="lg" fontWeight="semibold">
+    Upload File with Hex Content
+  </FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="hex-file-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("blue.300", "blue.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("blue.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "blue.500",
+      bg: useColorModeValue("blue.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaCode} boxSize={8} color="blue.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      Click to upload Hex file
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      .txt files only
+    </Text>
+    <Input
+      id="hex-file-upload"
+      type="file"
+      accept=".txt"
+      onChange={handleFileUpload}
+      display="none"
+    />
+  </Box>
+</FormControl>
 
                 {/* Action Buttons */}
                 <HStack spacing={4} justify="space-between">

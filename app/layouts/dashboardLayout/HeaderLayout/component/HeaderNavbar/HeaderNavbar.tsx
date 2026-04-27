@@ -26,7 +26,7 @@ const HeaderNavbar = observer(() => {
   const mobileMenuColor = themeConfig.colors.brand[100];
 
   return (
-    <HStack spacing={4} pr={2}>
+    <HStack spacing={4} pr={2} minW={0} maxW="100%" flexShrink={1}>
       {/* Main Action Container 
           Using a glass effect and a subtle border makes the profile/theme section 
           look like a dedicated "User Control Center"
@@ -62,7 +62,6 @@ const HeaderNavbar = observer(() => {
         </Box>
       </HStack>
 
-      Mobile Menu - Enhanced with better hit area and animation
       {/* {!isDesktop && (
         <IconButton
           aria-label="Open Menu"

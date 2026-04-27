@@ -14,8 +14,10 @@ import {
     useColorModeValue,
     useToast,
     HStack,
+    Text,
+    Icon,
 } from "@chakra-ui/react";
-import { FaClipboard, FaDownload, FaTrashAlt } from "react-icons/fa";
+import { FaClipboard, FaDownload, FaTrashAlt, FaMusic } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
 
@@ -166,18 +168,47 @@ const AudioToBase64Content = () => {
                 Audio to Base64
             </Heading>
             <VStack spacing={2} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Choose a File
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept="audio/*"  // This will limit the input to audio files
-                        onChange={handleFileChange}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                    />
-                </FormControl>
+              <FormControl>
+  <FormLabel fontSize="lg" fontWeight="semibold">
+    Choose a File
+  </FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="audio-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("blue.300", "blue.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("blue.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "blue.500",
+      bg: useColorModeValue("blue.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaMusic} boxSize={8} color="blue.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      {fileName ? fileName : "Click to upload audio file"}
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      MP3, WAV, OGG, AAC supported
+    </Text>
+    <Input
+      id="audio-upload"
+      type="file"
+      accept="audio/*"
+      onChange={handleFileChange}
+      display="none"
+    />
+  </Box>
+</FormControl>
 
                 {fileName && (
                     <FormControl>

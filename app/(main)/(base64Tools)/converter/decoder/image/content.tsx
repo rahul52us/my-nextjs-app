@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent } from "react";
 import { saveAs } from "file-saver";
+import { FaImage  } from "react-icons/fa";
 import {
     Box,
     Button,
@@ -13,6 +14,7 @@ import {
     Text,
     useColorModeValue,
     Image,
+    Icon,
     Modal,
     ModalOverlay,
     ModalContent,
@@ -203,18 +205,46 @@ const Base64ImageContent = () => {
                     />
                 </FormControl>
                 <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Upload an Image
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept=".txt"
-                        onChange={handleFileUpload}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                        size="lg"
-                    />
-                </FormControl>
+  <FormLabel fontSize="lg" fontWeight="semibold">
+    Upload an Image
+  </FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="image-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("purple.300", "purple.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("purple.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "purple.500",
+      bg: useColorModeValue("purple.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaImage} boxSize={8} color="purple.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      Click to upload Image
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      PNG, JPG, GIF, WEBP supported
+    </Text>
+    <Input
+      id="image-upload"
+      type="file"
+      accept=".txt"
+      onChange={handleFileUpload}
+      display="none"
+    />
+  </Box>
+</FormControl>
                 <HStack mt={2}>
                     <Button
                         colorScheme="green"

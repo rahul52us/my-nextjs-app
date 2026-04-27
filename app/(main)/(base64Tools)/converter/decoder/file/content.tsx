@@ -2,6 +2,7 @@
 
 import { useState, useCallback, ChangeEvent, useMemo, useEffect } from "react";
 import { saveAs } from "file-saver";
+import { FaFileAlt } from "react-icons/fa";
 import {
     Box,
     Button,
@@ -28,6 +29,7 @@ import {
     Tab,
     Spinner,
     Flex,
+    Icon
 } from "@chakra-ui/react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef } from "ag-grid-community";
@@ -648,15 +650,44 @@ const Base64ToFileContent = () => {
                 </FormControl>
 
                 <FormControl>
-                    <FormLabel fontWeight="semibold">Upload Base64 File (.txt)</FormLabel>
-                    <Input
-                        type="file"
-                        accept=".txt"
-                        onChange={handleFileUpload}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                    />
-                </FormControl>
+  <FormLabel fontWeight="semibold">Upload Base64 File (.txt)</FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="base64-txt-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("green.300", "green.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("green.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "green.500",
+      bg: useColorModeValue("green.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaFileAlt} boxSize={8} color="green.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      Click to upload Base64 file
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      .txt files only
+    </Text>
+    <Input
+      id="base64-txt-upload"
+      type="file"
+      accept=".txt"
+      onChange={handleFileUpload}
+      display="none"
+    />
+  </Box>
+</FormControl>
 
                 <Button colorScheme="green" onClick={handleDownload} width="full">
                     Download File

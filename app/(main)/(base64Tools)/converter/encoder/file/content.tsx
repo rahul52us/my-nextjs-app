@@ -14,8 +14,10 @@ import {
     useColorModeValue,
     useToast,
     HStack,
+    Text,
+    Icon,
 } from "@chakra-ui/react";
-import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
+import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt, FaFileAlt  } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
 
@@ -219,17 +221,46 @@ const FileToBase64Content = () => {
                 File to Base64
             </Heading>
             <VStack spacing={2} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Choose a File
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        onChange={handleFileChange}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                    />
-                </FormControl>
+               <FormControl>
+  <FormLabel fontSize="lg" fontWeight="semibold">
+    Choose a File
+  </FormLabel>
+
+  <Box
+    as="label"
+    htmlFor="file-upload"
+    display="flex"
+    flexDirection="column"
+    alignItems="center"
+    justifyContent="center"
+    gap={2}
+    p={6}
+    border="2px dashed"
+    borderColor={useColorModeValue("blue.300", "blue.500")}
+    borderRadius="xl"
+    bg={useColorModeValue("blue.50", "gray.700")}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      borderColor: "blue.500",
+      bg: useColorModeValue("blue.100", "gray.600"),
+    }}
+  >
+    <Icon as={FaFileAlt} boxSize={8} color="blue.400" />
+    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+      Click to upload or drag & drop
+    </Text>
+    <Text fontSize="sm" color="gray.400">
+      Any file supported
+    </Text>
+    <Input
+      id="file-upload"
+      type="file"
+      onChange={handleFileChange}
+      display="none"
+    />
+  </Box>
+</FormControl>
 
                 {fileName && (
                     <FormControl>
