@@ -2,202 +2,236 @@
 
 import React, { useState, useRef } from 'react';
 import { 
-  Box, 
-  Button, 
-  Heading, 
-  VStack, 
-  Text, 
-  Input, 
-  useToast, 
-  Divider, 
-  Container, 
-  Center,
-  useColorModeValue, // Added for dark mode support
-  Icon,
-  Badge,
-  HStack
+  Box, Button, Heading, VStack, Text, Input, useToast, 
+  Container, Center, useColorModeValue, Icon, Badge, HStack,
+  Spinner, Flex
 } from '@chakra-ui/react';
 import mammoth from 'mammoth';
-import { jsPDF } from 'jspdf';
-import { FileText, Download, Eye, CheckCircle } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
+import { Download, Eye, UploadCloud, Trash2, ShieldCheck, FileText } from 'lucide-react';
 
 const WordToPdf = () => {
   const [htmlPreview, setHtmlPreview] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const hiddenPrintRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
-
-  // --- Dark Mode Colors ---
-  const pageBg = useColorModeValue("gray.50", "gray.900");
+  
+  const pageBg = useColorModeValue("gray.50", "#0a0a0a");
   const cardBg = useColorModeValue("white", "gray.800");
-  const cardBorder = useColorModeValue("gray.200", "gray.700");
-  const textColor = useColorModeValue("gray.500", "gray.400");
-  const previewPaperBg = "white"; // Always white for realistic document feel
-  const dropzoneHoverBg = useColorModeValue("blue.50", "whiteAlpha.50");
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleFile = async (file: File) => {
     if (!file.name.endsWith('.docx')) {
-      toast({ title: "Invalid file type", status: "error", duration: 3000 });
+      toast({ title: "Invalid Format", description: "Please upload a .docx file", status: "error" });
       return;
     }
-
     setFileName(file.name.replace('.docx', ''));
     setLoading(true);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.convertToHtml({ arrayBuffer });
-      setHtmlPreview(result.value);
       
-      toast({ title: "Preview Generated", status: "success", duration: 2000 });
+      // Mammoth options to preserve more structure
+      const options = {
+        styleMap: [
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Table'] => table:fresh"
+        ]
+      };
+
+      const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+
+      // Advanced CSS for PDF Accuracy
+      const styledHtml = `
+        <style>
+          .pdf-render-container { 
+            font-family: 'Times New Roman', Times, serif; /* More standard for Word docs */
+            color: #000;
+            line-height: 1.5;
+            font-size: 12pt;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          /* Prevent text slicing across pages */
+          .pdf-render-container p, 
+          .pdf-render-container h1, 
+          .pdf-render-container h2, 
+          .pdf-render-container h3, 
+          .pdf-render-container li,
+          .pdf-render-container table tr { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            margin-bottom: 10pt;
+          }
+          .pdf-render-container h1 { font-size: 22pt; margin-top: 0; }
+          .pdf-render-container h2 { font-size: 18pt; margin-top: 15pt; border-bottom: 0.5pt solid #ccc; }
+          .pdf-render-container img { max-width: 100%; height: auto; }
+          .pdf-render-container table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 15pt 0;
+            table-layout: fixed; 
+          }
+          .pdf-render-container td, .pdf-render-container th { 
+            border: 0.5pt solid #666; 
+            padding: 6pt; 
+            vertical-align: top;
+            word-wrap: break-word;
+          }
+        </style>
+        <div class="pdf-render-container">
+          ${result.value}
+        </div>
+      `;
+
+      setHtmlPreview(styledHtml);
+      toast({ title: "Document Processed", status: "success" });
     } catch (err) {
-      console.error(err);
-      toast({ title: "Error reading file", status: "error" });
+      toast({ title: "Conversion Failed", status: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   const downloadPdf = async () => {
-    if (!previewRef.current) return;
+    if (!hiddenPrintRef.current) return;
+    setIsGenerating(true);
 
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4',
-    });
-
-    doc.html(previewRef.current, {
-      callback: function (doc) {
-        doc.save(`${fileName || 'document'}.pdf`);
+    const opt = {
+      margin: [0.75, 0.75, 0.75, 0.75], // Standard 0.75 inch Word margins
+      filename: `${fileName}.pdf`,
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { 
+        scale: 3, // Increased scale for crisp text
+        useCORS: true, 
+        logging: false,
+        letterRendering: true,
+        windowWidth: 800 // Forces a specific width for layout calculation
       },
-      margin: [40, 40, 40, 40],
-      autoPaging: 'text',
-      x: 0,
-      y: 0,
-      width: 515,
-      windowWidth: 800
-    });
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
+    };
+
+    try {
+      await html2pdf().set(opt).from(hiddenPrintRef.current).save();
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Export Error", status: "error" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
-    <Box minH="100vh" bg={pageBg} transition="background 0.2s">
-      <Container maxW="container.md" py={10}>
-        <VStack spacing={6} align="stretch">
+    <Box minH="100vh" bg={pageBg} py={{ base: 4, md: 10 }}>
+      <Container maxW="container.xl">
+        <Flex direction="column" gap={6}>
           
-          <VStack spacing={2} textAlign="center">
-            <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full">
-              Premium Word Engine
-            </Badge>
-            <Heading size="xl" fontWeight="900" letterSpacing="tight">
-              Word <Text as="span" color="blue.500">to PDF</Text>
-            </Heading>
-            <Text color={textColor}>Upload a .docx file to preview and convert</Text>
-          </VStack>
-
-          <Box 
-            p={10} 
-            bg={cardBg}
-            border="2px dashed" 
-            borderColor={cardBorder} 
-            borderRadius="3xl" 
-            textAlign="center"
-            transition="all 0.3s"
-            _hover={{ borderColor: 'blue.500', bg: dropzoneHoverBg, shadow: 'xl' }}
-            shadow="sm"
-          >
-            <Input 
-              type="file" 
-              accept=".docx" 
-              onChange={handleFileChange} 
-              display="none" 
-              id="file-upload" 
-            />
-            <label htmlFor="file-upload">
-              <Button 
-                as="span" 
-                leftIcon={<FileText size={18} />} 
-                colorScheme="blue" 
-                cursor="pointer" 
-                isLoading={loading}
-                borderRadius="full"
-                size="lg"
-                boxShadow="md"
-              >
-                Choose Word Document
-              </Button>
-            </label>
-            {fileName && (
-              <Text mt={4} fontSize="sm" fontWeight="bold" color="blue.500">
-                {fileName}.docx
-              </Text>
-            )}
-          </Box>
-
-          {htmlPreview && (
-            <Box>
-              <HStack justify="space-between" mb={4}>
-                <Heading size="md" display="flex" alignItems="center">
-                  <Eye size={20} style={{ marginRight: '8px' }} /> Live Preview
-                </Heading>
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setHtmlPreview("")}
-                    colorScheme="red"
-                >
-                    Clear
+          <Flex justify="space-between" align="center" direction={{ base: "column", md: "row" }} gap={4}>
+            <VStack align={{ base: "center", md: "start" }} spacing={0}>
+              <Heading size="lg" letterSpacing="tight">
+                Swift<Text as="span" color="blue.500">PDF</Text>
+              </Heading>
+              <Text fontSize="sm" color="gray.500">Professional Word to PDF Engine</Text>
+            </VStack>
+            <HStack spacing={3}>
+              <Badge colorScheme="green" variant="subtle" px={3} py={1} borderRadius="full">
+                <Icon as={ShieldCheck} mr={1} verticalAlign="middle" /> High-Fidelity Mode
+              </Badge>
+              {htmlPreview && (
+                <Button size="sm" variant="ghost" colorScheme="red" leftIcon={<Trash2 size={16}/>} onClick={() => setHtmlPreview("")}>
+                  Clear
                 </Button>
-              </HStack>
+              )}
+            </HStack>
+          </Flex>
+
+          {!htmlPreview ? (
+            <Center 
+              w="full" minH="350px" bg={cardBg} borderRadius="3xl" border="2px dashed"
+              borderColor={isDragging ? "blue.400" : "gray.200"}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault(); setIsDragging(false);
+                if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+              }}
+            >
+              <VStack spacing={6} p={6}>
+                <Box p={6} bg="blue.50" borderRadius="full" color="blue.500">
+                  <Icon as={UploadCloud} w={10} h={10} />
+                </Box>
+                <VStack spacing={2} textAlign="center">
+                  <Text fontWeight="bold" fontSize="xl">Upload your .docx file</Text>
+                  <Text color="gray.500" fontSize="sm">Converted locally. Content never leaves your device.</Text>
+                </VStack>
+                <Input type="file" accept=".docx" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} display="none" id="file-upload" />
+                <Button as="label" htmlFor="file-upload" colorScheme="blue" size="lg" px={10} borderRadius="full" cursor="pointer" isLoading={loading}>
+                  Select File
+                </Button>
+              </VStack>
+            </Center>
+          ) : (
+            <Flex direction={{ base: "column", lg: "row" }} gap={6} align="start">
               
-              <Box 
-                bg={previewPaperBg} 
-                boxShadow="2xl" 
-                p={12} 
-                borderRadius="xl" 
-                maxH="600px" 
-                overflowY="auto"
-                border="1px solid"
-                borderColor={cardBorder}
-                position="relative"
-              >
-                <div 
-                  ref={previewRef}
-                  dangerouslySetInnerHTML={{ __html: htmlPreview }} 
-                  style={{ 
-                    fontSize: '12pt', 
-                    lineHeight: '1.6', 
-                    color: '#1A202C', // Standard dark text for document readability
-                    fontFamily: 'serif' 
-                  }}
-                />
+              <Box flex={2} w="full" bg="white" borderRadius="2xl" boxShadow="xl" overflow="hidden" border="1px solid" borderColor="gray.100">
+                <HStack p={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.100" justify="space-between">
+                  <HStack>
+                    <Icon as={Eye} color="blue.500" />
+                    <Text fontWeight="bold" fontSize="sm" color="gray.600">SMART PREVIEW</Text>
+                  </HStack>
+                  <Text fontSize="xs" color="gray.400" fontWeight="bold">{fileName}.docx</Text>
+                </HStack>
+                <Box p={{ base: 4, md: 10 }} maxH="70vh" overflowY="auto">
+                   <div dangerouslySetInnerHTML={{ __html: htmlPreview }} />
+                </Box>
               </Box>
 
-              <Center mt={8}>
-                <Button 
-                  size="lg" 
-                  colorScheme="green" 
-                  leftIcon={<Download size={20} />} 
-                  onClick={downloadPdf}
-                  borderRadius="full"
-                  px={10}
-                  boxShadow="0 4px 14px 0 rgba(72, 187, 120, 0.39)"
-                >
-                  Download as PDF
-                </Button>
-              </Center>
-            </Box>
+              <VStack flex={1} w="full" spacing={4} position={{ lg: "sticky" }} top="20px">
+                <Box w="full" p={6} bg={cardBg} borderRadius="2xl" boxShadow="md" border="1px solid" borderColor="gray.100">
+                  <VStack align="stretch" spacing={5}>
+                    <HStack>
+                      <Icon as={FileText} color="blue.500" />
+                      <Text fontWeight="bold">Export Settings</Text>
+                    </HStack>
+                    <Text fontSize="xs" color="gray.500">
+                      We use a high-DPI rendering engine (300+ DPI equivalent) to ensure tables and fonts stay sharp in the final PDF.
+                    </Text>
+                    <Button 
+                      w="full" colorScheme="blue" size="lg" h="70px"
+                      leftIcon={isGenerating ? <Spinner size="sm" /> : <Download size={20} />}
+                      onClick={downloadPdf}
+                      isLoading={isGenerating}
+                      loadingText="Finalizing PDF..."
+                      borderRadius="xl"
+                      boxShadow="lg"
+                    >
+                      Download PDF
+                    </Button>
+                  </VStack>
+                </Box>
+              </VStack>
+            </Flex>
           )}
 
-          <HStack justify="center" opacity={0.5} pt={4}>
-            <Icon as={CheckCircle} color="green.500" size={14} />
-            <Text fontSize="xs" fontWeight="bold">Local browser processing</Text>
-          </HStack>
-        </VStack>
+          {/* This is the hidden engine room where the PDF is "photographed" */}
+          <Box position="absolute" top="-9999px" left="-9999px" aria-hidden="true">
+            <div 
+              ref={hiddenPrintRef} 
+              style={{ 
+                width: '794px', // Standard A4 pixel width at 96dpi
+                padding: '20px',
+                background: 'white' 
+              }} 
+              dangerouslySetInnerHTML={{ __html: htmlPreview }} 
+            />
+          </Box>
+
+        </Flex>
       </Container>
     </Box>
   );
