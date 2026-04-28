@@ -441,7 +441,7 @@ const ColorConverterContent: React.FC = () => {
                   borderColor={borderColor}
                   transition="border-color 0.2s, transform 0.15s"
                   _hover={{ borderColor: "teal.400", transform: "scale(1.04)" }}
-                  display="flex"
+                  // display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >

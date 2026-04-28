@@ -102,9 +102,9 @@ const WordToPdf = () => {
     setIsGenerating(true);
 
     const opt = {
-      margin: [0.75, 0.75, 0.75, 0.75], // Standard 0.75 inch Word margins
+      margin: [0.75, 0.75, 0.75, 0.75] as [number, number, number, number], // Standard 0.75 inch Word margins
       filename: `${fileName}.pdf`,
-      image: { type: 'jpeg', quality: 1.0 },
+      image: { type: 'jpeg' as 'jpeg', quality: 1.0 },
       html2canvas: { 
         scale: 3, // Increased scale for crisp text
         useCORS: true, 
@@ -112,7 +112,7 @@ const WordToPdf = () => {
         letterRendering: true,
         windowWidth: 800 // Forces a specific width for layout calculation
       },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
     };
 

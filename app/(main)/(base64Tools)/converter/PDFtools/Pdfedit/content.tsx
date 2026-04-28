@@ -16,7 +16,7 @@ import {
   FiTrash2, FiMaximize, FiChevronLeft, FiChevronRight,
   FiRotateCcw, FiMousePointer, FiEyeOff, FiBold, FiItalic,
 } from 'react-icons/fi';
-import stores from '../../../../store/stores';
+import stores from '../../../../../store/stores';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
