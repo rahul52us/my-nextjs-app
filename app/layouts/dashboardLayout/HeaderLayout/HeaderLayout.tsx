@@ -10,21 +10,20 @@ import React from "react";
 
 const HeaderLayout = observer(() => {
   const { themeStore: { themeConfig } } = stores;
-  
-  // Enhanced Professional Color Logic
+
   const borderColor = useColorModeValue("whiteAlpha.300", "whiteAlpha.100");
-  
+
   return (
     <Flex
       as="header"
       width="full"
+      maxW="100vw"           
+      overflow="hidden" 
       direction="row"
       alignItems="center"
       justifyContent="space-between"
       height={headerHeight}
-      px={headerPadding} // Use horizontal padding only
-      overflowX="hidden"
-      // Glassmorphism effect
+      px={headerPadding}
       backdropFilter="blur(10px)"
       borderBottom="1px solid"
       borderColor={borderColor}
@@ -34,24 +33,17 @@ const HeaderLayout = observer(() => {
       zIndex={1000}
       transition="all 0.3s ease"
     >
-      {/* LEFT: Logo & Toggle 
-        We use a fixed width or min-width to prevent 
-        the center links from shifting.
-      */}
-      <Flex flex={1} minW={0} justify="flex-start" alignItems="center">
+      {/* LEFT: Logo + nav (takes all remaining space) */}
+      <Flex flex={1} minW={0} justify="flex-start" alignItems="center" overflow="hidden">
         <HeaderLogo />
       </Flex>
 
-      {/* RIGHT: User Actions, Search, Profile 
-        Wrapped in a Flex to allow shrinking instead of overflowing.
-      */}
-      <Flex flex="0 1 auto" minW={0} alignItems="center">
+      {/* RIGHT: Theme switch + profile */}
+      <Flex flex="0 0 auto" alignItems="center">
         <HeaderNavbar />
       </Flex>
 
-      {/* OPTIONAL: Subtle Top Progress Bar Decor 
-        Gives it a high-tech "loading" or "active" feel.
-      */}
+      {/* Subtle bottom gradient line */}
       <Box
         position="absolute"
         bottom="-1px"
@@ -59,6 +51,7 @@ const HeaderLayout = observer(() => {
         width="100%"
         height="1px"
         bgGradient="linear(to-r, transparent, whiteAlpha.400, transparent)"
+        pointerEvents="none"
       />
     </Flex>
   );

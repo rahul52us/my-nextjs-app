@@ -20,7 +20,7 @@ import {
   DrawerBody,
   VStack,
   Divider,
-  Icon
+  Icon,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -50,14 +50,14 @@ const HeaderLogo = observer(() => {
     themeStore: { themeConfig },
   } = stores;
 
-  const isDesktop = useBreakpointValue({ base: false, md: true });
+  // Switch to desktop layout at xl (1280px) so all items fit in one row
+  const isDesktop = useBreakpointValue({ base: false, xl: true });
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
 
   const [openMenu, setOpenMenu] = useState<string | number | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
-  // Colors & Styles
   const textColor = "white";
   const accentColor = themeConfig.colors.brand[300];
   const menuTextColor = useColorModeValue("gray.800", "white");
@@ -65,32 +65,26 @@ const HeaderLogo = observer(() => {
   const menuBg = useColorModeValue("white", "gray.800");
   const mobileLinkHover = useColorModeValue("blue.50", "gray.700");
   const borderColor = useColorModeValue("gray.100", "whiteAlpha.100");
-  const shadowColor = useColorModeValue("0 10px 15px -3px rgba(0,0,0,0.1)", "0 20px 25px -5px rgba(0,0,0,0.4)");
+  const shadowColor = useColorModeValue(
+    "0 10px 15px -3px rgba(0,0,0,0.1)",
+    "0 20px 25px -5px rgba(0,0,0,0.4)"
+  );
 
   const slideDown = keyframes`
-    0% { opacity: 0; transform: translateY(-10px) scale(0.98); }
-    60% { opacity: 1; transform: translateY(0) scale(1.02); }
+    0%   { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    60%  { opacity: 1; transform: translateY(0) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   `;
 
   const slideRight = keyframes`
-    0% { opacity: 0; transform: translateX(-10px) scale(0.98); }
-    60% { opacity: 1; transform: translateX(0) scale(1.02); }
+    0%   { opacity: 0; transform: translateX(-10px) scale(0.98); }
+    60%  { opacity: 1; transform: translateX(0) scale(1.02); }
     100% { opacity: 1; transform: translateX(0) scale(1); }
   `;
 
-  // FIX: Close menu on scroll
   const handleScroll = useCallback(() => {
-    if (window.scrollY > 20) {
-      setScrolled(true);
-    } else {
-      setScrolled(false);
-    }
-
-    // Close desktop menu if user scrolls
-    if (openMenu !== null) {
-      setOpenMenu(null);
-    }
+    setScrolled(window.scrollY > 20);
+    if (openMenu !== null) setOpenMenu(null);
   }, [openMenu]);
 
   useEffect(() => {
@@ -98,7 +92,6 @@ const HeaderLogo = observer(() => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // Close menus on path change
   useEffect(() => {
     onClose();
     setOpenMenu(null);
@@ -109,29 +102,27 @@ const HeaderLogo = observer(() => {
 
   return (
     <HStack
-      spacing={8}
+      spacing={0}
       width="100%"
       minW={0}
-      px={{ base: 2, md: 6 }}
-      height="70px"
+      overflow="hidden"
+      px={{ base: 2, md: 3, xl: 4 }}
+      minH="64px"
+      py={0}
       alignItems="center"
       justify="space-between"
-      overflow="hidden"
-      position="sticky"
-      top={0}
-      zIndex={1000}
-      transition="all 0.3s ease"
     >
-      {/* LOGO */}
-      <HStack spacing={2}>
+      {/* ── LOGO ── fixed width so it never shrinks */}
+      <HStack flexShrink={0} mr={{ xl: 2, "2xl": 4 }}>
         <Link href="/" passHref>
           <Box cursor="pointer" _hover={{ transform: "scale(1.02)" }} transition="0.2s">
             <Text
               as="span"
-              fontSize="24px"
+              fontSize={{ base: "18px", md: "20px", xl: "22px" }}
               fontWeight="800"
               color={textColor}
               letterSpacing="-0.04em"
+              whiteSpace="nowrap"
             >
               Tool
               <Text as="span" color={accentColor}>
@@ -142,27 +133,22 @@ const HeaderLogo = observer(() => {
         </Link>
       </HStack>
 
-      {/* DESKTOP NAV */}
+      {/* ── DESKTOP NAV ── */}
       {isDesktop ? (
-        <Flex
-          flex="1 1 auto"
-          minW={0}
-          maxW="100%"
-          justify="center"
-          overflowX="auto"
-          sx={{
-            scrollbarWidth: "none",
-            "&::-webkit-scrollbar": { display: "none" },
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
+        <Flex flex="1 1 0" minW={0} justify="center" alignItems="center">
+          {/*
+           * KEY FIX: flexWrap="nowrap" forces single row.
+           * Tight px/py + small font ensures all items fit on 1280px+.
+           * spacing={0} lets us control padding per-item precisely.
+           */}
           <HStack
-            spacing={1}
-            minW={0}
+            spacing={0}
             flexWrap="nowrap"
-            whiteSpace="nowrap"
+            justify="center"
+            alignItems="center"
             bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"}
-            p={1.5}
+            px="6px"
+            py="4px"
             borderRadius="full"
             border="1px solid"
             borderColor="whiteAlpha.200"
@@ -174,19 +160,20 @@ const HeaderLogo = observer(() => {
             <Box
               as={Link}
               href="/"
-              px={5}
-              py={2}
+              px={{ xl: "10px", "2xl": "14px" }}
+              py="6px"
               borderRadius="full"
               transition="all 0.2s"
               _hover={{ bg: hoverBg }}
               onClick={() => setOpenMenu(null)}
             >
               <Text
-                fontSize="12px"
+                fontSize="11px"
                 fontWeight="700"
                 color={textColor}
                 textTransform="uppercase"
-                letterSpacing="wider"
+                letterSpacing="0.06em"
+                whiteSpace="nowrap"
               >
                 Home
               </Text>
@@ -204,28 +191,33 @@ const HeaderLogo = observer(() => {
               >
                 <MenuButton
                   as={Box}
-                  px={3}
-                  py={2}
+                  px={{ xl: "8px", "2xl": "12px" }}
+                  py="6px"
                   borderRadius="full"
                   cursor="pointer"
                   transition="all 0.2s ease"
-                  _hover={{ bg: hoverBg, transform: "translateY(-1px) scale(1.02)" }}
+                  _hover={{ bg: hoverBg }}
                   bg={openMenu === mainItem.id ? hoverBg : "transparent"}
                 >
-                  <HStack spacing={1}>
+                  <HStack spacing="3px">
                     <Text
-                      fontSize="12px"
+                      fontSize="11px"
                       fontWeight="700"
                       color={textColor}
                       textTransform="uppercase"
-                      letterSpacing="wider"
+                      letterSpacing="0.06em"
+                      whiteSpace="nowrap"
                     >
                       {mainItem.name}
                     </Text>
                     <ChevronDownIcon
                       color={textColor}
+                      w="12px"
+                      h="12px"
                       transition="transform 0.3s"
-                      transform={openMenu === mainItem.id ? "rotate(180deg)" : "rotate(0deg)"}
+                      transform={
+                        openMenu === mainItem.id ? "rotate(180deg)" : "rotate(0deg)"
+                      }
                     />
                   </HStack>
                 </MenuButton>
@@ -261,8 +253,14 @@ const HeaderLogo = observer(() => {
                           >
                             <HStack justify="space-between" width="100%">
                               <HStack spacing={3}>
-                                {subItem.icon && React.cloneElement(subItem.icon as React.ReactElement, { size: 18, color: accentColor })}
-                                <Text fontWeight="600" fontSize="sm">{subItem.name}</Text>
+                                {subItem.icon &&
+                                  React.cloneElement(subItem.icon as React.ReactElement, {
+                                    size: 18,
+                                    color: accentColor,
+                                  })}
+                                <Text fontWeight="600" fontSize="sm">
+                                  {subItem.name}
+                                </Text>
                               </HStack>
                               <ChevronRightIcon opacity={0.5} />
                             </HStack>
@@ -324,16 +322,18 @@ const HeaderLogo = observer(() => {
           </HStack>
         </Flex>
       ) : (
+        /* ── MOBILE HAMBURGER ── */
         <IconButton
           aria-label="Open menu"
           variant="ghost"
+          flexShrink={0}
           _hover={{ bg: "whiteAlpha.200" }}
-          icon={<HamburgerIcon color="white" boxSize={7} />}
+          icon={<HamburgerIcon color="white" boxSize={6} />}
           onClick={onOpen}
         />
       )}
 
-      {/* MOBILE DRAWER */}
+      {/* ── MOBILE DRAWER ── */}
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="xs">
         <DrawerOverlay backdropFilter="blur(8px)" />
         <DrawerContent bg={menuBg} borderLeftRadius="3xl">
@@ -343,7 +343,7 @@ const HeaderLogo = observer(() => {
             </Text>
             <IconButton
               size="sm"
-              variant="gray"
+              variant="ghost"
               aria-label="Close"
               icon={<CloseIcon boxSize={3} />}
               onClick={onClose}
@@ -365,7 +365,11 @@ const HeaderLogo = observer(() => {
                 transition="0.2s"
               >
                 <HStack spacing={3}>
-                  <Icon as={BiHomeAlt} boxSize={5} color={pathname === "/" ? accentColor : "inherit"} />
+                  <Icon
+                    as={BiHomeAlt}
+                    boxSize={5}
+                    color={pathname === "/" ? accentColor : "inherit"}
+                  />
                   <Text fontWeight={pathname === "/" ? "700" : "600"}>Home</Text>
                 </HStack>
               </Box>
@@ -392,13 +396,24 @@ const HeaderLogo = observer(() => {
                         {child.children ? (
                           <Box mb={2}>
                             <HStack px={5} py={2} spacing={3} opacity={0.8}>
-                              {child.icon && React.cloneElement(child.icon as React.ReactElement, { size: 18, color: accentColor })}
+                              {child.icon &&
+                                React.cloneElement(child.icon as React.ReactElement, {
+                                  size: 18,
+                                  color: accentColor,
+                                })}
                               <Text fontSize="sm" fontWeight="700">
                                 {child.name}
                               </Text>
                             </HStack>
 
-                            <VStack align="stretch" spacing={1} mt={1} ml={8} borderLeft="1.5px solid" borderColor={borderColor}>
+                            <VStack
+                              align="stretch"
+                              spacing={1}
+                              mt={1}
+                              ml={8}
+                              borderLeft="1.5px solid"
+                              borderColor={borderColor}
+                            >
                               {child.children.map((nested) => (
                                 <Box
                                   key={nested.id}
@@ -411,7 +426,10 @@ const HeaderLogo = observer(() => {
                                   _hover={{ bg: mobileLinkHover }}
                                   bg={pathname === nested.url ? mobileLinkHover : "transparent"}
                                 >
-                                  <Text fontSize="sm" fontWeight={pathname === nested.url ? "700" : "500"}>
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight={pathname === nested.url ? "700" : "500"}
+                                  >
                                     {nested.name}
                                   </Text>
                                 </Box>
@@ -430,7 +448,8 @@ const HeaderLogo = observer(() => {
                             bg={pathname === child.url ? mobileLinkHover : "transparent"}
                           >
                             <HStack spacing={3}>
-                              {child.icon && React.cloneElement(child.icon as React.ReactElement, { size: 20 })}
+                              {child.icon &&
+                                React.cloneElement(child.icon as React.ReactElement, { size: 20 })}
                               <Text fontWeight={pathname === child.url ? "700" : "600"}>
                                 {child.name}
                               </Text>
