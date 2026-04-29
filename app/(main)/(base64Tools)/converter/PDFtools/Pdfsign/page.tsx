@@ -6,7 +6,6 @@ import { saveAs } from 'file-saver';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-
 import {
   Box, Button, Container, Flex, Heading, Icon, Input,
   Stack, Text, VStack, HStack, IconButton, Spinner, Center,
@@ -32,27 +31,41 @@ const ProSignatureMaker: React.FC = () => {
   const [numPages, setNumPages] = useState<number>(0);
 
   const bgMain = useColorModeValue("gray.50", "gray.900");
-const cardBg = useColorModeValue("white", "gray.800");
-const borderColor = useColorModeValue("gray.200", "gray.700");
-const previewBg = useColorModeValue("gray.200", "gray.900");
-const textColor = useColorModeValue("gray.800", "gray.100");
-const subText = useColorModeValue("gray.500", "gray.400");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const previewBg = useColorModeValue("gray.200", "gray.900");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+  const subText = useColorModeValue("gray.500", "gray.400");
 
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [scale, setScale] = useState(1);
   const [applyToAll, setApplyToAll] = useState(false);
   const [targetPage, setTargetPage] = useState(1);
   const isDraggingInternal = useRef(false);
+  const [currentPageNum, setCurrentPageNum] = useState(1); // Track current visible page
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const toast = useToast();
+  
+  // Store signature image data URL
+  const [signatureImageData, setSignatureImageData] = useState<string | null>(null);
 
   useEffect(() => {
     return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
   }, [pdfUrl]);
 
+  // Update signature image whenever signature changes
+  useEffect(() => {
+    const updateSignature = async () => {
+      const sigData = await getSignatureImage();
+      setSignatureImageData(sigData);
+    };
+    updateSignature();
+  }, [activeTab, typedName, uploadedSig, isDrawing]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
     isDraggingInternal.current = true;
     const startX = e.pageX - position.x;
     const startY = e.pageY - position.y;
@@ -120,6 +133,10 @@ const subText = useColorModeValue("gray.500", "gray.400");
     if (files[0]) {
       setPdfFile(files[0]);
       setPdfUrl(URL.createObjectURL(files[0]));
+      // Reset page when new document loads
+      setTargetPage(1);
+      setCurrentPageNum(1);
+      setPosition({ x: 50, y: 50 });
     }
   };
   const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { 'application/pdf': ['.pdf'] }, multiple: false });
@@ -140,14 +157,14 @@ const subText = useColorModeValue("gray.500", "gray.400");
       const sigDataUrl = await getSignatureImage();
       if (!sigDataUrl) throw new Error("No signature");
 
-      // ✅ If coming from CV Builder
+      // If coming from CV Builder
       if (fromCV) {
         sessionStorage.setItem('cvSignature', sigDataUrl);
-        router.push('/converter/Cvbuilder'); // adjust if route different
+        router.push('/converter/Cvbuilder');
         return;
       }
 
-      // ✅ Normal PDF signing flow
+      // Normal PDF signing flow
       if (!pdfFile) return;
 
       setIsProcessing(true);
@@ -185,17 +202,74 @@ const subText = useColorModeValue("gray.500", "gray.400");
       });
 
       saveAs(blob, `Signed_${pdfFile.name}`);
+      toast({ title: "PDF Exported Successfully!", status: "success" });
     } catch (err) {
+      console.error(err);
       toast({ title: "Export Failed", status: "error" });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const [liveSig, setLiveSig] = useState<string | null>(null);
-  useEffect(() => {
-    getSignatureImage().then(setLiveSig);
-  }, [activeTab, typedName, uploadedSig, isDrawing, getSignatureImage]);
+  // Handle page scroll detection
+  const handlePageLoad = (pageNumber: number) => {
+    setCurrentPageNum(pageNumber);
+  };
+
+  // Clear signature canvas
+  const clearCanvas = () => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx?.clearRect(0, 0, 400, 200);
+      setSignatureImageData(null);
+    }
+  };
+
+  // Signature Preview Component
+  const SignaturePreview = ({ pageNumber }: { pageNumber: number }) => {
+    // Only show signature on the target page (unless applyToAll is true)
+    const shouldShow = applyToAll || targetPage === pageNumber;
+    
+    if (!shouldShow || !signatureImageData) return null;
+
+    return (
+      <Box
+        position="absolute"
+        top={`${position.y}px`}
+        left={`${position.x}px`}
+        zIndex={100}
+        cursor="move"
+        onMouseDown={handleMouseDown}
+        border="2px dashed"
+        borderColor="blue.400"
+        bg="whiteAlpha.600"
+        borderRadius="md"
+        _hover={{ bg: "whiteAlpha.800" }}
+      >
+        <Box 
+          as="img" 
+          src={signatureImageData} 
+          width={`${150 * scale}px`} 
+          height={`${75 * scale}px`} 
+          pointerEvents="none" 
+          opacity={0.85}
+          style={{ objectFit: 'contain' }}
+        />
+        <Icon 
+          as={FaArrowsAlt} 
+          position="absolute" 
+          top="-12px" 
+          left="-12px" 
+          color="blue.500" 
+          bg={cardBg} 
+          rounded="full" 
+          p={1} 
+          boxSize="24px"
+          cursor="grab"
+        />
+      </Box>
+    );
+  };
 
   return (
     <Box minH="100vh" bg={bgMain} py={8} px={4} color={textColor}>
@@ -214,8 +288,25 @@ const subText = useColorModeValue("gray.500", "gray.400");
 
               {activeTab === 'draw' && (
                 <Box border="2px solid" borderColor={borderColor} rounded="2xl" bg={useColorModeValue("gray.50", "gray.700")} position="relative">
-                  <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
-                  <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} onClick={() => canvasRef.current?.getContext('2d')?.clearRect(0, 0, 400, 200)} />
+                  <canvas 
+                    ref={canvasRef} 
+                    width={400} 
+                    height={200} 
+                    onMouseDown={startDrawing} 
+                    onMouseMove={draw} 
+                    onMouseUp={() => setIsDrawing(false)}
+                    onMouseLeave={() => setIsDrawing(false)}
+                    style={{ width: '100%', cursor: 'crosshair' }} 
+                  />
+                  <IconButton 
+                    aria-label="Clear" 
+                    icon={<FaEraser />} 
+                    size="sm" 
+                    position="absolute" 
+                    bottom={2} 
+                    right={2} 
+                    onClick={clearCanvas} 
+                  />
                 </Box>
               )}
 
@@ -239,7 +330,9 @@ const subText = useColorModeValue("gray.500", "gray.400");
               <Divider />
 
               <VStack align="stretch" spacing={3}>
-                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)}>Apply to all pages</Checkbox>
+                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)}>
+                  Apply to all pages
+                </Checkbox>
                 {!applyToAll && (
                   <HStack justify="space-between">
                     <Text fontSize="sm">Page Number:</Text>
@@ -269,39 +362,37 @@ const subText = useColorModeValue("gray.500", "gray.400");
             </VStack>
           </Box>
 
-          <Box gridColumn={{ lg: "span 8" }} bg="gray.200" rounded="3xl" overflow="hidden" position="relative" h="85vh">
+          <Box gridColumn={{ lg: "span 8" }} bg={previewBg} rounded="3xl" overflow="hidden" position="relative" h="85vh">
             <Box h="full" overflowY="auto" p={6} userSelect="none">
               {pdfUrl ? (
                 <Center>
-                  <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                  <Document 
+                    file={pdfUrl} 
+                    onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                  >
                     <Stack spacing={6} position="relative">
                       {Array.from({ length: numPages }).map((_, i) => (
-                        <Box key={i} shadow="2xl" bg={cardBg} position="relative" overflow="hidden">
-                          <Page pageNumber={i + 1} width={600} renderTextLayer={false} renderAnnotationLayer={false} />
-
-                          {(applyToAll || targetPage === i + 1) && (
-                            <Box
-                              position="absolute"
-                              top={`${position.y}px`}
-                              left={`${position.x}px`}
-                              zIndex={100}
-                              cursor="move"
-                              onMouseDown={handleMouseDown}
-                              border="1px dashed"
-                              borderColor="blue.400"
-                              bg="whiteAlpha.400"
-                            >
-                              {liveSig && <Box as="img" src={liveSig} width={`${150 * scale}px`} height={`${75 * scale}px`} pointerEvents="none" opacity={0.8} />}
-                              <Icon as={FaArrowsAlt} position="absolute" top="-10px" left="-10px" color="blue.500" bg={cardBg} rounded="full" p={1} />
-                            </Box>
-                          )}
+                        <Box key={i} shadow="2xl" bg={cardBg} position="relative" overflow="visible">
+                          <Page 
+                            pageNumber={i + 1} 
+                            width={600} 
+                            renderTextLayer={false} 
+                            renderAnnotationLayer={false}
+                            onRenderSuccess={() => handlePageLoad(i + 1)}
+                          />
+                          <SignaturePreview pageNumber={i + 1} />
                         </Box>
                       ))}
                     </Stack>
                   </Document>
                 </Center>
               ) : (
-                <Center h="full"><VStack color="gray.400"><Icon as={FaFileUpload} w={12} h={12} opacity={0.2} /><Text>Upload PDF</Text></VStack></Center>
+                <Center h="full">
+                  <VStack color="gray.400">
+                    <Icon as={FaFileUpload} w={12} h={12} opacity={0.2} />
+                    <Text>Upload PDF</Text>
+                  </VStack>
+                </Center>
               )}
             </Box>
           </Box>
