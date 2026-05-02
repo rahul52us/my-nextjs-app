@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import { useColorMode } from '@chakra-ui/react';
 import { 
   Upload, Download, RefreshCw, ArrowRight,
   FileImage, ShieldCheck, Zap, X, CheckCircle2, Layers, Settings2, Archive 
@@ -21,31 +22,11 @@ const FORMATS = [
   { label: 'WEBP', mime: 'image/webp', ext: 'webp' },
 ];
 
-// ✅ Reads dark class from <html> tag — set by YOUR website's global theme toggle
-const useGlobalDarkMode = () => {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  return isDark;
-};
-
 const ImageConverter: React.FC = () => {
-  const isDark = useGlobalDarkMode();
+  // ── Header ke saath sync — Chakra UI colorMode ──
+  const { colorMode } = useColorMode();
+  const isDark = colorMode === 'dark';
+
   const [images, setImages] = useState<ImageFile[]>([]);
   const [globalTarget, setGlobalTarget] = useState('image/jpeg');
   const [isProcessingAll, setIsProcessingAll] = useState(false);
@@ -143,7 +124,6 @@ const ImageConverter: React.FC = () => {
     setIsZipping(false);
   };
 
-  // ✅ All colors derived from isDark — no Tailwind dark: prefix needed
   const pageBg       = isDark ? 'bg-gray-950 text-slate-100'  : 'bg-[#F9FAFB] text-slate-900';
   const cardBg       = isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-slate-100';
   const labelCls     = isDark ? 'text-gray-500'               : 'text-slate-400';

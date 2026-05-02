@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useColorMode } from '@chakra-ui/react'; // ← header ke saath sync
 import {
   Sun, Droplets, Trash2, FlipHorizontal,
   FlipVertical, RotateCw, Wand2, Sparkles,
   Zap, Camera, QrCode, Info, Eye,
   Palette, Layers, Undo2, Wind, Focus, Crop as CropIcon,
-  Bold, Italic, List, Type, X, Menu, ChevronLeft,
+  Bold, Italic, List, Type, X, Menu,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop, PixelCrop } from 'react-image-crop';
@@ -107,6 +108,10 @@ const ToolIconButton = ({
 
 // --- Main Component ---
 const AIasist: React.FC = () => {
+  // ── Chakra UI se colorMode lo — header ke saath automatically sync rahega ──
+  const { colorMode } = useColorMode();
+  const isDark = colorMode === 'dark';
+
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [foregroundImage, setForegroundImage] = useState<HTMLImageElement | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -118,27 +123,7 @@ const AIasist: React.FC = () => {
   const [isCropping, setIsCropping] = useState(false);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-
-  // Responsive sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Dark mode state — reads from system or localStorage
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('visionStudio_theme');
-      if (stored) return stored === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  // Sync dark class to <html>
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) root.classList.add('dark');
-    else root.classList.remove('dark');
-    localStorage.setItem('visionStudio_theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -299,12 +284,11 @@ const AIasist: React.FC = () => {
     updateFilters(presets[type] || DEFAULT_FILTERS);
   };
 
-  // Theme-aware class helpers
+  // Theme-aware class helpers — isDark ab header se aata hai
   const bg = isDark ? 'bg-slate-900 text-slate-100' : 'bg-[#F1F5F9] text-slate-900';
   const navBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const sidebarBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const mainBg = isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]';
-  const cardBg = isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200';
   const btnSecondary = isDark
     ? 'bg-slate-700 border border-slate-600 text-slate-200 hover:border-indigo-400'
     : 'bg-white border border-slate-200 text-slate-900 hover:border-indigo-600';
@@ -313,7 +297,6 @@ const AIasist: React.FC = () => {
     ? 'bg-slate-700 text-slate-100 border-slate-600 focus:ring-indigo-500 placeholder:text-slate-400'
     : 'bg-slate-100 text-slate-900 border-transparent focus:ring-indigo-600 placeholder:text-slate-400';
 
-  // Sidebar panel content (shared between drawer and desktop)
   const SidebarContent = () => (
     <div className="space-y-7 p-5">
       {isCropping ? (
@@ -328,7 +311,9 @@ const AIasist: React.FC = () => {
         <>
           {/* AI Section */}
           <section className="space-y-3">
-            <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-indigo-500`}><Wand2 size={12} /> AI Intelligence</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-indigo-500">
+              <Wand2 size={12} /> AI Intelligence
+            </h3>
             <button onClick={() => processAI('remove')} disabled={isProcessing || !image}
               className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50 ${isDark ? 'bg-slate-700 hover:bg-indigo-600 text-white' : 'bg-slate-900 hover:bg-indigo-600 text-white shadow-slate-200'}`}>
               <div className="flex items-center gap-3"><Sparkles size={18} /><span className="text-sm font-bold">Magic BG Removal</span></div>
@@ -350,7 +335,9 @@ const AIasist: React.FC = () => {
 
           {/* Presets */}
           <section>
-            <h3 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${sectionLabel}`}><Palette size={12} /> Cinema Presets</h3>
+            <h3 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${sectionLabel}`}>
+              <Palette size={12} /> Cinema Presets
+            </h3>
             <div className="grid grid-cols-3 gap-2">
               {['Cyberpunk', 'Sahara', 'Forest', 'Noir', 'Duotone', 'Reset'].map(p => (
                 <button key={p} onClick={() => applyPreset(p.toLowerCase())}
@@ -366,7 +353,9 @@ const AIasist: React.FC = () => {
 
           {/* Manual Grading */}
           <section className="space-y-5">
-            <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${sectionLabel}`}><Layers size={12} /> Manual Grading</h3>
+            <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${sectionLabel}`}>
+              <Layers size={12} /> Manual Grading
+            </h3>
             <Slider label="Exposure" icon={<Sun size={14} />} value={filters.brightness} onChange={v => updateFilters({ ...filters, brightness: v })} isDark={isDark} />
             <Slider label="Color Pop" icon={<Droplets size={14} />} value={filters.saturate} onChange={v => updateFilters({ ...filters, saturate: v })} isDark={isDark} />
             <Slider label="Atmosphere" value={filters.hue} max={360} onChange={v => updateFilters({ ...filters, hue: v })} isDark={isDark} />
@@ -385,7 +374,9 @@ const AIasist: React.FC = () => {
 
           {/* Notes */}
           <section>
-            <h3 className={`text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2 ${sectionLabel}`}><Type size={12} /> Editor Notes</h3>
+            <h3 className={`text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2 ${sectionLabel}`}>
+              <Type size={12} /> Editor Notes
+            </h3>
             <RichEditor isDark={isDark} />
           </section>
         </>
@@ -396,11 +387,10 @@ const AIasist: React.FC = () => {
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${bg}`}>
 
-      {/* ── Navbar ── */}
+      {/* ── Navbar — NO theme toggle button ── */}
       <nav className={`h-14 md:h-16 border-b px-4 md:px-8 flex justify-between items-center sticky top-0 z-50 shadow-sm ${navBg}`}>
         {/* Logo */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* Mobile: sidebar toggle */}
           {image && (
             <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-indigo-500 transition-colors">
               <Menu size={20} />
@@ -415,15 +405,8 @@ const AIasist: React.FC = () => {
           </span>
         </div>
 
-        {/* Right actions */}
+        {/* Right actions — theme button HATA DIYA ── */}
         <div className="flex items-center gap-1 md:gap-3">
-          {/* Dark mode toggle */}
-          <button onClick={() => setIsDark(d => !d)}
-            className={`p-2 rounded-lg transition-colors ${isDark ? 'text-yellow-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'}`}
-            title="Toggle Theme">
-            {isDark ? <Sun size={18} /> : <Eye size={18} />}
-          </button>
-
           {image && (
             <>
               <button onClick={() => setIsCropping(!isCropping)}
@@ -464,12 +447,10 @@ const AIasist: React.FC = () => {
       {/* ── Layout ── */}
       <div className="flex h-[calc(100vh-56px)] md:h-[calc(100vh-64px)]">
 
-        {/* ── Mobile Sidebar Drawer ── */}
+        {/* Mobile Sidebar Drawer */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-[60] md:hidden">
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-            {/* Panel */}
             <aside className={`absolute left-0 top-0 bottom-0 w-80 max-w-[90vw] overflow-y-auto shadow-2xl ${sidebarBg}`}>
               <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                 <span className="font-black text-sm uppercase tracking-widest text-indigo-500">Tools</span>
@@ -482,12 +463,12 @@ const AIasist: React.FC = () => {
           </div>
         )}
 
-        {/* ── Desktop Sidebar ── */}
+        {/* Desktop Sidebar */}
         <aside className={`hidden md:block w-72 lg:w-80 border-r overflow-y-auto no-scrollbar flex-shrink-0 ${sidebarBg}`}>
           <SidebarContent />
         </aside>
 
-        {/* ── Main Canvas ── */}
+        {/* Main Canvas */}
         <main className={`flex-1 p-4 md:p-8 lg:p-12 flex flex-col items-center justify-center relative overflow-auto ${mainBg}`}>
           {!image ? (
             <div
@@ -508,7 +489,6 @@ const AIasist: React.FC = () => {
             </div>
           ) : (
             <div className="relative group max-h-full max-w-full w-full flex flex-col items-center">
-              {/* Image info */}
               <div className="flex justify-between w-full px-2 mb-2">
                 <div className="flex gap-3 flex-wrap">
                   <span className={`text-[10px] font-black uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -520,7 +500,6 @@ const AIasist: React.FC = () => {
                 </div>
               </div>
 
-              {/* Canvas Area */}
               <div className="relative rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_30px_60px_-10px_rgba(0,0,0,0.4)] bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] max-w-full">
                 {isCropping ? (
                   <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} className="max-h-[60vh] md:max-h-[75vh]">
@@ -532,7 +511,6 @@ const AIasist: React.FC = () => {
                 )}
               </div>
 
-              {/* Processing Overlay */}
               {isProcessing && (
                 <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center z-50">
                   <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
@@ -546,7 +524,7 @@ const AIasist: React.FC = () => {
         </main>
       </div>
 
-      {/* ── QR Modal ── */}
+      {/* QR Modal */}
       {showQRModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-[100] flex items-center justify-center p-4"
           onClick={() => setShowQRModal(false)}>

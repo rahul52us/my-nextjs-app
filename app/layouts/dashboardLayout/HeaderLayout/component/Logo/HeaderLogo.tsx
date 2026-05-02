@@ -42,6 +42,8 @@ interface SidebarItem {
   name: string;
   url?: string;
   icon?: React.ReactElement;
+  iconColor?: string;
+  columns?: number;
   children?: SidebarItem[];
 }
 
@@ -50,7 +52,6 @@ const HeaderLogo = observer(() => {
     themeStore: { themeConfig },
   } = stores;
 
-  // Switch to desktop layout at xl (1280px) so all items fit in one row
   const isDesktop = useBreakpointValue({ base: false, xl: true });
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
@@ -100,6 +101,15 @@ const HeaderLogo = observer(() => {
     }
   }, [pathname, onClose]);
 
+  // Helper to render a colored icon
+  const renderIcon = (item: SidebarItem, size: number = 16) => {
+    if (!item.icon) return null;
+    return React.cloneElement(item.icon as React.ReactElement, {
+      size,
+      style: { color: item.iconColor || accentColor, flexShrink: 0 },
+    });
+  };
+
   return (
     <HStack
       spacing={0}
@@ -112,7 +122,7 @@ const HeaderLogo = observer(() => {
       alignItems="center"
       justify="space-between"
     >
-      {/* ── LOGO ── fixed width so it never shrinks */}
+      {/* ── LOGO ── */}
       <HStack flexShrink={0} mr={{ xl: 2, "2xl": 4 }}>
         <Link href="/" passHref>
           <Box cursor="pointer" _hover={{ transform: "scale(1.02)" }} transition="0.2s">
@@ -136,11 +146,6 @@ const HeaderLogo = observer(() => {
       {/* ── DESKTOP NAV ── */}
       {isDesktop ? (
         <Flex flex="1 1 0" minW={0} justify="center" alignItems="center">
-          {/*
-           * KEY FIX: flexWrap="nowrap" forces single row.
-           * Tight px/py + small font ensures all items fit on 1280px+.
-           * spacing={0} lets us control padding per-item precisely.
-           */}
           <HStack
             spacing={0}
             flexWrap="nowrap"
@@ -226,7 +231,7 @@ const HeaderLogo = observer(() => {
                   <MenuList
                     bg={menuBg}
                     color={menuTextColor}
-                    minW="240px"
+                    minW={mainItem.columns === 2 ? "540px" : "240px"}
                     zIndex={1500}
                     border="1px solid"
                     borderColor={borderColor}
@@ -235,84 +240,188 @@ const HeaderLogo = observer(() => {
                     borderRadius="2xl"
                     animation={`${slideDown} 0.24s ease-out`}
                   >
-                    {mainItem.children?.map((subItem) =>
-                      subItem.children ? (
-                        <Menu
-                          key={subItem.id}
-                          placement="right-start"
-                          isLazy
-                          closeOnSelect={false}
-                          offset={[0, 10]}
-                        >
-                          <MenuButton
-                            as={MenuItem}
-                            borderRadius="xl"
-                            transition="all 0.2s ease"
-                            _hover={{ bg: mobileLinkHover, transform: "translateX(6px)" }}
-                            py={3}
-                          >
-                            <HStack justify="space-between" width="100%">
-                              <HStack spacing={3}>
-                                {subItem.icon &&
-                                  React.cloneElement(subItem.icon as React.ReactElement, {
-                                    size: 18,
-                                    color: accentColor,
-                                  })}
-                                <Text fontWeight="600" fontSize="sm">
-                                  {subItem.name}
-                                </Text>
-                              </HStack>
-                              <ChevronRightIcon opacity={0.5} />
-                            </HStack>
-                          </MenuButton>
-
-                          <Portal>
-                            <MenuList
-                              bg={menuBg}
-                              color={menuTextColor}
-                              p={2}
-                              borderRadius="2xl"
-                              boxShadow={shadowColor}
-                              border="1px solid"
+                    {mainItem.columns === 2 ? (
+                      /* ── 2-COLUMN LAYOUT for PDF Tools ── */
+                      (() => {
+                        const children = mainItem.children ?? [];
+                        const half = Math.ceil(children.length / 2);
+                        const col1 = children.slice(0, half);
+                        const col2 = children.slice(half);
+                        return (
+                          <Flex>
+                            {/* Column 1 */}
+                            <Box
+                              flex={1}
+                              borderRight="1px solid"
                               borderColor={borderColor}
-                              animation={`${slideRight} 0.24s ease-out`}
+                              pr={1}
                             >
-                              {subItem.children.map((nestedItem) => (
+                              <Text
+                                px={3}
+                                pt={1}
+                                pb={2}
+                                fontSize="10px"
+                                fontWeight="800"
+                                textTransform="uppercase"
+                                letterSpacing="0.1em"
+                                color="gray.400"
+                              >
+                                Convert
+                              </Text>
+                              {col1.map((subItem) => (
                                 <MenuItem
-                                  key={nestedItem.id}
+                                  key={subItem.id}
                                   as={Link}
-                                  href={nestedItem.url || "#"}
-                                  icon={nestedItem.icon}
+                                  href={subItem.url || "#"}
                                   borderRadius="xl"
                                   py={2.5}
                                   fontSize="sm"
                                   fontWeight="500"
                                   transition="all 0.18s ease"
-                                  _hover={{ bg: mobileLinkHover, transform: "translateX(4px)" }}
+                                  _hover={{
+                                    bg: mobileLinkHover,
+                                    transform: "translateX(3px)",
+                                  }}
                                   onClick={() => setOpenMenu(null)}
                                 >
-                                  {nestedItem.name}
+                                  <HStack spacing={3}>
+                                    {renderIcon(subItem, 16)}
+                                    <span>{subItem.name}</span>
+                                  </HStack>
                                 </MenuItem>
                               ))}
-                            </MenuList>
-                          </Portal>
-                        </Menu>
-                      ) : (
-                        <MenuItem
-                          key={subItem.id}
-                          as={Link}
-                          href={subItem.url || "#"}
-                          icon={subItem.icon}
-                          borderRadius="xl"
-                          py={3}
-                          fontSize="sm"
-                          fontWeight="500"
-                          transition="all 0.18s ease"
-                          _hover={{ bg: mobileLinkHover, transform: "translateX(3px)" }}
-                          onClick={() => setOpenMenu(null)}
-                        >
-                          {subItem.name}
-                        </MenuItem>
+                            </Box>
+
+                            {/* Column 2 */}
+                            <Box flex={1} pl={1}>
+                              <Text
+                                px={3}
+                                pt={1}
+                                pb={2}
+                                fontSize="10px"
+                                fontWeight="800"
+                                textTransform="uppercase"
+                                letterSpacing="0.1em"
+                                color="gray.400"
+                              >
+                                Manage
+                              </Text>
+                              {col2.map((subItem) => (
+                                <MenuItem
+                                  key={subItem.id}
+                                  as={Link}
+                                  href={subItem.url || "#"}
+                                  borderRadius="xl"
+                                  py={2.5}
+                                  fontSize="sm"
+                                  fontWeight="500"
+                                  transition="all 0.18s ease"
+                                  _hover={{
+                                    bg: mobileLinkHover,
+                                    transform: "translateX(3px)",
+                                  }}
+                                  onClick={() => setOpenMenu(null)}
+                                >
+                                  <HStack spacing={3}>
+                                    {renderIcon(subItem, 16)}
+                                    <span>{subItem.name}</span>
+                                  </HStack>
+                                </MenuItem>
+                              ))}
+                            </Box>
+                          </Flex>
+                        );
+                      })()
+                    ) : (
+                      /* ── NORMAL SINGLE-COLUMN for all other tools ── */
+                      mainItem.children?.map((subItem) =>
+                        subItem.children ? (
+                          <Menu
+                            key={subItem.id}
+                            placement="right-start"
+                            isLazy
+                            closeOnSelect={false}
+                            offset={[0, 10]}
+                          >
+                            <MenuButton
+                              as={MenuItem}
+                              borderRadius="xl"
+                              transition="all 0.2s ease"
+                              _hover={{
+                                bg: mobileLinkHover,
+                                transform: "translateX(6px)",
+                              }}
+                              py={3}
+                            >
+                              <HStack justify="space-between" width="100%">
+                                <HStack spacing={3}>
+                                  {renderIcon(subItem, 18)}
+                                  <Text fontWeight="600" fontSize="sm">
+                                    {subItem.name}
+                                  </Text>
+                                </HStack>
+                                <ChevronRightIcon opacity={0.5} />
+                              </HStack>
+                            </MenuButton>
+
+                            <Portal>
+                              <MenuList
+                                bg={menuBg}
+                                color={menuTextColor}
+                                p={2}
+                                borderRadius="2xl"
+                                boxShadow={shadowColor}
+                                border="1px solid"
+                                borderColor={borderColor}
+                                animation={`${slideRight} 0.24s ease-out`}
+                              >
+                                {subItem.children.map((nestedItem) => (
+                                  <MenuItem
+                                    key={nestedItem.id}
+                                    as={Link}
+                                    href={nestedItem.url || "#"}
+                                    borderRadius="xl"
+                                    py={2.5}
+                                    fontSize="sm"
+                                    fontWeight="500"
+                                    transition="all 0.18s ease"
+                                    _hover={{
+                                      bg: mobileLinkHover,
+                                      transform: "translateX(4px)",
+                                    }}
+                                    onClick={() => setOpenMenu(null)}
+                                  >
+                                    <HStack spacing={3}>
+                                      {renderIcon(nestedItem, 16)}
+                                      <span>{nestedItem.name}</span>
+                                    </HStack>
+                                  </MenuItem>
+                                ))}
+                              </MenuList>
+                            </Portal>
+                          </Menu>
+                        ) : (
+                          <MenuItem
+                            key={subItem.id}
+                            as={Link}
+                            href={subItem.url || "#"}
+                            borderRadius="xl"
+                            py={3}
+                            fontSize="sm"
+                            fontWeight="500"
+                            transition="all 0.18s ease"
+                            _hover={{
+                              bg: mobileLinkHover,
+                              transform: "translateX(3px)",
+                            }}
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            <HStack spacing={3}>
+                              {renderIcon(subItem, 18)}
+                              <span>{subItem.name}</span>
+                            </HStack>
+                          </MenuItem>
+                        )
                       )
                     )}
                   </MenuList>
@@ -396,11 +505,7 @@ const HeaderLogo = observer(() => {
                         {child.children ? (
                           <Box mb={2}>
                             <HStack px={5} py={2} spacing={3} opacity={0.8}>
-                              {child.icon &&
-                                React.cloneElement(child.icon as React.ReactElement, {
-                                  size: 18,
-                                  color: accentColor,
-                                })}
+                              {renderIcon(child, 18)}
                               <Text fontSize="sm" fontWeight="700">
                                 {child.name}
                               </Text>
@@ -424,14 +529,23 @@ const HeaderLogo = observer(() => {
                                   borderRadius="0 12px 12px 0"
                                   onClick={onClose}
                                   _hover={{ bg: mobileLinkHover }}
-                                  bg={pathname === nested.url ? mobileLinkHover : "transparent"}
+                                  bg={
+                                    pathname === nested.url
+                                      ? mobileLinkHover
+                                      : "transparent"
+                                  }
                                 >
-                                  <Text
-                                    fontSize="sm"
-                                    fontWeight={pathname === nested.url ? "700" : "500"}
-                                  >
-                                    {nested.name}
-                                  </Text>
+                                  <HStack spacing={2}>
+                                    {renderIcon(nested, 14)}
+                                    <Text
+                                      fontSize="sm"
+                                      fontWeight={
+                                        pathname === nested.url ? "700" : "500"
+                                      }
+                                    >
+                                      {nested.name}
+                                    </Text>
+                                  </HStack>
                                 </Box>
                               ))}
                             </VStack>
@@ -445,12 +559,19 @@ const HeaderLogo = observer(() => {
                             borderRadius="2xl"
                             onClick={onClose}
                             _hover={{ bg: mobileLinkHover }}
-                            bg={pathname === child.url ? mobileLinkHover : "transparent"}
+                            bg={
+                              pathname === child.url
+                                ? mobileLinkHover
+                                : "transparent"
+                            }
                           >
                             <HStack spacing={3}>
-                              {child.icon &&
-                                React.cloneElement(child.icon as React.ReactElement, { size: 20 })}
-                              <Text fontWeight={pathname === child.url ? "700" : "600"}>
+                              {renderIcon(child, 20)}
+                              <Text
+                                fontWeight={
+                                  pathname === child.url ? "700" : "600"
+                                }
+                              >
                                 {child.name}
                               </Text>
                             </HStack>
