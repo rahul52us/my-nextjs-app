@@ -36,7 +36,6 @@ const HeaderProfile = observer(() => {
   const router = useRouter();
   const {
     auth: { user },
-    themeStore: { setOpenThemeDrawer },
   } = stores;
 
   const themeConfig = themeStore.themeConfig;
