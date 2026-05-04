@@ -22,6 +22,7 @@ const ProSignatureMaker: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromCV = searchParams.get('from') === 'cv';
+
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'draw' | 'type' | 'upload'>('draw');
@@ -30,32 +31,27 @@ const ProSignatureMaker: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
 
-  const bgMain = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const previewBg = useColorModeValue("gray.200", "gray.900");
-  const textColor = useColorModeValue("gray.800", "gray.100");
-  const subText = useColorModeValue("gray.500", "gray.400");
+  const bgMain     = useColorModeValue("gray.50", "gray.900");
+  const cardBg     = useColorModeValue("white", "gray.800");
+  const borderColor= useColorModeValue("gray.200", "gray.700");
+  const previewBg  = useColorModeValue("gray.100", "gray.900");
+  const textColor  = useColorModeValue("gray.800", "gray.100");
 
   const [position, setPosition] = useState({ x: 50, y: 50 });
-  const [scale, setScale] = useState(1);
-  const [applyToAll, setApplyToAll] = useState(false);
-  const [targetPage, setTargetPage] = useState(1);
-  const isDraggingInternal = useRef(false);
-  const [currentPageNum, setCurrentPageNum] = useState(1); // Track current visible page
+  const [scale, setScale]       = useState(1);
+  const [applyToAll, setApplyToAll]   = useState(false);
+  const [targetPage, setTargetPage]   = useState(1);
+  const isDraggingInternal            = useRef(false);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const toast = useToast();
-  
-  // Store signature image data URL
+  const canvasRef  = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing]     = useState(false);
   const [signatureImageData, setSignatureImageData] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
   }, [pdfUrl]);
 
-  // Update signature image whenever signature changes
   useEffect(() => {
     const updateSignature = async () => {
       const sigData = await getSignatureImage();
@@ -64,26 +60,21 @@ const ProSignatureMaker: React.FC = () => {
     updateSignature();
   }, [activeTab, typedName, uploadedSig, isDrawing]);
 
+  // ── Drag signature overlay ────────────────────────────────────────
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     isDraggingInternal.current = true;
     const startX = e.pageX - position.x;
     const startY = e.pageY - position.y;
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handleMouseMove = (mv: MouseEvent) => {
       if (!isDraggingInternal.current) return;
-      setPosition({
-        x: moveEvent.pageX - startX,
-        y: moveEvent.pageY - startY
-      });
+      setPosition({ x: mv.pageX - startX, y: mv.pageY - startY });
     };
-
     const handleMouseUp = () => {
       isDraggingInternal.current = false;
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
@@ -107,11 +98,10 @@ const ProSignatureMaker: React.FC = () => {
     return null;
   }, [activeTab, typedName, uploadedSig]);
 
+  // ── Canvas drawing ────────────────────────────────────────────────
   const startDrawing = (e: any) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
@@ -129,18 +119,36 @@ const ProSignatureMaker: React.FC = () => {
     ctx?.lineTo(x, y); ctx?.stroke();
   };
 
-  const onDrop = (files: File[]) => {
-    if (files[0]) {
-      setPdfFile(files[0]);
-      setPdfUrl(URL.createObjectURL(files[0]));
-      // Reset page when new document loads
-      setTargetPage(1);
-      setCurrentPageNum(1);
-      setPosition({ x: 50, y: 50 });
+  const clearCanvas = () => {
+    if (canvasRef.current) {
+      canvasRef.current.getContext('2d')?.clearRect(0, 0, 400, 200);
+      setSignatureImageData(null);
     }
   };
-  const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { 'application/pdf': ['.pdf'] }, multiple: false });
 
+  // ── PDF dropzone (used by the preview area) ───────────────────────
+  const onPdfDrop = useCallback((files: File[]) => {
+    if (files[0]) {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      setPdfFile(files[0]);
+      setPdfUrl(URL.createObjectURL(files[0]));
+      setTargetPage(1);
+      setPosition({ x: 50, y: 50 });
+    }
+  }, [pdfUrl]);
+
+  // Dropzone used ONLY on the empty state (no PDF loaded yet)
+  const {
+    getRootProps: getPdfRootProps,
+    getInputProps: getPdfInputProps,
+    isDragActive: isPdfDragActive,
+  } = useDropzone({
+    onDrop: onPdfDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+    multiple: false,
+  });
+
+  // Signature image dropzone
   const onSigImageDrop = (files: File[]) => {
     if (files[0]) {
       const reader = new FileReader();
@@ -149,24 +157,22 @@ const ProSignatureMaker: React.FC = () => {
     }
   };
   const { getRootProps: getSigProps, getInputProps: getSigInputProps } = useDropzone({
-    onDrop: onSigImageDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, multiple: false
+    onDrop: onSigImageDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, multiple: false,
   });
 
+  // ── Export ────────────────────────────────────────────────────────
   const handleExport = async () => {
     try {
       const sigDataUrl = await getSignatureImage();
       if (!sigDataUrl) throw new Error("No signature");
 
-      // If coming from CV Builder
       if (fromCV) {
         sessionStorage.setItem('cvSignature', sigDataUrl);
         router.push('/converter/Cvbuilder');
         return;
       }
 
-      // Normal PDF signing flow
       if (!pdfFile) return;
-
       setIsProcessing(true);
 
       const existingBytes = await pdfFile.arrayBuffer();
@@ -174,34 +180,23 @@ const ProSignatureMaker: React.FC = () => {
       const pages = pdfDoc.getPages();
       const sigImage = await pdfDoc.embedPng(sigDataUrl);
 
-      const pagesToSign = applyToAll
-        ? pages.map((_, i) => i)
-        : [targetPage - 1];
+      const pagesToSign = applyToAll ? pages.map((_, i) => i) : [targetPage - 1];
 
       pagesToSign.forEach((idx) => {
         const page = pages[idx];
         const { width, height } = page.getSize();
         const scaleFactor = width / 600;
-
         const pdfX = position.x * scaleFactor;
-        const pdfY =
-          height - (position.y * scaleFactor) -
-          (75 * scale * scaleFactor);
-
+        const pdfY = height - (position.y * scaleFactor) - (75 * scale * scaleFactor);
         page.drawImage(sigImage, {
-          x: pdfX,
-          y: pdfY,
+          x: pdfX, y: pdfY,
           width: 150 * scale * scaleFactor,
           height: 75 * scale * scaleFactor,
         });
       });
 
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([new Uint8Array(pdfBytes)], {
-        type: 'application/pdf',
-      });
-
-      saveAs(blob, `Signed_${pdfFile.name}`);
+      saveAs(new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' }), `Signed_${pdfFile.name}`);
       toast({ title: "PDF Exported Successfully!", status: "success" });
     } catch (err) {
       console.error(err);
@@ -211,61 +206,27 @@ const ProSignatureMaker: React.FC = () => {
     }
   };
 
-  // Handle page scroll detection
-  const handlePageLoad = (pageNumber: number) => {
-    setCurrentPageNum(pageNumber);
-  };
-
-  // Clear signature canvas
-  const clearCanvas = () => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx?.clearRect(0, 0, 400, 200);
-      setSignatureImageData(null);
-    }
-  };
-
-  // Signature Preview Component
+  // ── Signature overlay on each page ───────────────────────────────
   const SignaturePreview = ({ pageNumber }: { pageNumber: number }) => {
-    // Only show signature on the target page (unless applyToAll is true)
     const shouldShow = applyToAll || targetPage === pageNumber;
-    
     if (!shouldShow || !signatureImageData) return null;
-
     return (
       <Box
-        position="absolute"
-        top={`${position.y}px`}
-        left={`${position.x}px`}
-        zIndex={100}
-        cursor="move"
-        onMouseDown={handleMouseDown}
-        border="2px dashed"
-        borderColor="blue.400"
-        bg="whiteAlpha.600"
-        borderRadius="md"
+        position="absolute" top={`${position.y}px`} left={`${position.x}px`}
+        zIndex={100} cursor="move" onMouseDown={handleMouseDown}
+        border="2px dashed" borderColor="blue.400"
+        bg="whiteAlpha.600" borderRadius="md"
         _hover={{ bg: "whiteAlpha.800" }}
       >
-        <Box 
-          as="img" 
-          src={signatureImageData} 
-          width={`${150 * scale}px`} 
-          height={`${75 * scale}px`} 
-          pointerEvents="none" 
-          opacity={0.85}
+        <Box
+          as="img" src={signatureImageData}
+          width={`${150 * scale}px`} height={`${75 * scale}px`}
+          pointerEvents="none" opacity={0.85}
           style={{ objectFit: 'contain' }}
         />
-        <Icon 
-          as={FaArrowsAlt} 
-          position="absolute" 
-          top="-12px" 
-          left="-12px" 
-          color="blue.500" 
-          bg={cardBg} 
-          rounded="full" 
-          p={1} 
-          boxSize="24px"
-          cursor="grab"
+        <Icon
+          as={FaArrowsAlt} position="absolute" top="-12px" left="-12px"
+          color="blue.500" bg={cardBg} rounded="full" p={1} boxSize="24px" cursor="grab"
         />
       </Box>
     );
@@ -276,49 +237,53 @@ const ProSignatureMaker: React.FC = () => {
       <Container maxW="container.xl">
         <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
 
+          {/* ── LEFT: Controls (no Change Document button) ── */}
           <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
             <VStack align="stretch" spacing={6}>
-              <Heading size="md"><Icon as={FaSignature} color="blue.500" mr={2} /> Signature Maker</Heading>
+              <Heading size="md">
+                <Icon as={FaSignature} color="blue.500" mr={2} /> Signature Maker
+              </Heading>
 
+              {/* Tabs */}
               <HStack bg={useColorModeValue("gray.100", "gray.700")} p={1} rounded="xl">
-                <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
-                <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'blue' : 'gray'} onClick={() => setActiveTab('type')}>Type</Button>
+                <Button flex={1} size="sm" variant={activeTab === 'draw'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw'   ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
+                <Button flex={1} size="sm" variant={activeTab === 'type'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'type'   ? 'blue' : 'gray'} onClick={() => setActiveTab('type')}>Type</Button>
                 <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'blue' : 'gray'} onClick={() => setActiveTab('upload')}>Image</Button>
               </HStack>
 
+              {/* Draw canvas */}
               {activeTab === 'draw' && (
-                <Box border="2px solid" borderColor={borderColor} rounded="2xl" bg={useColorModeValue("gray.50", "gray.700")} position="relative">
-                  <canvas 
-                    ref={canvasRef} 
-                    width={400} 
-                    height={200} 
-                    onMouseDown={startDrawing} 
-                    onMouseMove={draw} 
-                    onMouseUp={() => setIsDrawing(false)}
-                    onMouseLeave={() => setIsDrawing(false)}
-                    style={{ width: '100%', cursor: 'crosshair' }} 
+                <Box border="2px solid" borderColor={borderColor} rounded="2xl"
+                  bg={useColorModeValue("gray.50", "gray.700")} position="relative">
+                  <canvas
+                    ref={canvasRef} width={400} height={200}
+                    onMouseDown={startDrawing} onMouseMove={draw}
+                    onMouseUp={() => setIsDrawing(false)} onMouseLeave={() => setIsDrawing(false)}
+                    style={{ width: '100%', cursor: 'crosshair' }}
                   />
-                  <IconButton 
-                    aria-label="Clear" 
-                    icon={<FaEraser />} 
-                    size="sm" 
-                    position="absolute" 
-                    bottom={2} 
-                    right={2} 
-                    onClick={clearCanvas} 
-                  />
+                  <IconButton aria-label="Clear" icon={<FaEraser />} size="sm"
+                    position="absolute" bottom={2} right={2} onClick={clearCanvas} />
                 </Box>
               )}
 
-              {activeTab === 'type' && <Input placeholder="Type name..." value={typedName} onChange={(e) => setTypedName(e.target.value)} />}
+              {/* Type */}
+              {activeTab === 'type' && (
+                <Input placeholder="Type name..." value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)} />
+              )}
 
+              {/* Upload signature image */}
               {activeTab === 'upload' && (
-                <Box {...getSigProps()} p={4} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer">
+                <Box {...getSigProps()} p={4} border="2px dashed" borderColor={borderColor}
+                  rounded="xl" textAlign="center" cursor="pointer">
                   <input {...getSigInputProps()} />
-                  {uploadedSig ? <Box as="img" src={uploadedSig} maxH="60px" mx="auto" /> : <Text fontSize="xs">Upload Signature Image</Text>}
+                  {uploadedSig
+                    ? <Box as="img" src={uploadedSig} maxH="60px" mx="auto" />
+                    : <Text fontSize="xs">Upload Signature Image</Text>}
                 </Box>
               )}
 
+              {/* Size slider */}
               <Box>
                 <Text fontSize="xs" fontWeight="bold" mb={2}>SIGNATURE SIZE</Text>
                 <Slider min={0.5} max={2.5} step={0.1} value={scale} onChange={setScale}>
@@ -329,6 +294,7 @@ const ProSignatureMaker: React.FC = () => {
 
               <Divider />
 
+              {/* Page settings */}
               <VStack align="stretch" spacing={3}>
                 <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)}>
                   Apply to all pages
@@ -336,49 +302,72 @@ const ProSignatureMaker: React.FC = () => {
                 {!applyToAll && (
                   <HStack justify="space-between">
                     <Text fontSize="sm">Page Number:</Text>
-                    <NumberInput size="sm" maxW={20} min={1} max={numPages} value={targetPage} onChange={(v) => setTargetPage(parseInt(v))}>
+                    <NumberInput size="sm" maxW={20} min={1} max={numPages} value={targetPage}
+                      onChange={(v) => setTargetPage(parseInt(v))}>
                       <NumberInputField />
                     </NumberInput>
                   </HStack>
                 )}
               </VStack>
 
-              <Button
-                colorScheme="blue"
-                size="lg"
-                h="60px"
-                rounded="2xl"
-                onClick={handleExport}
-                isLoading={isProcessing}
-                leftIcon={<DownloadIcon />}
-              >
+              {/* Export */}
+              <Button colorScheme="blue" size="lg" h="60px" rounded="2xl"
+                onClick={handleExport} isLoading={isProcessing} leftIcon={<DownloadIcon />}
+                isDisabled={!pdfFile}>
                 {fromCV ? "Save Signature" : "Export PDF"}
               </Button>
 
-              <Box {...getRootProps()} cursor="pointer" p={3} border="1px solid" borderColor={borderColor} rounded="xl" textAlign="center">
-                <input {...getInputProps()} />
-                <Text fontSize="xs" color="gray.500">Change Document</Text>
-              </Box>
+              {/* If PDF is loaded — show a small "Change PDF" text link */}
+              {pdfFile && (
+                <Text
+                  fontSize="xs" color="gray.400" textAlign="center" cursor="pointer"
+                  textDecoration="underline" _hover={{ color: "blue.400" }}
+                  onClick={() => {
+                    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+                    setPdfFile(null); setPdfUrl(null); setNumPages(0);
+                  }}
+                >
+                  ✕ Remove PDF
+                </Text>
+              )}
             </VStack>
           </Box>
 
-          <Box gridColumn={{ lg: "span 8" }} bg={previewBg} rounded="3xl" overflow="hidden" position="relative" h="85vh">
+          {/* ── RIGHT: Preview container (plain box, no dropzone props) ── */}
+          <Box
+            gridColumn={{ lg: "span 8" }}
+            bg={previewBg}
+            rounded="3xl"
+            overflow="hidden"
+            position="relative"
+            h="85vh"
+            border="2px solid"
+            borderColor={borderColor}
+          >
+            {/* Badge */}
+            <HStack
+              position="absolute" top={4} left={4} zIndex={10}
+              bg="whiteAlpha.900" px={3} py={1} rounded="full" shadow="sm"
+              pointerEvents="none"
+            >
+              <Icon as={FaRegEye} color="blue.500" />
+              <Text fontSize="xs" fontWeight="black">PREVIEW</Text>
+            </HStack>
+
             <Box h="full" overflowY="auto" p={6} userSelect="none">
               {pdfUrl ? (
+                /* ── PDF loaded: show pages normally ── */
                 <Center>
-                  <Document 
-                    file={pdfUrl} 
+                  <Document
+                    file={pdfUrl}
                     onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                   >
                     <Stack spacing={6} position="relative">
                       {Array.from({ length: numPages }).map((_, i) => (
                         <Box key={i} shadow="2xl" bg={cardBg} position="relative" overflow="visible">
-                          <Page 
-                            pageNumber={i + 1} 
-                            width={600} 
-                            renderTextLayer={false} 
-                            renderAnnotationLayer={false}
-                            onRenderSuccess={() => handlePageLoad(i + 1)}
+                          <Page
+                            pageNumber={i + 1} width={600}
+                            renderTextLayer={false} renderAnnotationLayer={false}
                           />
                           <SignaturePreview pageNumber={i + 1} />
                         </Box>
@@ -387,15 +376,46 @@ const ProSignatureMaker: React.FC = () => {
                   </Document>
                 </Center>
               ) : (
+                /* ── Empty state: THIS box is the dropzone ── */
                 <Center h="full">
-                  <VStack color="gray.400">
-                    <Icon as={FaFileUpload} w={12} h={12} opacity={0.2} />
-                    <Text>Upload PDF</Text>
-                  </VStack>
+                  <Box
+                    {...getPdfRootProps()}
+                    w="full" h="full"
+                    display="flex" alignItems="center" justifyContent="center"
+                    cursor="pointer"
+                  >
+                    <input {...getPdfInputProps()} />
+                    <Box
+                      p={10} borderRadius="2xl"
+                      border="2px dashed"
+                      borderColor={isPdfDragActive ? "blue.400" : "gray.300"}
+                      bg={isPdfDragActive ? "blue.50" : "transparent"}
+                      transition="all 0.2s"
+                      textAlign="center"
+                    >
+                      <VStack color="gray.400" spacing={4}>
+                        <Icon
+                          as={FaFileUpload} w={14} h={14}
+                          color={isPdfDragActive ? "blue.400" : "gray.300"}
+                          transition="color 0.2s"
+                        />
+                        <VStack spacing={1}>
+                          <Text fontWeight="700" fontSize="lg" color={isPdfDragActive ? "blue.500" : "gray.500"}>
+                            {isPdfDragActive ? "Drop PDF here" : "Upload PDF to sign"}
+                          </Text>
+                          <Text fontSize="sm" color="gray.400">
+                            Drag & drop or click to browse
+                          </Text>
+                          <Text fontSize="xs" color="gray.300">Supports .pdf files</Text>
+                        </VStack>
+                      </VStack>
+                    </Box>
+                  </Box>
                 </Center>
               )}
             </Box>
           </Box>
+
         </SimpleGrid>
       </Container>
     </Box>

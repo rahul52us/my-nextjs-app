@@ -1,4 +1,4 @@
-"use client"; // Add this for client-side component in Next.js
+"use client";
 
 import {
   Avatar,
@@ -26,15 +26,14 @@ import {
 } from "react-icons/fa";
 import stores from "../../../../../../store/stores";
 import { authentication, main } from "../../../../../../config/utils/routes";
-import { useRouter, usePathname } from "next/navigation"; // Replace react-router-dom hooks
+import { useRouter, usePathname } from "next/navigation";
 import { WEBSITE_TITLE } from "../../../../../../config/utils/variables";
 import { themeStore } from "../../../../../../store/themeStore/themeStore";
 
-
 const HeaderProfile = observer(() => {
-  const { auth: { doLogout } } = stores
-  const pathname = usePathname(); // Replace useLocation
-  const router = useRouter(); // Replace useNavigate
+  const { auth: { doLogout } } = stores;
+  const pathname = usePathname();
+  const router = useRouter();
   const {
     auth: { user },
     themeStore: { setOpenThemeDrawer },
@@ -58,12 +57,13 @@ const HeaderProfile = observer(() => {
         size="sm"
         variant="ghost"
       />
+      {/* Portal renders outside the navbar DOM node — no z-index clipping */}
       <Portal>
         <MenuList
           minWidth="220px"
-          boxShadow="md"
+          boxShadow="xl"
           borderRadius="md"
-          zIndex={10}
+          zIndex={9999}   // ← HIGH enough to always sit above the sticky header (zIndex 1000)
           p={2}
         >
           <VStack spacing={2}>
@@ -99,7 +99,7 @@ const HeaderProfile = observer(() => {
             <MenuItem
               display="none"
               onClick={() => {
-                doLogout(); // Uncomment and implement if needed
+                doLogout();
                 router.push(authentication.login);
               }}
             >
@@ -121,9 +121,9 @@ const HeaderProfile = observer(() => {
       <Portal>
         <MenuList
           minWidth="220px"
-          boxShadow="md"
+          boxShadow="xl"
           borderRadius="md"
-          zIndex={10}
+          zIndex={9999}   // ← same fix here
           p={2}
         >
           <VStack spacing={2}>
@@ -136,9 +136,7 @@ const HeaderProfile = observer(() => {
               <Text>Login</Text>
             </MenuItem>
             <MenuItem
-              onClick={() =>
-                router.push(authentication.createOrganisationStep1)
-              }
+              onClick={() => router.push(authentication.createOrganisationStep1)}
               display="flex"
               alignItems="center"
             >
