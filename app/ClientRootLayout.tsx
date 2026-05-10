@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import stores from './store/stores';
 import Notification from './component/common/Notification/Notification';
+import { WorkflowGuide } from './(main)/(base64Tools)/tools/workflow/content';
 import React from 'react';
 
 const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) => {
@@ -45,6 +46,7 @@ const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) 
     <ChakraProvider theme={theme}>
       <CSSReset />
       <Notification />
+      <WorkflowGuide />
       <LayoutComponent>{children}</LayoutComponent>
     </ChakraProvider>
   );

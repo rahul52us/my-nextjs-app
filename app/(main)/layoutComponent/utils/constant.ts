@@ -1,4 +1,4 @@
-import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette, FaFilePdf, FaEdit } from "react-icons/fa";
+import { FaCode, FaMusic, FaFileAlt, FaImage, FaTextHeight, FaQrcode, FaBarcode, FaCompress, FaLock, FaLockOpen, FaExchangeAlt, FaClock, FaConfluence, FaPencilAlt, FaCut, FaFileArchive, FaKey, FaRuler, FaGlobe, FaTable, FaDollarSign, FaThermometerHalf, FaDatabase, FaPalette, FaFilePdf, FaEdit, FaTools } from "react-icons/fa";
 export const headerHeight = "70px";
 export const childrenHeight = "860px";
 export const footerHeight = "60px";
@@ -75,6 +75,7 @@ export const features: any = {
     { name: "Currency Converter", icon: FaDollarSign, path: "/converter/currency-converter" },
     { name: "Temperature Converter", icon: FaThermometerHalf, path: "/converter/temperature-converter" },
     { name: "Data Size Converter", icon: FaDatabase, path: "/converter/data-size-converter" },
+    { name: "Workflow Builder", icon: FaTools, path: "/tools/workflow" },
     { name: "IP Address Lookup", icon: FaGlobe, path: "/tools/ip-lookup" },
   ],
   "Converter Utilities": [

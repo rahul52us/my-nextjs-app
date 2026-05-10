@@ -90,6 +90,7 @@ const BUILT_ROUTES = new Set([
   "/tools/text-formatter",
   "/tools/javascript-formatter",
   "/tools/sql-formatter",
+  "/tools/workflow",
   "/tools/excel-to-json",
   "/tools/json-to-excel",
   "/converter/images-to-pdf",
@@ -1088,7 +1089,7 @@ export default function HomeContent() {
                     icon: FaEdit,
                     label: "Image Edit",
                   },
-                  // { href: "/converter/Imagetools/Bgremove",      icon: FaEraser,   label: "BG Remover"       },
+                   { href: "/converter/Imagetools/Imageedit",      icon: FaEraser,   label: "BG Remover"       },
                   {
                     href: "/converter/Imagetools/Imagetypeconvert",
                     icon: FaImage,

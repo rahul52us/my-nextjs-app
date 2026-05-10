@@ -27,6 +27,7 @@ import {
   FaEdit,
   FaChartBar,
   FaRobot,
+  FaTools,
 } from "react-icons/fa";
 import { FaRepeat } from "react-icons/fa6";
 
@@ -215,6 +216,7 @@ const sidebarData: SidebarItem[] = [
           { id: 95, name: "Regex Tester",    icon: <FaRepeat />,   iconColor: "#e74c3c", url: "/converter/Regextool"     },
           { id: 96, name: "Code Formatter",  icon: <FaCode />,     iconColor: "#e67e22", url: "/converter/Codeformatter" },
           { id: 97, name: "Data Visualizer", icon: <FaChartBar />, iconColor: "#1abc9c", url: "/converter/Datavisual"    },
+          { id: 99, name: "Workflow Builder", icon: <FaTools />,    iconColor: "#9b59b6", url: "/tools/workflow"        },
           { id: 98, name: "AI Chatbot",      icon: <FaRobot />,    iconColor: "#8e44ad", url: "/converter/Aichatboat"    },
         ],
       },
@@ -242,6 +244,7 @@ const filterSearchData: SidebarItem[] = [
   { id: 302,  name: "Text Formatter",          icon: <FaPencilAlt />,       iconColor: "#e67e22", url: "/tools/text-formatter"           },
   { id: 303,  name: "JavaScript Formatter",    icon: <FaCode />,            iconColor: "#f0db4f", url: "/tools/javascript-formatter"     },
   { id: 304,  name: "SQL Formatter",           icon: <FaTable />,           iconColor: "#336791", url: "/tools/sql-formatter"            },
+  { id: 307,  name: "Workflow Builder",        icon: <FaTools />,           iconColor: "#9b59b6", url: "/tools/workflow"            },
   { id: 305,  name: "Excel to Json Formatter", icon: <FaTable />,           iconColor: "#27ae60", url: "/tools/excel-to-json"            },
   { id: 306,  name: "JSON to Excel",           icon: <FaTable />,           iconColor: "#1e8449", url: "/tools/json-to-excel"            },
   { id: 401,  name: "Images to PDF & Base64",  icon: <FaFileArchive />,     iconColor: "#e74c3c", url: "/converter/images-to-pdf"        },
@@ -284,6 +287,7 @@ const filterSearchData: SidebarItem[] = [
   { id: 95,   name: "Regex Tester",            icon: <FaRepeat />,          iconColor: "#e74c3c", url: "/converter/Regextool"     },
   { id: 96,   name: "Code Formatter",          icon: <FaCode />,            iconColor: "#e67e22", url: "/converter/Codeformatter" },
   { id: 97,   name: "Data Visualizer",         icon: <FaChartBar />,        iconColor: "#1abc9c", url: "/converter/Datavisual"    },
+  { id: 99,   name: "Workflow Builder",        icon: <FaTools />,           iconColor: "#9b59b6", url: "/tools/workflow"        },
   { id: 98,   name: "AI Chatbot",              icon: <FaRobot />,           iconColor: "#8e44ad", url: "/converter/Aichatboat"    },
 ];
 
