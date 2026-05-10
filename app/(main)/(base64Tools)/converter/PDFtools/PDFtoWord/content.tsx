@@ -3,25 +3,31 @@
 import React, { useState } from 'react';
 import {
     Box, Button, Container, Heading, Text, VStack, useToast,
-    Icon, Progress, HStack, ScaleFade, Flex, Badge, Divider,
-    Center, SimpleGrid, Card, CardBody
+    Icon, Progress, HStack, ScaleFade, Flex, Divider,
+    Center, SimpleGrid, Card, CardBody, useColorModeValue
 } from '@chakra-ui/react';
 import { FiUploadCloud, FiFileText, FiShield, FiZap, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import * as pdfjs from 'pdfjs-dist';
+import stores from "../../../../../store/stores";
 
-// Updated Worker Path for v4.x Compatibility
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-const MotionBox = motion(Box);
 
 const PDFToWordContent = () => {
     const [isConverting, setIsConverting] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileData, setFileData] = useState<Uint8Array | null>(null);
     const toast = useToast();
+
+    const bgColor = useColorModeValue("gray.50", "gray.800");
+    const cardBg = useColorModeValue("white", "gray.700");
+    const textColor = useColorModeValue("gray.800", "gray.100");
+    const subTextColor = useColorModeValue("gray.500", "gray.400");
+    const dropzoneBg = useColorModeValue("gray.50", "gray.600");
+    const dropzoneActiveBg = useColorModeValue("blue.50", "blue.900");
+
+    const { themeStore: { themeConfig } } = stores;
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -59,9 +65,7 @@ const PDFToWordContent = () => {
                     lines[y] += item.str + " ";
                 });
 
-                const sortedY = Object.keys(lines)
-                    .map(Number)
-                    .sort((a, b) => b - a);
+                const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
 
                 sortedY.forEach(y => {
                     const text = lines[y].trim();
@@ -103,29 +107,45 @@ const PDFToWordContent = () => {
     };
 
     return (
-        <Box bg="gray.50" minH="100vh" py={20}>
+        <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": "PDF to Word",
+                        "applicationCategory": "UtilitiesApplication",
+                        "operatingSystem": "Any",
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "USD"
+                        },
+                        "description": "Convert PDF to Word online for free.",
+                        "url": "https://www.toolsahayata.com/converter/PDFtools/PDFtoWord"
+                    })
+                }}
+            />
             <Container maxW="container.md">
                 <VStack spacing={12} align="stretch">
 
-                    {/* Header Section */}
                     <VStack spacing={4} textAlign="center">
-                        <Heading color="gray.800" size="2xl" fontWeight="900" letterSpacing="tight">
-                            PDF to <Text as="span" color="blue.500">Word</Text>
+                        <Heading
+                            color={themeConfig.colors.brand[300]}
+                            size="2xl"
+                            fontWeight="900"
+                            letterSpacing="tight"
+                            textTransform="uppercase"
+                        >
+                            PDF to <Text as="span" color="blue.400">Word</Text> Converter
                         </Heading>
-                        <Text color="gray.500" fontSize="lg" maxW="lg">
-                            High-fidelity conversion powered by your browser. No files are ever sent to a server.
+                        <Text color={subTextColor} fontSize="lg" maxW="lg">
+                           High-fidelity conversion powered by your browser. No files are ever sent to a server.
                         </Text>
                     </VStack>
 
-                    {/* Main Dropzone Area */}
-                    <Card
-                        variant="outline"
-                        borderRadius="3xl"
-                        boxShadow="2xl"
-                        overflow="hidden"
-                        border="none"
-                        bg="white"
-                    >
+                    <Card borderRadius="3xl" boxShadow="2xl" overflow="hidden" border="none" bg={cardBg}>
                         <CardBody p={8}>
                             <VStack spacing={8}>
                                 <Box
@@ -133,36 +153,36 @@ const PDFToWordContent = () => {
                                     position="relative"
                                     p={10}
                                     border="2px dashed"
-                                    borderColor={fileName ? "blue.400" : "gray.200"}
+                                    borderColor={fileName ? "blue.400" : "gray.500"}
                                     borderRadius="2xl"
-                                    bg={fileName ? "blue.50" : "gray.50"}
+                                    bg={fileName ? dropzoneActiveBg : dropzoneBg}
                                     transition="all 0.3s"
-                                    _hover={{ borderColor: "blue.300", bg: "white" }}
+                                    _hover={{ borderColor: "blue.300", bg: useColorModeValue("white", "gray.600") }}
                                 >
                                     <input
                                         type="file"
                                         accept="application/pdf"
                                         onChange={handleFileChange}
                                         style={{
-                                            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                                            position: 'absolute', top: 0, left: 0,
+                                            width: '100%', height: '100%',
                                             opacity: 0, cursor: 'pointer', zIndex: 1
                                         }}
                                     />
                                     <VStack spacing={4}>
                                         <Center
                                             boxSize="60px"
-                                            bg={fileName ? "blue.500" : "blue.50"}
-                                            color={fileName ? "white" : "blue.500"}
+                                            bg={fileName ? "blue.500" : "blue.900"}
+                                            color="white"
                                             borderRadius="xl"
-                                            transition="0.3s"
                                         >
                                             <Icon as={fileName ? FiCheckCircle : FiUploadCloud} boxSize={8} />
                                         </Center>
                                         <VStack spacing={1}>
-                                            <Text fontSize="xl" fontWeight="bold" color="gray.700">
+                                            <Text fontSize="xl" fontWeight="bold" color={textColor}>
                                                 {fileName ? fileName : "Upload your PDF"}
                                             </Text>
-                                            <Text fontSize="sm" color="gray.400">
+                                            <Text fontSize="sm" color={subTextColor}>
                                                 Click or drag and drop your file here
                                             </Text>
                                         </VStack>
@@ -172,10 +192,10 @@ const PDFToWordContent = () => {
                                 {isConverting && (
                                     <Box w="full">
                                         <Flex justify="space-between" mb={2}>
-                                            <Text fontSize="xs" fontWeight="bold" color="blue.600" textTransform="uppercase">
+                                            <Text fontSize="xs" fontWeight="bold" color="blue.400" textTransform="uppercase">
                                                 Reconstructing Document...
                                             </Text>
-                                            <Text fontSize="xs" color="gray.400">Local processing active</Text>
+                                            <Text fontSize="xs" color={subTextColor}>Local processing active</Text>
                                         </Flex>
                                         <Progress size="xs" isIndeterminate colorScheme="blue" borderRadius="full" />
                                     </Box>
@@ -189,8 +209,6 @@ const PDFToWordContent = () => {
                                             w="full"
                                             size="lg"
                                             height="60px"
-                                            fontSize="md"
-                                            boxShadow="0 4px 14px 0 rgba(0, 118, 255, 0.39)"
                                             onClick={convertToWord}
                                             isLoading={isConverting}
                                             borderRadius="xl"
@@ -213,28 +231,36 @@ const PDFToWordContent = () => {
                         </CardBody>
                     </Card>
 
-                    {/* Feature Highlight Section */}
                     <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
                         <FeatureIcon
                             icon={FiZap}
                             title="Instant"
                             desc="Fast extraction right in your browser."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
                         />
                         <FeatureIcon
                             icon={FiShield}
                             title="Secure"
                             desc="Your data never leaves your device."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
                         />
                         <FeatureIcon
                             icon={FiCheckCircle}
                             title="Clean"
                             desc="Optimized line-by-line reconstruction."
+                            textColor={textColor}
+                            subTextColor={subTextColor}
+                            cardBg={cardBg}
                         />
                     </SimpleGrid>
 
-                    <Divider />
+                    <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
 
-                    <Text textAlign="center" color="gray.400" fontSize="sm">
+                    <Text textAlign="center" color={subTextColor} fontSize="sm">
                         Powered by PDF.js & Docx Engine
                     </Text>
                 </VStack>
@@ -243,15 +269,14 @@ const PDFToWordContent = () => {
     );
 };
 
-// Helper component for features
-const FeatureIcon = ({ icon, title, desc }: { icon: any, title: string, desc: string }) => (
+const FeatureIcon = ({ icon, title, desc, textColor, subTextColor, cardBg }: any) => (
     <HStack spacing={4} align="start">
-        <Center boxSize="40px" bg="white" borderRadius="lg" shadow="sm" color="blue.500" flexShrink={0}>
+        <Center boxSize="40px" bg={cardBg} borderRadius="lg" shadow="md" color="blue.400" flexShrink={0}>
             <Icon as={icon} />
         </Center>
         <VStack align="start" spacing={0}>
-            <Text fontWeight="bold" color="gray.700">{title}</Text>
-            <Text fontSize="xs" color="gray.500">{desc}</Text>
+            <Text fontWeight="bold" color={textColor}>{title}</Text>
+            <Text fontSize="xs" color={subTextColor}>{desc}</Text>
         </VStack>
     </HStack>
 );

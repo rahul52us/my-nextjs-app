@@ -9,5 +9,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: route === '' ? 1 : 0.8,
     }));
 
-    return [...routes];
+    const toolRoutes = [
+        '/converter/PDFtools/PDFtoWord',
+    ].map((route) => ({
+        url: `${SITE_URL}${route}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.8,
+    }));
+
+    return [...routes, ...toolRoutes]; 
 }
