@@ -52,15 +52,7 @@ import {
   FaTools,
   FaTwitter,
   FaGithub,
-  FaLinkedin,
-  FaFilePdf,
-  FaFileWord,
-  FaFileExcel,
-  FaObjectGroup,
-  FaAlignLeft,
-  FaFileArchive,
-  FaDollarSign,
-  FaIdCard,
+  FaLinkedin
 } from "react-icons/fa";
 import { sidebarData } from "../layouts/dashboardLayout/SidebarLayout/utils/SidebarItems";
 
