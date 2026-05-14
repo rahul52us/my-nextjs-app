@@ -31,9 +31,34 @@ const components = {
     },
     Text: {
       baseStyle: {
-        fontWeight: "300", // Might be overriding your component styles
+        fontWeight: "300",
       },
     },
+  },
+
+  // ── Menu: dark mode ka ugly border/box fix ──────────────────
+  Menu: {
+    baseStyle: (props: StyleFunctionProps) => ({
+      list: {
+        bg: props.colorMode === "dark" ? "#111111" : "white",
+        border: props.colorMode === "dark" ? "none" : "1px solid",
+        borderColor: props.colorMode === "dark" ? "transparent" : "#e2e8f0",
+        boxShadow:
+          props.colorMode === "dark"
+            ? "0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06)"
+            : "0 10px 15px -3px rgba(0,0,0,0.12), 0 4px 6px -2px rgba(0,0,0,0.07)",
+        outline: "none",
+      },
+      item: {
+        bg: "transparent",
+        _hover: {
+          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "blue.50",
+        },
+        _focus: {
+          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "blue.50",
+        },
+      },
+    }),
   },
 };
 
@@ -41,60 +66,16 @@ const styles = {
   global: (props: StyleFunctionProps) => ({
     body: {
       bg: "FFFFFA",
-      fontFamily: "var(--font-lato), sans-serif", // Apply Lato globally
-      color: props.colorMode === "light" ? "brand.900" : "darkBrand.50", // Dynamic text color
+      fontFamily: "var(--font-lato), sans-serif",
+      color: props.colorMode === "light" ? "brand.900" : "darkBrand.50",
     },
   }),
 };
 
-// const colors = {
-//   brand: {
-//     50: "#f5f7ff",
-//     100: "#045B64",
-//     200: "#c5c9ff",
-//     300: "#a4a9ff",
-//     400: "#8389ff",
-//     500: "#6269ff",
-//     600: "#4a51cc",
-//     700: "#333999",
-//     800: "#1b2166",
-//     900: "#040933",
-//     1000: "#475467",
-//     1100:"#434343"
-//   },
-//   darkBrand: {
-//     50: "#1b1f2d",
-//     100: "#2f3342",
-//     200: "#4a5066",
-//     300: "#5e6882",
-//     400: "#78829c",
-//     500: "#92a1b3",
-//     600: "#b1b8ca",
-//     700: "#c4ccd9",
-//     800: "#d7e1e8",
-//     900: "#eaf3f9",
-//   },
-// }
-
-
 const fonts = {
   heading: "Montserrat, sans-serif",
-  body: "var(--font-lato), sans-serif", // Set Lato as body font globally
+  body: "var(--font-lato), sans-serif",
 };
-
-
-
-// const theme = extendTheme({
-//   colors,
-//   fonts,
-//   breakpoints,
-//   components,
-//   styles,
-//   config,
-// });
-
-// export { theme, lato };
-
 
 const {
   themeStore: { themeConfig },

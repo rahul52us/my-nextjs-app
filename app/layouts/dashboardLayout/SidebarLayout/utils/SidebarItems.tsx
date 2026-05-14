@@ -216,7 +216,7 @@ const sidebarData: SidebarItem[] = [
           { id: 95, name: "Regex Tester",    icon: <FaRepeat />,   iconColor: "#e74c3c", url: "/converter/Regextool"     },
           { id: 96, name: "Code Formatter",  icon: <FaCode />,     iconColor: "#e67e22", url: "/converter/Codeformatter" },
           { id: 97, name: "Data Visualizer", icon: <FaChartBar />, iconColor: "#1abc9c", url: "/converter/Datavisual"    },
-          { id: 99, name: "Workflow Builder", icon: <FaTools />,    iconColor: "#9b59b6", url: "/tools/workflow"        },
+          // { id: 99, name: "Workflow Builder", icon: <FaTools />,    iconColor: "#9b59b6", url: "/tools/workflow"        },
           { id: 98, name: "AI Chatbot",      icon: <FaRobot />,    iconColor: "#8e44ad", url: "/converter/Aichatboat"    },
         ],
       },

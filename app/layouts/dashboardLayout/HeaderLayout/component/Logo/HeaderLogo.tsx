@@ -37,7 +37,7 @@ import { sidebarData } from "../../../SidebarLayout/utils/SidebarItems";
 import stores from "../../../../../store/stores";
 import React, { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import GlobalSearch from "./GlobalSearch"; // ← import
+import GlobalSearch from "./GlobalSearch";
 
 interface SidebarItem {
   id: string | number;
@@ -61,19 +61,19 @@ const HeaderLogo = observer(() => {
   const [openMenu, setOpenMenu] = useState<string | number | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
-  // ── Mobile search modal state ──────────────────────────────────
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const textColor = "white";
   const accentColor = themeConfig.colors.brand[300];
   const menuTextColor = useColorModeValue("gray.800", "white");
   const hoverBg = "whiteAlpha.200";
-  const menuBg = useColorModeValue("white", "gray.800");
-  const mobileLinkHover = useColorModeValue("blue.50", "gray.700");
-  const borderColor = useColorModeValue("gray.100", "whiteAlpha.100");
+  const menuBg = useColorModeValue("white", "#0f0f0f");
+  const mobileLinkHover = useColorModeValue("blue.50", "whiteAlpha.100");
+  const borderColor = useColorModeValue("gray.100", "whiteAlpha.50");
+  const menuBorderColor = useColorModeValue("#e2e8f0", "transparent");
   const shadowColor = useColorModeValue(
-    "0 10px 15px -3px rgba(0,0,0,0.1)",
-    "0 20px 25px -5px rgba(0,0,0,0.4)"
+    "0 10px 15px -3px rgba(0,0,0,0.12), 0 4px 6px -2px rgba(0,0,0,0.07)",
+    "0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06)"
   );
 
   const slideDown = keyframes`
@@ -114,12 +114,140 @@ const HeaderLogo = observer(() => {
     });
   };
 
+  // ── sidebarData ko 2 parts mein split karo ──
+  // Last item = "More", baaki sab = other menus
+  const sidebarItems = sidebarData as SidebarItem[];
+  const mainMenuItems = sidebarItems.slice(0, -1); // More ko chhodkar sab
+  const moreItem = sidebarItems[sidebarItems.length - 1]; // Sirf "More"
+
+  // ── Single Menu render karne ka helper ──
+  const renderMenu = (mainItem: SidebarItem) => (
+    <Menu
+      key={mainItem.id}
+      isLazy
+      closeOnSelect={false}
+      isOpen={openMenu === mainItem.id}
+      onOpen={() => setOpenMenu(mainItem.id)}
+      onClose={() => setOpenMenu(null)}
+    >
+      <MenuButton
+        as={Box}
+        px={{ xl: "8px", "2xl": "12px" }}
+        py="6px"
+        borderRadius="full"
+        cursor="pointer"
+        transition="all 0.2s ease"
+        _hover={{ bg: hoverBg }}
+        bg={openMenu === mainItem.id ? hoverBg : "transparent"}
+      >
+        <HStack spacing="3px">
+          <Text
+            fontSize="11px"
+            fontWeight="700"
+            color={textColor}
+            textTransform="uppercase"
+            letterSpacing="0.06em"
+            whiteSpace="nowrap"
+          >
+            {mainItem.name}
+          </Text>
+          <ChevronDownIcon
+            color={textColor}
+            w="12px"
+            h="12px"
+            transition="transform 0.3s"
+            transform={
+              openMenu === mainItem.id ? "rotate(180deg)" : "rotate(0deg)"
+            }
+          />
+        </HStack>
+      </MenuButton>
+
+      <Portal>
+        <MenuList
+          bg={menuBg}
+          color={menuTextColor}
+          minW={mainItem.columns === 2 ? "540px" : "240px"}
+          zIndex={9999}
+          p={2}
+          borderRadius="2xl"
+          animation={`${slideDown} 0.24s ease-out`}
+          sx={{
+            border: "1px solid !important",
+            borderColor: `${menuBorderColor} !important`,
+            boxShadow: `${shadowColor} !important`,
+            outline: "none !important",
+          }}
+        >
+          {mainItem.columns === 2 ? (
+            (() => {
+              const children = mainItem.children ?? [];
+              const half = Math.ceil(children.length / 2);
+              const col1 = children.slice(0, half);
+              const col2 = children.slice(half);
+              return (
+                <Flex>
+                  <Box flex={1} borderRight="1px solid" borderColor={borderColor} pr={1}>
+                    <Text px={3} pt={1} pb={2} fontSize="10px" fontWeight="800" textTransform="uppercase" letterSpacing="0.1em" color="gray.400">
+                      Convert
+                    </Text>
+                    {col1.map((subItem) => (
+                      <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
+                        <HStack spacing={3}>{renderIcon(subItem, 16)}<span>{subItem.name}</span></HStack>
+                      </MenuItem>
+                    ))}
+                  </Box>
+                  <Box flex={1} pl={1}>
+                    <Text px={3} pt={1} pb={2} fontSize="10px" fontWeight="800" textTransform="uppercase" letterSpacing="0.1em" color="gray.400">
+                      Manage
+                    </Text>
+                    {col2.map((subItem) => (
+                      <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
+                        <HStack spacing={3}>{renderIcon(subItem, 16)}<span>{subItem.name}</span></HStack>
+                      </MenuItem>
+                    ))}
+                  </Box>
+                </Flex>
+              );
+            })()
+          ) : (
+            mainItem.children?.map((subItem) =>
+              subItem.children ? (
+                <Menu key={subItem.id} placement="right-start" isLazy closeOnSelect={false} offset={[0, 10]}>
+                  <MenuButton as={MenuItem} borderRadius="xl" transition="all 0.2s ease" _hover={{ bg: mobileLinkHover }} py={3}>
+                    <HStack justify="space-between" width="100%">
+                      <HStack spacing={3}>{renderIcon(subItem, 18)}<Text fontWeight="700" fontSize="sm">{subItem.name}</Text></HStack>
+                      <ChevronRightIcon opacity={0.5} />
+                    </HStack>
+                  </MenuButton>
+                  <Portal>
+                    <MenuList bg={menuBg} color={menuTextColor} p={2} borderRadius="2xl" zIndex={9999} animation={`${slideRight} 0.24s ease-out`} sx={{ border: "1px solid !important", borderColor: `${menuBorderColor} !important`, boxShadow: `${shadowColor} !important`, outline: "none !important" }}>
+                      {subItem.children.map((nestedItem) => (
+                        <MenuItem key={nestedItem.id} as={Link} href={nestedItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
+                          <HStack spacing={3}>{renderIcon(nestedItem, 16)}<span>{nestedItem.name}</span></HStack>
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Portal>
+                </Menu>
+              ) : (
+                <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={3} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
+                  <HStack spacing={3}>{renderIcon(subItem, 18)}<span>{subItem.name}</span></HStack>
+                </MenuItem>
+              )
+            )
+          )}
+        </MenuList>
+      </Portal>
+    </Menu>
+  );
+
   return (
     <HStack
       spacing={0}
       width="100%"
       minW={0}
-      overflow="visible"        // ← was "hidden", changed so search modal isn't clipped
+      overflow="visible"
       px={{ base: 2, md: 3, xl: 4 }}
       minH="64px"
       py={0}
@@ -167,7 +295,7 @@ const HeaderLogo = observer(() => {
             boxShadow={scrolled ? "xl" : "none"}
             transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
           >
-            {/* HOME */}
+            {/* ── HOME ── */}
             <Box
               as={Link}
               href="/"
@@ -190,124 +318,35 @@ const HeaderLogo = observer(() => {
               </Text>
             </Box>
 
-            {/* DYNAMIC MENUS */}
-            {(sidebarData as SidebarItem[]).map((mainItem) => (
-              <Menu
-                key={mainItem.id}
-                isLazy
-                closeOnSelect={false}
-                isOpen={openMenu === mainItem.id}
-                onOpen={() => setOpenMenu(mainItem.id)}
-                onClose={() => setOpenMenu(null)}
-              >
-                <MenuButton
-                  as={Box}
-                  px={{ xl: "8px", "2xl": "12px" }}
-                  py="6px"
-                  borderRadius="full"
-                  cursor="pointer"
-                  transition="all 0.2s ease"
-                  _hover={{ bg: hoverBg }}
-                  bg={openMenu === mainItem.id ? hoverBg : "transparent"}
-                >
-                  <HStack spacing="3px">
-                    <Text
-                      fontSize="11px"
-                      fontWeight="700"
-                      color={textColor}
-                      textTransform="uppercase"
-                      letterSpacing="0.06em"
-                      whiteSpace="nowrap"
-                    >
-                      {mainItem.name}
-                    </Text>
-                    <ChevronDownIcon
-                      color={textColor}
-                      w="12px"
-                      h="12px"
-                      transition="transform 0.3s"
-                      transform={
-                        openMenu === mainItem.id ? "rotate(180deg)" : "rotate(0deg)"
-                      }
-                    />
-                  </HStack>
-                </MenuButton>
+            {/* ── PDF Tools, Image Tools, Base64, Formatters, File Converters ── */}
+            {mainMenuItems.map((mainItem) => renderMenu(mainItem))}
 
-                <Portal>
-                  <MenuList
-                    bg={menuBg}
-                    color={menuTextColor}
-                    minW={mainItem.columns === 2 ? "540px" : "240px"}
-                    zIndex={9999}
-                    border="1px solid"
-                    borderColor={borderColor}
-                    boxShadow={shadowColor}
-                    p={2}
-                    borderRadius="2xl"
-                    animation={`${slideDown} 0.24s ease-out`}
-                  >
-                    {mainItem.columns === 2 ? (
-                      (() => {
-                        const children = mainItem.children ?? [];
-                        const half = Math.ceil(children.length / 2);
-                        const col1 = children.slice(0, half);
-                        const col2 = children.slice(half);
-                        return (
-                          <Flex>
-                            <Box flex={1} borderRight="1px solid" borderColor={borderColor} pr={1}>
-                              <Text px={3} pt={1} pb={2} fontSize="10px" fontWeight="800" textTransform="uppercase" letterSpacing="0.1em" color="gray.400">
-                                Convert
-                              </Text>
-                              {col1.map((subItem) => (
-                                <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                                  <HStack spacing={3}>{renderIcon(subItem, 16)}<span>{subItem.name}</span></HStack>
-                                </MenuItem>
-                              ))}
-                            </Box>
-                            <Box flex={1} pl={1}>
-                              <Text px={3} pt={1} pb={2} fontSize="10px" fontWeight="800" textTransform="uppercase" letterSpacing="0.1em" color="gray.400">
-                                Manage
-                              </Text>
-                              {col2.map((subItem) => (
-                                <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                                  <HStack spacing={3}>{renderIcon(subItem, 16)}<span>{subItem.name}</span></HStack>
-                                </MenuItem>
-                              ))}
-                            </Box>
-                          </Flex>
-                        );
-                      })()
-                    ) : (
-                      mainItem.children?.map((subItem) =>
-                        subItem.children ? (
-                          <Menu key={subItem.id} placement="right-start" isLazy closeOnSelect={false} offset={[0, 10]}>
-                            <MenuButton as={MenuItem} borderRadius="xl" transition="all 0.2s ease" _hover={{ bg: mobileLinkHover }} py={3}>
-                              <HStack justify="space-between" width="100%">
-                                <HStack spacing={3}>{renderIcon(subItem, 18)}<Text fontWeight="700" fontSize="sm">{subItem.name}</Text></HStack>
-                                <ChevronRightIcon opacity={0.5} />
-                              </HStack>
-                            </MenuButton>
-                            <Portal>
-                              <MenuList bg={menuBg} color={menuTextColor} p={2} borderRadius="2xl" boxShadow={shadowColor} border="1px solid" borderColor={borderColor} zIndex={9999} animation={`${slideRight} 0.24s ease-out`}>
-                                {subItem.children.map((nestedItem) => (
-                                  <MenuItem key={nestedItem.id} as={Link} href={nestedItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                                    <HStack spacing={3}>{renderIcon(nestedItem, 16)}<span>{nestedItem.name}</span></HStack>
-                                  </MenuItem>
-                                ))}
-                              </MenuList>
-                            </Portal>
-                          </Menu>
-                        ) : (
-                          <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={3} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                            <HStack spacing={3}>{renderIcon(subItem, 18)}<span>{subItem.name}</span></HStack>
-                          </MenuItem>
-                        )
-                      )
-                    )}
-                  </MenuList>
-                </Portal>
-              </Menu>
-            ))}
+            {/* ── WORKFLOW (More se pehle) ── */}
+            <Box
+              as={Link}
+              href="/tools/workflow"
+              px={{ xl: "10px", "2xl": "14px" }}
+              py="6px"
+              borderRadius="full"
+              transition="all 0.2s"
+              _hover={{ bg: hoverBg }}
+              onClick={() => setOpenMenu(null)}
+            >
+              <Text
+                fontSize="11px"
+                fontWeight="700"
+                color={textColor}
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+                whiteSpace="nowrap"
+              >
+                Workflow
+              </Text>
+            </Box>
+
+            {/* ── MORE (Last mein) ── */}
+            {renderMenu(moreItem)}
+
           </HStack>
 
           {/* ── Global Search Bar (desktop) ── */}
@@ -317,7 +356,6 @@ const HeaderLogo = observer(() => {
       ) : (
         /* ── MOBILE: search icon + hamburger ── */
         <HStack spacing={2}>
-          {/* Mobile search icon button — opens the same GlobalSearch modal */}
           <GlobalSearch />
 
           <IconButton
@@ -342,6 +380,7 @@ const HeaderLogo = observer(() => {
 
           <DrawerBody px={2} pb={8}>
             <VStack align="stretch" spacing={1}>
+              {/* Home */}
               <Box as={Link} href="/" mx={2} p={4} borderRadius="2xl" onClick={onClose} bg={pathname === "/" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
                 <HStack spacing={3}>
                   <Icon as={BiHomeAlt} boxSize={5} color={pathname === "/" ? accentColor : "inherit"} />
@@ -351,7 +390,8 @@ const HeaderLogo = observer(() => {
 
               <Divider my={4} opacity={0.5} mx={4} w="auto" />
 
-              {(sidebarData as SidebarItem[]).map((item) => (
+              {/* Main items (More chhodkar) */}
+              {mainMenuItems.map((item) => (
                 <Box key={item.id} mb={6}>
                   <Text px={5} mb={3} fontSize="11px" fontWeight="800" textTransform="uppercase" letterSpacing="2px" color={accentColor}>
                     {item.name}
@@ -383,6 +423,47 @@ const HeaderLogo = observer(() => {
                   </VStack>
                 </Box>
               ))}
+
+              {/* Workflow - mobile drawer mein bhi */}
+              <Divider my={2} opacity={0.5} mx={4} w="auto" />
+              <Box as={Link} href="/tools/workflow" mx={2} p={4} borderRadius="2xl" onClick={onClose} bg={pathname === "/tools/workflow" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
+                <HStack spacing={3}>
+                  <Text fontWeight="700">Workflow</Text>
+                </HStack>
+              </Box>
+
+              {/* More - mobile drawer mein last mein */}
+              <Box key={moreItem.id} mb={6} mt={2}>
+                <Text px={5} mb={3} fontSize="11px" fontWeight="800" textTransform="uppercase" letterSpacing="2px" color={accentColor}>
+                  {moreItem.name}
+                </Text>
+                <VStack align="stretch" spacing={1}>
+                  {moreItem.children?.map((child) => (
+                    <Box key={child.id}>
+                      {child.children ? (
+                        <Box mb={2}>
+                          <HStack px={5} py={2} spacing={3} opacity={0.8}>
+                            {renderIcon(child, 18)}
+                            <Text fontSize="sm" fontWeight="700">{child.name}</Text>
+                          </HStack>
+                          <VStack align="stretch" spacing={1} mt={1} ml={8} borderLeft="1.5px solid" borderColor={borderColor}>
+                            {child.children.map((nested) => (
+                              <Box key={nested.id} as={Link} href={nested.url || "#"} p={2.5} pl={6} borderRadius="0 12px 12px 0" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === nested.url ? mobileLinkHover : "transparent"}>
+                                <HStack spacing={2}>{renderIcon(nested, 14)}<Text fontSize="sm" fontWeight="700">{nested.name}</Text></HStack>
+                              </Box>
+                            ))}
+                          </VStack>
+                        </Box>
+                      ) : (
+                        <Box as={Link} href={child.url || "#"} mx={2} p={3.5} borderRadius="2xl" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === child.url ? mobileLinkHover : "transparent"}>
+                          <HStack spacing={3}>{renderIcon(child, 20)}<Text fontWeight="700">{child.name}</Text></HStack>
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </VStack>
+              </Box>
+
             </VStack>
           </DrawerBody>
         </DrawerContent>

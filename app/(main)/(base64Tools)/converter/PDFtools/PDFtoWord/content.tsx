@@ -11,6 +11,7 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import * as pdfjs from 'pdfjs-dist';
 import stores from "../../../../../store/stores";
+import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -44,6 +45,8 @@ const PDFToWordContent = () => {
             });
         }
     };
+
+      const { advanceWorkflow } = useWorkflowAutoAdvance();
 
     const convertToWord = async () => {
         if (!fileData) return;
@@ -94,6 +97,10 @@ const PDFToWordContent = () => {
                 duration: 5000,
                 isClosable: true,
             });
+
+             setTimeout(() => {
+        advanceWorkflow();
+      }, 1200);
         } catch (error: any) {
             console.error("Conversion Error:", error);
             toast({

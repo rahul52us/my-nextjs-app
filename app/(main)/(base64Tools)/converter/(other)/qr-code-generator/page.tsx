@@ -17,6 +17,7 @@ import QRCode from "react-qr-code";
 import { FaDownload, FaTrash } from "react-icons/fa";
 import html2canvas from "html2canvas";
 import stores from "../../../../../store/stores";
+import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
 
 const QRCodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
@@ -30,6 +31,7 @@ const QRCodeGenerator: React.FC = () => {
     themeStore: { themeConfig },
   } = stores;
 
+  const { advanceWorkflow } = useWorkflowAutoAdvance();
   // Handle download as image (PNG)
   const handleDownload = async () => {
     const qrCodeElement = document.getElementById("qr-code");
@@ -58,6 +60,9 @@ const QRCodeGenerator: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
+        setTimeout(() => {
+        advanceWorkflow();
+      }, 1200);
     } catch (error) {
       console.error("Error downloading QR code:", error);
       toast({
