@@ -1,3 +1,4 @@
+import './polyfill';
 import { NextRequest, NextResponse } from 'next/server';
 import * as pdfjsLib from 'pdfjs-dist';
 
