@@ -41,8 +41,7 @@ export const features: any = {
     { name: "Encrypt File", icon: FaLock, path: "/converter/encrypt-file" },
     { name: "Decrypt File", icon: FaLockOpen, path: "/converter/decrypt-file" },
     // New Additions
-    { name: "PDF to Images", icon: FaImage, path: "/converter/pdf-to-images" },
-    { name: "Word to PDF", icon: FaFileAlt, path: "/converter/word-to-pdf" },
+    { name: "Word to PDF", icon: FaFileAlt, path: "/converter/PDFtools/Wordtopdf" },
     { name: "Excel to CSV", icon: FaTable, path: "/converter/excel-to-csv" },
     { name: "CSV to JSON", icon: FaCode, path: "/converter/csv-to-json" },
   ],

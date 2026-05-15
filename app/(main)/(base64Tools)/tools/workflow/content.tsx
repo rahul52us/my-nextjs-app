@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
@@ -277,6 +277,20 @@ const WorkflowBuilderContent = () => {
     setSavedWorkflows(updated);
     persistWorkflows(updated);
     toast({ status: "success", title: "Workflow saved successfully." });
+    return newWorkflow;
+  };
+
+  const saveAndGetWorkflow = () => {
+    if (!workflowName.trim()) { toast({ status: "error", title: "Workflow name is required." }); return null; }
+    if (steps.length === 0) { toast({ status: "error", title: "Add at least one step before running." }); return null; }
+
+    const existing = savedWorkflows.find((wf) => {
+      if (wf.name !== workflowName.trim() || wf.steps.length !== steps.length) return false;
+      return wf.steps.every((step, index) => step.id === steps[index].id && step.path === steps[index].path);
+    });
+
+    if (existing) return existing;
+    return saveWorkflow();
   };
 
   const loadWorkflow = (workflow: SavedWorkflow) => {
@@ -316,16 +330,11 @@ const WorkflowBuilderContent = () => {
   };
 
   const runWorkflow = () => {
-    if (steps.length === 0) { toast({ status: "error", title: "Add at least one step before running." }); return; }
-    const workflowSession = {
-      name: workflowName || "Untitled Workflow",
-      steps: steps.map(({ id, name, path, stepNumber }) => ({ id, name, path, stepNumber })),
-      currentStepIndex: 0,
-      totalSteps: steps.length,
-    };
-    if (typeof window !== "undefined") window.sessionStorage.setItem("workflowSession", JSON.stringify(workflowSession));
-    toast({ status: "success", title: "Starting workflow...", description: `Opening step 1 of ${steps.length}` });
-    setTimeout(() => router.push(steps[0].path), 500);
+    const workflow = saveAndGetWorkflow();
+    if (!workflow) return;
+
+    toast({ status: "success", title: "Starting workflow...", description: `Opening upload screen for ${workflow.name}` });
+    setTimeout(() => router.push(`/tools/workflow/run/${workflow.id}`), 500);
   };
 
   const selectedActionName =
@@ -584,6 +593,7 @@ const WorkflowBuilderContent = () => {
                   </Flex>
                   <Text fontSize="xs" color="gray.500" mb={3}>Saved on {new Date(workflow.savedAt).toLocaleString()}</Text>
                   <HStack spacing={2} wrap="wrap">
+                    <Button size="sm" colorScheme="green" onClick={() => router.push(`/tools/workflow/run/${workflow.id}`)}>Run</Button>
                     <Button size="sm" colorScheme="teal" onClick={() => loadWorkflow(workflow)}>Load</Button>
                     <Button size="sm" variant="outline" colorScheme="red" onClick={() => deleteWorkflow(workflow.id)}>Delete</Button>
                   </HStack>
@@ -634,78 +644,6 @@ const WorkflowBuilderContent = () => {
           </Box>
         </Box>
       </SimpleGrid>
-    </Box>
-  );
-};
-
-// ─────────────────────────────────────────────
-// FLOATING WORKFLOW GUIDE
-// ─────────────────────────────────────────────
-export const WorkflowGuide = () => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const toast = useToast();
-  const [session, setSession] = useState<any>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setIsMounted(true);
-    const raw = window.sessionStorage.getItem("workflowSession");
-    if (raw) { try { setSession(JSON.parse(raw)); } catch {} }
-  }, [pathname]);
-
-  if (!isMounted || !session) return null;
-
-  const currentStep = session.steps[session.currentStepIndex];
-  const isLastStep = session.currentStepIndex === session.steps.length - 1;
-
-  const handleNextStep = () => {
-    if (isLastStep) { handleEndWorkflow(); return; }
-    const nextIndex = session.currentStepIndex + 1;
-    const nextStep = session.steps[nextIndex];
-    if (!nextStep) { toast({ status: "error", title: "Error: Next step not found." }); return; }
-    const updated = { ...session, currentStepIndex: nextIndex };
-    if (typeof window !== "undefined") window.sessionStorage.setItem("workflowSession", JSON.stringify(updated));
-    toast({ status: "success", title: `Moving to Step ${nextIndex + 1} of ${session.totalSteps}`, description: `Opening ${nextStep.name}...`, duration: 2000 });
-    setTimeout(() => router.push(nextStep.path), 100);
-  };
-
-  const handleEndWorkflow = () => {
-    setSession(null);
-    if (typeof window !== "undefined") window.sessionStorage.removeItem("workflowSession");
-    toast({ status: "success", title: "✅ Workflow completed!", description: `Finished all ${session.totalSteps} step(s).`, duration: 3000 });
-    setTimeout(() => router.push("/tools/workflow"), 300);
-  };
-
-  const handleCancelWorkflow = () => {
-    setSession(null);
-    if (typeof window !== "undefined") window.sessionStorage.removeItem("workflowSession");
-    toast({ status: "info", title: "Workflow cancelled", description: "Workflow has been stopped.", duration: 2000 });
-  };
-
-  const bgColor = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("teal.200", "teal.600");
-  const accentColor = useColorModeValue("teal.600", "teal.300");
-
-  return (
-    <Box position="fixed" bottom={6} right={6} bg={bgColor} borderWidth="2px" borderColor={borderColor} rounded="2xl" p={4} shadow="2xl" maxW="350px" zIndex={50}>
-      <HStack spacing={2} mb={3} justify="space-between">
-        <VStack spacing={1} align="flex-start" flex={1}>
-          <Text fontSize="sm" fontWeight="bold" color={accentColor}>Workflow: {session.name}</Text>
-          <Text fontSize="xs" color="gray.500">Step {session.currentStepIndex + 1} of {session.totalSteps}</Text>
-          <Text fontSize="sm" fontWeight="semibold">{currentStep?.name}</Text>
-        </VStack>
-        <Box fontSize="2xl" fontWeight="bold" color={accentColor} minW="40px" textAlign="center">
-          {session.currentStepIndex + 1}/{session.totalSteps}
-        </Box>
-      </HStack>
-      <HStack spacing={2}>
-        <Button size="sm" colorScheme={isLastStep ? "green" : "teal"} onClick={handleNextStep} width="full">
-          {isLastStep ? "✓ Complete" : "Next Step"}
-        </Button>
-        <Button size="sm" variant="outline" colorScheme="red" onClick={handleCancelWorkflow}>End</Button>
-      </HStack>
     </Box>
   );
 };
