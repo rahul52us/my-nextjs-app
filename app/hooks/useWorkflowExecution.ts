@@ -12,6 +12,7 @@ export type WorkflowStep = {
   name: string;
   path: string;
   stepNumber: number;
+  settings?: Record<string, any>;
 };
 
 export type SavedWorkflow = {
@@ -20,6 +21,7 @@ export type SavedWorkflow = {
   description: string;
   steps: WorkflowStep[];
   savedAt: string;
+  isActive?: boolean;
 };
 
 export type WorkflowStepStatus = "pending" | "running" | "completed" | "failed";
@@ -48,9 +50,9 @@ function getToolSlug(path: string) {
     PdftoJpg: 'pdf-to-jpg',
     Wordtopdf: 'word-to-pdf',
     Excletopdf: 'excel-to-pdf',
-    PDFmerge: 'pdf-merge',
-    Pdfsplit: 'pdf-split',
-    Pdfwatermark: 'pdf-watermark',
+    PDFmerge: 'pdfmerge',
+    Pdfsplit: 'pdfsplit',
+    Pdfwatermark: 'pdfwatermark',
     Pdfedit: 'pdf-edit',
     Pdfrotate: 'pdf-rotate',
     Pdfsign: 'pdf-sign',
@@ -96,15 +98,37 @@ function getFileNameForUpload(inputFile: File | Blob, slug: string) {
   return `${slug}${extension}`;
 }
 
-async function convertPdfToJpgClient(inputFile: File | Blob): Promise<Blob> {
+async function convertPdfToJpgClient(inputFile: File | Blob, settings?: Record<string, any>): Promise<Blob> {
   const arrayBuffer = await inputFile.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
-  const pageCount = pdf.numPages;
+  const totalPages = pdf.numPages;
 
-  if (pageCount === 1) {
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
+  const quality = settings?.quality || 80;
+  const scale = quality > 80 ? 2.5 : quality > 50 ? 1.5 : 1.0;
+  
+  // Parse pages if provided (e.g. "1-3, 5")
+  let pagesToProcess: number[] = [];
+  if (settings?.pages) {
+    const parts = settings.pages.split(',').map((p: string) => p.trim());
+    parts.forEach((part: string) => {
+      if (part.includes('-')) {
+        const [start, end] = part.split('-').map(Number);
+        for (let i = start; i <= end; i++) if (i > 0 && i <= totalPages) pagesToProcess.push(i);
+      } else {
+        const p = Number(part);
+        if (p > 0 && p <= totalPages) pagesToProcess.push(p);
+      }
+    });
+  }
+  
+  if (pagesToProcess.length === 0) {
+    for (let i = 1; i <= totalPages; i++) pagesToProcess.push(i);
+  }
+
+  if (pagesToProcess.length === 1) {
+    const page = await pdf.getPage(pagesToProcess[0]);
+    const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -117,16 +141,16 @@ async function convertPdfToJpgClient(inputFile: File | Blob): Promise<Blob> {
       canvas.toBlob((b) => {
         if (b) resolve(b);
         else reject(new Error('Failed to generate image blob from canvas.'));
-      }, 'image/jpeg', 0.95);
+      }, 'image/jpeg', quality / 100);
     });
 
     return blob;
   }
 
   const zip = new JSZip();
-  for (let i = 1; i <= pageCount; i += 1) {
-    const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 2.0 });
+  for (const pageNum of pagesToProcess) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -139,18 +163,18 @@ async function convertPdfToJpgClient(inputFile: File | Blob): Promise<Blob> {
       canvas.toBlob((b) => {
         if (b) resolve(b);
         else reject(new Error('Failed to generate image blob from canvas.'));
-      }, 'image/jpeg', 0.95);
+      }, 'image/jpeg', quality / 100);
     });
 
-    zip.file(`page_${i}.jpg`, blob);
+    zip.file(`page_${pageNum}.jpg`, blob);
   }
 
   return zip.generateAsync({ type: 'blob' });
 }
 
-async function executeToolStep(slug: string, inputFile: File | Blob): Promise<Blob> {
+async function executeToolStep(slug: string, inputFile: File | Blob, settings?: Record<string, any>): Promise<Blob> {
   if (slug === 'pdf-to-jpg') {
-    return convertPdfToJpgClient(inputFile);
+    return convertPdfToJpgClient(inputFile, settings);
   }
 
   const isJsonInputTool = ['json-to-csv', 'qr-code-generator', 'html-to-pdf'].includes(slug);
@@ -183,6 +207,14 @@ async function executeToolStep(slug: string, inputFile: File | Blob): Promise<Bl
 
     const formData = new FormData();
     formData.append("file", uploadFile);
+    formData.append("files", uploadFile); // Some tools expect 'files' (e.g. image-to-pdf)
+    
+    // Append settings to formData
+    if (settings) {
+      Object.entries(settings).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+    }
 
     response = await fetch(`/api/tools/${slug}`, {
       method: "POST",
@@ -305,7 +337,7 @@ export function useWorkflowExecution(workflow: SavedWorkflow | null) {
       }));
 
       try {
-        const outputBlob = await executeToolStep(slug, currentInput);
+        const outputBlob = await executeToolStep(slug, currentInput, step.settings);
         setState((prev) => ({
           ...prev,
           steps: prev.steps.map((item, idx) => idx === index ? { ...item, status: "completed", message: "Completed" } : item),

@@ -67,7 +67,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   };
 
   const handleStart = async () => {
-    if (!uploadedFile || !workflow) return;
+    if (!uploadedFile || !workflow || !workflow.isActive) return;
     await runWorkflow(uploadedFile);
   };
 
@@ -135,7 +135,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
             Upload once and let the selected workflow run through all steps automatically.
           </Text>
         </VStack>
-        <Button size="sm" variant="outline" onClick={() => router.push("/tools/workflow")}>
+        <Button size="sm" variant="outline" colorScheme="blue" onClick={() => router.push("/tools/workflow")}>
           Back to Builder
         </Button>
       </HStack>
@@ -158,15 +158,35 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
 
           {/* ── Workflow info card ── */}
           <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder}>
-            <Heading size="md" mb={1}>{workflow.name}</Heading>
-            <Text color={mutedText}>{workflow.description || "No description provided."}</Text>
+            <HStack justify="space-between">
+              <VStack align="flex-start" spacing={1}>
+                <Heading size="md" mb={1}>{workflow.name}</Heading>
+                <Text color={mutedText}>{workflow.description || "No description provided."}</Text>
+              </VStack>
+              {workflow.isActive === false && (
+                <Badge colorScheme="red" variant="solid" px={3} py={1} rounded="full">INACTIVE</Badge>
+              )}
+            </HStack>
             <Text fontSize="sm" color={mutedText} mt={2}>
               {workflow.steps.length} step{workflow.steps.length !== 1 ? "s" : ""}
             </Text>
           </Box>
 
+          {/* ── Inactive Alert ── */}
+          {workflow.isActive === false && (
+            <Alert status="warning" rounded="xl" variant="subtle">
+              <AlertIcon />
+              <Box>
+                <AlertTitle>Workflow is currently disabled</AlertTitle>
+                <AlertDescription>
+                  This workflow is inactive. Please enable it in the Workflow Builder to process files.
+                </AlertDescription>
+              </Box>
+            </Alert>
+          )}
+
           {/* ── Upload card ── */}
-          <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder}>
+          <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder} opacity={workflow.isActive === false ? 0.6 : 1}>
             <VStack align="stretch" spacing={4}>
               <Heading size="md" fontWeight="500">Upload file</Heading>
 
@@ -182,8 +202,8 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                 borderWidth="0.5px"
                 borderColor={inputBorder}
                 rounded="lg"
-                cursor="pointer"
-                _hover={{ bg: inputHover }}
+                cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
+                _hover={{ bg: workflow.isActive === false ? inputBg : inputHover }}
                 transition="background 0.15s"
                 m={0}
               >
@@ -201,6 +221,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                   type="file"
                   display="none"
                   onChange={handleFileChange}
+                  disabled={workflow.isActive === false}
                 />
               </FormLabel>
 
@@ -227,8 +248,8 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
               <HStack spacing={3}>
                 <Button
                   size="sm"
-                  variant="outline"
-                  isDisabled={!uploadedFile || state.status === "running"}
+                  colorScheme="blue"
+                  isDisabled={!uploadedFile || state.status === "running" || workflow.isActive === false}
                   onClick={handleStart}
                 >
                   {state.status === "running" ? "Running…" : "Start workflow"}
@@ -263,10 +284,19 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                     borderWidth="0.5px"
                     borderColor={cardBorder}
                   >
-                    <HStack justify="space-between">
-                      <Text fontWeight="500" fontSize="sm">
-                        {step.stepNumber}. {step.name}
-                      </Text>
+                    <HStack justify="space-between" align="flex-start">
+                      <VStack align="flex-start" spacing={0}>
+                        <Text fontWeight="500" fontSize="sm">
+                          {step.stepNumber}. {step.name}
+                        </Text>
+                        {step.settings && Object.keys(step.settings).length > 0 && (
+                          <Text fontSize="10px" color="gray.500" fontStyle="italic">
+                            {Object.entries(step.settings)
+                              .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+                              .join(" | ")}
+                          </Text>
+                        )}
+                      </VStack>
                       <Badge colorScheme={statusColor(status)} fontSize="10px" px={2} py={0.5}>
                         {status.toUpperCase()}
                       </Badge>

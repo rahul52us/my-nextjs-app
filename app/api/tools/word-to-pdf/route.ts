@@ -12,6 +12,11 @@ function cleanHtmlToText(html: string): string {
     .replace(/<\/li>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/\u00A0/g, " ")
+    // Fix WinAnsi encoding issues by replacing unsupported unicode characters
+    .replace(/[\u2010\u2011\u2012\u2013\u2014]/g, "-") // Various hyphens and dashes
+    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+    .replace(/[\u2022\u2023\u2043]/g, "*") // Various bullet points
     .replace(/\s+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
