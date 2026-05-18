@@ -22,14 +22,23 @@ const HeaderThemeSwitch = () => {
 
   return (
     <IconButton
+      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
       icon={isDarkMode ? <BiSun /> : <BiMoon />}
       onClick={toggleMode}
       variant="ghost"
-      fontSize="2xl"
+      size="md"
+      fontSize="22px"
       color="white"
-      _hover={{ color: "blue.500", bg: "gray.700" }}
-      _active={{ bg: "gray.800" }}
-      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+      _hover={{
+        bg: "whiteAlpha.200",
+        color: "white",
+      }}
+      _active={{
+        bg: "whiteAlpha.300",
+      }}
+      _focus={{
+        boxShadow: "none",
+      }}
     />
   );
 };

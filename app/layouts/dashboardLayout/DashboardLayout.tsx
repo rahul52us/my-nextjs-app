@@ -220,7 +220,6 @@ import React from 'react';
 
 const DashboardLayout = observer(({ children }: { children: React.ReactNode }) => {
   const {
-    auth: { user },
     themeStore: { themeConfig },
   } = stores;
 
@@ -234,7 +233,7 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
     return () => clearTimeout(timeout);
   }, []);
 
-  if (!isReady || !user) {
+  if (!isReady) {
     return (
       <Box
         display="flex"

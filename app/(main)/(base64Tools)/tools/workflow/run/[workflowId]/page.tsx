@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import WorkflowRunner from '../../WorkflowRunner';
+import WorkflowAccessGuard from '../../WorkflowAccessGuard';
 
 export const metadata: Metadata = {
   title: 'Workflow Runner | Toolsahayata',
@@ -14,5 +15,10 @@ type WorkflowRunPageProps = {
 
 export default async function WorkflowRunPage({ params }: WorkflowRunPageProps) {
   const { workflowId } = await params;
-  return <WorkflowRunner workflowId={workflowId} />;
+  return (
+    <>
+      <WorkflowAccessGuard />
+      <WorkflowRunner workflowId={workflowId} />
+    </>
+  );
 }

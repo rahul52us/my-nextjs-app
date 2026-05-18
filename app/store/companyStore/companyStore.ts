@@ -58,13 +58,16 @@ class CompanyStores {
   }
 
   getCompanyDetails = async () => {
+    if (!authStore.company) return null;
     this.isLoading = true;
     try {
       const response = await axios.get(`/company/${authStore.company}`);
       this.companyDetails = response.data?.data
       return response;
     } catch (err: any) {
-      return Promise.reject(err?.response?.data || err.message);
+      // Endpoint may not exist in local auth-only setup; avoid crashing app shell.
+      this.companyDetails = {};
+      return null;
     } finally {
       this.isLoading = false;
     }

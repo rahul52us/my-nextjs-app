@@ -15,29 +15,7 @@ interface Notification {
 }
 
 class AuthStore {
-  user: any = {
-    "_id": "67a0febf6d59f5cb285d8dad",
-    "username": "unknown",
-    "is_active": true,
-    "role": "superadmin",
-    "createdAt": "2025-02-03T17:36:49.475Z",
-    "__v": 0,
-    "company": "65f65a70fbe7ae65d05dac64",
-    "name": "unknown",
-    "profile_details": null,
-    "companyDetails": {
-        "_id": "65f65a70fbe7ae65d05dac64",
-        "company_name": "dev tools",
-        "is_active": true,
-        "verified_email_allowed": false,
-        "otherLinks": [],
-        "createdAt": "2024-03-17T02:50:03.268Z",
-        "__v": 0,
-        "companyOrg": "65f65a70fbe7ae65d05dac64",
-        "companyType": "organisation",
-        "addressInfo": []
-    }
-};
+  user: any = null;
   token: string | null = null;
   isLoading: boolean = false;
   error: string | null = null;
@@ -46,7 +24,7 @@ class AuthStore {
 
   constructor() {
     makeAutoObservable(this);
-    axios.defaults.baseURL = BACKEND_URL
+    axios.defaults.baseURL = BACKEND_URL || "";
     axios.defaults.timeout = 0;
     axios.defaults.headers["Content-Type"] = "application/json";
 
@@ -112,19 +90,21 @@ class AuthStore {
   };
 
   // Register user
-  register = async (email: string, password: string) => {
+  register = async (payload: { name: string; email: string; password: string }) => {
     this.isLoading = true;
     try {
-      const response = await axios.post("/auth/register", { email, password });
-      this.token = response.data.token;
+      const response = await axios.post("/auth/register", payload);
+      this.token = response?.data?.data?.authorization_token;
 
-      if (typeof window !== "undefined") {
+      if (this.token && typeof window !== "undefined") {
         localStorage.setItem(AUTH_TOKEN!, this.token!);
       }
 
       await this.fetchUser();
+      return response?.data;
     } catch (err: any) {
       this.error = err?.response?.data?.message || "Registration failed.";
+      throw err;
     } finally {
       this.isLoading = false;
     }
@@ -179,6 +159,7 @@ class AuthStore {
       return response?.data
     } catch (err: any) {
       this.error = err?.response?.data?.message || "Login failed.";
+      throw err;
     } finally {
       this.isLoading = false;
     }

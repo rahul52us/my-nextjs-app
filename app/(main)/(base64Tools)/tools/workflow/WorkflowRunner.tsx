@@ -24,8 +24,8 @@ import {
 } from "@chakra-ui/react";
 import { FiUpload, FiFile, FiCheck } from "react-icons/fi";
 import { useWorkflowExecution, SavedWorkflow } from "../../../../hooks/useWorkflowExecution";
-
-const WORKFLOW_STORAGE_KEY = "toolsWorkflowBuilder_savedWorkflows";
+import axios from "axios";
+import { AUTH_TOKEN } from "../../../../config/utils/variables";
 
 type WorkflowRunnerProps = {
   workflowId: string;
@@ -41,18 +41,21 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const { state, runWorkflow, reset } = useWorkflowExecution(workflow);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(WORKFLOW_STORAGE_KEY);
-    if (!raw) { setLoadingSaved(false); return; }
-    try {
-      const savedWorkflows: SavedWorkflow[] = JSON.parse(raw);
-      const matched = savedWorkflows.find((w) => w.id === workflowId) ?? null;
-      setWorkflow(matched);
-    } catch (error) {
-      console.error("Failed to load workflow", error);
-      setWorkflow(null);
-    }
-    setLoadingSaved(false);
+    const loadWorkflow = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
+        const { data } = await axios.get(`/workflows/${workflowId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setWorkflow(data?.data ?? null);
+      } catch (error) {
+        console.error("Failed to load workflow", error);
+        setWorkflow(null);
+      } finally {
+        setLoadingSaved(false);
+      }
+    };
+    loadWorkflow();
   }, [workflowId]);
 
   useEffect(() => {

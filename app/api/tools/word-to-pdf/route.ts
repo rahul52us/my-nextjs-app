@@ -17,6 +17,10 @@ function cleanHtmlToText(html: string): string {
     .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
     .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
     .replace(/[\u2022\u2023\u2043]/g, "*") // Various bullet points
+    .replace(/[\u2190\u2191\u2192\u2193]/g, "") // Various arrows (←↑→↓)
+    .replace(/[\u2217\u2218\u2219]/g, "*") // Multiplication/composition symbols
+    .replace(/[\u00AE\u2122\u00A9]/g, "") // Registered, trademark, copyright
+    .replace(/[\u2026]/g, "...") // Ellipsis
     .replace(/\s+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();

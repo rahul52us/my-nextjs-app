@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import WorkflowBuilderContent from './content';
+import WorkflowAccessGuard from './WorkflowAccessGuard';
 
 export const metadata: Metadata = {
   title: 'Workflow Builder | Toolsahayata',
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function WorkflowPage() {
-  return <WorkflowBuilderContent />;
+  return (
+    <>
+      <WorkflowAccessGuard />
+      <WorkflowBuilderContent />
+    </>
+  );
 }

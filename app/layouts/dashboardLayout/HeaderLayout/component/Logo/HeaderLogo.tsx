@@ -37,6 +37,7 @@ import { sidebarData } from "../../../SidebarLayout/utils/SidebarItems";
 import stores from "../../../../../store/stores";
 import React, { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import { AUTH_TOKEN } from "../../../../../config/utils/variables";
 import GlobalSearch from "./GlobalSearch";
 
 interface SidebarItem {
@@ -62,6 +63,7 @@ const HeaderLogo = observer(() => {
   const [scrolled, setScrolled] = useState(false);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [workflowHref, setWorkflowHref] = useState("/tools/workflow");
 
   const textColor = "white";
   const accentColor = themeConfig.colors.brand[300];
@@ -105,6 +107,14 @@ const HeaderLogo = observer(() => {
       document.activeElement.blur();
     }
   }, [pathname, onClose]);
+
+  useEffect(() => {
+    const tokenKey = AUTH_TOKEN || "auth_token";
+    const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+    setWorkflowHref(
+      token ? "/tools/workflow" : "/login"
+    );
+  }, []);
 
   const renderIcon = (item: SidebarItem, size: number = 16) => {
     if (!item.icon) return null;
@@ -408,7 +418,7 @@ const HeaderLogo = observer(() => {
             {/* ── WORKFLOW (More se pehle) ── */}
             <Box
               as={Link}
-              href="/tools/workflow"
+              href={workflowHref}
               px={{ xl: "10px", "2xl": "14px" }}
               py="6px"
               borderRadius="full"
@@ -488,7 +498,7 @@ const HeaderLogo = observer(() => {
 
               {/* Workflow - mobile drawer mein bhi */}
               <Divider my={2} opacity={0.5} mx={4} w="auto" />
-              <Box as={Link} href="/tools/workflow" mx={2} p={4} borderRadius="2xl" onClick={onClose} bg={pathname === "/tools/workflow" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
+              <Box as={Link} href={workflowHref} mx={2} p={4} borderRadius="2xl" onClick={onClose} bg={pathname === "/tools/workflow" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
                 <HStack spacing={3}>
                   <Text fontWeight="700">Workflow</Text>
                 </HStack>

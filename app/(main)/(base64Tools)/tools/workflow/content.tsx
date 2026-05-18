@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import {
   Box, Button, Heading, Text, Input, VStack, HStack, SimpleGrid,
   Badge, Flex, useColorModeValue, useToast, Icon,
@@ -13,8 +14,7 @@ import {
   FaTrash, FaPlay, FaTools, FaChevronDown, FaSearch, FaArrowRight, FaEdit
 } from "react-icons/fa";
 import { features } from "../../../layoutComponent/utils/constant";
-
-const WORKFLOW_STORAGE_KEY = "toolsWorkflowBuilder_savedWorkflows";
+import { AUTH_TOKEN } from "../../../../config/utils/variables";
 
 type OutputType =
   | "pdf" | "word" | "image" | "audio" | "video"
@@ -111,6 +111,11 @@ const WorkflowBuilderContent = () => {
   const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
   const [dropdownSearch, setDropdownSearch] = useState("");
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   // Theme colors
   const pageBg = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
@@ -153,20 +158,16 @@ const WorkflowBuilderContent = () => {
   }, [availableActions, selectedActionId]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(WORKFLOW_STORAGE_KEY);
-    if (raw) {
-      try { 
-        const parsed = JSON.parse(raw);
-        setSavedWorkflows(parsed.map((wf: any) => ({ ...wf, isActive: wf.isActive ?? true }))); 
-      } catch {}
-    }
+    const loadWorkflows = async () => {
+      try {
+        const { data } = await axios.get("/workflows", { headers: getAuthHeaders() });
+        setSavedWorkflows(data?.data || []);
+      } catch {
+        setSavedWorkflows([]);
+      }
+    };
+    loadWorkflows();
   }, []);
-
-  const persistWorkflows = (workflows: SavedWorkflow[]) => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify(workflows));
-  };
 
   const addStep = () => {
     const action = availableActions.find((item) => item.id === selectedActionId);
@@ -193,51 +194,55 @@ const WorkflowBuilderContent = () => {
   };
 
   const toggleWorkflowStatus = (id: string) => {
-    const updated = savedWorkflows.map(wf => wf.id === id ? { ...wf, isActive: !wf.isActive } : wf);
-    setSavedWorkflows(updated);
-    persistWorkflows(updated);
+    const updateStatus = async () => {
+      const target = savedWorkflows.find((wf) => wf.id === id);
+      if (!target) return;
+      try {
+        const { data } = await axios.put(
+          `/workflows/${id}`,
+          { isActive: !target.isActive },
+          { headers: getAuthHeaders() }
+        );
+        setSavedWorkflows((prev) => prev.map((wf) => (wf.id === id ? data.data : wf)));
+      } catch {
+        toast({ status: "error", title: "Failed to update workflow status." });
+      }
+    };
+    updateStatus();
   };
 
-  const saveWorkflow = () => {
+  const saveWorkflow = async () => {
     if (!workflowName.trim()) { toast({ status: "error", title: "Workflow name is required." }); return null; }
     if (steps.length === 0) { toast({ status: "error", title: "Add at least one step to save." }); return null; }
     
-    let updated: SavedWorkflow[];
-    let workflow: SavedWorkflow;
-
     const mappedSteps = steps.map(({ id, name, path, stepNumber, settings }) => ({ id, name, path, stepNumber, settings }));
 
-    if (editingWorkflowId) {
-      updated = savedWorkflows.map(wf => {
-        if (wf.id === editingWorkflowId) {
-          workflow = {
-            ...wf,
-            name: workflowName.trim(),
-            description: workflowDescription.trim(),
-            steps: mappedSteps,
-            savedAt: new Date().toISOString(),
-          };
-          return workflow;
-        }
-        return wf;
-      });
-      workflow = updated.find(wf => wf.id === editingWorkflowId) as SavedWorkflow;
-    } else {
-      workflow = {
-        id: `${Date.now()}`,
-        name: workflowName.trim(),
-        description: workflowDescription.trim(),
-        steps: mappedSteps,
-        savedAt: new Date().toISOString(),
-        isActive: true,
-      };
-      updated = [workflow, ...savedWorkflows];
-    }
+    try {
+      if (editingWorkflowId) {
+        const { data } = await axios.put(
+          `/workflows/${editingWorkflowId}`,
+          { name: workflowName.trim(), description: workflowDescription.trim(), steps: mappedSteps },
+          { headers: getAuthHeaders() }
+        );
+        const updatedWorkflow = data.data;
+        setSavedWorkflows((prev) => prev.map((wf) => (wf.id === editingWorkflowId ? updatedWorkflow : wf)));
+        toast({ status: "success", title: "Workflow updated successfully." });
+        return updatedWorkflow;
+      }
 
-    setSavedWorkflows(updated);
-    persistWorkflows(updated);
-    toast({ status: "success", title: "Workflow saved successfully." });
-    return workflow;
+      const { data } = await axios.post(
+        "/workflows",
+        { name: workflowName.trim(), description: workflowDescription.trim(), steps: mappedSteps, isActive: true },
+        { headers: getAuthHeaders() }
+      );
+      const createdWorkflow = data.data;
+      setSavedWorkflows((prev) => [createdWorkflow, ...prev]);
+      toast({ status: "success", title: "Workflow created successfully." });
+      return createdWorkflow;
+    } catch {
+      toast({ status: "error", title: "Failed to save workflow." });
+      return null;
+    }
   };
 
   const loadWorkflow = (workflow: SavedWorkflow) => {
@@ -260,10 +265,16 @@ const WorkflowBuilderContent = () => {
   };
 
   const deleteWorkflow = (workflowId: string) => {
-    const updated = savedWorkflows.filter((wf) => wf.id !== workflowId);
-    setSavedWorkflows(updated);
-    persistWorkflows(updated);
-    toast({ status: "success", title: "Workflow removed." });
+    const deleteAction = async () => {
+      try {
+        await axios.delete(`/workflows/${workflowId}`, { headers: getAuthHeaders() });
+        setSavedWorkflows((prev) => prev.filter((wf) => wf.id !== workflowId));
+        toast({ status: "success", title: "Workflow removed." });
+      } catch {
+        toast({ status: "error", title: "Failed to delete workflow." });
+      }
+    };
+    deleteAction();
   };
 
   const clearBuilder = () => {
@@ -531,9 +542,10 @@ const WorkflowBuilderContent = () => {
                     <Button variant="link" color="blue.500" fontWeight="normal" onClick={() => setView("list")} fontSize="sm">
                       Cancel
                     </Button>
-                    <Button bg="blue.500" color="white" _hover={{ bg: "blue.600" }} onClick={() => {
+                    <Button bg="blue.500" color="white" _hover={{ bg: "blue.600" }} onClick={async () => {
                       const saved = saveWorkflow();
-                      if (saved) setView("list");
+                      const savedWorkflow = await saved;
+                      if (savedWorkflow) setView("list");
                     }} px={8} size="md">
                       {editingWorkflowId ? "Update Workflow" : "Create Workflow"}
                     </Button>

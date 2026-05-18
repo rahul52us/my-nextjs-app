@@ -13,6 +13,7 @@ import {
   VStack,
   Icon,
   Portal,
+  Button,
 } from "@chakra-ui/react";
 import { observer } from "mobx-react-lite";
 import {
@@ -96,7 +97,6 @@ const HeaderProfile = observer(() => {
             </MenuItem>
             <Divider />
             <MenuItem
-              display="none"
               onClick={() => {
                 doLogout();
                 router.push(authentication.login);
@@ -109,43 +109,22 @@ const HeaderProfile = observer(() => {
       </Portal>
     </Menu>
   ) : (
-    <Menu closeOnSelect={false} placement="bottom-end">
-      <MenuButton
-        as={IconButton}
-        aria-label="User Menu"
-        icon={<Avatar size="sm" borderRadius="full" />}
-        size="sm"
-        variant="ghost"
-      />
-      <Portal>
-        <MenuList
-          minWidth="220px"
-          boxShadow="xl"
-          borderRadius="md"
-          zIndex={9999}   // ← same fix here
-          p={2}
-        >
-          <VStack spacing={2}>
-            <MenuItem
-              onClick={() => router.push(authentication.login)}
-              display="flex"
-              alignItems="center"
-            >
-              <Icon as={FaUser} boxSize={6} mr={2} color={themeConfig.colors.brand[500]} />
-              <Text>Login</Text>
-            </MenuItem>
-            <MenuItem
-              onClick={() => router.push(authentication.createOrganisationStep1)}
-              display="flex"
-              alignItems="center"
-            >
-              <Icon as={FaKey} boxSize={6} mr={2} color={themeConfig.colors.brand[500]} />
-              <Text>Create New Account</Text>
-            </MenuItem>
-          </VStack>
-        </MenuList>
-      </Portal>
-    </Menu>
+    <Button
+  size="sm"
+  variant="ghost"
+  color="white"
+  _hover={{
+    bg: "whiteAlpha.200",
+    color: "white",
+  }}
+  _active={{
+    bg: "whiteAlpha.300",
+  }}
+  onClick={() => router.push(authentication.login)}
+  leftIcon={<Icon as={FaUser} boxSize={4} color="white" />}
+>
+  Login
+</Button>
   );
 });
 

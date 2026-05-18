@@ -41,7 +41,7 @@ export type WorkflowExecutionState = {
   error?: string;
 };
 
-function getToolSlug(path: string) {
+function getToolSlug(path: string, name?: string) {
   const parts = path.split("/").filter(Boolean);
   const lastPart = parts[parts.length - 1] || "";
 
@@ -71,6 +71,14 @@ function getToolSlug(path: string) {
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
     .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
     .toLowerCase();
+
+  if (normalized === 'binary' && name) {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
 
   if (normalized.includes('-')) {
     return normalized.replace(/-+/g, '-');
@@ -216,6 +224,10 @@ async function executeToolStep(slug: string, inputFile: File | Blob, settings?: 
       });
     }
 
+    if (slug.startsWith('binary')) {
+      formData.append('mode', slug);
+    }
+
     response = await fetch(`/api/tools/${slug}`, {
       method: "POST",
       body: formData,
@@ -329,7 +341,7 @@ export function useWorkflowExecution(workflow: SavedWorkflow | null) {
 
     for (let index = 0; index < workflow.steps.length; index += 1) {
       const step = workflow.steps[index];
-      const slug = getToolSlug(step.path);
+      const slug = getToolSlug(step.path, step.name);
       setState((prev) => ({
         ...prev,
         currentStepIndex: index,

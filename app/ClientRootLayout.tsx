@@ -7,28 +7,30 @@ import MainLayout from './layouts/mainLayout/MainLayout';
 import AuthenticationLayout from './layouts/authenticationLayout/AuthenticationLayout';
 import DashboardLayout from './layouts/dashboardLayout/DashboardLayout';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import stores from './store/stores';
 import Notification from './component/common/Notification/Notification';
 import React from 'react';
 
 const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) => {
-  const {
-    companyStore: { getCompanyDetails },
-  } = stores;
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    getCompanyDetails();
-  }, [getCompanyDetails]);
+    setMounted(true);
+  }, []);
 
-  const theme = extendTheme({
-    ...stores.themeStore.themeConfig,
-    fonts,
-    breakpoints,
-    components,
-    styles,
-  });
+  const theme = useMemo(
+    () =>
+      extendTheme({
+        ...stores.themeStore.themeConfig,
+        fonts,
+        breakpoints,
+        components,
+        styles,
+      }),
+    [stores.themeStore.themeConfig]
+  );
 
   const getLayout = () => {
     if (['/login', '/register', '/forgot-password'].includes(pathname)) {
@@ -40,6 +42,10 @@ const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) 
   };
 
   const LayoutComponent = getLayout();
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <ChakraProvider theme={theme}>

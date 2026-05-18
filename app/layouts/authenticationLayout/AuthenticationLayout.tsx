@@ -1,76 +1,53 @@
 'use client';
 
-import { Box, Flex, Image, useBreakpointValue } from '@chakra-ui/react';
+import { Box, Flex, useBreakpointValue, useColorModeValue } from '@chakra-ui/react';
 import React from 'react';
 
 const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
-  // const pathname = usePathname();
   const isMobile = useBreakpointValue({ base: true, md: false });
-
-  // if (pathname === '/register') {
-  //   return <>{children}</>;
-  // }
+  const overlay = useColorModeValue(
+    'linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.62) 48%, rgba(255,255,255,0.95))',
+    'linear-gradient(90deg, rgba(0,0,0,0.78), rgba(0,0,0,0.5) 48%, rgba(0,0,0,0.78))'
+  );
 
   return (
-    <Flex
-      minHeight="100vh"
-      direction={{ base: 'column', md: 'row' }}
-      justifyContent="center"
-      alignItems="center"
-      bg="gray.50"
-      p={5}
-      gap={{ md: 8 ,xl:10}}
+    <Box
+      height="100vh"
+      width="100%"
+      overflow="hidden"
+      position="relative"
+      bgImage="url('/Auth-image.jpg')"
+      bgSize="cover"
+      bgPosition="center"
+      bgRepeat="no-repeat"
+      bgColor={useColorModeValue('gray.50', 'gray.900')}
     >
-      {/* Left Section - Background Image */}
-      {!isMobile && (
-        <Box
-          position="relative"
-          bgImage="/images/auth/bgImage.png"
-          height={{ md: '90vh',xl:"94vh" }}
-          width={{ md: '40%', lg: '45%' }}
-          bgSize="cover"
-          bgPosition="center"
-          rounded="xl"
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          alignSelf="center"
-        >
-          <Image
-            src="/images/whiteLogo.png"
-            alt="top psychologist in noida"
-            position="absolute"
-            top={4}
-            left={8}
-            width={{ base: '60px', md: '160px' }}
-          />
-          <Image
-            src="/images/auth/gridImages.png"
-            alt="Top Clinical Psychologist Doctors in Noida"
-            width={{ base: '50%', md: '70%' }}
-            maxW="450px"
-          />
-        </Box>
-      )}
+      <Box position="absolute" inset={0} bg={overlay} />
 
-      {/* Right Section - Form Content */}
-      <Box
-        bg="white"
-        p={{ base: 6, md: 8 }}
-        borderRadius="md"
-        width={{ base: '100%', md: '40%', lg: '45%' }}
-        maxW="550px"
-        display="flex"
-        flexDirection="column"
+      <Flex
+        minHeight="100vh"
+        width="100%"
+        position="relative"
+        px={{ base: 4, md: 8, xl: 16 }}
+        py={{ base: 10, md: 14 }}
         justifyContent="center"
-        // boxShadow={{ base: 'none', md: 'lg' }}
-        minHeight={{ md: 'auto' }}
-        ml={4}
+        alignItems="center"
       >
-        {children}
-      </Box>
-    </Flex>
+        <Box
+          width={{ base: '100%', md: '46%', lg: '38%' }}
+          maxW="560px"
+          maxHeight="calc(100vh - 84px)"
+          overflow="hidden"
+          bg="transparent"
+          borderRadius="0"
+          boxShadow="none"
+          p={{ base: 5, md: 8 }}
+          mb={{ base: 10, md: 12 }}
+        >
+          {children}
+        </Box>
+      </Flex>
+    </Box>
   );
 };
 
