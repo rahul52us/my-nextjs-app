@@ -114,6 +114,114 @@ const HeaderLogo = observer(() => {
     });
   };
 
+  const renderSubMenu = (subItem: SidebarItem, depth: number = 1) => {
+    if (subItem.children && subItem.children.length > 0) {
+      return (
+        <Menu key={subItem.id} placement="right-start" isLazy closeOnSelect={false} offset={[0, 10]}>
+          <MenuButton
+            as={MenuItem}
+            borderRadius="xl"
+            transition="all 0.2s ease"
+            _hover={{ bg: mobileLinkHover }}
+            py={3}
+          >
+            <HStack justify="space-between" width="100%">
+              <HStack spacing={3}>
+                {renderIcon(subItem, 18)}
+                <Text fontWeight="700" fontSize="sm">
+                  {subItem.name}
+                </Text>
+              </HStack>
+              <ChevronRightIcon opacity={0.5} />
+            </HStack>
+          </MenuButton>
+          <MenuList
+            bg={menuBg}
+            color={menuTextColor}
+            p={2}
+            borderRadius="2xl"
+            zIndex={9999}
+            animation={`${slideRight} 0.24s ease-out`}
+            sx={{
+              border: "1px solid !important",
+              borderColor: `${menuBorderColor} !important`,
+              boxShadow: `${shadowColor} !important`,
+              outline: "none !important",
+            }}
+          >
+            {subItem.children.map((child) => renderSubMenu(child, depth + 1))}
+          </MenuList>
+        </Menu>
+      );
+    } else {
+      return (
+        <MenuItem
+          key={subItem.id}
+          as={Link}
+          href={subItem.url || "#"}
+          borderRadius="xl"
+          py={depth === 1 ? 3 : 2.5}
+          fontSize="sm"
+          fontWeight="700"
+          transition="all 0.18s ease"
+          _hover={{ bg: mobileLinkHover }}
+          onClick={() => setOpenMenu(null)}
+        >
+          <HStack spacing={3}>
+            {renderIcon(subItem, depth === 1 ? 18 : 16)}
+            <span>{subItem.name}</span>
+          </HStack>
+        </MenuItem>
+      );
+    }
+  };
+
+  const renderMobileMenu = (child: SidebarItem, depth: number = 0) => {
+    if (child.children && child.children.length > 0) {
+      return (
+        <Box key={child.id} mb={depth === 0 ? 2 : 1}>
+          <HStack px={5} py={2} spacing={3} opacity={0.8}>
+            {renderIcon(child, 18 - depth * 2)}
+            <Text fontSize="sm" fontWeight="700">
+              {child.name}
+            </Text>
+          </HStack>
+          <VStack
+            align="stretch"
+            spacing={1}
+            mt={1}
+            ml={5 + depth * 3}
+            borderLeft="1.5px solid"
+            borderColor={borderColor}
+          >
+            {child.children.map((nested) => renderMobileMenu(nested, depth + 1))}
+          </VStack>
+        </Box>
+      );
+    } else {
+      return (
+        <Box
+          key={child.id}
+          as={Link}
+          href={child.url || "#"}
+          mx={2}
+          p={3.5 - depth * 0.5}
+          borderRadius={depth === 0 ? "2xl" : "0 12px 12px 0"}
+          onClick={onClose}
+          _hover={{ bg: mobileLinkHover }}
+          bg={pathname === child.url ? mobileLinkHover : "transparent"}
+        >
+          <HStack spacing={3}>
+            {renderIcon(child, 20 - depth * 2)}
+            <Text fontSize="sm" fontWeight="700">
+              {child.name}
+            </Text>
+          </HStack>
+        </Box>
+      );
+    }
+  };
+
   // ── sidebarData ko 2 parts mein split karo ──
   // Last item = "More", baaki sab = other menus
   const sidebarItems = sidebarData as SidebarItem[];
@@ -211,31 +319,7 @@ const HeaderLogo = observer(() => {
               );
             })()
           ) : (
-            mainItem.children?.map((subItem) =>
-              subItem.children ? (
-                <Menu key={subItem.id} placement="right-start" isLazy closeOnSelect={false} offset={[0, 10]}>
-                  <MenuButton as={MenuItem} borderRadius="xl" transition="all 0.2s ease" _hover={{ bg: mobileLinkHover }} py={3}>
-                    <HStack justify="space-between" width="100%">
-                      <HStack spacing={3}>{renderIcon(subItem, 18)}<Text fontWeight="700" fontSize="sm">{subItem.name}</Text></HStack>
-                      <ChevronRightIcon opacity={0.5} />
-                    </HStack>
-                  </MenuButton>
-                  <Portal>
-                    <MenuList bg={menuBg} color={menuTextColor} p={2} borderRadius="2xl" zIndex={9999} animation={`${slideRight} 0.24s ease-out`} sx={{ border: "1px solid !important", borderColor: `${menuBorderColor} !important`, boxShadow: `${shadowColor} !important`, outline: "none !important" }}>
-                      {subItem.children.map((nestedItem) => (
-                        <MenuItem key={nestedItem.id} as={Link} href={nestedItem.url || "#"} borderRadius="xl" py={2.5} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                          <HStack spacing={3}>{renderIcon(nestedItem, 16)}<span>{nestedItem.name}</span></HStack>
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Portal>
-                </Menu>
-              ) : (
-                <MenuItem key={subItem.id} as={Link} href={subItem.url || "#"} borderRadius="xl" py={3} fontSize="sm" fontWeight="700" transition="all 0.18s ease" _hover={{ bg: mobileLinkHover }} onClick={() => setOpenMenu(null)}>
-                  <HStack spacing={3}>{renderIcon(subItem, 18)}<span>{subItem.name}</span></HStack>
-                </MenuItem>
-              )
-            )
+            mainItem.children?.map((subItem) => renderSubMenu(subItem))
           )}
         </MenuList>
       </Portal>
@@ -397,29 +481,7 @@ const HeaderLogo = observer(() => {
                     {item.name}
                   </Text>
                   <VStack align="stretch" spacing={1}>
-                    {item.children?.map((child) => (
-                      <Box key={child.id}>
-                        {child.children ? (
-                          <Box mb={2}>
-                            <HStack px={5} py={2} spacing={3} opacity={0.8}>
-                              {renderIcon(child, 18)}
-                              <Text fontSize="sm" fontWeight="700">{child.name}</Text>
-                            </HStack>
-                            <VStack align="stretch" spacing={1} mt={1} ml={8} borderLeft="1.5px solid" borderColor={borderColor}>
-                              {child.children.map((nested) => (
-                                <Box key={nested.id} as={Link} href={nested.url || "#"} p={2.5} pl={6} borderRadius="0 12px 12px 0" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === nested.url ? mobileLinkHover : "transparent"}>
-                                  <HStack spacing={2}>{renderIcon(nested, 14)}<Text fontSize="sm" fontWeight="700">{nested.name}</Text></HStack>
-                                </Box>
-                              ))}
-                            </VStack>
-                          </Box>
-                        ) : (
-                          <Box as={Link} href={child.url || "#"} mx={2} p={3.5} borderRadius="2xl" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === child.url ? mobileLinkHover : "transparent"}>
-                            <HStack spacing={3}>{renderIcon(child, 20)}<Text fontWeight="700">{child.name}</Text></HStack>
-                          </Box>
-                        )}
-                      </Box>
-                    ))}
+                    {item.children?.map((child) => renderMobileMenu(child))}
                   </VStack>
                 </Box>
               ))}
@@ -438,29 +500,7 @@ const HeaderLogo = observer(() => {
                   {moreItem.name}
                 </Text>
                 <VStack align="stretch" spacing={1}>
-                  {moreItem.children?.map((child) => (
-                    <Box key={child.id}>
-                      {child.children ? (
-                        <Box mb={2}>
-                          <HStack px={5} py={2} spacing={3} opacity={0.8}>
-                            {renderIcon(child, 18)}
-                            <Text fontSize="sm" fontWeight="700">{child.name}</Text>
-                          </HStack>
-                          <VStack align="stretch" spacing={1} mt={1} ml={8} borderLeft="1.5px solid" borderColor={borderColor}>
-                            {child.children.map((nested) => (
-                              <Box key={nested.id} as={Link} href={nested.url || "#"} p={2.5} pl={6} borderRadius="0 12px 12px 0" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === nested.url ? mobileLinkHover : "transparent"}>
-                                <HStack spacing={2}>{renderIcon(nested, 14)}<Text fontSize="sm" fontWeight="700">{nested.name}</Text></HStack>
-                              </Box>
-                            ))}
-                          </VStack>
-                        </Box>
-                      ) : (
-                        <Box as={Link} href={child.url || "#"} mx={2} p={3.5} borderRadius="2xl" onClick={onClose} _hover={{ bg: mobileLinkHover }} bg={pathname === child.url ? mobileLinkHover : "transparent"}>
-                          <HStack spacing={3}>{renderIcon(child, 20)}<Text fontWeight="700">{child.name}</Text></HStack>
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
+                  {moreItem.children?.map((child) => renderMobileMenu(child))}
                 </VStack>
               </Box>
 
