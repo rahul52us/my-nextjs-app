@@ -24,7 +24,7 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import stores from "../../../../store/stores";
 
-const API_URL = "http://localhost:5000/api/chat";
+const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chat`;
 
 interface Message {
   role: "user" | "bot";
