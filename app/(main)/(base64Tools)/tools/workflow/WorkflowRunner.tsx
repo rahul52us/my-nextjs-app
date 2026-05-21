@@ -1,6 +1,6 @@
 'use client';
 
-import { type ChangeEvent, useEffect, useState } from "react";
+import React, { type ChangeEvent, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -21,9 +21,18 @@ import {
   AlertTitle,
   AlertDescription,
   Link,
+  Flex,
+  Spinner,
+  Divider,
+  SimpleGrid,
 } from "@chakra-ui/react";
-import { FiUpload, FiFile, FiCheck } from "react-icons/fi";
+import {
+  FaCloudUploadAlt, FaFileAlt, FaCheckCircle,
+  FaExclamationTriangle, FaDownload, FaArrowLeft,
+  FaRedo, FaTools, FaSlidersH, FaPercent
+} from "react-icons/fa";
 import { useWorkflowExecution, SavedWorkflow } from "../../../../hooks/useWorkflowExecution";
+import { features } from "../../../layoutComponent/utils/constant";
 import axios from "axios";
 import { AUTH_TOKEN } from "../../../../config/utils/variables";
 
@@ -31,14 +40,37 @@ type WorkflowRunnerProps = {
   workflowId: string;
 };
 
+function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<SavedWorkflow | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [loadingSaved, setLoadingSaved] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { state, runWorkflow, reset } = useWorkflowExecution(workflow);
+
+  // Map features to have access to step icons
+  const availableActions = useMemo(() => {
+    return Object.values(features)
+      .flat()
+      .filter((item: any) => item?.path && item?.name)
+      .map((item: any) => ({
+        id: item.path,
+        name: item.name,
+        path: item.path,
+        icon: item.icon,
+      }));
+  }, []);
 
   useEffect(() => {
     const loadWorkflow = async () => {
@@ -67,6 +99,29 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUploadedFile(event.target.files?.[0] ?? null);
+  };
+
+  // Drag and Drop triggers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (workflow?.isActive !== false && state.status !== "running") {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (workflow?.isActive === false || state.status === "running") return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
   };
 
   const handleStart = async () => {
@@ -114,220 +169,382 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
 
   const errorMessage = state.status === "error" ? state.error : undefined;
 
-  // ── colour tokens ──────────────────────────────────────────────
-  const cardBg = useColorModeValue("white", "gray.800");
+  // Expected file format based on first step
+  const expectedFormatText = useMemo(() => {
+    if (!workflow || workflow.steps.length === 0) return "any file";
+    const firstStep = workflow.steps[0];
+    const name = firstStep.name.toLowerCase();
+    if (name.includes("pdf")) return "PDF file";
+    if (name.includes("word") || name.includes("doc")) return "Word document";
+    if (name.includes("excel") || name.includes("csv")) return "Excel/CSV table";
+    if (name.includes("image") || name.includes("jpg") || name.includes("png")) return "Image file";
+    if (name.includes("audio") || name.includes("mp3")) return "Audio track";
+    if (name.includes("zip")) return "ZIP archive";
+    if (name.includes("json")) return "JSON file";
+    return "compatible format";
+  }, [workflow]);
+
+  // Color tokens
+  const cardBg = useColorModeValue("white", "gray.850");
   const cardBorder = useColorModeValue("gray.200", "gray.700");
-  const mutedText = useColorModeValue("gray.500", "gray.400");
-  const inputBg = useColorModeValue("gray.50", "gray.700");
-  const inputBorder = useColorModeValue("gray.300", "gray.600");
-  const inputHover = useColorModeValue("gray.100", "gray.600");
-  const pillBorder = useColorModeValue("gray.200", "gray.600");
+  const mutedText = useColorModeValue("gray.500", "gray.450");
+  const uploadBg = useColorModeValue("gray.50", "gray.800");
+  const uploadHoverBg = useColorModeValue("blue.50", "gray.750");
+  const uploadBorder = useColorModeValue("gray.300", "gray.600");
   const stepBg = useColorModeValue("gray.50", "gray.750");
 
   const statusColor = (s: string) =>
-    s === "completed" ? "green" : s === "running" ? "teal" : s === "failed" ? "red" : "gray";
+    s === "completed" ? "green" : s === "running" ? "blue" : s === "failed" ? "red" : "gray";
+
+  // Calculate compression/processing savings
+  const sizeStats = useMemo(() => {
+    if (!uploadedFile || !state.resultBlob || state.status !== "completed") return null;
+    const orig = uploadedFile.size;
+    const res = state.resultBlob.size;
+    const diff = orig - res;
+    const ratio = Math.round((diff / orig) * 100);
+    return {
+      original: formatBytes(orig),
+      processed: formatBytes(res),
+      reduced: diff > 0,
+      savingsPercent: ratio > 0 ? ratio : 0,
+    };
+  }, [uploadedFile, state.resultBlob, state.status]);
 
   return (
-    <Box py={{ base: 6, md: 10 }} px={{ base: 4, md: 8 }} maxW="container.lg" mx="auto">
-
-      {/* ── Header ── */}
-      <HStack justify="space-between" mb={6} flexWrap="wrap" gap={3}>
-        <VStack align="flex-start" spacing={1}>
-          <Heading size="xl">Workflow Runner</Heading>
-          <Text color={mutedText}>
-            Upload once and let the selected workflow run through all steps automatically.
-          </Text>
-        </VStack>
-        <Button size="sm" variant="outline" colorScheme="blue" onClick={() => router.push("/tools/workflow")}>
-          Back to Builder
+    <Box py={{ base: 6, md: 10 }} px={{ base: 4, md: 8 }} maxW="4xl" mx="auto" minH="85vh">
+      {/* Top Navigation */}
+      <HStack justify="space-between" mb={8} flexWrap="wrap" gap={3}>
+        <Button
+          leftIcon={<FaArrowLeft />}
+          size="sm"
+          variant="ghost"
+          colorScheme="blue"
+          onClick={() => router.push("/tools/workflow")}
+        >
+          Back to Workflows
         </Button>
+        <Heading size="xs" color={mutedText} textTransform="uppercase" letterSpacing="wider">
+          Workflow Pipeline Runner
+        </Heading>
       </HStack>
 
-      {/* ── States ── */}
       {loadingSaved ? (
-        <Text>Loading workflow…</Text>
+        <Flex justify="center" align="center" py={12}>
+          <Spinner size="lg" color="blue.500" thickness="3px" />
+          <Text ml={3}>Loading workflow details...</Text>
+        </Flex>
       ) : !workflow ? (
-        <Alert status="error" rounded="xl">
+        <Alert status="error" rounded="2xl" shadow="sm">
           <AlertIcon />
           <Box>
             <AlertTitle>Workflow not found</AlertTitle>
             <AlertDescription>
-              The workflow ID may be invalid or the workflow has been removed.
+              The workflow ID may be invalid or it has been removed.
             </AlertDescription>
           </Box>
         </Alert>
       ) : (
-        <Stack spacing={5}>
-
-          {/* ── Workflow info card ── */}
-          <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder}>
-            <HStack justify="space-between">
+        <Stack spacing={6}>
+          {/* Workflow Header Panel */}
+          <Box
+            p={6}
+            bg={cardBg}
+            rounded="2xl"
+            borderWidth="1px"
+            borderColor={cardBorder}
+            shadow="sm"
+          >
+            <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
               <VStack align="flex-start" spacing={1}>
-                <Heading size="md" mb={1}>{workflow.name}</Heading>
-                <Text color={mutedText}>{workflow.description || "No description provided."}</Text>
+                <Heading size="md">{workflow.name}</Heading>
+                <Text color={mutedText} fontSize="sm">
+                  {workflow.description || "No description provided."}
+                </Text>
               </VStack>
-              {workflow.isActive === false && (
-                <Badge colorScheme="red" variant="solid" px={3} py={1} rounded="full">INACTIVE</Badge>
-              )}
-            </HStack>
-            <Text fontSize="sm" color={mutedText} mt={2}>
-              {workflow.steps.length} step{workflow.steps.length !== 1 ? "s" : ""}
-            </Text>
+              <HStack spacing={2}>
+                <Badge colorScheme="blue" variant="subtle" px={2.5} py={1} rounded="md">
+                  {workflow.steps.length} Step{workflow.steps.length !== 1 ? "s" : ""}
+                </Badge>
+                {workflow.isActive === false && (
+                  <Badge colorScheme="red" variant="solid" px={2.5} py={1} rounded="md">
+                    Disabled
+                  </Badge>
+                )}
+              </HStack>
+            </Flex>
           </Box>
 
-          {/* ── Inactive Alert ── */}
+          {/* Inactive workflow warning */}
           {workflow.isActive === false && (
-            <Alert status="warning" rounded="xl" variant="subtle">
+            <Alert status="warning" rounded="2xl" variant="subtle">
               <AlertIcon />
               <Box>
-                <AlertTitle>Workflow is currently disabled</AlertTitle>
-                <AlertDescription>
-                  This workflow is inactive. Please enable it in the Workflow Builder to process files.
+                <AlertTitle>Workflow is inactive</AlertTitle>
+                <AlertDescription fontSize="sm">
+                  Please activate this workflow toggle in the Workflow Builder to upload and process files.
                 </AlertDescription>
               </Box>
             </Alert>
           )}
 
-          {/* ── Upload card ── */}
-          <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder} opacity={workflow.isActive === false ? 0.6 : 1}>
-            <VStack align="stretch" spacing={4}>
-              <Heading size="md" fontWeight="500">Upload file</Heading>
+          {/* Running State: Pipeline Timeline Runner */}
+          {state.status === "running" && (
+            <Box p={6} bg={cardBg} rounded="2xl" borderWidth="1px" borderColor={cardBorder} shadow="sm">
+              <Heading size="sm" mb={4}>
+                Executing Pipeline Steps...
+              </Heading>
+              <Progress value={progressValue} size="xs" colorScheme="blue" rounded="full" mb={6} hasStripe isAnimated />
 
-              {/* Custom file trigger */}
-              <FormLabel
-                htmlFor="file-upload"
-                display="flex"
-                alignItems="center"
-                gap={3}
-                px={4}
-                py={3}
-                bg={inputBg}
-                borderWidth="0.5px"
-                borderColor={inputBorder}
-                rounded="lg"
-                cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
-                _hover={{ bg: workflow.isActive === false ? inputBg : inputHover }}
-                transition="background 0.15s"
-                m={0}
-              >
-                <Icon as={FiUpload} color="gray.500" boxSize={5} />
-                <Text
-                  fontSize="sm"
-                  color={uploadedFile ? "inherit" : mutedText}
-                  noOfLines={1}
-                  flex={1}
-                >
-                  {uploadedFile ? uploadedFile.name : "Choose a file…"}
-                </Text>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  display="none"
-                  onChange={handleFileChange}
-                  disabled={workflow.isActive === false}
-                />
-              </FormLabel>
+              <VStack align="stretch" spacing={3}>
+                {workflow.steps.map((step, index) => {
+                  const stepState = state.steps[index];
+                  const status = stepState?.status ?? "pending";
+                  const action = availableActions.find((a) => a.id === step.id || a.path === step.path || a.name === step.name);
+                  const stepIcon = action?.icon ?? FaTools;
 
-              {/* Selected file pill */}
-              {uploadedFile && (
-                <HStack
-                  px={3}
-                  py={2}
-                  bg={inputBg}
-                  borderWidth="0.5px"
-                  borderColor={pillBorder}
-                  rounded="lg"
-                  spacing={2}
-                >
-                  <Icon as={FiFile} boxSize={4} color="gray.500" />
-                  <Text fontSize="xs" flex={1} noOfLines={1}>
-                    {uploadedFile.name}
-                  </Text>
-                  <Icon as={FiCheck} boxSize={4} color="green.400" />
-                </HStack>
-              )}
+                  const isCurrent = state.currentStepIndex === index;
 
-              {/* Action buttons */}
-              <HStack spacing={3}>
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  isDisabled={!uploadedFile || state.status === "running" || workflow.isActive === false}
-                  onClick={handleStart}
-                >
-                  {state.status === "running" ? "Running…" : "Start workflow"}
-                </Button>
-                <Button size="sm" variant="ghost" color={mutedText} onClick={handleReset}>
-                  Reset
-                </Button>
-              </HStack>
+                  return (
+                    <Box
+                      key={`${step.id}-${index}`}
+                      p={4}
+                      rounded="xl"
+                      bg={isCurrent ? useColorModeValue("blue.50", "gray.750") : stepBg}
+                      borderWidth="1px"
+                      borderColor={isCurrent ? "blue.300" : cardBorder}
+                      transition="all 0.2s"
+                    >
+                      <Flex align="center" justify="space-between">
+                        <HStack spacing={3}>
+                          {status === "running" ? (
+                            <Spinner size="xs" color="blue.500" />
+                          ) : status === "completed" ? (
+                            <Icon as={FaCheckCircle} color="green.500" boxSize={4} />
+                          ) : status === "failed" ? (
+                            <Icon as={FaExclamationTriangle} color="red.500" boxSize={4} />
+                          ) : (
+                            <Flex
+                              w="18px"
+                              h="18px"
+                              rounded="full"
+                              bg="gray.300"
+                              color="white"
+                              fontSize="10px"
+                              fontWeight="bold"
+                              align="center"
+                              justify="center"
+                            >
+                              {index + 1}
+                            </Flex>
+                          )}
 
-              {errorMessage && (
-                <Alert status="error" rounded="lg" fontSize="sm">
-                  <AlertIcon />
-                  {errorMessage}
-                </Alert>
-              )}
-            </VStack>
-          </Box>
+                          <Icon as={stepIcon} color={isCurrent ? "blue.500" : "gray.400"} boxSize={4} />
+                          <VStack align="flex-start" spacing={0}>
+                            <Text fontWeight={isCurrent ? "bold" : "semibold"} fontSize="sm" color={isCurrent ? "blue.600" : "inherit"}>
+                              {step.name}
+                            </Text>
+                            {step.settings && Object.keys(step.settings).length > 0 && (
+                              <HStack spacing={1} color="gray.500" fontSize="10px">
+                                <Icon as={FaSlidersH} />
+                                <Text>
+                                  {Object.entries(step.settings)
+                                    .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
+                                    .join(" | ")}
+                                </Text>
+                              </HStack>
+                            )}
+                          </VStack>
+                        </HStack>
 
-          {/* ── Progress card ── */}
-          <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder}>
-            <Heading size="md" mb={4}>Progress</Heading>
-            <Progress value={progressValue} size="sm" colorScheme="teal" rounded="full" mb={5} />
-            <Stack spacing={3}>
-              {workflow.steps.map((step, index) => {
-                const status = state.steps[index]?.status ?? "pending";
-                return (
-                  <Box
-                    key={step.id}
-                    p={3}
-                    rounded="lg"
-                    bg={stepBg}
-                    borderWidth="0.5px"
-                    borderColor={cardBorder}
-                  >
-                    <HStack justify="space-between" align="flex-start">
-                      <VStack align="flex-start" spacing={0}>
-                        <Text fontWeight="500" fontSize="sm">
-                          {step.stepNumber}. {step.name}
-                        </Text>
-                        {step.settings && Object.keys(step.settings).length > 0 && (
-                          <Text fontSize="10px" color="gray.500" fontStyle="italic">
-                            {Object.entries(step.settings)
-                              .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`)
-                              .join(" | ")}
+                        <Badge colorScheme={statusColor(status)} fontSize="9px" px={2} py={0.5} rounded="md">
+                          {status.toUpperCase()}
+                        </Badge>
+                      </Flex>
+
+                      {status === "failed" && stepState?.message && (
+                        <Box mt={3} p={2.5} bg="red.50" _dark={{ bg: "red.950" }} rounded="md" borderLeftWidth="3px" borderColor="red.400">
+                          <Text fontSize="xs" color="red.700" _dark={{ color: "red.200" }} fontWeight="semibold">
+                            Error: {stepState.message}
                           </Text>
-                        )}
-                      </VStack>
-                      <Badge colorScheme={statusColor(status)} fontSize="10px" px={2} py={0.5}>
-                        {status.toUpperCase()}
-                      </Badge>
-                    </HStack>
-                    {state.steps[index]?.message && (
-                      <Text fontSize="xs" color={mutedText} mt={1}>
-                        {state.steps[index]?.message}
-                      </Text>
-                    )}
-                  </Box>
-                );
-              })}
-            </Stack>
-          </Box>
-
-          {/* ── Result card ── */}
-          {state.status === "completed" && state.resultBlob && downloadUrl && (
-            <Box p={6} bg={cardBg} rounded="xl" borderWidth="0.5px" borderColor={cardBorder}>
-              <Heading size="md" mb={1}>Done</Heading>
-              <Text color={mutedText} mb={4}>
-                Workflow completed successfully. Download the transformed file below.
-              </Text>
-              <Link href={downloadUrl} download={resultFileName} color="teal.500" fontWeight="500">
-                Download final file
-              </Link>
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </VStack>
             </Box>
           )}
 
+          {/* Success Screen */}
+          {state.status === "completed" && state.resultBlob && downloadUrl && (
+            <VStack spacing={6} align="stretch">
+              <Box
+                p={8}
+                bg={cardBg}
+                rounded="2xl"
+                borderWidth="1px"
+                borderColor="green.200"
+                shadow="sm"
+                textAlign="center"
+              >
+                <Icon as={FaCheckCircle} color="green.450" boxSize={16} mb={4} />
+                <Heading size="lg" mb={2}>Workflow Complete!</Heading>
+                <Text color={mutedText} mb={6} maxW="md" mx="auto">
+                  All pipeline steps ran successfully. Your processed output file is ready for download.
+                </Text>
+
+                {sizeStats && (
+                  <SimpleGrid columns={2} gap={4} maxW="sm" mx="auto" mb={6} p={4} bg={stepBg} rounded="xl" borderWidth="1px" borderColor={cardBorder}>
+                    <VStack spacing={0}>
+                      <Text fontSize="xs" color={mutedText}>Original Size</Text>
+                      <Text fontWeight="bold" fontSize="md">{sizeStats.original}</Text>
+                    </VStack>
+                    <VStack spacing={0}>
+                      <Text fontSize="xs" color={mutedText}>Result Size</Text>
+                      <Text fontWeight="bold" fontSize="md" color={sizeStats.reduced ? "green.500" : "inherit"}>
+                        {sizeStats.processed}
+                      </Text>
+                    </VStack>
+                    {sizeStats.reduced && sizeStats.savingsPercent > 0 && (
+                      <Flex gridColumn="span 2" align="center" justify="center" color="green.500" gap={1} fontSize="xs" fontWeight="semibold" pt={2} borderTopWidth="1px" borderColor={cardBorder}>
+                        <Icon as={FaPercent} />
+                        <Text>File compressed by {sizeStats.savingsPercent}%!</Text>
+                      </Flex>
+                    )}
+                  </SimpleGrid>
+                )}
+
+                <VStack spacing={3} maxW="xs" mx="auto">
+                  <Button
+                    as={Link}
+                    href={downloadUrl}
+                    download={resultFileName}
+                    bgGradient="linear(to-r, green.400, green.600)"
+                    color="white"
+                    _hover={{ bgGradient: "linear(to-r, green.500, green.700)", textDecoration: "none", transform: "translateY(-1px)" }}
+                    leftIcon={<FaDownload />}
+                    w="full"
+                    size="lg"
+                    rounded="xl"
+                    fontWeight="bold"
+                    shadow="md"
+                  >
+                    Download Output File
+                  </Button>
+                  <Button
+                    leftIcon={<FaRedo />}
+                    variant="outline"
+                    onClick={handleReset}
+                    w="full"
+                    rounded="xl"
+                    size="sm"
+                  >
+                    Process Another File
+                  </Button>
+                </VStack>
+              </Box>
+            </VStack>
+          )}
+
+          {/* Idle / Ready / Error Upload Panel */}
+          {(state.status === "idle" || state.status === "error") && (
+            <Box
+              p={6}
+              bg={cardBg}
+              rounded="2xl"
+              borderWidth="1px"
+              borderColor={cardBorder}
+              shadow="sm"
+              opacity={workflow.isActive === false ? 0.6 : 1}
+            >
+              <VStack align="stretch" spacing={5}>
+                <Heading size="md" fontWeight="bold">
+                  Run Automation
+                </Heading>
+
+                {/* Drag and Drop Zone */}
+                <Box
+                  borderWidth="2px"
+                  borderStyle="dashed"
+                  borderColor={isDragging ? "blue.400" : uploadBorder}
+                  bg={isDragging ? uploadHoverBg : uploadBg}
+                  rounded="2xl"
+                  p={8}
+                  textAlign="center"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  transition="all 0.2s"
+                  cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
+                  position="relative"
+                >
+                  <FormLabel
+                    htmlFor="file-upload"
+                    m={0}
+                    w="full"
+                    h="full"
+                    cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
+                  >
+                    <VStack spacing={3}>
+                      <Icon
+                        as={FaCloudUploadAlt}
+                        color={isDragging ? "blue.500" : "gray.400"}
+                        boxSize={12}
+                        transition="transform 0.15s"
+                        _hover={{ transform: "scale(1.05)" }}
+                      />
+                      <Box>
+                        <Text fontWeight="bold" fontSize="md">
+                          {uploadedFile ? "Selected file:" : "Drag & drop your file here"}
+                        </Text>
+                        <Text fontSize="xs" color={mutedText} mt={1}>
+                          {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : `or click to browse from device. Expected format: ${expectedFormatText}`}
+                        </Text>
+                      </Box>
+                    </VStack>
+                    <Input
+                      id="file-upload"
+                      type="file"
+                      display="none"
+                      onChange={handleFileChange}
+                      disabled={workflow.isActive === false}
+                    />
+                  </FormLabel>
+                </Box>
+
+                {/* Reset or Run actions */}
+                <HStack spacing={3}>
+                  <Button
+                    size="md"
+                    colorScheme="blue"
+                    px={8}
+                    rounded="xl"
+                    isDisabled={!uploadedFile || workflow.isActive === false}
+                    onClick={handleStart}
+                    fontWeight="bold"
+                  >
+                    Start Pipeline Processing
+                  </Button>
+                  {uploadedFile && (
+                    <Button size="md" variant="ghost" rounded="xl" onClick={handleReset}>
+                      Clear Selection
+                    </Button>
+                  )}
+                </HStack>
+
+                {errorMessage && (
+                  <Alert status="error" rounded="xl" variant="subtle" fontSize="sm">
+                    <AlertIcon />
+                    <Box>
+                      <AlertTitle>Pipeline execution failed</AlertTitle>
+                      <AlertDescription>{errorMessage}</AlertDescription>
+                    </Box>
+                  </Alert>
+                )}
+              </VStack>
+            </Box>
+          )}
         </Stack>
       )}
     </Box>

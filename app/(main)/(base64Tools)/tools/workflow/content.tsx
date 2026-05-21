@@ -6,12 +6,15 @@ import axios from "axios";
 import {
   Box, Button, Heading, Text, Input, VStack, HStack, SimpleGrid,
   Badge, Flex, useColorModeValue, useToast, Icon,
-  Menu, MenuButton, MenuList, MenuItem, InputGroup, InputLeftElement,
-  Table, Thead, Tbody, Tr, Th, Td, Switch, IconButton,
-  FormControl, FormLabel, Select
+  InputGroup, InputLeftElement, Switch, IconButton,
+  FormControl, FormLabel, Select, Drawer, DrawerBody,
+  DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton,
+  useDisclosure, Tooltip, Divider, Collapse
 } from "@chakra-ui/react";
 import {
-  FaTrash, FaPlay, FaTools, FaChevronDown, FaSearch, FaArrowRight, FaEdit
+  FaTrash, FaPlay, FaTools, FaSearch, FaArrowRight, FaEdit,
+  FaArrowUp, FaArrowDown, FaPlusCircle, FaExclamationTriangle,
+  FaTimes, FaChevronRight, FaFileAlt, FaCheckCircle, FaUndo
 } from "react-icons/fa";
 import { features } from "../../../layoutComponent/utils/constant";
 import { AUTH_TOKEN } from "../../../../config/utils/variables";
@@ -74,6 +77,11 @@ function detectInputType(name: string, path: string): OutputType[] {
   return inputs;
 }
 
+function isCompatible(outType: OutputType, inTypes: OutputType[]): boolean {
+  if (outType === "any" || inTypes.includes("any")) return true;
+  return inTypes.includes(outType);
+}
+
 type WorkflowAction = {
   id: string;
   name: string;
@@ -100,6 +108,7 @@ type SavedWorkflow = {
 const WorkflowBuilderContent = () => {
   const router = useRouter();
   const toast = useToast();
+  const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
 
   const [view, setView] = useState<"list" | "edit">("list");
   const [editingWorkflowId, setEditingWorkflowId] = useState<string | null>(null);
@@ -107,9 +116,8 @@ const WorkflowBuilderContent = () => {
   const [workflowName, setWorkflowName] = useState("");
   const [workflowDescription, setWorkflowDescription] = useState("");
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
-  const [selectedActionId, setSelectedActionId] = useState("");
   const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
-  const [dropdownSearch, setDropdownSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getAuthHeaders = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
@@ -121,16 +129,12 @@ const WorkflowBuilderContent = () => {
   const cardBg = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const subTextColor = useColorModeValue("gray.600", "gray.400");
-  const tableHeaderBg = useColorModeValue("gray.50", "gray.700");
-  const stepBorder = useColorModeValue("gray.200", "gray.600");
-  const menuBg = useColorModeValue("white", "gray.700");
-  const menuHoverBg = useColorModeValue("red.50", "gray.600");
+  const stepBorder = useColorModeValue("gray.200", "gray.700");
   const inputBg = useColorModeValue("white", "gray.700");
   const badgeBg = useColorModeValue("blue.50", "blue.900");
   const badgeColor = useColorModeValue("blue.700", "blue.100");
   const badgeBorder = useColorModeValue("blue.100", "blue.700");
-  const toolBoxBg = useColorModeValue("blue.50", "blue.900");
-  const toolBoxBorder = useColorModeValue("blue.200", "blue.700");
+  const timelineBg = useColorModeValue("blue.500", "blue.400");
 
   const availableActions: WorkflowAction[] = useMemo(() => {
     return Object.values(features)
@@ -146,16 +150,42 @@ const WorkflowBuilderContent = () => {
       }));
   }, []);
 
-  const filteredActions = useMemo(() => {
-    const searchLower = dropdownSearch.toLowerCase();
-    return availableActions.filter((a) => !searchLower || a.name.toLowerCase().includes(searchLower));
-  }, [availableActions, dropdownSearch]);
+  // Organize actions by categories from features object
+  const categorizedActions = useMemo(() => {
+    const result: Record<string, WorkflowAction[]> = {};
+    Object.entries(features).forEach(([category, list]: [string, any]) => {
+      const filtered = list
+        .filter((item: any) => item?.path && item?.name)
+        .map((item: any) => {
+          const action = availableActions.find((a) => a.id === item.path);
+          return action;
+        })
+        .filter(Boolean) as WorkflowAction[];
 
-  useEffect(() => {
-    if (!selectedActionId && availableActions.length > 0) {
-      setSelectedActionId(availableActions[0].id);
-    }
-  }, [availableActions, selectedActionId]);
+      if (filtered.length > 0) {
+        result[category] = filtered;
+      }
+    });
+    return result;
+  }, [availableActions]);
+
+  // Filter actions based on drawer search query
+  const filteredCategorizedActions = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return categorizedActions;
+
+    const filtered: Record<string, WorkflowAction[]> = {};
+    Object.entries(categorizedActions).forEach(([category, list]) => {
+      const matches = list.filter((action) =>
+        action.name.toLowerCase().includes(query) ||
+        category.toLowerCase().includes(query)
+      );
+      if (matches.length > 0) {
+        filtered[category] = matches;
+      }
+    });
+    return filtered;
+  }, [categorizedActions, searchQuery]);
 
   useEffect(() => {
     const loadWorkflows = async () => {
@@ -169,10 +199,7 @@ const WorkflowBuilderContent = () => {
     loadWorkflows();
   }, []);
 
-  const addStep = () => {
-    const action = availableActions.find((item) => item.id === selectedActionId);
-    if (!action) { toast({ status: "error", title: "Please select a valid step." }); return; }
-    
+  const addStep = (action: WorkflowAction) => {
     let settings = {};
     const slug = action.path.split("/").pop()?.toLowerCase() || "";
     if (slug.includes("compression") || slug.includes("pdf-to-jpg")) settings = { quality: 80 };
@@ -181,12 +208,42 @@ const WorkflowBuilderContent = () => {
     if (slug.includes("watermark")) settings = { watermarkText: "ToolSahayata" };
 
     setSteps((prev) => [...prev, { ...action, stepNumber: prev.length + 1, settings }]);
+    onDrawerClose();
+    setSearchQuery("");
+    toast({
+      position: "bottom-right",
+      title: `${action.name} added to workflow.`,
+      status: "success",
+      duration: 2000,
+    });
   };
 
   const removeStep = (index: number) => {
     setSteps((prev) =>
       prev.filter((_, idx) => idx !== index).map((step, idx) => ({ ...step, stepNumber: idx + 1 }))
     );
+  };
+
+  const moveStepUp = (index: number) => {
+    if (index === 0) return;
+    setSteps((prev) => {
+      const list = [...prev];
+      const temp = list[index];
+      list[index] = list[index - 1];
+      list[index - 1] = temp;
+      return list.map((step, idx) => ({ ...step, stepNumber: idx + 1 }));
+    });
+  };
+
+  const moveStepDown = (index: number) => {
+    if (index === steps.length - 1) return;
+    setSteps((prev) => {
+      const list = [...prev];
+      const temp = list[index];
+      list[index] = list[index + 1];
+      list[index + 1] = temp;
+      return list.map((step, idx) => ({ ...step, stepNumber: idx + 1 }));
+    });
   };
 
   const updateStepSetting = (index: number, key: string, value: any) => {
@@ -204,6 +261,11 @@ const WorkflowBuilderContent = () => {
           { headers: getAuthHeaders() }
         );
         setSavedWorkflows((prev) => prev.map((wf) => (wf.id === id ? data.data : wf)));
+        toast({
+          status: "success",
+          title: `Workflow ${!target.isActive ? "enabled" : "disabled"} successfully.`,
+          duration: 2000,
+        });
       } catch {
         toast({ status: "error", title: "Failed to update workflow status." });
       }
@@ -214,7 +276,7 @@ const WorkflowBuilderContent = () => {
   const saveWorkflow = async () => {
     if (!workflowName.trim()) { toast({ status: "error", title: "Workflow name is required." }); return null; }
     if (steps.length === 0) { toast({ status: "error", title: "Add at least one step to save." }); return null; }
-    
+
     const mappedSteps = steps.map(({ id, name, path, stepNumber, settings }) => ({ id, name, path, stepNumber, settings }));
 
     try {
@@ -289,42 +351,52 @@ const WorkflowBuilderContent = () => {
     router.push(`/tools/workflow/run/${workflow.id}`);
   };
 
-  const selectedActionName =
-    availableActions.find((a) => a.id === selectedActionId)?.name || "Select a tool";
+  // Check if steps have compatibility issues
+  const compatibilityIssues = useMemo(() => {
+    const issues: Record<number, string> = {};
+    for (let i = 0; i < steps.length - 1; i++) {
+      const current = steps[i];
+      const next = steps[i + 1];
+      if (!isCompatible(current.outputType, next.inputTypes)) {
+        issues[i + 1] = `Step ${i + 1} outputs '${current.outputType.toUpperCase()}', but Step ${i + 2} requires [${next.inputTypes.map(t => t.toUpperCase()).join(", ")}]`;
+      }
+    }
+    return issues;
+  }, [steps]);
+
+  const hasAnyIssues = Object.keys(compatibilityIssues).length > 0;
 
   const renderSettingsUI = (step: WorkflowStep, index: number) => {
     const slug = step.path.split("/").pop()?.toLowerCase() || "";
-    
+
     if (slug.includes("compression") || slug.includes("pdf-to-jpg")) {
       return (
-        <VStack align="flex-start" spacing={1} mt={2} pl={2}>
-          <Text fontSize="xs" color={subTextColor} fontWeight="semibold">Compression level:</Text>
-          <HStack spacing={2}>
-            <Select size="xs" w="120px" bg={inputBg} color={textColor} value={step.settings?.quality || 80} onChange={(e) => updateStepSetting(index, "quality", parseInt(e.target.value))}>
-              <option value={90}>Low (Best Quality)</option>
-              <option value={80}>Normal (Recommended)</option>
-              <option value={50}>High (Smallest File)</option>
-              <option value={20}>Extreme (Lowest Quality)</option>
-            </Select>
-          </HStack>
+        <VStack align="flex-start" spacing={1} mt={2} w="full">
+          <Text fontSize="xs" color={subTextColor} fontWeight="semibold">Compression quality:</Text>
+          <Select size="xs" bg={inputBg} color={textColor} rounded="md" value={step.settings?.quality || 80} onChange={(e) => updateStepSetting(index, "quality", parseInt(e.target.value))}>
+            <option value={90}>Low (Best Quality)</option>
+            <option value={80}>Normal (Recommended)</option>
+            <option value={50}>High (Smallest File)</option>
+            <option value={20}>Extreme (Lowest Quality)</option>
+          </Select>
         </VStack>
       );
     }
 
     if (slug.includes("split")) {
       return (
-        <VStack align="flex-start" spacing={1} mt={2} pl={2}>
+        <VStack align="flex-start" spacing={1} mt={2} w="full">
           <Text fontSize="xs" color={subTextColor} fontWeight="semibold">Split range:</Text>
-          <Input size="xs" bg={inputBg} color={textColor} placeholder="e.g. 1-3, 5-8" value={step.settings?.pageRange || ""} onChange={(e) => updateStepSetting(index, "pageRange", e.target.value)} />
+          <Input size="xs" bg={inputBg} color={textColor} rounded="md" placeholder="e.g. 1-3, 5-8" value={step.settings?.pageRange || ""} onChange={(e) => updateStepSetting(index, "pageRange", e.target.value)} />
         </VStack>
       );
     }
 
     if (slug.includes("rotate")) {
       return (
-        <VStack align="flex-start" spacing={1} mt={2} pl={2}>
+        <VStack align="flex-start" spacing={1} mt={2} w="full">
           <Text fontSize="xs" color={subTextColor} fontWeight="semibold">Rotation angle:</Text>
-          <Select size="xs" w="100px" bg={inputBg} color={textColor} value={step.settings?.angle || 90} onChange={(e) => updateStepSetting(index, "angle", parseInt(e.target.value))}>
+          <Select size="xs" bg={inputBg} color={textColor} rounded="md" value={step.settings?.angle || 90} onChange={(e) => updateStepSetting(index, "angle", parseInt(e.target.value))}>
             <option value={90}>90° Clockwise</option>
             <option value={180}>180°</option>
             <option value={270}>270° Clockwise</option>
@@ -335,9 +407,9 @@ const WorkflowBuilderContent = () => {
 
     if (slug.includes("watermark")) {
       return (
-        <VStack align="flex-start" spacing={1} mt={2} pl={2}>
+        <VStack align="flex-start" spacing={1} mt={2} w="full">
           <Text fontSize="xs" color={subTextColor} fontWeight="semibold">Watermark text:</Text>
-          <Input size="xs" bg={inputBg} color={textColor} value={step.settings?.watermarkText || ""} onChange={(e) => updateStepSetting(index, "watermarkText", e.target.value)} />
+          <Input size="xs" bg={inputBg} color={textColor} rounded="md" value={step.settings?.watermarkText || ""} onChange={(e) => updateStepSetting(index, "watermarkText", e.target.value)} />
         </VStack>
       );
     }
@@ -346,216 +418,526 @@ const WorkflowBuilderContent = () => {
   };
 
   return (
-    <Box minH="80vh" bg={pageBg} color={textColor} p={{ base: 4, md: 8, lg: 12 }}>
+    <Box minH="90vh" bg={pageBg} color={textColor} py={{ base: 6, md: 10 }} px={{ base: 4, md: 8, lg: 12 }}>
       {view === "list" && (
         <Box maxW="6xl" mx="auto">
-          <Heading size="xl" color={textColor} mb={6} fontWeight="bold">Workflows</Heading>
-          
-          <Box bg={cardBg} p={{ base: 4, md: 8 }} rounded="xl" shadow="sm" borderWidth="1px" borderColor={stepBorder}>
-          <Text color={subTextColor} mb={8} fontSize="md" lineHeight="tall">
-            Simplify tasks by connecting tools into one automated workflow. Create custom workflows that connect your favorite tools. Set up each step, fine-tune your settings, and save your automations for easy access whenever you need them.
-          </Text>
-
-          <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
-            <Heading size="lg" color={textColor}>My workflows</Heading>
+          {/* Header */}
+          <Flex justify="space-between" align="center" mb={8} flexWrap="wrap" gap={4}>
+            <VStack align="flex-start" spacing={1}>
+              <Heading size="xl" fontWeight="extrabold" letterSpacing="tight" bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">
+                Workflows
+              </Heading>
+              <Text color={subTextColor} fontSize="md">
+                Automate your document processing pipeline by combining your favorite tools.
+              </Text>
+            </VStack>
             <Button
-              variant="outline"
-              colorScheme="gray"
+              bgGradient="linear(to-r, blue.500, purple.600)"
+              color="white"
+              _hover={{ bgGradient: "linear(to-r, blue.600, purple.700)", transform: "translateY(-1px)", boxShadow: "lg" }}
+              _active={{ transform: "translateY(0)" }}
               onClick={() => { clearBuilder(); setEditingWorkflowId(null); setView("edit"); }}
               size="md"
-              fontWeight="medium"
+              fontWeight="bold"
+              leftIcon={<FaPlusCircle />}
+              transition="all 0.2s"
             >
-              Create new workflow
+              Create New Workflow
             </Button>
           </Flex>
 
-          <Box borderWidth="1px" borderColor={stepBorder} rounded="md" overflowX="auto">
-            <Table variant="simple" size="md">
-              <Thead bg={tableHeaderBg}>
-                <Tr>
-                  <Th color={subTextColor} fontSize="sm" textTransform="none">Name</Th>
-                  <Th color={subTextColor} fontSize="sm" textTransform="none">Tools</Th>
-                  <Th color={subTextColor} fontSize="sm" textTransform="none">Status</Th>
-                  <Th color={subTextColor} fontSize="sm" textTransform="none" textAlign="right"></Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {savedWorkflows.length === 0 ? (
-                  <Tr>
-                    <Td colSpan={4} textAlign="center" py={8} color={subTextColor}>
-                      No workflows created yet. Click "Create new workflow" to get started!
-                    </Td>
-                  </Tr>
-                ) : (
-                  savedWorkflows.map((workflow) => (
-                    <Tr key={workflow.id} _hover={{ bg: tableHeaderBg }} opacity={workflow.isActive ? 1 : 0.6}>
-                      <Td fontWeight="medium" color={textColor} w="20%">
-                        <HStack>
-                          <Icon as={FaTools} color="blue.500" />
-                          <Text>{workflow.name}</Text>
+          {/* Workflow Cards */}
+          <VStack spacing={6} align="stretch">
+            {savedWorkflows.length === 0 ? (
+              <Box bg={cardBg} p={12} rounded="2xl" textAlign="center" borderWidth="1px" borderColor={stepBorder} shadow="sm">
+                <Icon as={FaTools} boxSize={12} color="gray.400" mb={4} />
+                <Heading size="md" mb={2}>No workflows yet</Heading>
+                <Text color={subTextColor} maxW="md" mx="auto" mb={6}>
+                  Simplify tasks by connecting tools into one automated pipeline. Set up each step, fine-tune your settings, and save.
+                </Text>
+                <Button variant="outline" colorScheme="blue" onClick={() => { clearBuilder(); setEditingWorkflowId(null); setView("edit"); }}>
+                  Create your first workflow
+                </Button>
+              </Box>
+            ) : (
+              savedWorkflows.map((workflow) => {
+                return (
+                  <Box
+                    key={workflow.id}
+                    bg={cardBg}
+                    p={{ base: 5, md: 6 }}
+                    rounded="2xl"
+                    shadow="sm"
+                    borderWidth="1px"
+                    borderColor={stepBorder}
+                    transition="all 0.2s"
+                    _hover={{ shadow: "md", borderColor: "blue.400" }}
+                    position="relative"
+                    overflow="hidden"
+                  >
+                    <Flex justify="space-between" align="flex-start" flexWrap="wrap" gap={4} mb={4}>
+                      <VStack align="flex-start" spacing={1} flex="1">
+                        <HStack spacing={3}>
+                          <Heading size="md" color={textColor} fontWeight="bold">
+                            {workflow.name}
+                          </Heading>
+                          <Badge colorScheme={workflow.isActive ? "green" : "gray"} rounded="full" px={2} py={0.5} fontSize="10px">
+                            {workflow.isActive ? "Active" : "Inactive"}
+                          </Badge>
                         </HStack>
-                      </Td>
-                      <Td w="50%">
-                        <Flex flexWrap="wrap" align="center" gap={2}>
-                          {workflow.steps.map((step, idx) => (
-                            <React.Fragment key={step.id + idx}>
-                              <Badge bg={badgeBg} color={badgeColor} textTransform="none" rounded="md" px={3} py={1} fontSize="xs" fontWeight="medium" border="1px solid" borderColor={badgeBorder}>
-                                {step.name}
-                              </Badge>
-                              {idx < workflow.steps.length - 1 && <Icon as={FaArrowRight} boxSize={3} color={subTextColor} />}
+                        <Text color={subTextColor} fontSize="sm">
+                          {workflow.description || "No description provided."}
+                        </Text>
+                      </VStack>
+
+                      <HStack spacing={3} align="center">
+                        <HStack spacing={1}>
+                          <Text fontSize="xs" fontWeight="semibold" color={subTextColor}>Status:</Text>
+                          <Switch colorScheme="green" isChecked={workflow.isActive} onChange={() => toggleWorkflowStatus(workflow.id)} size="sm" />
+                        </HStack>
+                        <Divider orientation="vertical" h="20px" borderColor={stepBorder} />
+                        <HStack spacing={2}>
+                          <Tooltip label="Run Workflow" hasArrow>
+                            <IconButton
+                              aria-label="Run"
+                              icon={<FaPlay />}
+                              size="sm"
+                              colorScheme="green"
+                              isDisabled={!workflow.isActive}
+                              onClick={() => runWorkflowAction(workflow)}
+                              rounded="lg"
+                            />
+                          </Tooltip>
+                          <Tooltip label="Edit" hasArrow>
+                            <IconButton
+                              aria-label="Edit"
+                              icon={<FaEdit />}
+                              size="sm"
+                              variant="outline"
+                              colorScheme="blue"
+                              onClick={() => { loadWorkflow(workflow); setEditingWorkflowId(workflow.id); setView("edit"); }}
+                              rounded="lg"
+                            />
+                          </Tooltip>
+                          <Tooltip label="Delete" hasArrow>
+                            <IconButton
+                              aria-label="Delete"
+                              icon={<FaTrash />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="red"
+                              onClick={() => deleteWorkflow(workflow.id)}
+                              rounded="lg"
+                            />
+                          </Tooltip>
+                        </HStack>
+                      </HStack>
+                    </Flex>
+
+                    {/* Timeline visualization of workflow steps */}
+                    <Box pt={2} borderTopWidth="1px" borderColor={stepBorder}>
+                      <Text fontSize="xs" fontWeight="bold" color={subTextColor} mb={3}>
+                        STEPS PIPELINE:
+                      </Text>
+                      <Flex flexWrap="wrap" align="center" gap={3}>
+                        {workflow.steps.map((step, idx) => {
+                          const action = availableActions.find((a) => a.id === step.id || a.path === step.path || a.name === step.name);
+                          const stepIcon = action?.icon ?? FaTools;
+
+                          return (
+                            <React.Fragment key={step.id + "-" + idx}>
+                              <HStack
+                                bg={useColorModeValue("gray.50", "gray.750")}
+                                px={3}
+                                py={2}
+                                rounded="xl"
+                                borderWidth="1px"
+                                borderColor={stepBorder}
+                                spacing={2.5}
+                                shadow="xs"
+                              >
+                                <Icon as={stepIcon} color="blue.500" boxSize={3.5} />
+                                <VStack align="flex-start" spacing={0}>
+                                  <Text fontSize="xs" fontWeight="bold" noOfLines={1} maxW="150px">
+                                    {step.name}
+                                  </Text>
+                                  {step.settings && Object.keys(step.settings).length > 0 && (
+                                    <Text fontSize="9px" color="gray.500">
+                                      custom settings
+                                    </Text>
+                                  )}
+                                </VStack>
+                              </HStack>
+                              {idx < workflow.steps.length - 1 && (
+                                <Icon as={FaArrowRight} boxSize={3.5} color="blue.400" />
+                              )}
                             </React.Fragment>
-                          ))}
-                        </Flex>
-                      </Td>
-                      <Td w="10%">
-                        <Switch colorScheme="green" isChecked={workflow.isActive} onChange={() => toggleWorkflowStatus(workflow.id)} />
-                      </Td>
-                      <Td textAlign="right" w="20%">
-                        <HStack justify="flex-end" spacing={1}>
-                          <IconButton aria-label="Run" icon={<FaPlay />} size="sm" variant="ghost" color={subTextColor} isDisabled={!workflow.isActive} onClick={() => runWorkflowAction(workflow)} _hover={{ color: "green.500" }} />
-                          <IconButton aria-label="Edit" icon={<FaEdit />} size="sm" variant="ghost" color={subTextColor} onClick={() => { loadWorkflow(workflow); setEditingWorkflowId(workflow.id); setView("edit"); }} _hover={{ color: "blue.500" }} />
-                          <IconButton aria-label="Delete" icon={<FaTrash />} size="sm" variant="ghost" color={subTextColor} onClick={() => deleteWorkflow(workflow.id)} _hover={{ color: "red.500" }} />
-                        </HStack>
-                      </Td>
-                    </Tr>
-                  ))
-                )}
-              </Tbody>
-            </Table>
-          </Box>
+                          );
+                        })}
+                      </Flex>
+                    </Box>
+                  </Box>
+                );
+              })
+            )}
+          </VStack>
         </Box>
-      </Box>
       )}
 
       {view === "edit" && (
-        <Box maxW="6xl" mx="auto">
-          <Heading size="lg" color={textColor} mb={8} fontWeight="semibold">
-            <Text as="span" color={subTextColor} cursor="pointer" onClick={() => setView("list")} _hover={{ color: textColor }}>
-              Workflows
-            </Text> / {editingWorkflowId ? "Edit Workflow" : "Create Workflow"}
-          </Heading>
+        <Box maxW="5xl" mx="auto">
+          {/* Header */}
+          <Flex align="center" justify="space-between" mb={8} borderBottomWidth="1px" borderColor={stepBorder} pb={4}>
+            <HStack spacing={3}>
+              <Text
+                fontSize="md"
+                fontWeight="bold"
+                color="blue.500"
+                cursor="pointer"
+                onClick={() => setView("list")}
+                _hover={{ textDecoration: "underline" }}
+              >
+                Workflows
+              </Text>
+              <Icon as={FaChevronRight} color="gray.400" boxSize={3} />
+              <Heading size="md" color={textColor} fontWeight="bold">
+                {editingWorkflowId ? "Edit Workflow" : "New Workflow"}
+              </Heading>
+            </HStack>
+            <HStack spacing={4}>
+              <Button variant="ghost" onClick={() => setView("list")} size="sm">
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={async () => {
+                  const saved = await saveWorkflow();
+                  if (saved) setView("list");
+                }}
+                px={6}
+                size="sm"
+                isDisabled={steps.length === 0}
+              >
+                Save Workflow
+              </Button>
+            </HStack>
+          </Flex>
 
-          <Box bg={cardBg} p={{ base: 6, md: 8 }} rounded="xl" shadow="sm" borderWidth="1px" borderColor={stepBorder}>
-            <SimpleGrid columns={{ base: 1, lg: 2 }} gap={12}>
-              {/* Left Column: Tool selection */}
-              <Box>
-                <Heading size="md" mb={6} color={textColor} fontWeight="semibold" borderBottomWidth="1px" borderColor={stepBorder} pb={2}>Tool selection</Heading>
-                <VStack align="stretch" spacing={6}>
-                  <Box bg={toolBoxBg} p={5} rounded="md" borderWidth="1px" borderColor={toolBoxBorder}>
-                    <Text fontWeight="semibold" mb={2} color={textColor}>Workflow name:</Text>
-                    <Text fontSize="sm" color={subTextColor} mb={4}>Enter a workflow name so you can find it in tools and on the homepage.</Text>
-                    <Input bg={cardBg} color={textColor} value={workflowName} onChange={(e) => setWorkflowName(e.target.value)} placeholder="Workflow name" size="md" borderColor={stepBorder} _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #4299E1" }} />
-                  </Box>
-
-                  <Box>
-                    <Text fontWeight="semibold" mb={2} color={textColor}>Select a tool:</Text>
-                    <Menu placement="bottom" flip={true} preventOverflow={true} onClose={() => setDropdownSearch("")}>
-                      <MenuButton
-                        as={Button}
-                        rightIcon={<FaChevronDown />}
-                        width="full"
-                        size="md"
-                        textAlign="left"
-                        bg={cardBg}
-                        color={textColor}
-                        fontWeight="normal"
-                        borderWidth="1px"
-                        borderColor={stepBorder}
-                        _hover={{ borderColor: "gray.400" }}
-                        _active={{ bg: tableHeaderBg }}
-                      >
-                        {selectedActionName}
-                      </MenuButton>
-                      <MenuList bg={menuBg} borderColor={stepBorder} shadow="xl" rounded="md" zIndex={1500} w={{ base: "100%", md: "400px" }} maxH="300px" overflowY="auto" p={0}>
-                        <Box px={3} py={2} borderBottomWidth="1px" borderColor={stepBorder} position="sticky" top={0} bg={menuBg} zIndex={1}>
-                          <InputGroup size="sm">
-                            <InputLeftElement pointerEvents="none"><Icon as={FaSearch} color="gray.400" /></InputLeftElement>
-                            <Input placeholder="Search tools..." value={dropdownSearch} onChange={(e) => setDropdownSearch(e.target.value)} border="none" _focus={{ boxShadow: "none" }} />
-                          </InputGroup>
-                        </Box>
-                        {filteredActions.map((action) => (
-                          <MenuItem
-                            key={action.id}
-                            onClick={() => { setSelectedActionId(action.id); setDropdownSearch(""); }}
-                            bg={selectedActionId === action.id ? menuHoverBg : "transparent"}
-                            _hover={{ bg: menuHoverBg }}
-                            fontSize="sm"
-                            px={4}
-                            py={2.5}
-                          >
-                            <HStack spacing={3}>
-                              <Icon as={action.icon || FaTools} boxSize={4} color="gray.500" />
-                              <Text color={textColor}>{action.name}</Text>
-                            </HStack>
-                          </MenuItem>
-                        ))}
-                      </MenuList>
-                    </Menu>
-                  </Box>
-
-                  <Flex justify="flex-end">
-                    <Button variant="outline" colorScheme="blue" borderColor="blue.400" color="blue.400" rightIcon={<FaArrowRight />} onClick={addStep} _hover={{ bg: "blue.50" }} size="sm" px={6}>
-                      Add step
-                    </Button>
-                  </Flex>
+          <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8}>
+            {/* Left Column: Metadata Details */}
+            <VStack align="stretch" spacing={6}>
+              <Box bg={cardBg} p={5} rounded="2xl" shadow="sm" borderWidth="1px" borderColor={stepBorder}>
+                <Heading size="xs" textTransform="uppercase" letterSpacing="wider" mb={4} color="blue.500">
+                  Workflow Info
+                </Heading>
+                <VStack spacing={4} align="stretch">
+                  <FormControl isRequired>
+                    <FormLabel fontSize="xs" fontWeight="bold">Name</FormLabel>
+                    <Input
+                      bg={inputBg}
+                      color={textColor}
+                      value={workflowName}
+                      onChange={(e) => setWorkflowName(e.target.value)}
+                      placeholder="e.g. Invoicing & Archiving Pipeline"
+                      size="sm"
+                      rounded="md"
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="xs" fontWeight="bold">Description</FormLabel>
+                    <Input
+                      bg={inputBg}
+                      color={textColor}
+                      value={workflowDescription}
+                      onChange={(e) => setWorkflowDescription(e.target.value)}
+                      placeholder="Briefly describe what this workflow does..."
+                      size="sm"
+                      rounded="md"
+                    />
+                  </FormControl>
                 </VStack>
               </Box>
 
-              {/* Right Column: Workflow preview */}
-              <Box>
-                <Heading size="md" mb={6} color={textColor} fontWeight="semibold" borderBottomWidth="1px" borderColor={stepBorder} pb={2}>Workflow preview</Heading>
-                <Box>
-                  {steps.length === 0 ? (
-                    <Text color={subTextColor} fontSize="sm" textAlign="center" py={8}>No tools selected. Add a step from the left.</Text>
-                  ) : (
-                    <VStack align="stretch" spacing={0} pl={2}>
-                      {steps.map((step, index) => (
-                        <Flex key={step.id + index} position="relative" pb={index < steps.length - 1 ? 6 : 0}>
-                          {/* Vertical line connecting steps */}
-                          {index < steps.length - 1 && (
-                            <Box position="absolute" left="11px" top="24px" bottom="-4px" width="1px" bg={stepBorder} zIndex={0} />
-                          )}
-                          
-                          <Flex align="flex-start" gap={4} zIndex={1} width="100%">
-                            <Flex align="center" justify="center" w="24px" h="24px" rounded="full" bg={tableHeaderBg} color={subTextColor} fontWeight="bold" fontSize="xs" flexShrink={0} mt={1}>
+              {/* Add Tool Trigger Card */}
+              <Box
+                bg={cardBg}
+                p={5}
+                rounded="2xl"
+                shadow="sm"
+                borderWidth="1px"
+                borderColor={stepBorder}
+                textAlign="center"
+              >
+                <Heading size="xs" textTransform="uppercase" letterSpacing="wider" mb={4} color="blue.500">
+                  Add Pipeline Steps
+                </Heading>
+                <Text fontSize="xs" color={subTextColor} mb={4}>
+                  Choose from any PDF converters, image tools, decoders, or utilities to build your chain.
+                </Text>
+                <Button
+                  colorScheme="blue"
+                  variant="outline"
+                  leftIcon={<FaPlusCircle />}
+                  onClick={onDrawerOpen}
+                  w="full"
+                  size="md"
+                  rounded="xl"
+                >
+                  Select & Add a Tool
+                </Button>
+              </Box>
+            </VStack>
+
+            {/* Right Column: Steps Pipeline preview and Reordering */}
+            <Box bg={cardBg} p={{ base: 5, md: 6 }} rounded="2xl" shadow="sm" borderWidth="1px" borderColor={stepBorder} gridColumn={{ base: "span 1", lg: "span 2" }}>
+              <Flex justify="space-between" align="center" mb={6}>
+                <Heading size="sm" fontWeight="bold">
+                  Steps Pipeline ({steps.length})
+                </Heading>
+                {hasAnyIssues && (
+                  <Badge colorScheme="red" px={2} py={1} rounded="md" display="flex" alignItems="center" gap={1}>
+                    <Icon as={FaExclamationTriangle} /> Incompatibility warnings
+                  </Badge>
+                )}
+              </Flex>
+
+              {steps.length === 0 ? (
+                <Flex flexDir="column" align="center" justify="center" py={12} borderStyle="dashed" borderWidth="2px" borderColor={stepBorder} rounded="2xl">
+                  <Icon as={FaTools} boxSize={8} color="gray.400" mb={3} />
+                  <Text color={subTextColor} fontSize="sm">No steps added to this workflow pipeline.</Text>
+                  <Button variant="link" color="blue.500" fontSize="xs" mt={2} onClick={onDrawerOpen}>
+                    Click here to add the first step
+                  </Button>
+                </Flex>
+              ) : (
+                <VStack align="stretch" spacing={4} position="relative">
+                  {steps.map((step, index) => {
+                    const nextStep = steps[index + 1];
+                    const isStepIncompatible = compatibilityIssues[index];
+                    const stepIcon = step.icon || FaTools;
+
+                    return (
+                      <VStack key={`${step.id}-${index}`} align="stretch" spacing={2}>
+                        {/* Step Card */}
+                        <Box
+                          p={4}
+                          rounded="xl"
+                          bg={useColorModeValue("gray.50", "gray.750")}
+                          borderWidth="1px"
+                          borderColor={isStepIncompatible ? "red.300" : stepBorder}
+                          position="relative"
+                          transition="all 0.15s"
+                          _hover={{ borderColor: isStepIncompatible ? "red.400" : "blue.300" }}
+                        >
+                          <Flex align="flex-start" gap={3}>
+                            {/* Step Number Badge */}
+                            <Flex
+                              align="center"
+                              justify="center"
+                              w="24px"
+                              h="24px"
+                              rounded="full"
+                              bg={timelineBg}
+                              color="white"
+                              fontWeight="bold"
+                              fontSize="xs"
+                              mt={0.5}
+                              flexShrink={0}
+                            >
                               {index + 1}
                             </Flex>
-                            <Box flex="1">
-                              <Flex justify="space-between" align="center">
-                                <HStack spacing={3} align="flex-start">
-                                  <Icon as={step.icon || FaTools} color="blue.500" boxSize={4} mt={1} />
-                                  <VStack align="flex-start" spacing={0}>
-                                    <Text fontWeight="semibold" color={textColor}>{step.name}</Text>
-                                    {renderSettingsUI(step, index)}
-                                  </VStack>
-                                </HStack>
-                                <IconButton aria-label="Remove" icon={<FaTrash />} size="xs" variant="ghost" color={subTextColor} _hover={{ color: "red.500", bg: "red.50" }} onClick={() => removeStep(index)} />
-                              </Flex>
-                            </Box>
-                          </Flex>
-                        </Flex>
-                      ))}
-                    </VStack>
-                  )}
 
-                  <Flex justify="flex-end" mt={12} gap={6} align="center">
-                    <Button variant="link" color="blue.500" fontWeight="normal" onClick={() => setView("list")} fontSize="sm">
-                      Cancel
-                    </Button>
-                    <Button bg="blue.500" color="white" _hover={{ bg: "blue.600" }} onClick={async () => {
-                      const saved = saveWorkflow();
-                      const savedWorkflow = await saved;
-                      if (savedWorkflow) setView("list");
-                    }} px={8} size="md">
-                      {editingWorkflowId ? "Update Workflow" : "Create Workflow"}
-                    </Button>
-                  </Flex>
-                </Box>
+                            {/* Core Step Details */}
+                            <VStack align="flex-start" spacing={1.5} flex="1">
+                              <HStack spacing={2} flexWrap="wrap">
+                                <Icon as={stepIcon} color="blue.500" boxSize={4} />
+                                <Text fontWeight="bold" fontSize="sm">{step.name}</Text>
+                                <Badge colorScheme="blue" variant="subtle" fontSize="9px" rounded="md">
+                                  In: {step.inputTypes.join(", ").toUpperCase()}
+                                </Badge>
+                                <Icon as={FaArrowRight} boxSize={2} color="gray.400" />
+                                <Badge colorScheme="purple" variant="subtle" fontSize="9px" rounded="md">
+                                  Output: {step.outputType.toUpperCase()}
+                                </Badge>
+                              </HStack>
+
+                              {/* Settings (collapsible settings block if settings exist) */}
+                              {renderSettingsUI(step, index)}
+                            </VStack>
+
+                            {/* Actions: Move Up, Move Down, Delete */}
+                            <HStack spacing={1}>
+                              <IconButton
+                                aria-label="Move Up"
+                                icon={<FaArrowUp />}
+                                size="xs"
+                                variant="ghost"
+                                isDisabled={index === 0}
+                                onClick={() => moveStepUp(index)}
+                              />
+                              <IconButton
+                                aria-label="Move Down"
+                                icon={<FaArrowDown />}
+                                size="xs"
+                                variant="ghost"
+                                isDisabled={index === steps.length - 1}
+                                onClick={() => moveStepDown(index)}
+                              />
+                              <IconButton
+                                aria-label="Remove Step"
+                                icon={<FaTrash />}
+                                size="xs"
+                                variant="ghost"
+                                colorScheme="red"
+                                onClick={() => removeStep(index)}
+                              />
+                            </HStack>
+                          </Flex>
+                        </Box>
+
+                        {/* Incompatibility Warn message */}
+                        {isStepIncompatible && (
+                          <Collapse in={true}>
+                            
+                            <Box
+                              bg={useColorModeValue("red.50", "red.950")}
+                              px={4}
+                              py={2}
+                              rounded="lg"
+                              fontSize="xs"
+                              borderWidth="1px"
+                              borderColor={useColorModeValue("red.200", "red.800")}
+                              color={useColorModeValue("red.600", "red.200")}  // ← yeh add karo
+                              display="flex"
+                              alignItems="center"
+                              gap={2}
+                            >
+                              <Icon as={FaExclamationTriangle} color={useColorModeValue("red.500", "red.400")} />
+                              <Text fontWeight="semibold">{isStepIncompatible}</Text>
+                            </Box>
+                          </Collapse>
+                        )}
+                      </VStack>
+                    );
+                  })}
+                </VStack>
+              )}
+
+              {hasAnyIssues && (
+                // Yellow summary warning box ke liye
+              <Box
+                bg={useColorModeValue("yellow.50", "yellow.950")}
+                p={4}
+                rounded="xl"
+                borderWidth="1px"
+                borderColor={useColorModeValue("yellow.200", "yellow.800")}
+                color={useColorModeValue("yellow.700", "yellow.200")}  // ← yeh add karo
+                mt={6}
+                fontSize="xs"
+                display="flex"
+                gap={2}
+                alignItems="flex-start"
+              >
+                <Icon as={FaExclamationTriangle} color={useColorModeValue("yellow.500", "yellow.400")} mt={0.5} />
+                <VStack align="flex-start" spacing={1}>
+                  <Text fontWeight="bold">Pipeline contains type compatibility issues</Text>
+                  <Text>
+                    Adjacent steps have incompatible output/input types. The workflow will still save, but processing files may fail or crash when running if formats do not match at runtime.
+                  </Text>
+                </VStack>
               </Box>
-            </SimpleGrid>
-          </Box>
+              )}
+            </Box>
+          </SimpleGrid>
         </Box>
       )}
+
+      {/* Categorized Tool Selector Drawer */}
+      <Drawer isOpen={isDrawerOpen} placement="right" onClose={onDrawerClose} size="md">
+        <DrawerOverlay />
+        <DrawerContent bg={cardBg} color={textColor}>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px" borderColor={stepBorder}>
+            <Heading size="md">Select a Tool to Add</Heading>
+            <Text fontSize="xs" color={subTextColor} fontWeight="normal" mt={1}>
+              Select from all active converters and formatters to append to your workflow.
+            </Text>
+          </DrawerHeader>
+
+          <DrawerBody px={4} py={6}>
+            <VStack spacing={6} align="stretch">
+              {/* Search Bar */}
+              <InputGroup size="md">
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={FaSearch} color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search by tool name or function..."
+                  bg={inputBg}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  borderColor={stepBorder}
+                  _focus={{ borderColor: "blue.400" }}
+                />
+              </InputGroup>
+
+              {/* Categorized List */}
+              <VStack spacing={5} align="stretch" overflowY="auto" maxH="calc(100vh - 200px)" pr={1}>
+                {Object.keys(filteredCategorizedActions).length === 0 ? (
+                  <Text color={subTextColor} fontSize="sm" textAlign="center" py={8}>
+                    No tools match your search criteria.
+                  </Text>
+                ) : (
+                  Object.entries(filteredCategorizedActions).map(([category, list]) => (
+                    <Box key={category}>
+                      <Heading size="xs" textTransform="uppercase" color="blue.500" letterSpacing="wide" mb={2}>
+                        {category}
+                      </Heading>
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2}>
+                        {list.map((action) => {
+                          const actionIcon = action.icon || FaTools;
+                          return (
+                            <Box
+                              key={action.id}
+                              p={3}
+                              rounded="lg"
+                              borderWidth="1px"
+                              borderColor={stepBorder}
+                              cursor="pointer"
+                              transition="all 0.15s"
+                              _hover={{ borderColor: "blue.400", bg: useColorModeValue("blue.50", "gray.700"), transform: "translateY(-1px)" }}
+                              onClick={() => addStep(action)}
+                            >
+                              <HStack spacing={3}>
+                                <Icon as={actionIcon} color="blue.500" boxSize={4} />
+                                <VStack align="flex-start" spacing={0} flex="1">
+                                  <Text fontSize="xs" fontWeight="bold" noOfLines={1}>
+                                    {action.name}
+                                  </Text>
+                                  <HStack spacing={1}>
+                                    <Badge colorScheme="blue" variant="subtle" fontSize="7px" px={1} rounded="sm">
+                                      {action.inputTypes[0].toUpperCase()}
+                                    </Badge>
+                                    <Icon as={FaArrowRight} boxSize={1.5} color="gray.500" />
+                                    <Badge colorScheme="purple" variant="subtle" fontSize="7px" px={1} rounded="sm">
+                                      {action.outputType.toUpperCase()}
+                                    </Badge>
+                                  </HStack>
+                                </VStack>
+                              </HStack>
+                            </Box>
+                          );
+                        })}
+                      </SimpleGrid>
+                      <Divider mt={4} borderColor={stepBorder} />
+                    </Box>
+                  ))
+                )}
+              </VStack>
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
   );
 };
