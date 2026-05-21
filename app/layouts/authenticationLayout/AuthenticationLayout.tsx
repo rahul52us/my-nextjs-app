@@ -25,6 +25,7 @@ const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
     >
       <Box position="absolute" inset={0} bg={overlay} />
 
+
       <Flex
         minH="100dvh"
         width="100%"
