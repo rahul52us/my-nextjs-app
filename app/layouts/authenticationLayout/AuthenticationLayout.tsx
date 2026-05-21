@@ -12,9 +12,10 @@ const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <Box
-      height="100vh"
+      minH="100dvh"
       width="100%"
-      overflow="hidden"
+      overflowX="hidden"
+      overflowY={{ base: "auto", md: "hidden" }}
       position="relative"
       bgImage="url('/Auth-image.jpg')"
       bgSize="cover"
@@ -25,24 +26,24 @@ const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
       <Box position="absolute" inset={0} bg={overlay} />
 
       <Flex
-        minHeight="100vh"
+        minH="100dvh"
         width="100%"
         position="relative"
         px={{ base: 4, md: 8, xl: 16 }}
-        py={{ base: 10, md: 14 }}
+        py={{ base: 4, md: 0 }}
         justifyContent="center"
-        alignItems="center"
+        alignItems={{ base: "flex-start", md: "center" }}
       >
         <Box
           width={{ base: '100%', md: '46%', lg: '38%' }}
           maxW="560px"
-          maxHeight="calc(100vh - 84px)"
-          overflow="hidden"
+          maxH="none"
+          overflowY="visible"
           bg="transparent"
           borderRadius="0"
           boxShadow="none"
-          p={{ base: 5, md: 8 }}
-          mb={{ base: 10, md: 12 }}
+          p={{ base: 0, md: 4 }}
+          mb={{ base: 4, md: 0 }}
         >
           {children}
         </Box>

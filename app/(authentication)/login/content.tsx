@@ -73,7 +73,7 @@ const LoginContent = observer(() => {
   const googleColor = useColorModeValue("#344054", "gray.100");
 
   return (
-    <Box minH="100vh" px={4} py={10}>
+    <Box minH="auto" px={4} py={{ base: 6, md: 4 }}>
       <Flex align="center" justify="center">
         <Box
           w="full"

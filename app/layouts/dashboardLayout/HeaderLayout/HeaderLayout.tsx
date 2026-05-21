@@ -18,12 +18,12 @@ const HeaderLayout = observer(() => {
       as="header"
       width="full"
       maxW="100vw"           
-      overflow="hidden" 
+      overflow="visible"
       direction="row"
       alignItems="center"
       justifyContent="space-between"
       height={headerHeight}
-      px={headerPadding}
+      px={{ base: 2, sm: 3, md: headerPadding }}
       backdropFilter="blur(10px)"
       borderBottom="1px solid"
       borderColor={borderColor}

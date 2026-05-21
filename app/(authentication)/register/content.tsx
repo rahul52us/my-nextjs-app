@@ -89,7 +89,7 @@ const RegisterContent = observer(() => {
   const checkboxColor = useColorModeValue('gray.700', 'gray.200');
 
   return (
-    <Box minHeight="100vh" px={4} py={10}>
+    <Box minHeight="auto" px={4} py={{ base: 6, md: 4 }}>
       <Flex align="center" justify="center">
         <Box
           width="100%"

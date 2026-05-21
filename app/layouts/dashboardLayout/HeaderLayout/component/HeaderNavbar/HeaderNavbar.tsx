@@ -27,12 +27,12 @@ const HeaderNavbar = observer(() => {
      *      off-screen when the nav items take up space.
      *      pr={2} gives a small right breathing room.
      */
-    <HStack spacing={3} pr={2} flexShrink={0}>
+    <HStack spacing={{ base: 1.5, md: 3 }} pr={{ base: 0, md: 2 }} flexShrink={0}>
       <HStack
         spacing={0}
         bg={glassBg}
         backdropFilter="blur(8px)"
-        px={2}
+        px={{ base: 1, md: 2 }}
         py={1.5}
         borderRadius="xl"
         border="1px solid"
@@ -41,7 +41,7 @@ const HeaderNavbar = observer(() => {
         _hover={{ borderColor: "whiteAlpha.500", boxShadow: "sm" }}
       >
         <Tooltip label="Toggle Theme" fontSize="xs" placement="bottom">
-          <Box px={1}>
+          <Box px={1} display={{ base: "none", sm: "block" }}>
             <HeaderThemeSwitch />
           </Box>
         </Tooltip>
@@ -52,6 +52,7 @@ const HeaderNavbar = observer(() => {
           mx={2}
           borderColor={borderColor}
           opacity={0.6}
+          display={{ base: "none", sm: "block" }}
         />
 
         <Box px={1}>
