@@ -170,23 +170,6 @@ const LoginContent = observer(() => {
                 {isLoading ? <Spinner size="sm" color="white" /> : "Sign in"}
               </CustomButton>
 
-              <Button
-                size="lg"
-                width="100%"
-                mt={2}
-                leftIcon={<FcGoogle size={24} />}
-                fontSize="16px"
-                fontWeight="medium"
-                bg={googleButtonBg}
-                color={googleColor}
-                border="1px solid"
-                borderColor={useColorModeValue('#D0D5DD', 'rgba(255,255,255,0.14)')}
-                borderRadius="xl"
-                _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}
-                boxShadow="sm"
-              >
-                Sign in with Google
-              </Button>
             </Stack>
           </form>
 
