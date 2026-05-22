@@ -82,6 +82,12 @@ function isCompatible(outType: OutputType, inTypes: OutputType[]): boolean {
   return inTypes.includes(outType);
 }
 
+function isStrictDrawerCompatible(outType: OutputType, inTypes: OutputType[]): boolean {
+  // Drawer me sirf exact type match show karo; "any" ko include mat karo.
+  if (outType === "any") return false;
+  return inTypes.includes(outType);
+}
+
 type WorkflowAction = {
   id: string;
   name: string;
@@ -118,6 +124,9 @@ const WorkflowBuilderContent = () => {
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
   const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ── NEW: override to show all tools ignoring compatibility filter ──
+  const [showAllTools, setShowAllTools] = useState(false);
 
   const getAuthHeaders = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
@@ -169,23 +178,43 @@ const WorkflowBuilderContent = () => {
     return result;
   }, [availableActions]);
 
-  // Filter actions based on drawer search query
+  // ── NEW: output type of the last added step (null = no steps yet) ──
+  const drawerFilterType = useMemo((): OutputType | null => {
+    if (steps.length === 0 || showAllTools) return null;
+    return steps[steps.length - 1].outputType;
+  }, [steps, showAllTools]);
+
+  // Filter actions: by search query AND (when steps exist) by compatibility
   const filteredCategorizedActions = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    if (!query) return categorizedActions;
 
-    const filtered: Record<string, WorkflowAction[]> = {};
+    const result: Record<string, WorkflowAction[]> = {};
     Object.entries(categorizedActions).forEach(([category, list]) => {
-      const matches = list.filter((action) =>
-        action.name.toLowerCase().includes(query) ||
-        category.toLowerCase().includes(query)
-      );
+      const matches = list.filter((action) => {
+        // 1. Search filter
+        const matchesSearch =
+          !query ||
+          action.name.toLowerCase().includes(query) ||
+          category.toLowerCase().includes(query);
+
+        // 2. Compatibility filter — only when drawerFilterType is set
+        const matchesCompat =
+          drawerFilterType === null ||
+          isStrictDrawerCompatible(drawerFilterType, action.inputTypes);
+
+        return matchesSearch && matchesCompat;
+      });
       if (matches.length > 0) {
-        filtered[category] = matches;
+        result[category] = matches;
       }
     });
-    return filtered;
-  }, [categorizedActions, searchQuery]);
+    return result;
+  }, [categorizedActions, searchQuery, drawerFilterType]);
+
+  // Total compatible tool count (for empty-state messaging)
+  const compatibleToolCount = useMemo(() => {
+    return Object.values(filteredCategorizedActions).reduce((sum, list) => sum + list.length, 0);
+  }, [filteredCategorizedActions]);
 
   useEffect(() => {
     const loadWorkflows = async () => {
@@ -210,6 +239,7 @@ const WorkflowBuilderContent = () => {
     setSteps((prev) => [...prev, { ...action, stepNumber: prev.length + 1, settings }]);
     onDrawerClose();
     setSearchQuery("");
+    setShowAllTools(false); // reset override after adding
     toast({
       position: "bottom-right",
       title: `${action.name} added to workflow.`,
@@ -415,6 +445,13 @@ const WorkflowBuilderContent = () => {
     }
 
     return null;
+  };
+
+  // ── helper: reset drawer state when it closes ──
+  const handleDrawerClose = () => {
+    onDrawerClose();
+    setSearchQuery("");
+    setShowAllTools(false);
   };
 
   return (
@@ -672,7 +709,9 @@ const WorkflowBuilderContent = () => {
                   Add Pipeline Steps
                 </Heading>
                 <Text fontSize="xs" color={subTextColor} mb={4}>
-                  Choose from any PDF converters, image tools, decoders, or utilities to build your chain.
+                  {steps.length === 0
+                    ? "Choose from any PDF converters, image tools, decoders, or utilities to build your chain."
+                    : `Only tools compatible with the previous step's output will be shown.`}
                 </Text>
                 <Button
                   colorScheme="blue"
@@ -712,7 +751,6 @@ const WorkflowBuilderContent = () => {
               ) : (
                 <VStack align="stretch" spacing={4} position="relative">
                   {steps.map((step, index) => {
-                    const nextStep = steps[index + 1];
                     const isStepIncompatible = compatibilityIssues[index];
                     const stepIcon = step.icon || FaTools;
 
@@ -761,7 +799,7 @@ const WorkflowBuilderContent = () => {
                                 </Badge>
                               </HStack>
 
-                              {/* Settings (collapsible settings block if settings exist) */}
+                              {/* Settings */}
                               {renderSettingsUI(step, index)}
                             </VStack>
 
@@ -795,10 +833,9 @@ const WorkflowBuilderContent = () => {
                           </Flex>
                         </Box>
 
-                        {/* Incompatibility Warn message */}
+                        {/* Incompatibility Warning */}
                         {isStepIncompatible && (
                           <Collapse in={true}>
-                            
                             <Box
                               bg={useColorModeValue("red.50", "red.950")}
                               px={4}
@@ -807,7 +844,7 @@ const WorkflowBuilderContent = () => {
                               fontSize="xs"
                               borderWidth="1px"
                               borderColor={useColorModeValue("red.200", "red.800")}
-                              color={useColorModeValue("red.600", "red.200")}  // ← yeh add karo
+                              color={useColorModeValue("red.600", "red.200")}
                               display="flex"
                               alignItems="center"
                               gap={2}
@@ -824,48 +861,109 @@ const WorkflowBuilderContent = () => {
               )}
 
               {hasAnyIssues && (
-                // Yellow summary warning box ke liye
-              <Box
-                bg={useColorModeValue("yellow.50", "yellow.950")}
-                p={4}
-                rounded="xl"
-                borderWidth="1px"
-                borderColor={useColorModeValue("yellow.200", "yellow.800")}
-                color={useColorModeValue("yellow.700", "yellow.200")}  // ← yeh add karo
-                mt={6}
-                fontSize="xs"
-                display="flex"
-                gap={2}
-                alignItems="flex-start"
-              >
-                <Icon as={FaExclamationTriangle} color={useColorModeValue("yellow.500", "yellow.400")} mt={0.5} />
-                <VStack align="flex-start" spacing={1}>
-                  <Text fontWeight="bold">Pipeline contains type compatibility issues</Text>
-                  <Text>
-                    Adjacent steps have incompatible output/input types. The workflow will still save, but processing files may fail or crash when running if formats do not match at runtime.
-                  </Text>
-                </VStack>
-              </Box>
+                <Box
+                  bg={useColorModeValue("yellow.50", "yellow.950")}
+                  p={4}
+                  rounded="xl"
+                  borderWidth="1px"
+                  borderColor={useColorModeValue("yellow.200", "yellow.800")}
+                  color={useColorModeValue("yellow.700", "yellow.200")}
+                  mt={6}
+                  fontSize="xs"
+                  display="flex"
+                  gap={2}
+                  alignItems="flex-start"
+                >
+                  <Icon as={FaExclamationTriangle} color={useColorModeValue("yellow.500", "yellow.400")} mt={0.5} />
+                  <VStack align="flex-start" spacing={1}>
+                    <Text fontWeight="bold">Pipeline contains type compatibility issues</Text>
+                    <Text>
+                      Adjacent steps have incompatible output/input types. The workflow will still save, but processing files may fail or crash when running if formats do not match at runtime.
+                    </Text>
+                  </VStack>
+                </Box>
               )}
             </Box>
           </SimpleGrid>
         </Box>
       )}
 
-      {/* Categorized Tool Selector Drawer */}
-      <Drawer isOpen={isDrawerOpen} placement="right" onClose={onDrawerClose} size="md">
+      {/* ── Categorized Tool Selector Drawer ── */}
+      <Drawer isOpen={isDrawerOpen} placement="right" onClose={handleDrawerClose} size="md">
         <DrawerOverlay />
         <DrawerContent bg={cardBg} color={textColor}>
           <DrawerCloseButton />
           <DrawerHeader borderBottomWidth="1px" borderColor={stepBorder}>
             <Heading size="md">Select a Tool to Add</Heading>
+            {/* ── Dynamic subtitle based on filter state ── */}
             <Text fontSize="xs" color={subTextColor} fontWeight="normal" mt={1}>
-              Select from all active converters and formatters to append to your workflow.
+              {drawerFilterType
+                ? `Showing tools that accept ${drawerFilterType.toUpperCase()} — matching the previous step's output.`
+                : "Select from all active converters and formatters to append to your workflow."}
             </Text>
           </DrawerHeader>
 
           <DrawerBody px={4} py={6}>
-            <VStack spacing={6} align="stretch">
+            <VStack spacing={4} align="stretch">
+
+              {/* ── Filter badge with "Show all tools" override ── */}
+              {steps.length > 0 && (
+                <Flex
+                  bg={showAllTools
+                    ? useColorModeValue("gray.50", "gray.700")
+                    : badgeBg}
+                  border="1px solid"
+                  borderColor={showAllTools
+                    ? useColorModeValue("gray.200", "gray.600")
+                    : badgeBorder}
+                  rounded="lg"
+                  px={3}
+                  py={2}
+                  align="center"
+                  justify="space-between"
+                  fontSize="xs"
+                >
+                  <HStack spacing={2}>
+                    <Icon
+                      as={showAllTools ? FaTools : FaCheckCircle}
+                      color={showAllTools ? "gray.400" : "blue.500"}
+                    />
+                    <Text
+                      color={showAllTools
+                        ? subTextColor
+                        : badgeColor}
+                      fontWeight="semibold"
+                    >
+                      {showAllTools
+                        ? `Showing all tools (${Object.values(categorizedActions).reduce((s, l) => s + l.length, 0)} total)`
+                        : `Filtered: accepts ${steps[steps.length - 1].outputType.toUpperCase()} input · ${compatibleToolCount} tools`}
+                    </Text>
+                  </HStack>
+
+                  {showAllTools ? (
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="blue"
+                      leftIcon={<FaCheckCircle />}
+                      onClick={() => setShowAllTools(false)}
+                    >
+                      Smart filter
+                    </Button>
+                  ) : (
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="gray"
+                      leftIcon={<FaUndo />}
+                      onClick={() => setShowAllTools(true)}
+                    >
+                      Show all
+                    </Button>
+                  )}
+                </Flex>
+              )}
+
               {/* Search Bar */}
               <InputGroup size="md">
                 <InputLeftElement pointerEvents="none">
@@ -882,11 +980,27 @@ const WorkflowBuilderContent = () => {
               </InputGroup>
 
               {/* Categorized List */}
-              <VStack spacing={5} align="stretch" overflowY="auto" maxH="calc(100vh - 200px)" pr={1}>
+              <VStack spacing={5} align="stretch" overflowY="auto" maxH="calc(100vh - 260px)" pr={1}>
                 {Object.keys(filteredCategorizedActions).length === 0 ? (
-                  <Text color={subTextColor} fontSize="sm" textAlign="center" py={8}>
-                    No tools match your search criteria.
-                  </Text>
+                  <VStack py={10} spacing={3}>
+                    <Icon as={FaTools} boxSize={8} color="gray.300" />
+                    <Text color={subTextColor} fontSize="sm" textAlign="center">
+                      {searchQuery
+                        ? "No tools match your search."
+                        : `No compatible tools found for ${steps[steps.length - 1]?.outputType.toUpperCase()} output.`}
+                    </Text>
+                    {!showAllTools && steps.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="blue"
+                        leftIcon={<FaUndo />}
+                        onClick={() => setShowAllTools(true)}
+                      >
+                        Show all tools anyway
+                      </Button>
+                    )}
+                  </VStack>
                 ) : (
                   Object.entries(filteredCategorizedActions).map(([category, list]) => (
                     <Box key={category}>
