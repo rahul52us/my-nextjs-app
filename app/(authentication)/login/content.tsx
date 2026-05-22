@@ -10,6 +10,8 @@ import {
   FormErrorMessage,
   Heading,
   Input,
+  InputGroup,
+  InputRightElement,
   Stack,
   Text,
   Spinner,
@@ -18,6 +20,7 @@ import {
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useState } from "react";
+import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { FcGoogle } from "react-icons/fc";
 import CustomButton from "../../component/common/CustomButton/CustomButton";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,6 +31,7 @@ const LoginContent = observer(() => {
   const { auth: { login, openNotification } } = stores;
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const loginMessage = searchParams.get("message");
@@ -140,16 +144,29 @@ const LoginContent = observer(() => {
 
               <FormControl id="password" isRequired>
                 <FormLabel fontWeight="semibold" color={labelColor}>Password</FormLabel>
-                <Input
-                  type="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  focusBorderColor="teal.500"
-                  bg={inputBg}
-                  color={useColorModeValue('gray.800','white')}
-                />
+                <InputGroup>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    focusBorderColor="teal.500"
+                    bg={inputBg}
+                    color={useColorModeValue('gray.800','white')}
+                  />
+                  <InputRightElement h="full">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowPassword(!showPassword)}
+                      size="sm"
+                      _hover={{ bg: 'transparent', opacity: 0.8 }}
+                      _active={{ bg: 'transparent' }}
+                    >
+                      {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    </Button>
+                  </InputRightElement>
+                </InputGroup>
               </FormControl>
 
               <Flex align="center" justify="space-between" flexDirection={{ base: "column", md: "row" }} gap={2}>

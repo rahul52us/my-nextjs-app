@@ -36,8 +36,8 @@ const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
         alignItems={{ base: "flex-start", md: "center" }}
       >
         <Box
-          width={{ base: '100%', md: '46%', lg: '38%' }}
-          maxW="560px"
+          width={{ base: '100%', md: '60%', lg: '50%', xl: '45%' }}
+          maxW="680px"
           maxH="none"
           overflowY="visible"
           bg="transparent"

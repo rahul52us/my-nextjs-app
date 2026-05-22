@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -10,11 +11,14 @@ import {
   FormLabel,
   Heading,
   Input,
+  InputGroup,
+  InputRightElement,
   Stack,
   Text,
   useColorModeValue,
   VStack,
 } from '@chakra-ui/react';
+import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { ErrorMessage, Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import * as Yup from 'yup';
@@ -42,6 +46,8 @@ const RegisterContent = observer(() => {
     auth: { register, openNotification },
   } = stores;
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const initialValues = {
     name: '',
     email: '',
@@ -93,7 +99,7 @@ const RegisterContent = observer(() => {
       <Flex align="center" justify="center">
         <Box
           width="100%"
-          maxWidth="560px"
+          maxWidth="680px"
           bg={cardBg}
           p={{ base: 6, md: 10 }}
           borderRadius="3xl"
@@ -129,7 +135,7 @@ const RegisterContent = observer(() => {
           >
             {({ isSubmitting, errors, touched }) => (
               <Form>
-                <Stack spacing={4}>
+                <Stack spacing={5}>
                   <FormControl id="name" isInvalid={!!(touched.name && errors.name)}>
                     <FormLabel color={labelColor}>Full Name <Text as="span" color="red.500">*</Text></FormLabel>
                     <Field
@@ -146,50 +152,68 @@ const RegisterContent = observer(() => {
                     </FormErrorMessage>
                   </FormControl>
 
-                  <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
-                    <FormLabel color={labelColor}>Email Address <Text as="span" color="red.500">*</Text></FormLabel>
-                    <Field
-                      as={Input}
-                      type="email"
-                      name="email"
-                      placeholder="Enter your email"
-                      focusBorderColor="teal.500"
-                      bg={inputBg}
-                      color={useColorModeValue('gray.800','white')}
-                    />
-                    <FormErrorMessage>
-                      <ErrorMessage name="email" />
-                    </FormErrorMessage>
-                  </FormControl>
-
-                  <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
-                    <FormLabel color={labelColor}>Phone Number</FormLabel>
-                    <Field
-                      as={Input}
-                      type="tel"
-                      name="phone"
-                      placeholder="Enter your phone number"
-                      focusBorderColor="teal.500"
-                      bg={inputBg}
-                      color={useColorModeValue('gray.800','white')}
-                    />
-                    <FormErrorMessage>
-                      <ErrorMessage name="phone" />
-                    </FormErrorMessage>
-                  </FormControl>
-
                   <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
-                    <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
-                      <FormLabel color={labelColor}>Password <Text as="span" color="red.500">*</Text></FormLabel>
+                    <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
+                      <FormLabel color={labelColor}>Email Address <Text as="span" color="red.500">*</Text></FormLabel>
                       <Field
                         as={Input}
-                        type="password"
-                        name="password"
-                        placeholder="Create a password"
+                        type="email"
+                        name="email"
+                        placeholder="Enter your email"
                         focusBorderColor="teal.500"
                         bg={inputBg}
                         color={useColorModeValue('gray.800','white')}
                       />
+                      <FormErrorMessage>
+                        <ErrorMessage name="email" />
+                      </FormErrorMessage>
+                    </FormControl>
+
+                    <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
+                      <FormLabel color={labelColor}>Phone Number</FormLabel>
+                      <Field
+                        as={Input}
+                        type="tel"
+                        name="phone"
+                        placeholder="Enter your phone number"
+                        focusBorderColor="teal.500"
+                        bg={inputBg}
+                        color={useColorModeValue('gray.800','white')}
+                      />
+                      <FormErrorMessage>
+                        <ErrorMessage name="phone" />
+                      </FormErrorMessage>
+                    </FormControl>
+                  </Stack>
+
+                  <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+                    <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
+                      <FormLabel color={labelColor}>Password <Text as="span" color="red.500">*</Text></FormLabel>
+                      <Field name="password">
+                        {({ field }: any) => (
+                          <InputGroup>
+                            <Input
+                              {...field}
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="Create a password"
+                              focusBorderColor="teal.500"
+                              bg={inputBg}
+                              color={useColorModeValue('gray.800','white')}
+                            />
+                            <InputRightElement h="full">
+                              <Button
+                                variant="ghost"
+                                onClick={() => setShowPassword(!showPassword)}
+                                size="sm"
+                                _hover={{ bg: 'transparent', opacity: 0.8 }}
+                                _active={{ bg: 'transparent' }}
+                              >
+                                {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                              </Button>
+                            </InputRightElement>
+                          </InputGroup>
+                        )}
+                      </Field>
                       <FormErrorMessage>
                         <ErrorMessage name="password" />
                       </FormErrorMessage>
@@ -200,15 +224,31 @@ const RegisterContent = observer(() => {
                       isInvalid={!!(touched.confirmPassword && errors.confirmPassword)}
                     >
                       <FormLabel color={labelColor}>Confirm Password <Text as="span" color="red.500">*</Text></FormLabel>
-                      <Field
-                        as={Input}
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Re-enter your password"
-                        focusBorderColor="teal.500"
-                        bg={inputBg}
-                        color={useColorModeValue('gray.800','white')}
-                      />
+                      <Field name="confirmPassword">
+                        {({ field }: any) => (
+                          <InputGroup>
+                            <Input
+                              {...field}
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              placeholder="Confirm password"
+                              focusBorderColor="teal.500"
+                              bg={inputBg}
+                              color={useColorModeValue('gray.800','white')}
+                            />
+                            <InputRightElement h="full">
+                              <Button
+                                variant="ghost"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                size="sm"
+                                _hover={{ bg: 'transparent', opacity: 0.8 }}
+                                _active={{ bg: 'transparent' }}
+                              >
+                                {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                              </Button>
+                            </InputRightElement>
+                          </InputGroup>
+                        )}
+                      </Field>
                       <FormErrorMessage>
                         <ErrorMessage name="confirmPassword" />
                       </FormErrorMessage>
