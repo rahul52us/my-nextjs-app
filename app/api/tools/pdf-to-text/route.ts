@@ -1,6 +1,8 @@
 import './polyfill';
 import { NextRequest, NextResponse } from 'next/server';
-import * as pdfjsLib from 'pdfjs-dist';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pdf = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
     
     let extractedText = '';
 

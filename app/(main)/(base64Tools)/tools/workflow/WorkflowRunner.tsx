@@ -146,6 +146,9 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
         "image/jpeg": ".jpg",
         "application/zip": ".zip",
         "application/pdf": ".pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+          ".docx",
+        "application/msword": ".doc",
         "text/plain": ".txt",
         "text/csv": ".csv",
         "application/json": ".json",
@@ -153,6 +156,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
       if (map[state.resultBlob.type]) return map[state.resultBlob.type];
     }
     const last = workflow?.steps?.[workflow.steps.length - 1]?.name.toLowerCase() || "";
+    if (last.includes("word") || last.includes("docx") || last.includes("doc")) return ".docx";
     if (last.includes("jpg") || last.includes("image")) return ".jpg";
     if (last.includes("zip")) return ".zip";
     if (last.includes("pdf")) return ".pdf";
