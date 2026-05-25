@@ -119,6 +119,23 @@ type SavedWorkflow = {
   isActive?: boolean;
 };
 
+const isWorkflowDebugEnabled = () => {
+  if (typeof window === "undefined") return false;
+  const queryFlag = new URLSearchParams(window.location.search).get("workflowDebug");
+  const storageFlag = localStorage.getItem("workflow_debug");
+  return queryFlag === "1" || storageFlag === "1";
+};
+
+const workflowDebug = (label: string, payload?: unknown) => {
+  if (!isWorkflowDebugEnabled()) return;
+  const time = new Date().toISOString();
+  if (payload === undefined) {
+    console.log(`[WorkflowDebug][${time}] ${label}`);
+    return;
+  }
+  console.log(`[WorkflowDebug][${time}] ${label}`, payload);
+};
+
 const WorkflowBuilderContent = () => {
   const router = useRouter();
   const toast = useToast();
@@ -155,7 +172,7 @@ const WorkflowBuilderContent = () => {
   const timelineBg = useColorModeValue("blue.500", "blue.400");
 
   const availableActions: WorkflowAction[] = useMemo(() => {
-    return Object.values(features)
+    const actions = Object.values(features)
       .flat()
       .filter((item: any) => item?.path && item?.name)
       .map((item: any) => ({
@@ -166,6 +183,16 @@ const WorkflowBuilderContent = () => {
         outputType: detectOutputType(item.name, item.path),
         inputTypes: detectInputType(item.name, item.path),
       }));
+    workflowDebug("availableActions computed", {
+      total: actions.length,
+      sample: actions.slice(0, 20).map((a) => ({
+        name: a.name,
+        path: a.path,
+        outputType: a.outputType,
+        inputTypes: a.inputTypes,
+      })),
+    });
+    return actions;
   }, []);
 
   // Organize actions by categories from features object
@@ -183,6 +210,10 @@ const WorkflowBuilderContent = () => {
       if (filtered.length > 0) {
         result[category] = filtered;
       }
+    });
+    workflowDebug("categorizedActions computed", {
+      categories: Object.keys(result).length,
+      counts: Object.fromEntries(Object.entries(result).map(([k, v]) => [k, v.length])),
     });
     return result;
   }, [availableActions]);
@@ -217,6 +248,22 @@ const WorkflowBuilderContent = () => {
         result[category] = matches;
       }
     });
+    workflowDebug("filteredCategorizedActions computed", {
+      query,
+      drawerFilterType,
+      showAllTools,
+      totalAfterFilter: Object.values(result).reduce((sum, list) => sum + list.length, 0),
+      perCategory: Object.fromEntries(Object.entries(result).map(([k, v]) => [k, v.length])),
+      first20: Object.values(result)
+        .flat()
+        .slice(0, 20)
+        .map((a) => ({
+          name: a.name,
+          path: a.path,
+          outputType: a.outputType,
+          inputTypes: a.inputTypes,
+        })),
+    });
     return result;
   }, [categorizedActions, searchQuery, drawerFilterType]);
 
@@ -230,12 +277,49 @@ const WorkflowBuilderContent = () => {
       try {
         const { data } = await axios.get("/workflows", { headers: getAuthHeaders() });
         setSavedWorkflows(data?.data || []);
+        workflowDebug("loadWorkflows success", {
+          count: Array.isArray(data?.data) ? data.data.length : 0,
+        });
       } catch {
         setSavedWorkflows([]);
+        workflowDebug("loadWorkflows failed");
       }
     };
     loadWorkflows();
   }, []);
+
+  useEffect(() => {
+    if (!isWorkflowDebugEnabled()) return;
+    workflowDebug("debug mode enabled", {
+      path: typeof window !== "undefined" ? window.location.pathname : "",
+      search: typeof window !== "undefined" ? window.location.search : "",
+      featureCategories: Object.keys(features).length,
+      tokenKey: AUTH_TOKEN || "auth_token",
+      hasToken: typeof window !== "undefined" ? Boolean(localStorage.getItem(AUTH_TOKEN || "auth_token")) : false,
+    });
+  }, []);
+
+  useEffect(() => {
+    workflowDebug("steps changed", {
+      totalSteps: steps.length,
+      steps: steps.map((s) => ({
+        stepNumber: s.stepNumber,
+        name: s.name,
+        path: s.path,
+        outputType: s.outputType,
+        inputTypes: s.inputTypes,
+      })),
+    });
+  }, [steps]);
+
+  useEffect(() => {
+    workflowDebug("drawer filter changed", {
+      drawerFilterType,
+      showAllTools,
+      searchQuery,
+      compatibleToolCount,
+    });
+  }, [drawerFilterType, showAllTools, searchQuery, compatibleToolCount]);
 
   const addStep = (action: WorkflowAction) => {
     let settings = {};
@@ -246,6 +330,15 @@ const WorkflowBuilderContent = () => {
     if (slug.includes("watermark")) settings = { watermarkText: "ToolSahayata" };
 
     setSteps((prev) => [...prev, { ...action, stepNumber: prev.length + 1, settings }]);
+    workflowDebug("addStep", {
+      added: {
+        name: action.name,
+        path: action.path,
+        outputType: action.outputType,
+        inputTypes: action.inputTypes,
+      },
+      previousLastStepOutput: steps.length > 0 ? steps[steps.length - 1].outputType : null,
+    });
     onDrawerClose();
     setSearchQuery("");
     setShowAllTools(false); // reset override after adding
@@ -393,13 +486,28 @@ const WorkflowBuilderContent = () => {
   // Check if steps have compatibility issues
   const compatibilityIssues = useMemo(() => {
     const issues: Record<number, string> = {};
+    const debugPairs: Array<Record<string, unknown>> = [];
     for (let i = 0; i < steps.length - 1; i++) {
       const current = steps[i];
       const next = steps[i + 1];
-      if (!isCompatible(current.outputType, next.inputTypes)) {
+      const compatible = isCompatible(current.outputType, next.inputTypes);
+      debugPairs.push({
+        fromStep: i + 1,
+        fromName: current.name,
+        out: current.outputType,
+        toStep: i + 2,
+        toName: next.name,
+        in: next.inputTypes,
+        compatible,
+      });
+      if (!compatible) {
         issues[i + 1] = `Step ${i + 1} outputs '${current.outputType.toUpperCase()}', but Step ${i + 2} requires [${next.inputTypes.map(t => t.toUpperCase()).join(", ")}]`;
       }
     }
+    workflowDebug("compatibilityIssues computed", {
+      totalIssues: Object.keys(issues).length,
+      pairs: debugPairs,
+    });
     return issues;
   }, [steps]);
 
