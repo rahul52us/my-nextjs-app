@@ -21,6 +21,17 @@ class AuthStore {
   error: string | null = null;
   notification: Notification | null = null;
   company: any = "65f65a70fbe7ae65d05dac64"
+  private tokenKey = AUTH_TOKEN || "auth_token";
+
+  private setAuthCookie = (token: string) => {
+    if (typeof document === "undefined") return;
+    document.cookie = `${this.tokenKey}=${encodeURIComponent(token)}; path=/; max-age=2592000; samesite=lax`;
+  };
+
+  private clearAuthCookie = () => {
+    if (typeof document === "undefined") return;
+    document.cookie = `${this.tokenKey}=; path=/; max-age=0; samesite=lax`;
+  };
 
   constructor() {
     makeAutoObservable(this);
@@ -32,7 +43,7 @@ class AuthStore {
     axios.interceptors.request.use(
       (config) => {
         if (typeof window !== "undefined") {
-          const token = localStorage.getItem(AUTH_TOKEN!);
+          const token = localStorage.getItem(this.tokenKey);
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -60,7 +71,7 @@ class AuthStore {
   // Initialize User Session
   initializeUser = async () => {
     if (typeof window !== "undefined") {  // ✅ Prevent SSR errors
-      const savedToken = localStorage.getItem(AUTH_TOKEN!);
+      const savedToken = localStorage.getItem(this.tokenKey);
       if (savedToken) {
         this.token = savedToken;
         await this.fetchUser();
@@ -97,7 +108,8 @@ class AuthStore {
       this.token = response?.data?.data?.authorization_token;
 
       if (this.token && typeof window !== "undefined") {
-        localStorage.setItem(AUTH_TOKEN!, this.token!);
+        localStorage.setItem(this.tokenKey, this.token!);
+        this.setAuthCookie(this.token!);
       }
 
       await this.fetchUser();
@@ -140,8 +152,9 @@ class AuthStore {
 
   clearLocalStorage = () => {
     localStorage.removeItem(
-      AUTH_TOKEN as string
+      this.tokenKey
     );
+    this.clearAuthCookie();
     sessionStorage.removeItem(USER_SESSION_DATA!);
   };
   // Login user
@@ -152,7 +165,8 @@ class AuthStore {
       this.token = response?.data?.data?.authorization_token;
 
       if (this.token && typeof window !== "undefined") {
-        localStorage.setItem(AUTH_TOKEN!, this.token);
+        localStorage.setItem(this.tokenKey, this.token);
+        this.setAuthCookie(this.token);
       }
 
       await this.fetchUser();
@@ -232,7 +246,8 @@ class AuthStore {
     this.error = null;
 
     if (typeof window !== "undefined") {
-      localStorage.removeItem(AUTH_TOKEN!);
+      localStorage.removeItem(this.tokenKey);
+      this.clearAuthCookie();
     }
   };
 }

@@ -9,9 +9,8 @@ export const metadata: Metadata = {
 
 export default function WorkflowPage() {
   return (
-    <>
-      <WorkflowAccessGuard />
+    <WorkflowAccessGuard>
       <WorkflowBuilderContent />
-    </>
+    </WorkflowAccessGuard>
   );
 }

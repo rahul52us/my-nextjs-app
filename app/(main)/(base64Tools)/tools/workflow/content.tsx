@@ -26,7 +26,11 @@ type OutputType =
   | "qr" | "barcode" | "url" | "hash" | "jwt" | "any";
 
 function detectOutputType(name: string, path: string): OutputType {
-  const n = (name + " " + path).toLowerCase();
+  const n = (name + " " + path)
+    .toLowerCase()
+    .replace(/[-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (n.includes("to pdf") || n.includes("-to-pdf")) return "pdf";
   if (n.includes("to word") || n.includes("to doc") || n.includes("-to-word") || n.includes("-to-doc")) return "word";
   if (n.includes("to image") || n.includes("to jpg") || n.includes("to png") || n.includes("to jpeg") || n.includes("to webp") || n.includes("to svg") || n.includes("-to-image") || n.includes("-to-jpg") || n.includes("-to-png")) return "image";
@@ -51,7 +55,11 @@ function detectOutputType(name: string, path: string): OutputType {
 }
 
 function detectInputType(name: string, path: string): OutputType[] {
-  const n = (name + " " + path).toLowerCase();
+  const n = (name + " " + path)
+    .toLowerCase()
+    .replace(/[-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   const inputs: OutputType[] = [];
 
   if (n.startsWith("pdf") || n.includes("pdf to") || n.includes("compress pdf") || n.includes("merge pdf") || n.includes("split pdf") || n.includes("rotate pdf") || n.includes("watermark pdf")) inputs.push("pdf");
@@ -129,7 +137,8 @@ const WorkflowBuilderContent = () => {
   const [showAllTools, setShowAllTools] = useState(false);
 
   const getAuthHeaders = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
+    const tokenKey = AUTH_TOKEN || "auth_token";
+    const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

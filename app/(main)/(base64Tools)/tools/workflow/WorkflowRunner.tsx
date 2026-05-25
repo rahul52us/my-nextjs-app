@@ -75,7 +75,8 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   useEffect(() => {
     const loadWorkflow = async () => {
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN || "") : null;
+        const tokenKey = AUTH_TOKEN || "auth_token";
+        const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
         const { data } = await axios.get(`/workflows/${workflowId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
