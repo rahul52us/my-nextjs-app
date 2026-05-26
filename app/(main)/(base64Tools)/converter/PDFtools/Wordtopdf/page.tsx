@@ -20,8 +20,15 @@ const WordToPdf = () => {
   const hiddenPrintRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   
-  const pageBg = useColorModeValue("gray.50", "#0a0a0a");
+  const pageBg = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
+  const previewBg = useColorModeValue("white", "gray.800");
+  const previewHeaderBg = useColorModeValue("gray.50", "gray.700");
+  const previewBorderColor = useColorModeValue("gray.100", "gray.600");
+  const previewTextColor = useColorModeValue("gray.600", "gray.200");
+  const previewMetaColor = useColorModeValue("gray.400", "gray.300");
+  const previewContentColor = useColorModeValue("gray.900", "whiteAlpha.900");
+  const previewRuleColor = useColorModeValue("gray.300", "whiteAlpha.300");
 
   const handleFile = async (file: File) => {
     if (!file.name.endsWith('.docx')) {
@@ -178,15 +185,41 @@ const WordToPdf = () => {
           ) : (
             <Flex direction={{ base: "column", lg: "row" }} gap={6} align="start">
               
-              <Box flex={2} w="full" bg="white" borderRadius="2xl" boxShadow="xl" overflow="hidden" border="1px solid" borderColor="gray.100">
-                <HStack p={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.100" justify="space-between">
+              <Box flex={2} w="full" bg={previewBg} borderRadius="2xl" boxShadow="xl" overflow="hidden" border="1px solid" borderColor={previewBorderColor}>
+                <HStack p={4} bg={previewHeaderBg} borderBottom="1px solid" borderColor={previewBorderColor} justify="space-between">
                   <HStack>
                     <Icon as={Eye} color="blue.500" />
-                    <Text fontWeight="bold" fontSize="sm" color="gray.600">SMART PREVIEW</Text>
+                    <Text fontWeight="bold" fontSize="sm" color={previewTextColor}>SMART PREVIEW</Text>
                   </HStack>
-                  <Text fontSize="xs" color="gray.400" fontWeight="bold">{fileName}.docx</Text>
+                  <Text fontSize="xs" color={previewMetaColor} fontWeight="bold">{fileName}.docx</Text>
                 </HStack>
-                <Box p={{ base: 4, md: 10 }} maxH="70vh" overflowY="auto">
+                <Box
+                  p={{ base: 4, md: 10 }}
+                  maxH="70vh"
+                  overflowY="auto"
+                  sx={{
+                    "& .pdf-render-container": {
+                      color: previewContentColor,
+                      background: "transparent",
+                    },
+                    "& .pdf-render-container *": {
+                      color: "inherit",
+                    },
+                    "& .pdf-render-container h1, & .pdf-render-container h2, & .pdf-render-container h3": {
+                      color: previewContentColor,
+                    },
+                    "& .pdf-render-container h2": {
+                      borderBottomColor: previewRuleColor,
+                    },
+                    "& .pdf-render-container table": {
+                      borderColor: previewRuleColor,
+                    },
+                    "& .pdf-render-container td, & .pdf-render-container th": {
+                      color: previewContentColor,
+                      borderColor: previewRuleColor,
+                    },
+                  }}
+                >
                    <div dangerouslySetInnerHTML={{ __html: htmlPreview }} />
                 </Box>
               </Box>

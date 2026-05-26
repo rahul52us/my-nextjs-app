@@ -10,7 +10,8 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Box, Button, Container, Flex, Heading, Icon, Input,
     Stack, Text, VStack, HStack, IconButton, Spinner, Center,
-    useToast, SimpleGrid, Divider, Checkbox, NumberInput, NumberInputField
+    useToast, SimpleGrid, Divider, Checkbox, NumberInput, NumberInputField,
+    useColorModeValue
 } from '@chakra-ui/react';
 import { DeleteIcon, DownloadIcon, EditIcon } from '@chakra-ui/icons';
 import { FaSignature, FaFont, FaFileUpload, FaRegEye, FaEraser, FaImage } from 'react-icons/fa';
@@ -34,6 +35,19 @@ const PdfSignatureContent: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const toast = useToast();
+    const pageBg = useColorModeValue("gray.50", "gray.900");
+    const cardBg = useColorModeValue("white", "gray.800");
+    const panelBg = useColorModeValue("gray.200", "gray.800");
+    const borderColor = useColorModeValue("gray.200", "gray.700");
+    const softBorderColor = useColorModeValue("gray.100", "gray.600");
+    const textPrimary = useColorModeValue("gray.800", "gray.100");
+    const textMuted = useColorModeValue("gray.400", "gray.500");
+    const textSecondary = useColorModeValue("gray.500", "gray.400");
+    const tabBg = useColorModeValue("gray.100", "gray.700");
+    const canvasBg = useColorModeValue("gray.50", "gray.700");
+    const inputBg = useColorModeValue("white", "gray.800");
+    const previewBadgeBg = useColorModeValue("whiteAlpha.900", "gray.700");
+    const previewBadgeText = useColorModeValue("gray.800", "gray.100");
 
     useEffect(() => {
         return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
@@ -150,28 +164,28 @@ const PdfSignatureContent: React.FC = () => {
     };
 
     return (
-        <Box minH="100vh" bg="gray.50" py={8} px={4}>
+        <Box minH="100vh" bg={pageBg} py={8} px={4} color={textPrimary}>
             <Container maxW="container.xl">
                 <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
 
                     {/* LEFT: CONTROLS */}
-                    <Box gridColumn={{ lg: "span 4" }} p={6} bg="white" rounded="3xl" shadow="sm" border="1px" borderColor="gray.200">
+                    <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
                         <VStack align="stretch" spacing={6}>
                             <Box>
                                 <Heading size="md" display="flex" alignItems="center" gap={2}>
                                     <Icon as={FaSignature} color="blue.500" /> Signature Maker
                                 </Heading>
-                                <Text fontSize="xs" color="gray.400" fontWeight="bold" mt={1}>PRO WORKSPACE</Text>
+                                <Text fontSize="xs" color={textMuted} fontWeight="bold" mt={1}>PRO WORKSPACE</Text>
                             </Box>
 
-                            <HStack bg="gray.100" p={1} rounded="xl">
+                            <HStack bg={tabBg} p={1} rounded="xl">
                                 <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')} leftIcon={<EditIcon />}> Draw </Button>
                                 <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'blue' : 'gray'} onClick={() => setActiveTab('type')} leftIcon={<Icon as={FaFont} />}> Type </Button>
                                 <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'blue' : 'gray'} onClick={() => setActiveTab('upload')} leftIcon={<Icon as={FaImage} />}> Image </Button>
                             </HStack>
 
                             {activeTab === 'draw' && (
-                                <Box position="relative" border="2px solid" borderColor="gray.100" rounded="2xl" bg="gray.50" overflow="hidden">
+                                <Box position="relative" border="2px solid" borderColor={softBorderColor} rounded="2xl" bg={canvasBg} overflow="hidden">
                                     <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
                                     <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} rounded="full" onClick={clearCanvas} colorScheme="red" variant="ghost" />
                                 </Box>
@@ -179,18 +193,18 @@ const PdfSignatureContent: React.FC = () => {
 
                             {activeTab === 'type' && (
                                 <VStack spacing={4}>
-                                    <Input placeholder="Type your name..." size="lg" rounded="xl" value={typedName} onChange={(e) => setTypedName(e.target.value)} />
-                                    <Box p={4} w="full" bg="gray.50" rounded="xl" textAlign="center"><Text fontSize="2xl" fontFamily="serif" fontStyle="italic">{typedName || "Signature Preview"}</Text></Box>
+                                    <Input bg={inputBg} color={textPrimary} borderColor={borderColor} placeholder="Type your name..." size="lg" rounded="xl" value={typedName} onChange={(e) => setTypedName(e.target.value)} />
+                                    <Box p={4} w="full" bg={canvasBg} rounded="xl" textAlign="center"><Text fontSize="2xl" fontFamily="serif" fontStyle="italic">{typedName || "Signature Preview"}</Text></Box>
                                 </VStack>
                             )}
 
                             {activeTab === 'upload' && (
-                                <Box {...getSigProps()} p={6} border="2px dashed" borderColor="gray.200" rounded="xl" textAlign="center" cursor="pointer" _hover={{ bg: "gray.50" }}>
+                                <Box {...getSigProps()} p={6} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "blue.400" }}>
                                     <input {...getSigInputProps()} />
                                     {uploadedSig ? (
                                         <VStack><Box as="img" src={uploadedSig} maxH="80px" alt="Signature" /><Text fontSize="xs" color="blue.500">Click to change</Text></VStack>
                                     ) : (
-                                        <VStack color="gray.500"><Icon as={FaImage} w={8} h={8} /><Text fontSize="sm">Upload PNG/JPG Signature</Text></VStack>
+                                        <VStack color={textSecondary}><Icon as={FaImage} w={8} h={8} /><Text fontSize="sm">Upload PNG/JPG Signature</Text></VStack>
                                     )}
                                 </Box>
                             )}
@@ -206,7 +220,7 @@ const PdfSignatureContent: React.FC = () => {
                                     <HStack justify="space-between">
                                         <Text fontSize="sm">Sign specific page:</Text>
                                         <NumberInput size="sm" maxW={20} defaultValue={1} min={1} max={numPages || 1} onChange={(val) => setTargetPage(parseInt(val))}>
-                                            <NumberInputField />
+                                            <NumberInputField bg={inputBg} color={textPrimary} borderColor={borderColor} />
                                         </NumberInput>
                                     </HStack>
                                 )}
@@ -216,18 +230,18 @@ const PdfSignatureContent: React.FC = () => {
                                 {isProcessing ? "Processing..." : "Export Signed PDF"}
                             </Button>
 
-                            <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor="gray.200" rounded="2xl" textAlign="center" _hover={{ borderColor: 'blue.400' }}>
+                            <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor={borderColor} rounded="2xl" textAlign="center" bg={canvasBg} _hover={{ borderColor: 'blue.400' }}>
                                 <input {...getInputProps()} />
-                                <HStack justify="center" spacing={2} color="gray.500"><Icon as={FaFileUpload} /><Text fontSize="sm" fontWeight="bold">Change PDF</Text></HStack>
+                                <HStack justify="center" spacing={2} color={textSecondary}><Icon as={FaFileUpload} /><Text fontSize="sm" fontWeight="bold">Change PDF</Text></HStack>
                             </Box>
                         </VStack>
                     </Box>
 
                     {/* RIGHT: PREVIEW (Unchanged Structure) */}
-                    <Box gridColumn={{ lg: "span 8" }} bg="gray.200" rounded="3xl" overflow="hidden" border="1px" borderColor="gray.300" position="relative">
-                        <HStack position="absolute" top={4} left={4} zIndex={10} bg="whiteAlpha.900" px={3} py={1} rounded="full" shadow="sm">
+                    <Box gridColumn={{ lg: "span 8" }} bg={panelBg} rounded="3xl" overflow="hidden" border="1px" borderColor={borderColor} position="relative">
+                        <HStack position="absolute" top={4} left={4} zIndex={10} bg={previewBadgeBg} px={3} py={1} rounded="full" shadow="sm">
                             <Icon as={FaRegEye} color="blue.500" />
-                            <Text fontSize="xs" fontWeight="black">PREVIEW</Text>
+                            <Text fontSize="xs" fontWeight="black" color={previewBadgeText}>PREVIEW</Text>
                         </HStack>
 
                         <Box h="80vh" overflowY="auto" p={6}>
@@ -245,7 +259,7 @@ const PdfSignatureContent: React.FC = () => {
                                 </Center>
                             ) : (
                                 <Center h="full">
-                                    <VStack color="gray.400" spacing={4}><Icon as={FaFileUpload} w={12} h={12} opacity={0.2} /><Text fontWeight="medium">Upload a PDF to start</Text></VStack>
+                                    <VStack color={textMuted} spacing={4}><Icon as={FaFileUpload} w={12} h={12} opacity={0.2} /><Text fontWeight="medium">Upload a PDF to start</Text></VStack>
                                 </Center>
                             )}
                         </Box>

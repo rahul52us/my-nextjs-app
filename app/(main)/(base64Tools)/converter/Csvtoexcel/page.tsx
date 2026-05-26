@@ -4,7 +4,7 @@ import {
   Box, Button, VStack, Text, useToast, Heading, Icon, Center,
   HStack, Badge, Card, CardBody, IconButton, Divider,
   Container, Flex, Tooltip, useColorModeValue, Progress,
-  Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import {
@@ -21,6 +21,8 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
+const accentHex = "#007AAC";
+
 const CsvToExcel = () => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,11 +32,27 @@ const CsvToExcel = () => {
   const gridRef = useRef<AgGridReact>(null);
   const toast = useToast();
 
-  // Theme colors
-  const bgColor = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const accentColor = "green.500";
-  const accentHex = "#38A169";
+  // ── Theme-aware colors ──
+  const isDark = useColorModeValue(false, true);
+  const bgColor = useColorModeValue("#f0f4f8", "#0d1117");
+  const cardBg = useColorModeValue("#ffffff", "#161b22");
+  const cardBorder = useColorModeValue("rgba(0,122,172,0.15)", "rgba(0,122,172,0.25)");
+  const headingColor = useColorModeValue("#1a202c", "#e2e8f0");
+  const subText = useColorModeValue("#718096", "#8b949e");
+  const dropBg = useColorModeValue("#f7fafc", "#1c2128");
+  const dropBgHover = useColorModeValue("#edf2f7", "#21262d");
+  const dropBorder = useColorModeValue("#cbd5e0", "#30363d");
+  const dropDragBg = useColorModeValue("rgba(0,122,172,0.08)", "rgba(0,122,172,0.15)");
+  const badgeBg = useColorModeValue("rgba(0,122,172,0.1)", "rgba(0,122,172,0.2)");
+  const gridTheme = useColorModeValue("ag-theme-alpine", "ag-theme-alpine-dark");
+  const gridBorder = useColorModeValue("#e2e8f0", "#30363d");
+  const statBoxBg = useColorModeValue("rgba(0,122,172,0.07)", "rgba(0,122,172,0.12)");
+  const statBoxBorder = useColorModeValue("rgba(0,122,172,0.2)", "rgba(0,122,172,0.3)");
+  const statNumColor = useColorModeValue("#1a202c", "#e2e8f0");
+  const featureBg = useColorModeValue("#ffffff", "#1c2128");
+  const featureBorder = useColorModeValue("#e2e8f0", "#30363d");
+  const featureText = useColorModeValue("#4a5568", "#c9d1d9");
+  const footerColor = useColorModeValue("#a0aec0", "#6e7681");
 
   const clearState = () => {
     setFile(null);
@@ -53,8 +71,6 @@ const CsvToExcel = () => {
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-
-          // Use XLSX to parse CSV — handles quotes, commas inside fields, etc.
           const workbook = XLSX.read(text, { type: "string" });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
@@ -117,7 +133,7 @@ const CsvToExcel = () => {
     try {
       const worksheet = XLSX.utils.json_to_sheet(rowData);
 
-      // Auto column widths based on header length
+      // Auto column widths
       const colWidths = Object.keys(rowData[0]).map((key) => ({
         wch: Math.max(key.length + 4, 14),
       }));
@@ -149,31 +165,92 @@ const CsvToExcel = () => {
   const fileSizeKB = file ? (file.size / 1024).toFixed(1) : null;
 
   return (
-    <Box minH="100vh" bg={bgColor} py={10}>
+    <Box minH="100vh"  py={10}>
+      <style>{`
+        .ag-theme-alpine {
+          --ag-background-color: #ffffff;
+          --ag-header-background-color: #f0f4f8;
+          --ag-header-foreground-color: #1a202c;
+          --ag-foreground-color: #2d3748;
+          --ag-row-hover-color: rgba(0,122,172,0.06);
+          --ag-selected-row-background-color: rgba(0,122,172,0.12);
+          --ag-range-selection-border-color: ${accentHex};
+          --ag-header-column-separator-color: #e2e8f0;
+          --ag-border-color: #e2e8f0;
+          --ag-secondary-border-color: #e2e8f0;
+          --ag-cell-horizontal-border: solid #f0f4f8;
+          --ag-font-size: 14px;
+          --ag-font-family: inherit;
+        }
+        .ag-theme-alpine-dark {
+          --ag-background-color: #161b22;
+          --ag-odd-row-background-color: #1c2128;
+          --ag-header-background-color: #1c2128;
+          --ag-header-foreground-color: #c9d1d9;
+          --ag-foreground-color: #c9d1d9;
+          --ag-row-hover-color: rgba(0,122,172,0.12);
+          --ag-selected-row-background-color: rgba(0,122,172,0.2);
+          --ag-range-selection-border-color: ${accentHex};
+          --ag-header-column-separator-color: #30363d;
+          --ag-border-color: #30363d;
+          --ag-secondary-border-color: #30363d;
+          --ag-cell-horizontal-border: solid #21262d;
+          --ag-font-size: 14px;
+          --ag-font-family: inherit;
+        }
+        .ag-theme-alpine .ag-root-wrapper,
+        .ag-theme-alpine-dark .ag-root-wrapper {
+          border: none;
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        .ag-theme-alpine .ag-header-cell-label,
+        .ag-theme-alpine-dark .ag-header-cell-label {
+          font-weight: 700;
+          font-size: 12px;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .ag-theme-alpine .ag-paging-panel,
+        .ag-theme-alpine-dark .ag-paging-panel {
+          border-top: 1px solid;
+          border-color: inherit;
+          color: inherit;
+        }
+      `}</style>
+
       <Container maxW="container.lg">
         <VStack spacing={8}>
 
           {/* ── Header ── */}
           <VStack spacing={3} textAlign="center">
-            <HStack bg="green.50" px={3} py={1} borderRadius="full" color="green.600">
-              <Icon as={Zap} boxSize={3.5} />
-              <Text fontSize="xs" fontWeight="bold" letterSpacing="wider">
+            <HStack
+              bg={badgeBg}
+              px={3} py={1}
+              borderRadius="full"
+              border="1px solid"
+              borderColor={`${accentHex}40`}
+            >
+              <Icon as={Zap} boxSize={3.5} color={accentHex} />
+              <Text fontSize="xs" fontWeight="bold" color={accentHex} letterSpacing="wider">
                 CSV → EXCEL CONVERTER
               </Text>
             </HStack>
-            <Heading size="2xl" fontWeight="800" letterSpacing="tight">
+
+            <Heading size="2xl" fontWeight="800" letterSpacing="tight" color={headingColor}>
               CSV to{" "}
-              <Text as="span" color={accentColor}>
+              <Text as="span" color={accentHex}>
                 Excel
               </Text>
             </Heading>
-            <Text color="gray.500" fontSize="lg" maxW="500px">
+
+            <Text color={subText} fontSize="lg" maxW="500px">
               Convert your CSV files to professional Excel (.xlsx) format instantly.
               100% browser-based — your data never leaves your device.
             </Text>
           </VStack>
 
-          {/* ── Feature badges ── */}
+          {/* ── Feature Badges ── */}
           <HStack spacing={4} flexWrap="wrap" justify="center">
             {[
               { icon: ShieldCheck, label: "Client-side only" },
@@ -182,17 +259,16 @@ const CsvToExcel = () => {
             ].map(({ icon, label }) => (
               <HStack
                 key={label}
-                bg={cardBg}
-                px={4}
-                py={2}
+                bg={featureBg}
+                px={4} py={2}
                 borderRadius="full"
-                boxShadow="sm"
-                color="gray.600"
+                boxShadow={isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "sm"}
+                color={featureText}
                 fontSize="sm"
                 border="1px solid"
-                borderColor="gray.100"
+                borderColor={featureBorder}
               >
-                <Icon as={icon} boxSize={4} color={accentColor} />
+                <Icon as={icon} boxSize={4} color={accentHex} />
                 <Text fontWeight="medium">{label}</Text>
               </HStack>
             ))}
@@ -202,72 +278,90 @@ const CsvToExcel = () => {
           <Card
             w="full"
             borderRadius="3xl"
-            variant="outline"
             bg={cardBg}
-            boxShadow="2xl"
+            boxShadow={isDark
+              ? "0 8px 32px rgba(0,0,0,0.5)"
+              : "0 8px 32px rgba(0,122,172,0.1)"}
+            border="1px solid"
+            borderColor={cardBorder}
             overflow="hidden"
-            border="none"
           >
             <CardBody p={8}>
 
-              {/* ── Step 1: Upload Dropzone ── */}
+              {/* ── Dropzone ── */}
               <Box
                 {...getRootProps()}
                 p={16}
                 border="2px dashed"
-                borderColor={isDragActive ? accentColor : "gray.200"}
-                bg={isDragActive ? "green.50" : "gray.50"}
+                borderColor={isDragActive ? accentHex : dropBorder}
+                bg={isDragActive ? dropDragBg : dropBg}
                 borderRadius="2xl"
                 cursor="pointer"
-                transition="all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                transition="all 0.3s ease"
                 _hover={{
                   transform: "scale(1.01)",
-                  borderColor: accentColor,
-                  bg: "white",
-                  boxShadow: "inner",
+                  borderColor: accentHex,
+                  bg: dropBgHover,
+                  boxShadow: `0 0 0 4px ${accentHex}18`,
                 }}
               >
                 <input {...getInputProps()} />
                 <VStack spacing={4}>
                   <Center
-                    w={20}
-                    h={20}
-                    bg="white"
+                    w={20} h={20}
+                    bg={cardBg}
                     borderRadius="2xl"
-                    boxShadow="lg"
+                    boxShadow={isDark ? "0 4px 16px rgba(0,0,0,0.4)" : "lg"}
+                    border="1px solid"
+                    borderColor={cardBorder}
                     transform={file ? "rotate(0deg)" : "rotate(-5deg)"}
                     transition="transform 0.3s ease"
                   >
                     <Icon
                       as={file ? FileCheck : FileUp}
-                      w={10}
-                      h={10}
-                      color={file ? "green.400" : accentColor}
+                      w={10} h={10}
+                      color={file ? "green.400" : accentHex}
                     />
                   </Center>
+
                   <VStack spacing={1}>
-                    <Text fontWeight="800" fontSize="xl" color="gray.700">
+                    <Text fontWeight="800" fontSize="xl" color={headingColor}>
                       {file ? file.name : "Drag & Drop your CSV file"}
                     </Text>
-                    <Text color="gray.400" fontSize="sm">
+                    <Text color={subText} fontSize="sm">
                       Supports .csv files up to 50MB
                     </Text>
                   </VStack>
+
                   {file ? (
-                    <HStack>
-                      <Badge colorScheme="green" variant="subtle" px={4} py={1} borderRadius="full">
-                        ✓ File loaded — {fileSizeKB} KB
-                      </Badge>
-                    </HStack>
+                    <Badge
+                      px={4} py={1}
+                      borderRadius="full"
+                      bg={badgeBg}
+                      color={accentHex}
+                      border="1px solid"
+                      borderColor={`${accentHex}40`}
+                      fontWeight="bold"
+                    >
+                      ✓ File loaded — {fileSizeKB} KB
+                    </Badge>
                   ) : (
-                    <Button size="sm" variant="outline" colorScheme="green" borderRadius="full" pointerEvents="none">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      borderRadius="full"
+                      pointerEvents="none"
+                      borderColor={accentHex}
+                      color={accentHex}
+                      _hover={{}}
+                    >
                       Browse files
                     </Button>
                   )}
                 </VStack>
               </Box>
 
-              {/* ── Step 2: Stats bar ── */}
+              {/* ── Stats Bar ── */}
               {rowData.length > 0 && (
                 <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4} mt={6}>
                   {[
@@ -277,50 +371,50 @@ const CsvToExcel = () => {
                   ].map(({ label, value, help }) => (
                     <Box
                       key={label}
-                      bg="green.50"
+                      bg={statBoxBg}
                       borderRadius="xl"
                       p={4}
                       border="1px solid"
-                      borderColor="green.100"
+                      borderColor={statBoxBorder}
                     >
-                      <Stat>
-                        <StatLabel color="green.600" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-                          {label}
-                        </StatLabel>
-                        <StatNumber color="gray.800" fontSize="2xl" fontWeight="800">
-                          {value}
-                        </StatNumber>
-                        <StatHelpText color="gray.400" mb={0}>
-                          {help}
-                        </StatHelpText>
-                      </Stat>
+                      <Text fontSize="xs" fontWeight="bold" color={accentHex} textTransform="uppercase" letterSpacing="wider" mb={1}>
+                        {label}
+                      </Text>
+                      <Text fontSize="2xl" fontWeight="800" color={statNumColor}>
+                        {value}
+                      </Text>
+                      <Text fontSize="xs" color={subText} mt={0.5}>
+                        {help}
+                      </Text>
                     </Box>
                   ))}
                 </SimpleGrid>
               )}
 
-              {/* ── Step 3: AG Grid Preview ── */}
+              {/* ── AG Grid Preview ── */}
               {rowData.length > 0 && (
                 <Box mt={8}>
                   <Flex justify="space-between" align="flex-end" mb={4}>
                     <VStack align="start" spacing={0}>
-                      <HStack color={accentColor}>
+                      <HStack color={accentHex}>
                         <TableIcon size={18} />
-                        <Text
-                          fontWeight="bold"
-                          fontSize="sm"
-                          letterSpacing="widest"
-                          textTransform="uppercase"
-                        >
+                        <Text fontWeight="bold" fontSize="sm" letterSpacing="widest" textTransform="uppercase">
                           Data Preview
                         </Text>
                       </HStack>
-                      <Heading size="md" color="gray.700">
+                      <Heading size="md" color={headingColor}>
                         Inspect Your Records
                       </Heading>
                     </VStack>
+
                     <HStack>
-                      <Badge variant="outline" colorScheme="green" borderRadius="md" px={3}>
+                      <Badge
+                        variant="outline"
+                        px={3}
+                        borderRadius="md"
+                        color={accentHex}
+                        borderColor={`${accentHex}50`}
+                      >
                         {rowData.length} rows · {columnDefs.length} cols
                       </Badge>
                       <Tooltip label="Remove file and start over">
@@ -338,14 +432,13 @@ const CsvToExcel = () => {
                   </Flex>
 
                   <Box
-                    className="ag-theme-alpine"
+                    className={gridTheme}
                     h="400px"
                     w="100%"
                     borderRadius="2xl"
                     overflow="hidden"
-                    boxShadow="sm"
                     border="1px solid"
-                    borderColor="gray.100"
+                    borderColor={gridBorder}
                   >
                     <AgGridReact
                       ref={gridRef}
@@ -360,15 +453,17 @@ const CsvToExcel = () => {
                 </Box>
               )}
 
-              {/* ── Step 4: Convert Button ── */}
+              {/* ── Convert Button ── */}
               <Box mt={8}>
                 {loading && (
                   <Progress
                     size="xs"
                     isIndeterminate
-                    colorScheme="green"
                     borderRadius="full"
                     mb={4}
+                    sx={{
+                      "& > div": { background: accentHex },
+                    }}
                   />
                 )}
 
@@ -377,34 +472,37 @@ const CsvToExcel = () => {
                   isLoading={loading}
                   loadingText="Converting..."
                   onClick={convertToExcel}
-                  colorScheme="green"
                   size="lg"
                   w="full"
                   h="70px"
                   fontSize="lg"
                   fontWeight="bold"
                   borderRadius="2xl"
-                  leftIcon={
-                    converted ? <CheckCircle2 size={22} /> : <FileSpreadsheet size={22} />
-                  }
-                  boxShadow={`0 15px 30px -10px ${accentHex}88`}
+                  leftIcon={converted ? <CheckCircle2 size={22} /> : <FileSpreadsheet size={22} />}
+                  bg={converted ? "green.500" : accentHex}
+                  color="white"
+                  boxShadow={converted
+                    ? "0 15px 30px -10px rgba(72,187,120,0.5)"
+                    : `0 15px 30px -10px ${accentHex}88`}
                   _hover={{
+                    bg: converted ? "green.400" : "#006a96",
                     transform: "translateY(-2px)",
-                    boxShadow: `0 20px 35px -10px ${accentHex}99`,
+                    boxShadow: converted
+                      ? "0 20px 35px -10px rgba(72,187,120,0.6)"
+                      : `0 20px 35px -10px ${accentHex}99`,
                   }}
                   _active={{ transform: "scale(0.98)" }}
+                  _disabled={{ opacity: 0.5, cursor: "not-allowed", transform: "none" }}
                   transition="all 0.2s"
                 >
-                  {converted
-                    ? "✓ Downloaded! Convert Again?"
-                    : "Download as Excel (.xlsx)"}
+                  {converted ? "✓ Downloaded! Convert Again?" : "Download as Excel (.xlsx)"}
                 </Button>
               </Box>
             </CardBody>
           </Card>
 
           {/* ── Footer ── */}
-          <HStack spacing={6} color="gray.400" fontSize="sm" pb={4}>
+          <HStack spacing={6} color={footerColor} fontSize="sm" pb={4}>
             <HStack>
               <Icon as={ShieldCheck} w={4} h={4} />
               <Text>All processing happens in your browser</Text>

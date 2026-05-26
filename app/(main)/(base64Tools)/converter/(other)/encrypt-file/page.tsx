@@ -120,24 +120,24 @@ const FileEncryption = () => {
             gap={3}
             p={8}
             border="2px dashed"
-            borderColor={file ? "teal.400" : borderColor}
+            borderColor={file ? "#007AAC" : borderColor}
             borderRadius="xl"
-            bg={file ? useColorModeValue("teal.50", "teal.900") : cardBg}
+            bg={file ? useColorModeValue("#e6f4fa", "#003d56") : cardBg}
             cursor="pointer"
             transition="all 0.2s"
             _hover={{
-              borderColor: "teal.400",
-              bg: useColorModeValue("teal.50", "teal.900"),
+              borderColor: "#007AAC",
+              bg: useColorModeValue("#e6f4fa", "#003d56"),
             }}
           >
             <Icon
               as={FaUpload}
               boxSize={8}
-              color={file ? "teal.500" : "gray.400"}
+              color={file ? "#007AAC" : "gray.400"}
             />
             <Text
               fontWeight={file ? "semibold" : "normal"}
-              color={file ? "teal.600" : "gray.500"}
+              color={file ? "#007AAC" : "gray.500"}
               fontSize="sm"
               textAlign="center"
             >
@@ -146,7 +146,7 @@ const FileEncryption = () => {
                 : "Click to choose a file or drag & drop"}
             </Text>
             {file && (
-              <Text fontSize="xs" color="teal.400">
+              <Text fontSize="xs" color="#007AAC">
                 {(file.size / 1024).toFixed(1)} KB
               </Text>
             )}
@@ -178,11 +178,11 @@ const FileEncryption = () => {
               onChange={handleSecretKeyChange}
               placeholder="Enter encryption key"
               bg={cardBg}
-              _hover={{ borderColor: "teal.400" }}
+              _hover={{ borderColor: "#007AAC" }}
               borderColor={borderColor}
               _focus={{
-                borderColor: "teal.500",
-                boxShadow: "0 0 0 2px teal",
+                borderColor: "#007AAC",
+                boxShadow: "0 0 0 2px #007AAC",
               }}
             />
           </InputGroup>
@@ -192,12 +192,12 @@ const FileEncryption = () => {
         <Button
           onClick={encryptFile}
           leftIcon={<FaLock />}
-          colorScheme="teal"
           size="lg"
           fontSize={{ base: "md", md: "lg" }}
           borderRadius="full"
-          bgGradient="linear(to-r, teal.500, teal.600)"
-          _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+          bg="#007AAC"
+          color="white"
+          _hover={{ bg: "#005f85" }}
           _active={{ transform: "scale(0.98)" }}
           transition="all 0.2s"
           width={{ base: "100%", md: "auto" }}

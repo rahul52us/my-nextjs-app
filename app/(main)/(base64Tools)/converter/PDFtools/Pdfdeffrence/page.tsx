@@ -56,6 +56,7 @@ const FileComparer = () => {
   const swapBorder   = useColorModeValue('gray.200',  'gray.600');
   const swapHoverBg  = useColorModeValue('blue.50',   'blue.900');
   const swapHoverColor = useColorModeValue('blue.600','blue.300');
+  const swapIconColor = useColorModeValue('gray.600',  'gray.300');
 
   // Overlay bg
   const overlayBg    = useColorModeValue('white',     'gray.900');
@@ -85,6 +86,13 @@ const FileComparer = () => {
     return (['txt', 'json', 'md'].includes(extension || '')) ? await file.text() : "";
   };
 
+  const clearAll = () => {
+  setFiles({ left: '', right: '' });
+  setPreviews({ left: '', right: '' });
+  setFileNames({ left: '', right: '' });
+  if (leftInputRef.current)  leftInputRef.current.value  = '';
+  if (rightInputRef.current) rightInputRef.current.value = '';
+};
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, side: 'left' | 'right') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -156,7 +164,7 @@ const FileComparer = () => {
               variant="ghost"
               icon={<Trash2 size={18}/>}
               aria-label="clear"
-              onClick={() => window.location.reload()}
+               onClick={clearAll}
             />
           </HStack>
         </Flex>
@@ -177,17 +185,25 @@ const FileComparer = () => {
               borderColor={borderColor}
             />
             <IconButton
-              aria-label="Swap"
-              icon={<ArrowLeftRight size={22} />}
-              onClick={swapSides}
-              variant="solid"
-              bg={swapBg}
-              shadow="md"
-              border="1px solid"
-              borderColor={swapBorder}
-              _hover={{ bg: swapHoverBg, color: swapHoverColor }}
-              isRound
-            />
+  aria-label="Swap"
+  icon={<ArrowLeftRight size={22} color="currentColor" />}
+  onClick={swapSides}
+  variant="unstyled"                        // ← solid hatao, unstyled lagao
+  display="flex"
+  alignItems="center"
+  justifyContent="center"
+  bg={swapBg}
+  color={swapIconColor}                     // ← icon color theme-aware
+  shadow="md"
+  border="1px solid"
+  borderColor={swapBorder}
+  _hover={{ bg: swapHoverBg, color: swapHoverColor, transform: "rotate(180deg)" }}
+  transition="all 0.3s ease"               // ← smooth rotate animation bonus 😄
+  isRound
+  w={10}
+  h={10}
+  flexShrink={0}
+/>
             <UploadBox
               title="Comparison"
               fileName={fileNames.right}

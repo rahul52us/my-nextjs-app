@@ -32,12 +32,25 @@ const PDFNumberingPage: React.FC = () => {
   const [fontSize, setFontSize] = useState<number>(11);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const pageBg = useColorModeValue("gray.50", "gray.900");
-const cardBg = useColorModeValue("white", "gray.800");
-const headerBg = useColorModeValue("gray.50", "gray.700");
-const textPrimary = useColorModeValue("gray.700", "gray.100");
-const textSecondary = useColorModeValue("gray.500", "gray.400");
-const borderColor = useColorModeValue("gray.200", "gray.600");
-const previewBg = useColorModeValue("white", "gray.800");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const headerBg = useColorModeValue("gray.50", "gray.700");
+  const textPrimary = useColorModeValue("gray.700", "gray.100");
+  const textSecondary = useColorModeValue("gray.500", "gray.400");
+  const textMuted = useColorModeValue("gray.400", "gray.500");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const softBorderColor = useColorModeValue("gray.100", "gray.700");
+  const inputBg = useColorModeValue("white", "gray.800");
+  const inputTextColor = useColorModeValue("gray.800", "gray.100");
+  const inputIconColor = useColorModeValue("#718096", "#A0AEC0");
+  const dropzoneBg = useColorModeValue("white", "gray.800");
+  const dropzoneHoverBg = useColorModeValue("blue.50", "gray.700");
+  const selectedFileBg = useColorModeValue("blue.50", "blue.900");
+  const selectedFileBorder = useColorModeValue("blue.100", "blue.700");
+  const selectedFileText = useColorModeValue("blue.700", "blue.100");
+  const selectedFileMeta = useColorModeValue("blue.600", "blue.200");
+  const previewPanelBg = useColorModeValue("gray.50", "gray.800");
+  const emptyIconBg = useColorModeValue("white", "gray.700");
+  const sliderTrackBg = useColorModeValue("gray.200", "gray.700");
 
   const toast = useToast();
 
@@ -164,21 +177,21 @@ const previewBg = useColorModeValue("white", "gray.800");
               {!file ? (
                 <Box
                   {...getRootProps()}
-                  w="full" py={10} border="2px dashed" borderColor="gray.200"
-                  borderRadius="lg" bg={cardBg} cursor="pointer" textAlign="center"
-                  _hover={{ borderColor: "blue.400", bg: useColorModeValue("blue.50", "gray.700") }} transition="all 0.2s"
+                  w="full" py={10} border="2px dashed" borderColor={borderColor}
+                  borderRadius="lg" bg={dropzoneBg} cursor="pointer" textAlign="center"
+                  _hover={{ borderColor: "blue.400", bg: dropzoneHoverBg }} transition="all 0.2s"
                 >
                   <input {...getInputProps()} />
-                  <Icon as={FileUp} w={8} h={8} color="gray.400" mb={3} />
-                  <Text fontWeight="semibold" color="gray.600">Drop your PDF file here</Text>
-                  <Text fontSize="xs" color="gray.400">PDF format only (Max 50MB)</Text>
+                  <Icon as={FileUp} w={8} h={8} color={textMuted} mb={3} />
+                  <Text fontWeight="semibold" color={textSecondary}>Drop your PDF file here</Text>
+                  <Text fontSize="xs" color={textMuted}>PDF format only (Max 50MB)</Text>
                 </Box>
               ) : (
-                <HStack w="full" p={4} bg="blue.50" borderRadius="lg" border="1px solid" borderColor="blue.100">
+                <HStack w="full" p={4} bg={selectedFileBg} borderRadius="lg" border="1px solid" borderColor={selectedFileBorder}>
                   <Icon as={FileText} color="blue.500" />
                   <VStack align="start" spacing={0} flex={1}>
-                    <Text fontWeight="bold" fontSize="sm" noOfLines={1} color="blue.700">{file.name}</Text>
-                    <Text fontSize="xs" color="blue.600">{(file.size / 1024 / 1024).toFixed(2)} MB</Text>
+                    <Text fontWeight="bold" fontSize="sm" noOfLines={1} color={selectedFileText}>{file.name}</Text>
+                    <Text fontSize="xs" color={selectedFileMeta}>{(file.size / 1024 / 1024).toFixed(2)} MB</Text>
                   </VStack>
                   <IconButton aria-label="remove" size="sm" variant="ghost" icon={<Trash2 size={16} />} onClick={() => setFile(null)} colorScheme="red" />
                 </HStack>
@@ -188,30 +201,30 @@ const previewBg = useColorModeValue("white", "gray.800");
 
               <SimpleGrid columns={2} spacing={4} w="full">
                 <FormControl>
-                  <FormLabel fontSize="xs" fontWeight="bold">PREFIX</FormLabel>
+                  <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>PREFIX</FormLabel>
                   <InputGroup size="sm">
-                    <InputLeftElement children={<Type size={14} color="gray" />} />
-                    <Input rounded="md" placeholder="e.g. Page" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+                    <InputLeftElement children={<Type size={14} color={inputIconColor} />} />
+                    <Input bg={inputBg} color={inputTextColor} borderColor={borderColor} rounded="md" placeholder="e.g. Page" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
                   </InputGroup>
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" fontWeight="bold">START FROM</FormLabel>
-                  <Input size="sm" type="number" rounded="md" value={startNumber} onChange={(e) => setStartNumber(parseInt(e.target.value) || 1)} />
+                  <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>START FROM</FormLabel>
+                  <Input bg={inputBg} color={inputTextColor} borderColor={borderColor} size="sm" type="number" rounded="md" value={startNumber} onChange={(e) => setStartNumber(parseInt(e.target.value) || 1)} />
                 </FormControl>
               </SimpleGrid>
 
               <SimpleGrid columns={2} spacing={4} w="full">
                 <FormControl>
-                  <FormLabel fontSize="xs" fontWeight="bold">FORMAT</FormLabel>
-                  <Select size="sm" rounded="md" value={format} onChange={(e) => setFormat(e.target.value)}>
+                  <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>FORMAT</FormLabel>
+                  <Select bg={inputBg} color={inputTextColor} borderColor={borderColor} size="sm" rounded="md" value={format} onChange={(e) => setFormat(e.target.value)}>
                     <option value="simple">Simple (Page 1)</option>
                     <option value="of">Formal (Page 1 of X)</option>
                     <option value="bracket">Classic [ 1 ]</option>
                   </Select>
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="xs" fontWeight="bold">POSITION</FormLabel>
-                  <Select size="sm" rounded="md" value={position} onChange={(e) => setPosition(e.target.value)}>
+                  <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>POSITION</FormLabel>
+                  <Select bg={inputBg} color={inputTextColor} borderColor={borderColor} size="sm" rounded="md" value={position} onChange={(e) => setPosition(e.target.value)}>
                     <option value="bottom-center">Bottom Center</option>
                     <option value="bottom-right">Bottom Right</option>
                     <option value="bottom-left">Bottom Left</option>
@@ -221,14 +234,14 @@ const previewBg = useColorModeValue("white", "gray.800");
               </SimpleGrid>
 
               <FormControl>
-                <FormLabel fontSize="xs" fontWeight="bold">STYLE (COLOR & SIZE)</FormLabel>
+                <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>STYLE (COLOR & SIZE)</FormLabel>
                 <HStack spacing={4}>
-                  <Input type="color" w="50px" h="34px" p={1} value={color} onChange={(e) => setColor(e.target.value)} cursor="pointer" border="none" />
+                  <Input type="color" w="50px" h="34px" p={1} value={color} onChange={(e) => setColor(e.target.value)} cursor="pointer" bg={inputBg} borderColor={borderColor} />
                   <Slider flex="1" value={fontSize} min={8} max={24} onChange={(v) => setFontSize(v)}>
-                    <SliderTrack><SliderFilledTrack bg="blue.500" /></SliderTrack>
+                    <SliderTrack bg={sliderTrackBg}><SliderFilledTrack bg="blue.500" /></SliderTrack>
                     <SliderThumb boxSize={4} />
                   </Slider>
-                  <Text fontSize="sm" fontWeight="bold" color="gray.600">{fontSize}px</Text>
+                  <Text fontSize="sm" fontWeight="bold" color={textSecondary}>{fontSize}px</Text>
                 </HStack>
               </FormControl>
 
@@ -245,11 +258,11 @@ const previewBg = useColorModeValue("white", "gray.800");
 
         {/* RIGHT: PREVIEW */}
         <VStack spacing={4} align="stretch">
-          <Card variant="outline" borderRadius="xl" bg="gray.50" h="full" minH="650px" shadow="inner" borderStyle="dashed">
-            <HStack p={4} bg={cardBg} borderBottom="1px solid" borderColor="gray.100" justifyContent="space-between">
+          <Card variant="outline" borderRadius="xl" bg={previewPanelBg} h="full" minH="650px" shadow="inner" borderStyle="dashed" borderColor={borderColor}>
+            <HStack p={4} bg={headerBg} borderBottom="1px solid" borderColor={softBorderColor} justifyContent="space-between">
               <HStack>
                 <Icon as={Eye} size={16} color="blue.500" />
-                <Text fontSize="sm" fontWeight="bold" color="gray.700">Visual Preview</Text>
+                <Text fontSize="sm" fontWeight="bold" color={textPrimary}>Visual Preview</Text>
               </HStack>
               {file && (
                 <HStack spacing={3}>
@@ -261,7 +274,7 @@ const previewBg = useColorModeValue("white", "gray.800");
             </HStack>
             <Box flex={1} display="flex" justifyContent="center" alignItems="center" p={10} position="relative" overflow="hidden">
               {previewUrl ? (
-                <Box position="relative" bg={cardBg} shadow="2xl" border="1px solid" borderColor="gray.200">
+                <Box position="relative" bg="white" shadow="2xl" border="1px solid" borderColor={borderColor}>
                   <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
                     <Page
                       pageNumber={currPreviewPage}
@@ -276,11 +289,11 @@ const previewBg = useColorModeValue("white", "gray.800");
                   </div>
                 </Box>
               ) : (
-                <VStack spacing={4} color="gray.400">
-                  <Box p={6} borderRadius="full" bg={cardBg} border="1px solid" borderColor="gray.100">
+                <VStack spacing={4} color={textMuted}>
+                  <Box p={6} borderRadius="full" bg={emptyIconBg} border="1px solid" borderColor={softBorderColor}>
                     <Icon as={FileText} size={40} strokeWidth={1.5} />
                   </Box>
-                  <Text fontSize="sm" fontWeight="medium">No document active</Text>
+                  <Text fontSize="sm" fontWeight="medium" color={textSecondary}>No document active</Text>
                 </VStack>
               )}
             </Box>

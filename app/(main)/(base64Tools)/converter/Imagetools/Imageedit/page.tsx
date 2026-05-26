@@ -62,7 +62,7 @@ const RichEditor = ({ isDark }: { isDark: boolean }) => {
         ].map((btn, i) => (
           <button key={i} onClick={btn.action}
             className={`p-1.5 rounded transition-colors ${btn.active
-              ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300'
+              ? isDark ? 'bg-[#007ACC]/20 text-[#8fd3ff]' : 'bg-[#007ACC]/10 text-[#007ACC]'
               : isDark ? 'hover:bg-slate-600 text-slate-300' : 'hover:bg-white text-slate-600'}`}>
             {btn.icon}
           </button>
@@ -83,12 +83,12 @@ const Slider = ({
   <div className="space-y-2">
     <div className="flex justify-between items-center text-[10px] font-black uppercase">
       <div className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{icon}{label}</div>
-      <span className="text-indigo-500 font-mono">{value}</span>
+      <span className="text-[#007ACC] font-mono">{value}</span>
     </div>
     <input
       type="range" min="0" max={max} value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}
+      className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[#007ACC] ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}
     />
   </div>
 );
@@ -100,8 +100,8 @@ const ToolIconButton = ({
   <button onClick={onClick}
     className={`aspect-square rounded-2xl flex items-center justify-center transition-all active:scale-90
       ${isDark
-        ? 'bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-indigo-400 hover:text-indigo-400'
-        : 'bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-400 hover:text-indigo-600 hover:shadow-xl'}`}>
+        ? 'bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-[#007ACC] hover:text-[#8fd3ff]'
+        : 'bg-slate-50 border border-slate-100 hover:bg-white hover:border-[#007ACC] hover:text-[#007ACC] hover:shadow-xl'}`}>
     {icon}
   </button>
 );
@@ -290,44 +290,44 @@ const AIasist: React.FC = () => {
   const sidebarBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const mainBg = isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]';
   const btnSecondary = isDark
-    ? 'bg-slate-700 border border-slate-600 text-slate-200 hover:border-indigo-400'
-    : 'bg-white border border-slate-200 text-slate-900 hover:border-indigo-600';
+    ? 'bg-slate-700 border border-slate-600 text-slate-200 hover:border-[#007ACC]'
+    : 'bg-white border border-slate-200 text-slate-900 hover:border-[#007ACC]';
   const sectionLabel = isDark ? 'text-slate-500' : 'text-slate-400';
   const inputCls = isDark
-    ? 'bg-slate-700 text-slate-100 border-slate-600 focus:ring-indigo-500 placeholder:text-slate-400'
-    : 'bg-slate-100 text-slate-900 border-transparent focus:ring-indigo-600 placeholder:text-slate-400';
+    ? 'bg-slate-700 text-slate-100 border-slate-600 focus:ring-[#007ACC] placeholder:text-slate-400'
+    : 'bg-slate-100 text-slate-900 border-transparent focus:ring-[#007ACC] placeholder:text-slate-400';
 
   const SidebarContent = () => (
     <div className="space-y-7 p-5">
       {isCropping ? (
-        <section className="p-5 bg-indigo-600 rounded-2xl text-white space-y-4 shadow-xl shadow-indigo-200">
+        <section className={`p-5 bg-[#007ACC] rounded-2xl text-white space-y-4 shadow-xl ${isDark ? 'shadow-sky-950/40' : 'shadow-sky-200'}`}>
           <div className="flex items-center gap-2"><CropIcon size={18} /><h3 className="text-sm font-bold">Precision Crop</h3></div>
           <div className="flex gap-2">
-            <button onClick={applyCrop} className="flex-1 py-3 bg-white text-indigo-600 rounded-xl text-[11px] font-black uppercase hover:bg-slate-100 transition-colors">Apply</button>
-            <button onClick={() => setIsCropping(false)} className="px-4 py-3 bg-indigo-700 text-white rounded-xl text-[11px] font-bold">Cancel</button>
+            <button onClick={applyCrop} className="flex-1 py-3 bg-white text-[#007ACC] rounded-xl text-[11px] font-black uppercase hover:bg-slate-100 transition-colors">Apply</button>
+            <button onClick={() => setIsCropping(false)} className="px-4 py-3 bg-[#006bb3] text-white rounded-xl text-[11px] font-bold">Cancel</button>
           </div>
         </section>
       ) : (
         <>
           {/* AI Section */}
           <section className="space-y-3">
-            <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-indigo-500">
+            <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-[#007ACC]">
               <Wand2 size={12} /> AI Intelligence
             </h3>
             <button onClick={() => processAI('remove')} disabled={isProcessing || !image}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50 ${isDark ? 'bg-slate-700 hover:bg-indigo-600 text-white' : 'bg-slate-900 hover:bg-indigo-600 text-white shadow-slate-200'}`}>
+              className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50 ${isDark ? 'bg-slate-700 hover:bg-[#007ACC] text-white' : 'bg-[#007ACC] hover:bg-[#006bb3] text-white shadow-sky-200'}`}>
               <div className="flex items-center gap-3"><Sparkles size={18} /><span className="text-sm font-bold">Magic BG Removal</span></div>
               <Wind size={14} className="opacity-40" />
             </button>
             <button onClick={() => processAI('portrait')} disabled={isProcessing || !image}
               className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all disabled:opacity-50 ${btnSecondary}`}>
-              <div className="flex items-center gap-3"><Focus size={18} className="text-indigo-500" /><span className="text-sm font-bold">AI Portrait Blur</span></div>
-              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <div className="flex items-center gap-3"><Focus size={18} className="text-[#007ACC]" /><span className="text-sm font-bold">AI Portrait Blur</span></div>
+              <div className="w-2 h-2 rounded-full bg-[#007ACC] animate-pulse" />
             </button>
           </section>
 
           {foregroundImage && (
-            <section className={`p-4 rounded-2xl border ${isDark ? 'bg-indigo-950 border-indigo-800' : 'bg-indigo-50 border-indigo-100'}`}>
+            <section className={`p-4 rounded-2xl border ${isDark ? 'bg-[#007ACC]/10 border-[#007ACC]/30' : 'bg-[#007ACC]/5 border-[#007ACC]/20'}`}>
               <Slider label="Portrait Depth" value={filters.bgBlur} max={50}
                 onChange={v => updateFilters({ ...filters, bgBlur: v })} icon={<Focus size={14} />} isDark={isDark} />
             </section>
@@ -343,8 +343,8 @@ const AIasist: React.FC = () => {
                 <button key={p} onClick={() => applyPreset(p.toLowerCase())}
                   className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border transition-all
                     ${isDark
-                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-indigo-400 hover:text-indigo-400'
-                      : 'bg-slate-50/50 border-slate-100 text-slate-600 hover:border-indigo-500 hover:text-indigo-600'}`}>
+                      ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-[#007ACC] hover:text-[#8fd3ff]'
+                      : 'bg-slate-50/50 border-slate-100 text-slate-600 hover:border-[#007ACC] hover:text-[#007ACC]'}`}>
                   {p}
                 </button>
               ))}
@@ -392,16 +392,16 @@ const AIasist: React.FC = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 md:gap-3">
           {image && (
-            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-indigo-500 transition-colors">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-[#007ACC] transition-colors">
               <Menu size={20} />
             </button>
           )}
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-indigo-600 rounded-xl flex items-center justify-center rotate-3 shadow-lg shadow-indigo-200 flex-shrink-0">
+          <div className={`w-8 h-8 md:w-10 md:h-10 bg-[#007ACC] rounded-xl flex items-center justify-center rotate-3 shadow-lg ${isDark ? 'shadow-sky-950/40' : 'shadow-sky-200'} flex-shrink-0`}>
             <Zap size={16} className="text-white fill-current md:w-5 md:h-5" />
           </div>
           <span className="font-bold text-base md:text-xl tracking-tighter">
             VisionStudio
-            <span className="text-indigo-600 font-black tracking-widest text-[10px] ml-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 rounded hidden sm:inline">ULTRA</span>
+            <span className="text-[#007ACC] font-black tracking-widest text-[10px] ml-1 px-2 py-0.5 bg-[#007ACC]/10 rounded hidden sm:inline">ULTRA</span>
           </span>
         </div>
 
@@ -410,25 +410,25 @@ const AIasist: React.FC = () => {
           {image && (
             <>
               <button onClick={() => setIsCropping(!isCropping)}
-                className={`p-2 transition rounded-lg ${isCropping ? 'bg-indigo-600 text-white' : isDark ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-600'}`}
+                className={`p-2 transition rounded-lg ${isCropping ? 'bg-[#007ACC] text-white' : isDark ? 'text-slate-400 hover:text-[#8fd3ff]' : 'text-slate-400 hover:text-[#007ACC]'}`}
                 title="Toggle Crop">
                 <CropIcon size={18} />
               </button>
               <button onClick={handleUndo} disabled={history.length === 0}
-                className={`p-2 disabled:opacity-20 transition ${isDark ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-600'}`}>
+                className={`p-2 disabled:opacity-20 transition ${isDark ? 'text-slate-400 hover:text-[#8fd3ff]' : 'text-slate-400 hover:text-[#007ACC]'}`}>
                 <Undo2 size={18} />
               </button>
               <button onMouseDown={() => setIsComparing(true)} onMouseUp={() => setIsComparing(false)}
-                className={`p-2 transition hidden sm:block ${isDark ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-600'}`}>
+                className={`p-2 transition hidden sm:block ${isDark ? 'text-slate-400 hover:text-[#8fd3ff]' : 'text-slate-400 hover:text-[#007ACC]'}`}>
                 <Eye size={18} />
               </button>
-              <div className="h-5 w-px bg-slate-200 dark:bg-slate-600 mx-1 hidden sm:block" />
+              <div className={`h-5 w-px mx-1 hidden sm:block ${isDark ? 'bg-slate-600' : 'bg-slate-200'}`} />
               <button onClick={() => setShowQRModal(true)}
                 className={`hidden sm:flex items-center gap-1.5 text-xs font-bold px-2 md:px-3 py-2 rounded-lg transition ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-50'}`}>
                 <QrCode size={14} /> <span className="hidden md:inline">QR</span>
               </button>
               <button onClick={handleResetStudio}
-                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition">
+                className={`p-2 text-red-400 hover:text-red-600 rounded-lg transition ${isDark ? 'hover:bg-red-950' : 'hover:bg-red-50'}`}>
                 <Trash2 size={16} />
               </button>
               <button onClick={() => {
@@ -436,7 +436,7 @@ const AIasist: React.FC = () => {
                 a.download = 'vision-pro.png';
                 a.href = canvasRef.current!.toDataURL('image/png');
                 a.click();
-              }} className="px-3 md:px-6 py-2 md:py-2.5 bg-slate-900 dark:bg-indigo-600 text-white rounded-full text-xs font-bold hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-all active:scale-95 whitespace-nowrap">
+              }} className="px-3 md:px-6 py-2 md:py-2.5 bg-[#007ACC] text-white rounded-full text-xs font-bold hover:bg-[#006bb3] transition-all active:scale-95 whitespace-nowrap">
                 Export
               </button>
             </>
@@ -453,7 +453,7 @@ const AIasist: React.FC = () => {
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
             <aside className={`absolute left-0 top-0 bottom-0 w-80 max-w-[90vw] overflow-y-auto shadow-2xl ${sidebarBg}`}>
               <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <span className="font-black text-sm uppercase tracking-widest text-indigo-500">Tools</span>
+                <span className="font-black text-sm uppercase tracking-widest text-[#007ACC]">Tools</span>
                 <button onClick={() => setSidebarOpen(false)} className={`p-1.5 rounded-lg ${isDark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-400 hover:bg-slate-100'}`}>
                   <X size={18} />
                 </button>
@@ -475,11 +475,11 @@ const AIasist: React.FC = () => {
               {...getRootProps()}
               className={`w-full max-w-2xl aspect-video border-2 border-dashed rounded-[32px] md:rounded-[48px] flex flex-col items-center justify-center gap-4 md:gap-6 cursor-pointer transition-all group shadow-2xl
                 ${isDark
-                  ? 'bg-slate-800 border-slate-600 hover:border-indigo-400 hover:bg-slate-700'
-                  : 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30'}`}
+                  ? 'bg-slate-800 border-slate-600 hover:border-[#007ACC] hover:bg-slate-700'
+                  : 'bg-white border-slate-200 hover:border-[#007ACC] hover:bg-[#007ACC]/5'}`}
             >
               <input {...getInputProps()} />
-              <div className={`w-16 h-16 md:w-24 md:h-24 rounded-[24px] md:rounded-[32px] flex items-center justify-center text-white group-hover:scale-110 transition-transform ${isDark ? 'bg-indigo-600' : 'bg-slate-900'}`}>
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-[24px] md:rounded-[32px] flex items-center justify-center text-white group-hover:scale-110 transition-transform bg-[#007ACC]">
                 <Camera size={28} className="md:w-10 md:h-10" />
               </div>
               <div className="text-center px-4">
@@ -494,7 +494,7 @@ const AIasist: React.FC = () => {
                   <span className={`text-[10px] font-black uppercase flex items-center gap-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     <Info size={12} /> {image.width}×{image.height}
                   </span>
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-black text-[#007ACC] uppercase tracking-widest">
                     {isCropping ? "Cropping" : isComparing ? "Original" : "Live Edit"}
                   </span>
                 </div>
@@ -512,8 +512,8 @@ const AIasist: React.FC = () => {
               </div>
 
               {isProcessing && (
-                <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center z-50">
-                  <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                <div className={`absolute inset-0 ${isDark ? 'bg-slate-900/90' : 'bg-white/90'} backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center z-50`}>
+                  <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-[#007ACC] border-t-transparent rounded-full animate-spin mb-4" />
                   <p className={`text-sm md:text-lg font-black uppercase tracking-widest animate-pulse text-center ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
                     AI Processing...
                   </p>
@@ -543,7 +543,7 @@ const AIasist: React.FC = () => {
               className={`w-full p-3 md:p-4 rounded-2xl text-sm font-bold border focus:outline-none focus:ring-2 mb-5 ${inputCls}`}
               placeholder="https://..." />
             <button onClick={() => setShowQRModal(false)}
-              className="w-full py-4 md:py-5 bg-indigo-600 text-white rounded-2xl font-black hover:bg-slate-900 transition-colors">
+              className="w-full py-4 md:py-5 bg-[#007ACC] text-white rounded-2xl font-black hover:bg-[#006bb3] transition-colors">
               Apply Link
             </button>
           </div>

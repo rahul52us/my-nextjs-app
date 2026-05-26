@@ -115,7 +115,7 @@ const PdfMerger = () => {
           <VStack spacing={2} textAlign="center">
             <Badge colorScheme="purple" borderRadius="full" px={3}>All-in-One</Badge>
             <Heading size="xl" color={textPrimary}>
-              PDF & Image <Text as="span" color="blue.500">Converter</Text>
+              Merge PDF & Image <Text as="span" color="blue.500">Converter</Text>
             </Heading>
             <Text color={textSecondary}>Combine PDFs and Images into a single document</Text>
           </VStack>

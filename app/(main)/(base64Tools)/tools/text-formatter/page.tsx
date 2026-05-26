@@ -18,7 +18,6 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { FaCopy, FaDownload, FaUpload } from "react-icons/fa";
-import stores from "../../../../store/stores";
 
 const downloadTextFile = (text: string, filename: string) => {
   const element = document.createElement("a");
@@ -35,13 +34,18 @@ const TextFormatter = () => {
   const [formattedText, setFormattedText] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const bgColor = "transparent";
   const textColor = useColorModeValue("gray.800", "gray.100");
+  const inputBgColor = useColorModeValue("white", "gray.800");
+  const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+  const inputPlaceholderColor = useColorModeValue("gray.500", "gray.400");
+  const outputBgColor = useColorModeValue("gray.50", "gray.800");
+  const outputBorderColor = useColorModeValue("gray.200", "gray.600");
+  const outputTextColor = useColorModeValue("gray.700", "gray.200");
+  const mutedTextColor = useColorModeValue("gray.500", "gray.400");
+  const primaryColor = "#007ACC";
+  const primaryHoverColor = "#006bb3";
   const toast = useToast();
-
-  const {
-    themeStore: { themeConfig },
-  } = stores;
 
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
@@ -95,7 +99,7 @@ const TextFormatter = () => {
       <Heading
         as="h1"
         size="xl"
-        color={themeConfig.colors.brand[300]}
+        color={textColor}
         textAlign="center"
         fontWeight="bold"
         mb={6}
@@ -111,8 +115,12 @@ const TextFormatter = () => {
           onChange={handleInputChange}
           placeholder="Enter text here"
           rows={8}
-          borderColor="teal.300"
-          _focus={{ borderColor: "teal.500" }}
+          bg={inputBgColor}
+          color={textColor}
+          borderColor={inputBorderColor}
+          _placeholder={{ color: inputPlaceholderColor }}
+          _hover={{ borderColor: primaryColor }}
+          _focus={{ borderColor: primaryColor, boxShadow: `0 0 0 1px ${primaryColor}` }}
           resize="vertical"
         />
 
@@ -121,10 +129,13 @@ const TextFormatter = () => {
           <WrapItem flex={{ base: "1 1 100%", md: "1" }}>
             <Button
               onClick={handleRemoveExtraSpaces}
-              colorScheme="blue"
+              bg={primaryColor}
+              color="white"
               size="lg"
               variant="solid"
               width="100%"
+              _hover={{ bg: primaryHoverColor }}
+              _active={{ bg: primaryHoverColor }}
             >
               Remove Extra Spaces
             </Button>
@@ -133,10 +144,13 @@ const TextFormatter = () => {
           <WrapItem flex={{ base: "1 1 100%", md: "1" }}>
             <Button
               onClick={handleCapitalizeText}
-              colorScheme="blue"
+              bg={primaryColor}
+              color="white"
               size="lg"
               variant="solid"
               width="100%"
+              _hover={{ bg: primaryHoverColor }}
+              _active={{ bg: primaryHoverColor }}
             >
               Capitalize Text
             </Button>
@@ -145,10 +159,13 @@ const TextFormatter = () => {
           <WrapItem flex={{ base: "1 1 100%", md: "1" }}>
             <Button
               onClick={handleToUppercase}
-              colorScheme="blue"
+              bg={primaryColor}
+              color="white"
               size="lg"
               variant="solid"
               width="100%"
+              _hover={{ bg: primaryHoverColor }}
+              _active={{ bg: primaryHoverColor }}
             >
               Convert to Uppercase
             </Button>
@@ -157,10 +174,13 @@ const TextFormatter = () => {
           <WrapItem flex={{ base: "1 1 100%", md: "1" }}>
             <Button
               onClick={handleToLowercase}
-              colorScheme="blue"
+              bg={primaryColor}
+              color="white"
               size="lg"
               variant="solid"
               width="100%"
+              _hover={{ bg: primaryHoverColor }}
+              _active={{ bg: primaryHoverColor }}
             >
               Convert to Lowercase
             </Button>
@@ -173,8 +193,10 @@ const TextFormatter = () => {
                 aria-label="Copy to clipboard"
                 icon={<FaCopy />}
                 onClick={handleCopyToClipboard}
-                colorScheme="green"
+                bg={primaryColor}
+                color="white"
                 size="lg"
+                _hover={{ bg: primaryHoverColor }}
               />
               <IconButton
                 aria-label="Download as .txt"
@@ -182,15 +204,19 @@ const TextFormatter = () => {
                 onClick={() =>
                   downloadTextFile(formattedText, "formatted-text.txt")
                 }
-                colorScheme="teal"
+                bg={primaryColor}
+                color="white"
                 size="lg"
+                _hover={{ bg: primaryHoverColor }}
               />
               <IconButton
                 aria-label="Upload .txt File"
                 icon={<FaUpload />}
                 onClick={() => fileInputRef.current?.click()}
-                colorScheme="orange"
+                bg={primaryColor}
+                color="white"
                 size="lg"
+                _hover={{ bg: primaryHoverColor }}
               />
             </HStack>
           </WrapItem>
@@ -201,13 +227,13 @@ const TextFormatter = () => {
           mt={4}
           p={4}
           border="1px"
-          borderColor="gray.200"
+          borderColor={outputBorderColor}
           borderRadius="md"
-          bg="gray.100"
+          bg={outputBgColor}
           maxH="250px"
           overflowY="auto"
         >
-          <Text fontSize="sm" wordBreak="break-word" whiteSpace="pre-wrap">
+          <Text fontSize="sm" color={formattedText ? outputTextColor : mutedTextColor} wordBreak="break-word" whiteSpace="pre-wrap">
             {formattedText || "Formatted text will appear here"}
           </Text>
         </Box>
@@ -224,7 +250,7 @@ const TextFormatter = () => {
         {/* Upload spinner */}
         {isUploading && (
           <Box display="flex" justifyContent="center" mt={4}>
-            <Spinner size="lg" color="teal.500" />
+            <Spinner size="lg" color={primaryColor} />
           </Box>
         )}
       </VStack>

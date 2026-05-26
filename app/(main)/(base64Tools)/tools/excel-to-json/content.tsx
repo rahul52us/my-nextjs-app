@@ -61,7 +61,7 @@ import ReactSelect, { MultiValue } from "react-select";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import stores from "../../../../store/stores";
-// import "./excelViewer.css"; // Ensure this CSS file exists or style directly
+import "./excelViewer.css";
 
 // Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -236,7 +236,12 @@ export default function ExcelToJsonContent() {
   const textColor = useColorModeValue("gray.800", "gray.100");
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
-  const accentColor = "teal.500";
+  const accentColor = "#007ACC";
+  const accentColorHover = "#0062a3";
+  const accentColorActive = "#005994";
+  const accentBgLight = "#e5f2ff";
+  const accentBgDark = "#003366";
+  const accentBgLightHover = "#cce6ff";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState<string>("");
 
@@ -1000,7 +1005,7 @@ export default function ExcelToJsonContent() {
         <Heading
           as="h1"
           size="xl"
-          color={themeConfig.colors.brand[300]}
+          color={useColorModeValue(accentColor, "blue.300")}
           textAlign="center"
           fontWeight="extrabold"
           mb={6}
@@ -1044,7 +1049,11 @@ export default function ExcelToJsonContent() {
             <Progress
               value={loadingProgress}
               size="sm"
-              colorScheme="teal"
+              sx={{
+                "& > div": {
+                  bg: accentColor,
+                }
+              }}
               width="300px"
               mt={4}
               borderRadius="md"
@@ -1073,9 +1082,9 @@ export default function ExcelToJsonContent() {
                 fontSize="sm"
                 _focus={{
                   borderColor: accentColor,
-                  boxShadow: `0 0 0 2px ${accentColor}`,
+                  boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                 }}
-                _hover={{ borderColor: "teal.400" }}
+                _hover={{ borderColor: accentColor }}
                 transition="all 0.2s"
                 aria-label="Base64 input"
               />
@@ -1112,27 +1121,27 @@ export default function ExcelToJsonContent() {
                 gap={2}
                 p={6}
                 border="2px dashed"
-                borderColor={fileName ? "teal.400" : borderColor}
+                borderColor={fileName ? accentColor : borderColor}
                 borderRadius="md"
                 bg={
-                  fileName ? useColorModeValue("teal.50", "teal.900") : cardBg
+                  fileName ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)") : cardBg
                 }
                 cursor="pointer"
                 transition="all 0.2s"
                 _hover={{
-                  borderColor: "teal.400",
-                  bg: useColorModeValue("teal.50", "teal.900"),
+                  borderColor: accentColor,
+                  bg: useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)"),
                 }}
                 width="100%"
               >
                 <Icon
                   as={DownloadIcon}
                   boxSize={6}
-                  color={fileName ? "teal.500" : "gray.400"}
+                  color={fileName ? accentColor : "gray.400"}
                   transform="rotate(180deg)"
                 />
                 <Text
-                  color={fileName ? "teal.600" : "gray.500"}
+                  color={fileName ? useColorModeValue(accentColor, "blue.300") : "gray.500"}
                   fontWeight={fileName ? "semibold" : "normal"}
                   fontSize="sm"
                   textAlign="center"
@@ -1140,7 +1149,7 @@ export default function ExcelToJsonContent() {
                   {fileName ? fileName : "Click to choose file or drag & drop"}
                 </Text>
                 {fileName && (
-                  <Text fontSize="xs" color="teal.400">
+                  <Text fontSize="xs" color="green.400">
                     ✓ File selected
                   </Text>
                 )}
@@ -1154,17 +1163,26 @@ export default function ExcelToJsonContent() {
 
           <Flex justify="space-between" flexWrap="wrap" gap={4}>
             <Button
-              colorScheme="teal"
               onClick={handleDownload}
               flex={1}
               minW="150px"
               isDisabled={!base64}
               leftIcon={<DownloadIcon />}
-              bgGradient="linear(to-r, teal.500, teal.600)"
-              _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+              bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+              color="white"
+              _hover={{
+                bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                _disabled: { bg: "gray.300" }
+              }}
+              _active={{ transform: "scale(0.98)" }}
+              _disabled={{
+                bg: useColorModeValue("gray.100", "gray.700"),
+                color: useColorModeValue("gray.400", "gray.500"),
+                cursor: "not-allowed",
+                bgGradient: "none",
+              }}
               transform="scale(1)"
               transition="transform 0.2s, background 0.3s"
-              _active={{ transform: "scale(0.98)" }}
               borderRadius="full"
               fontWeight="medium"
               aria-label="Download file"
@@ -1172,17 +1190,26 @@ export default function ExcelToJsonContent() {
               Download Original
             </Button>
             <Button
-              colorScheme="teal"
               onClick={handleShare}
               flex={1}
               minW="150px"
               isDisabled={!base64}
               leftIcon={<ExternalLinkIcon />}
-              bgGradient="linear(to-r, teal.500, teal.600)"
-              _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+              bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+              color="white"
+              _hover={{
+                bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                _disabled: { bg: "gray.300" }
+              }}
+              _active={{ transform: "scale(0.98)" }}
+              _disabled={{
+                bg: useColorModeValue("gray.100", "gray.700"),
+                color: useColorModeValue("gray.400", "gray.500"),
+                cursor: "not-allowed",
+                bgGradient: "none",
+              }}
               transform="scale(1)"
               transition="transform 0.2s, background 0.3s"
-              _active={{ transform: "scale(0.98)" }}
               borderRadius="full"
               fontWeight="medium"
               aria-label="Share file"
@@ -1190,16 +1217,18 @@ export default function ExcelToJsonContent() {
               Share File
             </Button>
             <Button
-              colorScheme="teal"
               onClick={handleTogglePreview}
               flex={1}
               minW="150px"
               leftIcon={showPreview ? <ViewOffIcon /> : <ViewIcon />}
-              bgGradient="linear(to-r, teal.500, teal.600)"
-              _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+              bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+              color="white"
+              _hover={{
+                bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+              }}
+              _active={{ transform: "scale(0.98)" }}
               transform="scale(1)"
               transition="transform 0.2s, background 0.3s"
-              _active={{ transform: "scale(0.98)" }}
               borderRadius="full"
               fontWeight="medium"
               aria-label={showPreview ? "Hide preview" : "Show preview"}
@@ -1248,7 +1277,7 @@ export default function ExcelToJsonContent() {
           borderColor={borderColor}
         >
           <DrawerHeader
-            bgGradient="linear(to-r, teal.500, teal.600)"
+            bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
             color="white"
             py={4}
             px={6}
@@ -1275,7 +1304,11 @@ export default function ExcelToJsonContent() {
                 <Progress
                   value={loadingProgress}
                   size="sm"
-                  colorScheme="teal"
+                  sx={{
+                    "& > div": {
+                      bg: accentColor,
+                    }
+                  }}
                   width="300px"
                   borderRadius="md"
                 />
@@ -1343,9 +1376,9 @@ export default function ExcelToJsonContent() {
                         borderRadius="md"
                         _focus={{
                           borderColor: accentColor,
-                          boxShadow: `0 0 0 2px ${accentColor}`,
+                          boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                         }}
-                        _hover={{ borderColor: "teal.400" }}
+                        _hover={{ borderColor: accentColor }}
                         transition="all 0.2s"
                         aria-label="Select sheet"
                       >
@@ -1414,13 +1447,39 @@ export default function ExcelToJsonContent() {
                             backgroundColor: state.isSelected
                               ? accentColor
                               : state.isFocused
-                                ? useColorModeValue("#E6FFFA", "#2D3748")
+                                ? useColorModeValue("#e5f2ff", "#2d3748")
                                 : undefined,
                             color: state.isSelected
                               ? "white"
                               : useColorModeValue("gray.800", "white"),
                             padding: "8px 12px",
                             transition: "all 0.2s",
+                            cursor: "pointer",
+                          }),
+                          multiValue: (provided) => ({
+                            ...provided,
+                            backgroundColor: useColorModeValue("#e5f2ff", "#003366"),
+                            borderRadius: "4px",
+                          }),
+                          multiValueLabel: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("#007ACC", "#e5f2ff"),
+                          }),
+                          multiValueRemove: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("#007ACC", "#e5f2ff"),
+                            ':hover': {
+                              backgroundColor: accentColor,
+                              color: 'white',
+                            },
+                          }),
+                          placeholder: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("gray.400", "gray.500"),
+                          }),
+                          singleValue: (provided) => ({
+                            ...provided,
+                            color: textColor,
                           }),
                           input: (provided) => ({
                             ...provided,
@@ -1448,14 +1507,14 @@ export default function ExcelToJsonContent() {
                           borderRadius="md"
                           _focus={{
                             borderColor: accentColor,
-                            boxShadow: `0 0 0 2px ${accentColor}`,
+                            boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                           }}
-                          _hover={{ borderColor: "teal.400" }}
+                          _hover={{ borderColor: accentColor }}
                           transition="all 0.2s"
                         >
                           <NumberInputField
                             _focus={{ borderColor: accentColor }}
-                            _hover={{ borderColor: "teal.400" }}
+                            _hover={{ borderColor: accentColor }}
                             aria-label="Start row"
                           />
                         </NumberInput>
@@ -1480,14 +1539,14 @@ export default function ExcelToJsonContent() {
                           borderRadius="md"
                           _focus={{
                             borderColor: accentColor,
-                            boxShadow: `0 0 0 2px ${accentColor}`,
+                            boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                           }}
-                          _hover={{ borderColor: "teal.400" }}
+                          _hover={{ borderColor: accentColor }}
                           transition="all 0.2s"
                         >
                           <NumberInputField
                             _focus={{ borderColor: accentColor }}
-                            _hover={{ borderColor: "teal.400" }}
+                            _hover={{ borderColor: accentColor }}
                             aria-label="End row"
                           />
                         </NumberInput>
@@ -1504,7 +1563,15 @@ export default function ExcelToJsonContent() {
                     <Checkbox
                       isChecked={selectAllColumns}
                       onChange={(e) => setSelectAllColumns(e.target.checked)}
-                      colorScheme="teal"
+                      sx={{
+                        "span.chakra-checkbox__control[data-checked]": {
+                          bg: accentColor,
+                          borderColor: accentColor,
+                        },
+                        "span.chakra-checkbox__control:hover": {
+                          borderColor: accentColor,
+                        }
+                      }}
                       size="md"
                       aria-label="Select all columns"
                     >
@@ -1538,12 +1605,20 @@ export default function ExcelToJsonContent() {
                           hasArrow
                         >
                           <Button
-                            colorScheme="teal"
                             onClick={() => handleDownloadJson(selectedSheet)}
                             isDisabled={!selectedColumns[selectedSheet]?.length}
-                            bgGradient="linear(to-r, teal.500, teal.600)"
+                            bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+                            color="white"
                             _hover={{
-                              bgGradient: "linear(to-r, teal.600, teal.700)",
+                              bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                              _disabled: { bg: "gray.300" }
+                            }}
+                            _active={{ transform: "scale(0.98)" }}
+                            _disabled={{
+                              bg: useColorModeValue("gray.100", "gray.700"),
+                              color: useColorModeValue("gray.400", "gray.500"),
+                              cursor: "not-allowed",
+                              bgGradient: "none",
                             }}
                             size="sm"
                             borderRadius="full"
@@ -1558,12 +1633,20 @@ export default function ExcelToJsonContent() {
                           hasArrow
                         >
                           <Button
-                            colorScheme="teal"
                             onClick={() => handleDownloadExcel(selectedSheet)}
                             isDisabled={!selectedColumns[selectedSheet]?.length}
-                            bgGradient="linear(to-r, teal.500, teal.600)"
+                            bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+                            color="white"
                             _hover={{
-                              bgGradient: "linear(to-r, teal.600, teal.700)",
+                              bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                              _disabled: { bg: "gray.300" }
+                            }}
+                            _active={{ transform: "scale(0.98)" }}
+                            _disabled={{
+                              bg: useColorModeValue("gray.100", "gray.700"),
+                              color: useColorModeValue("gray.400", "gray.500"),
+                              cursor: "not-allowed",
+                              bgGradient: "none",
                             }}
                             size="sm"
                             borderRadius="full"
@@ -1575,7 +1658,6 @@ export default function ExcelToJsonContent() {
                         </Tooltip>
                         <Tooltip label="Download all sheets as zip" hasArrow>
                           <Button
-                            colorScheme="teal"
                             variant="outline"
                             onClick={handleDownloadAllJsons}
                             isDisabled={
@@ -1586,7 +1668,20 @@ export default function ExcelToJsonContent() {
                             }
                             size="sm"
                             borderColor={accentColor}
-                            _hover={{ bg: "teal.50" }}
+                            color={useColorModeValue(accentColor, "blue.300")}
+                            _hover={{
+                              bg: useColorModeValue(accentBgLight, "whiteAlpha.100"),
+                              borderColor: accentColorHover,
+                            }}
+                            _active={{
+                              bg: useColorModeValue(accentBgLightHover, "whiteAlpha.200"),
+                            }}
+                            _disabled={{
+                              borderColor: useColorModeValue("gray.200", "gray.700"),
+                              color: useColorModeValue("gray.400", "gray.500"),
+                              cursor: "not-allowed",
+                              bg: "transparent",
+                            }}
                             borderRadius="full"
                             transition="all 0.2s"
                             aria-label="Download all sheets as zip"
@@ -1605,7 +1700,7 @@ export default function ExcelToJsonContent() {
                             color={accentColor}
                             fontWeight="semibold"
                             textDecoration="underline"
-                            _hover={{ color: "teal.600" }}
+                            _hover={{ color: accentColorHover }}
                             isExternal
                             aria-label={`Download ${generateFileName(fileType ?? "application/octet-stream")}`}
                           >

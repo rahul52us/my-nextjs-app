@@ -115,7 +115,12 @@ const JsonToExcel = () => {
   const textColor = useColorModeValue("gray.800", "gray.100");
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
-  const accentColor = "teal.500";
+  const accentColor = "#007ACC";
+  const accentColorHover = "#0062a3";
+  const accentColorActive = "#005994";
+  const accentBgLight = "#e5f2ff";
+  const accentBgDark = "#003366";
+  const accentBgLightHover = "#cce6ff";
 
   // Load saved column selections from localStorage
   useEffect(() => {
@@ -575,7 +580,7 @@ const JsonToExcel = () => {
         <Heading
           as="h1"
           size={{ base: "lg", md: "xl" }}
-          color={themeConfig.colors.brand[300]}
+          color={useColorModeValue(accentColor, "blue.300")}
           textAlign="center"
           fontWeight="extrabold"
           mb={6}
@@ -624,7 +629,11 @@ const JsonToExcel = () => {
             <Progress
               value={loadingProgress}
               size="sm"
-              colorScheme="teal"
+              sx={{
+                "& > div": {
+                  bg: accentColor,
+                }
+              }}
               width="300px"
               mt={4}
               borderRadius="md"
@@ -666,9 +675,9 @@ const JsonToExcel = () => {
                 fontSize="sm"
                 _focus={{
                   borderColor: accentColor,
-                  boxShadow: `0 0 0 2px ${accentColor}`,
+                  boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                 }}
-                _hover={{ borderColor: "teal.400" }}
+                _hover={{ borderColor: accentColor }}
                 transition="all 0.2s"
                 aria-label="JSON input"
                 resize="vertical"
@@ -718,19 +727,19 @@ const JsonToExcel = () => {
                 p={5}
                 border="2px dashed"
                 borderColor={
-                  jsonInput && previewContent ? "teal.400" : borderColor
+                  jsonInput && previewContent ? accentColor : borderColor
                 }
                 borderRadius="md"
                 bg={
                   jsonInput && previewContent
-                    ? useColorModeValue("teal.50", "teal.900")
+                    ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)")
                     : cardBg
                 }
                 cursor="pointer"
                 transition="all 0.2s"
                 _hover={{
-                  borderColor: "teal.400",
-                  bg: useColorModeValue("teal.50", "teal.900"),
+                  borderColor: accentColor,
+                  bg: useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)"),
                 }}
                 width="100%"
               >
@@ -738,13 +747,13 @@ const JsonToExcel = () => {
                 <Box
                   as="span"
                   fontSize="2xl"
-                  color={jsonInput && previewContent ? "teal.500" : "gray.400"}
+                  color={jsonInput && previewContent ? accentColor : "gray.400"}
                 >
                   ↑
                 </Box>
 
                 <Text
-                  color={jsonInput && previewContent ? "teal.600" : "gray.500"}
+                  color={jsonInput && previewContent ? useColorModeValue(accentColor, "blue.300") : "gray.500"}
                   fontWeight={
                     jsonInput && previewContent ? "semibold" : "normal"
                   }
@@ -773,17 +782,26 @@ const JsonToExcel = () => {
               hasArrow
             >
               <Button
-                colorScheme="teal"
                 onClick={() => handleDownloadExcel("Sheet1")}
                 flex={1}
                 minW="120px"
                 isDisabled={!jsonInput || !selectedColumns["Sheet1"]?.length}
                 leftIcon={<DownloadIcon />}
-                bgGradient="linear(to-r, teal.500, teal.600)"
-                _hover={{ bgGradient: "linear(to-r, teal.600, teal.700)" }}
+                bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+                color="white"
+                _hover={{
+                  bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                  _disabled: { bg: "gray.300" }
+                }}
+                _active={{ transform: "scale(0.98)" }}
+                _disabled={{
+                  bg: useColorModeValue("gray.100", "gray.700"),
+                  color: useColorModeValue("gray.400", "gray.500"),
+                  cursor: "not-allowed",
+                  bgGradient: "none",
+                }}
                 transform="scale(1)"
                 transition="transform 0.2s, background 0.3s"
-                _active={{ transform: "scale(0.98)" }}
                 borderRadius="full"
                 fontWeight="medium"
                 fontSize="sm"
@@ -799,15 +817,14 @@ const JsonToExcel = () => {
               hasArrow
             >
               <Button
-                colorScheme={showPreview ? "orange" : "teal"}
                 onClick={() => {
                   if (!jsonInput) {
-                    setError("Please enter a JSON string or upload a file.");
-                    return;
+                     setError("Please enter a JSON string or upload a file.");
+                     return;
                   }
                   if (!previewContent) {
-                    setError("No data to preview. Ensure the JSON is valid.");
-                    return;
+                     setError("No data to preview. Ensure the JSON is valid.");
+                     return;
                   }
                   setShowPreview((prev) => {
                     const newState = !prev;
@@ -825,12 +842,13 @@ const JsonToExcel = () => {
                 bgGradient={
                   showPreview
                     ? "linear(to-r, orange.400, orange.500)"
-                    : "linear(to-r, teal.500, teal.600)"
+                    : `linear(to-r, ${accentColor}, ${accentColorHover})`
                 }
+                color="white"
                 _hover={
                   showPreview
                     ? { bgGradient: "linear(to-r, orange.500, orange.600)" }
-                    : { bgGradient: "linear(to-r, teal.600, teal.700)" }
+                    : { bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})` }
                 }
                 transform="scale(1)"
                 transition="transform 0.2s, background 0.3s"
@@ -893,7 +911,7 @@ const JsonToExcel = () => {
           borderColor={borderColor}
         >
           <DrawerHeader
-            bgGradient="linear(to-r, teal.500, teal.600)"
+            bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
             color="white"
             py={4}
             px={6}
@@ -926,7 +944,11 @@ const JsonToExcel = () => {
                 <Progress
                   value={loadingProgress}
                   size="sm"
-                  colorScheme="teal"
+                  sx={{
+                    "& > div": {
+                      bg: accentColor,
+                    }
+                  }}
                   width="300px"
                   borderRadius="md"
                 />
@@ -975,9 +997,9 @@ const JsonToExcel = () => {
                         borderRadius="md"
                         _focus={{
                           borderColor: accentColor,
-                          boxShadow: `0 0 0 2px ${accentColor}`,
+                          boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                         }}
-                        _hover={{ borderColor: "teal.400" }}
+                        _hover={{ borderColor: accentColor }}
                         transition="all 0.2s"
                         fontSize="sm"
                         aria-label="Select sheet"
@@ -1060,7 +1082,7 @@ const JsonToExcel = () => {
                             backgroundColor: state.isSelected
                               ? accentColor
                               : state.isFocused
-                                ? useColorModeValue("#E6FFFA", "#2D3748")
+                                ? useColorModeValue("#e5f2ff", "#2d3748")
                                 : undefined,
                             color: state.isSelected
                               ? "white"
@@ -1068,22 +1090,37 @@ const JsonToExcel = () => {
                             padding: "8px 12px",
                             fontSize: "14px",
                             transition: "all 0.2s",
+                            cursor: "pointer",
+                          }),
+                          multiValue: (provided) => ({
+                            ...provided,
+                            backgroundColor: useColorModeValue("#e5f2ff", "#003366"),
+                            borderRadius: "4px",
+                          }),
+                          multiValueLabel: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("#007ACC", "#e5f2ff"),
+                          }),
+                          multiValueRemove: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("#007ACC", "#e5f2ff"),
+                            ':hover': {
+                              backgroundColor: accentColor,
+                              color: 'white',
+                            },
+                          }),
+                          placeholder: (provided) => ({
+                            ...provided,
+                            color: useColorModeValue("gray.400", "gray.500"),
+                          }),
+                          singleValue: (provided) => ({
+                            ...provided,
+                            color: textColor,
                           }),
                           input: (provided) => ({
                             ...provided,
                             color: textColor,
                             fontSize: "14px",
-                          }),
-                          multiValue: (provided) => ({
-                            ...provided,
-                            backgroundColor: useColorModeValue(
-                              "teal.100",
-                              "teal.700",
-                            ),
-                          }),
-                          multiValueLabel: (provided) => ({
-                            ...provided,
-                            color: textColor,
                           }),
                         }}
                         aria-label="Select columns to export"
@@ -1119,15 +1156,15 @@ const JsonToExcel = () => {
                           borderRadius="md"
                           _focus={{
                             borderColor: accentColor,
-                            boxShadow: `0 0 0 2px ${accentColor}`,
+                            boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                           }}
-                          _hover={{ borderColor: "teal.400" }}
+                          _hover={{ borderColor: accentColor }}
                           transition="all 0.2s"
                           size="sm"
                         >
                           <NumberInputField
                             _focus={{ borderColor: accentColor }}
-                            _hover={{ borderColor: "teal.400" }}
+                            _hover={{ borderColor: accentColor }}
                             aria-label="Start row"
                             fontSize="sm"
                           />
@@ -1165,15 +1202,15 @@ const JsonToExcel = () => {
                           borderRadius="md"
                           _focus={{
                             borderColor: accentColor,
-                            boxShadow: `0 0 0 2px ${accentColor}`,
+                            boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                           }}
-                          _hover={{ borderColor: "teal.400" }}
+                          _hover={{ borderColor: accentColor }}
                           transition="all 0.2s"
                           size="sm"
                         >
                           <NumberInputField
                             _focus={{ borderColor: accentColor }}
-                            _hover={{ borderColor: "teal.400" }}
+                            _hover={{ borderColor: accentColor }}
                             aria-label="End row"
                             fontSize="sm"
                           />
@@ -1193,7 +1230,15 @@ const JsonToExcel = () => {
                     <Checkbox
                       isChecked={selectAllColumns}
                       onChange={(e) => setSelectAllColumns(e.target.checked)}
-                      colorScheme="teal"
+                      sx={{
+                        "span.chakra-checkbox__control[data-checked]": {
+                          bg: accentColor,
+                          borderColor: accentColor,
+                        },
+                        "span.chakra-checkbox__control:hover": {
+                          borderColor: accentColor,
+                        }
+                      }}
                       size="md"
                       aria-label="Select all columns"
                     >
@@ -1249,9 +1294,9 @@ const JsonToExcel = () => {
                         borderRadius="md"
                         _focus={{
                           borderColor: accentColor,
-                          boxShadow: `0 0 0 2px ${accentColor}`,
+                          boxShadow: `0 0 0 2px rgba(0, 122, 204, 0.25)`,
                         }}
-                        _hover={{ borderColor: "teal.400" }}
+                        _hover={{ borderColor: accentColor }}
                         transition="all 0.2s"
                         fontSize="sm"
                         aria-label="Search table"
@@ -1276,12 +1321,20 @@ const JsonToExcel = () => {
                       hasArrow
                     >
                       <Button
-                        colorScheme="teal"
                         onClick={() => handleDownloadExcel(selectedSheet)}
                         isDisabled={!selectedColumns[selectedSheet]?.length}
-                        bgGradient="linear(to-r, teal.500, teal.600)"
+                        bgGradient={`linear(to-r, ${accentColor}, ${accentColorHover})`}
+                        color="white"
                         _hover={{
-                          bgGradient: "linear(to-r, teal.600, teal.700)",
+                          bgGradient: `linear(to-r, ${accentColorHover}, ${accentColorActive})`,
+                          _disabled: { bg: "gray.300" }
+                        }}
+                        _active={{ transform: "scale(0.98)" }}
+                        _disabled={{
+                          bg: useColorModeValue("gray.100", "gray.700"),
+                          color: useColorModeValue("gray.400", "gray.500"),
+                          cursor: "not-allowed",
+                          bgGradient: "none",
                         }}
                         size="sm"
                         borderRadius="full"

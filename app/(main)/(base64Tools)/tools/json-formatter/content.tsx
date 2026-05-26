@@ -21,7 +21,6 @@ import {
     SliderThumb,
     FormLabel,
     HStack,
-    IconButton,
     Text,
     Input,
     Modal,
@@ -32,11 +31,10 @@ import {
     ModalBody,
     ModalFooter,
     useDisclosure,
+    VisuallyHiddenInput,
 } from "@chakra-ui/react";
 import Editor from "@monaco-editor/react";
 import JSON5 from "json5";
-import { FaAdjust } from "react-icons/fa";
-import stores from "../../../../store/stores";
 
 // Dynamically import ReactJson to ensure it's only used on the client-side (not server-side)
 const ReactJson = dynamic(() => import("react-json-view"), { ssr: false });
@@ -48,17 +46,25 @@ const JsonFormatterContent = () => {
     const [loading, setLoading] = useState(false);
     const [isClient, setIsClient] = useState(false);
     const [fontSize, setFontSize] = useState(14); // Initial font size
-    const [jsonTheme, setJsonTheme] = useState<any>("rjv-default"); // Initial theme
     const [file, setFile] = useState<File | null>(null);
     const { isOpen, onOpen, onClose } = useDisclosure();
 
-    const bgColor = useColorModeValue("gray.50", "gray.800");
+    const bgColor = "transparent";
     const textColor = useColorModeValue("gray.800", "gray.100");
-    const cardBgColor = useColorModeValue("white", "gray.700");
-    const buttonColor = useColorModeValue("teal", "blue");
-        const {
-  themeStore: { themeConfig },
-} = stores;
+    const cardBgColor = useColorModeValue("white", "gray.800");
+    const cardBorderColor = useColorModeValue("gray.200", "gray.700");
+    const mutedTextColor = useColorModeValue("gray.600", "gray.400");
+    const outputBgColor = useColorModeValue("gray.50", "gray.900");
+    const outputBorderColor = useColorModeValue("gray.200", "gray.600");
+    const modalBgColor = useColorModeValue("white", "gray.800");
+    const inputBgColor = useColorModeValue("white", "gray.700");
+    const inputBorderColor = useColorModeValue("gray.200", "gray.600");
+    const fileInputBgColor = useColorModeValue("gray.50", "gray.700");
+    const fileInputHoverBgColor = useColorModeValue("blue.50", "gray.600");
+    const editorTheme = useColorModeValue("vs-light", "vs-dark");
+    const jsonTheme = useColorModeValue("rjv-default", "monokai");
+    const primaryColor = "#007ACC";
+    const primaryHoverColor = "#006bb3";
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -139,7 +145,7 @@ const JsonFormatterContent = () => {
 
     return (
         <Box p={1} bg={bgColor} color={textColor} minH="80vh">
-            <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]} textAlign="center" mb={4}>
+            <Heading as="h1" size="xl" color={primaryColor} textAlign="center" mb={4}>
                 JSON Formatter & Validator
             </Heading>
 
@@ -154,6 +160,8 @@ const JsonFormatterContent = () => {
                         borderRadius="md"
                         overflow="hidden"
                         bg={cardBgColor}
+                        border="1px solid"
+                        borderColor={cardBorderColor}
                         boxShadow="lg"
                         height="100%"
                         p={4}
@@ -162,7 +170,7 @@ const JsonFormatterContent = () => {
                         <Editor
                             height="410px"
                             language="json"
-                            theme={"vs-light"}
+                            theme={editorTheme}
                             value={rawJson}
                             onChange={(value) => handleJsonInput(value || "")}
                             options={{
@@ -179,6 +187,8 @@ const JsonFormatterContent = () => {
                         borderRadius="md"
                         overflow="hidden"
                         bg={cardBgColor}
+                        border="1px solid"
+                        borderColor={cardBorderColor}
                         boxShadow="lg"
                         display="flex"
                         flexDirection="column"
@@ -200,9 +210,9 @@ const JsonFormatterContent = () => {
                                 flex="1"
                                 p={2}
                                 border="1px"
-                                borderColor="gray.200"
+                                borderColor={outputBorderColor}
                                 borderRadius="md"
-                                bg="gray.50"
+                                bg={outputBgColor}
                                 overflow="auto"
                                 height="400px"
                             >
@@ -219,23 +229,12 @@ const JsonFormatterContent = () => {
                                             width="150px" // Limit width for better spacing
                                         >
                                             <SliderTrack>
-                                                <SliderFilledTrack />
+                                                <SliderFilledTrack bg={primaryColor} />
                                             </SliderTrack>
-                                            <SliderThumb />
+                                            <SliderThumb bg={primaryColor} />
                                         </Slider>
-                                        <Text fontSize="sm">Size: {fontSize}px</Text>
+                                        <Text fontSize="sm" color={mutedTextColor}>Size: {fontSize}px</Text>
                                     </HStack>
-
-                                    {/* Theme Toggle Icon */}
-                                    <IconButton
-                                        aria-label="Toggle Theme"
-                                        icon={<FaAdjust />}
-                                        onClick={() =>
-                                            setJsonTheme(jsonTheme === "rjv-default" ? "monokai" : "rjv-default")
-                                        }
-                                        variant="ghost"
-                                        size="sm"
-                                    />
                                 </HStack>
 
                                 {/* ReactJson Component */}
@@ -262,24 +261,30 @@ const JsonFormatterContent = () => {
                 <Flex gap={4}>
                     <Button
                         onClick={onOpen}
-                        colorScheme={buttonColor}
+                        bg={primaryColor}
+                        color="white"
                         width="full"
                         borderRadius="md"
-                        _hover={{ bg: `${buttonColor}.600` }}
+                        _hover={{ bg: primaryHoverColor }}
+                        _active={{ bg: primaryHoverColor }}
+                        _disabled={{ opacity: 0.45, cursor: "not-allowed" }}
                     >
-                        Upload JSON
+                        Upload JSON File
                     </Button>
 
                     {/* Format Button */}
                     <Button
                         onClick={handleFormatJson}
-                        colorScheme={buttonColor}
+                        bg={primaryColor}
+                        color="white"
                         width="full"
                         isLoading={loading}
                         loadingText="Formatting"
                         spinnerPlacement="start"
                         borderRadius="md"
-                        _hover={{ bg: `${buttonColor}.600` }}
+                        _hover={{ bg: primaryHoverColor }}
+                        _active={{ bg: primaryHoverColor }}
+                        _disabled={{ opacity: 0.45, cursor: "not-allowed" }}
                     >
                         Format & Validate JSON
                     </Button>
@@ -288,20 +293,42 @@ const JsonFormatterContent = () => {
 
             {/* Modal for Uploading JSON File */}
             <Modal isOpen={isOpen} onClose={onClose}>
-                <ModalOverlay />
-                <ModalContent>
-                    <ModalHeader>Upload JSON File</ModalHeader>
+                <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(3px)" />
+                <ModalContent bg={modalBgColor} color={textColor} border="1px solid" borderColor={cardBorderColor} borderRadius="xl" overflow="hidden">
+                    <ModalHeader color={textColor} borderBottom="1px solid" borderColor={cardBorderColor}>
+                        Upload JSON File
+                    </ModalHeader>
                     <ModalCloseButton />
-                    <ModalBody>
+                    <ModalBody py={6}>
                         <VStack spacing={4} align="stretch">
-                            <FormLabel htmlFor="file-upload">Choose a JSON File</FormLabel>
-                            <Input
-                                type="file"
-                                id="file-upload"
-                                accept=".json"
-                                onChange={handleFileUpload}
-                                borderRadius="md"
-                            />
+                            <FormLabel htmlFor="file-upload" color={mutedTextColor}>Choose a JSON File</FormLabel>
+                            <Box
+                                as="label"
+                                htmlFor="file-upload"
+                                cursor="pointer"
+                                border="1px dashed"
+                                borderColor={inputBorderColor}
+                                bg={fileInputBgColor}
+                                borderRadius="lg"
+                                px={4}
+                                py={5}
+                                textAlign="center"
+                                transition="all 0.2s"
+                                _hover={{ borderColor: primaryColor, bg: fileInputHoverBgColor }}
+                            >
+                                <Text fontWeight="semibold" color={textColor}>
+                                    {file ? file.name : "Click to choose a .json file"}
+                                </Text>
+                                <Text mt={1} fontSize="sm" color={mutedTextColor}>
+                                    JSON files only
+                                </Text>
+                                <VisuallyHiddenInput
+                                    type="file"
+                                    id="file-upload"
+                                    accept=".json"
+                                    onChange={handleFileUpload}
+                                />
+                            </Box>
                             {error && (
                                 <Alert status="error">
                                     <AlertIcon />
@@ -311,8 +338,8 @@ const JsonFormatterContent = () => {
                             )}
                         </VStack>
                     </ModalBody>
-                    <ModalFooter>
-                        <Button variant="ghost" onClick={onClose}>Close</Button>
+                    <ModalFooter borderTop="1px solid" borderColor={cardBorderColor}>
+                        <Button bg={primaryColor} color="white" _hover={{ bg: primaryHoverColor }} onClick={onClose}>Close</Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>
