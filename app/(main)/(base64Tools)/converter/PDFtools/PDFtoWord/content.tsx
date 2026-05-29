@@ -7,18 +7,13 @@ import {
     Center, SimpleGrid, Card, CardBody, useColorModeValue
 } from '@chakra-ui/react';
 import { FiUploadCloud, FiFileText, FiShield, FiZap, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
-import { saveAs } from 'file-saver';
-import * as pdfjs from 'pdfjs-dist';
 import stores from "../../../../../store/stores";
 import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
-
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PDFToWordContent = () => {
     const [isConverting, setIsConverting] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
-    const [fileData, setFileData] = useState<Uint8Array | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const toast = useToast();
 
     const bgColor = useColorModeValue("gray.50", "gray.800");
@@ -29,13 +24,13 @@ const PDFToWordContent = () => {
     const dropzoneActiveBg = useColorModeValue("blue.50", "blue.900");
 
     const { themeStore: { themeConfig } } = stores;
+    const { advanceWorkflow } = useWorkflowAutoAdvance();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file && file.type === 'application/pdf') {
             setFileName(file.name);
-            const arrayBuffer = await file.arrayBuffer();
-            setFileData(new Uint8Array(arrayBuffer));
+            setSelectedFile(file);
         } else {
             toast({
                 title: "Selection Error",
@@ -46,49 +41,34 @@ const PDFToWordContent = () => {
         }
     };
 
-      const { advanceWorkflow } = useWorkflowAutoAdvance();
-
     const convertToWord = async () => {
-        if (!fileData) return;
+        if (!selectedFile) return;
         setIsConverting(true);
 
         try {
-            const loadingTask = pdfjs.getDocument({ data: fileData });
-            const pdf = await loadingTask.promise;
-            const docSections: Paragraph[] = [];
+            const formData = new FormData();
+            formData.append("file", selectedFile);
 
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const lines: Record<number, string> = {};
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
 
-                textContent.items.forEach((item: any) => {
-                    const y = Math.round(item.transform[5]);
-                    if (!lines[y]) lines[y] = "";
-                    lines[y] += item.str + " ";
-                });
-
-                const sortedY = Object.keys(lines).map(Number).sort((a, b) => b - a);
-
-                sortedY.forEach(y => {
-                    const text = lines[y].trim();
-                    if (text) {
-                        docSections.push(
-                            new Paragraph({
-                                children: [new TextRun({ text, size: 24 })],
-                                spacing: { after: 200 }
-                            })
-                        );
-                    }
-                });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || "Conversion failed");
             }
 
-            const doc = new Document({
-                sections: [{ properties: {}, children: docSections }],
-            });
-
-            const blob = await Packer.toBlob(doc);
-            saveAs(blob, fileName?.replace('.pdf', '.docx') || 'converted-doc.docx');
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName?.replace('.pdf', '.docx') || 'converted.docx';
+            a.click();
+            URL.revokeObjectURL(url);
 
             toast({
                 title: "Conversion Successful",
@@ -98,9 +78,10 @@ const PDFToWordContent = () => {
                 isClosable: true,
             });
 
-             setTimeout(() => {
-        advanceWorkflow();
-      }, 1200);
+            setTimeout(() => {
+                advanceWorkflow();
+            }, 1200);
+
         } catch (error: any) {
             console.error("Conversion Error:", error);
             toast({
@@ -111,6 +92,11 @@ const PDFToWordContent = () => {
         } finally {
             setIsConverting(false);
         }
+    };
+
+    const handleClear = () => {
+        setFileName(null);
+        setSelectedFile(null);
     };
 
     return (
@@ -124,11 +110,7 @@ const PDFToWordContent = () => {
                         "name": "PDF to Word",
                         "applicationCategory": "UtilitiesApplication",
                         "operatingSystem": "Any",
-                        "offers": {
-                            "@type": "Offer",
-                            "price": "0",
-                            "priceCurrency": "USD"
-                        },
+                        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
                         "description": "Convert PDF to Word online for free.",
                         "url": "https://www.toolsahayata.com/converter/PDFtools/PDFtoWord"
                     })
@@ -148,7 +130,7 @@ const PDFToWordContent = () => {
                             PDF to <Text as="span" color="blue.400">Word</Text> Converter
                         </Heading>
                         <Text color={subTextColor} fontSize="lg" maxW="lg">
-                           High-fidelity conversion powered by your browser. No files are ever sent to a server.
+                            LibreOffice engine — pixel-perfect conversion with full formatting preserved.
                         </Text>
                     </VStack>
 
@@ -164,7 +146,6 @@ const PDFToWordContent = () => {
                                     borderRadius="2xl"
                                     bg={fileName ? dropzoneActiveBg : dropzoneBg}
                                     transition="all 0.3s"
-                                    _hover={{ borderColor: "blue.300", bg: useColorModeValue("white", "gray.600") }}
                                 >
                                     <input
                                         type="file"
@@ -200,9 +181,9 @@ const PDFToWordContent = () => {
                                     <Box w="full">
                                         <Flex justify="space-between" mb={2}>
                                             <Text fontSize="xs" fontWeight="bold" color="blue.400" textTransform="uppercase">
-                                                Reconstructing Document...
+                                                Converting via LibreOffice...
                                             </Text>
-                                            <Text fontSize="xs" color={subTextColor}>Local processing active</Text>
+                                            <Text fontSize="xs" color={subTextColor}>Please wait</Text>
                                         </Flex>
                                         <Progress size="xs" isIndeterminate colorScheme="blue" borderRadius="full" />
                                     </Box>
@@ -218,6 +199,7 @@ const PDFToWordContent = () => {
                                             height="60px"
                                             onClick={convertToWord}
                                             isLoading={isConverting}
+                                            loadingText="Converting..."
                                             borderRadius="xl"
                                         >
                                             Convert to .docx
@@ -227,7 +209,7 @@ const PDFToWordContent = () => {
                                             height="60px"
                                             variant="ghost"
                                             colorScheme="red"
-                                            onClick={() => { setFileName(null); setFileData(null); }}
+                                            onClick={handleClear}
                                             borderRadius="xl"
                                         >
                                             <FiTrash2 />
@@ -241,8 +223,8 @@ const PDFToWordContent = () => {
                     <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
                         <FeatureIcon
                             icon={FiZap}
-                            title="Instant"
-                            desc="Fast extraction right in your browser."
+                            title="Accurate"
+                            desc="LibreOffice engine preserves fonts, tables, images."
                             textColor={textColor}
                             subTextColor={subTextColor}
                             cardBg={cardBg}
@@ -250,15 +232,15 @@ const PDFToWordContent = () => {
                         <FeatureIcon
                             icon={FiShield}
                             title="Secure"
-                            desc="Your data never leaves your device."
+                            desc="Files deleted immediately after conversion."
                             textColor={textColor}
                             subTextColor={subTextColor}
                             cardBg={cardBg}
                         />
                         <FeatureIcon
                             icon={FiCheckCircle}
-                            title="Clean"
-                            desc="Optimized line-by-line reconstruction."
+                            title="Clean Output"
+                            desc="Editable .docx with proper formatting."
                             textColor={textColor}
                             subTextColor={subTextColor}
                             cardBg={cardBg}
@@ -268,7 +250,7 @@ const PDFToWordContent = () => {
                     <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
 
                     <Text textAlign="center" color={subTextColor} fontSize="sm">
-                        Powered by PDF.js & Docx Engine
+                        Powered by LibreOffice Engine
                     </Text>
                 </VStack>
             </Container>
