@@ -117,6 +117,14 @@ const HeaderLogo = observer(() => {
     return localStorage.getItem(tokenKey);
   }, []);
 
+  const [loginRedirectPath, setLoginRedirectPath] = useState<string>("");
+
+  useEffect(() => {
+    if (!isLoginOpen) {
+      setLoginRedirectPath("");
+    }
+  }, [isLoginOpen]);
+
   const handleWorkflowClick = useCallback(() => {
     setOpenMenu(null);
     onClose();
@@ -126,6 +134,20 @@ const HeaderLogo = observer(() => {
       return;
     }
 
+    setLoginRedirectPath("/tools/workflow");
+    onLoginOpen();
+  }, [getAuthToken, onClose, onLoginOpen, router]);
+
+  const handleTaskManagerClick = useCallback(() => {
+    setOpenMenu(null);
+    onClose();
+
+    if (getAuthToken()) {
+      router.push("/tools/task-manager");
+      return;
+    }
+
+    setLoginRedirectPath("/tools/task-manager");
     onLoginOpen();
   }, [getAuthToken, onClose, onLoginOpen, router]);
 
@@ -185,6 +207,27 @@ const HeaderLogo = observer(() => {
         </Menu>
       );
     } else {
+      // Auth-guarded items: show login popup if not logged in
+      const isGuarded = subItem.url === "/tools/task-manager";
+      if (isGuarded) {
+        return (
+          <MenuItem
+            key={subItem.id}
+            borderRadius="xl"
+            py={depth === 1 ? 3 : 2.5}
+            fontSize="sm"
+            fontWeight="700"
+            transition="all 0.18s ease"
+            _hover={{ bg: mobileLinkHover }}
+            onClick={handleTaskManagerClick}
+          >
+            <HStack spacing={3}>
+              {renderIcon(subItem, depth === 1 ? 18 : 16)}
+              <span>{subItem.name}</span>
+            </HStack>
+          </MenuItem>
+        );
+      }
       return (
         <MenuItem
           key={subItem.id}
@@ -230,6 +273,29 @@ const HeaderLogo = observer(() => {
         </Box>
       );
     } else {
+      // Auth-guarded items in mobile drawer
+      const isGuarded = child.url === "/tools/task-manager";
+      if (isGuarded) {
+        return (
+          <Box
+            key={child.id}
+            mx={2}
+            p={3.5 - depth * 0.5}
+            borderRadius={depth === 0 ? "2xl" : "0 12px 12px 0"}
+            onClick={handleTaskManagerClick}
+            _hover={{ bg: mobileLinkHover }}
+            bg={pathname === child.url ? mobileLinkHover : "transparent"}
+            cursor="pointer"
+          >
+            <HStack spacing={3}>
+              {renderIcon(child, 20 - depth * 2)}
+              <Text fontSize="sm" fontWeight="700">
+                {child.name}
+              </Text>
+            </HStack>
+          </Box>
+        );
+      }
       return (
         <Box
           key={child.id}
@@ -544,7 +610,7 @@ const HeaderLogo = observer(() => {
         <ModalContent borderRadius="3xl" overflow="hidden" mx={4}>
           <ModalCloseButton zIndex={1} />
           <ModalBody p={0}>
-            <LoginContent isModal onLoginSuccess={onLoginClose} />
+            <LoginContent isModal onLoginSuccess={onLoginClose} redirectPath={loginRedirectPath} />
           </ModalBody>
         </ModalContent>
       </Modal>

@@ -86,6 +86,7 @@ export const features: any = {
     { name: "Data Size Converter", icon: FaDatabase, path: "/converter/data-size-converter" },
     { name: "Workflow Builder", icon: FaTools, path: "/tools/workflow" },
     { name: "IP Address Lookup", icon: FaGlobe, path: "/tools/ip-lookup" },
+    { name: "Task Manager", icon: FaTools, path: "/tools/task-manager" },
   ],
   "Converter Utilities": [
     { name: "Unix Timestamp Converter", icon: FaClock, path: "/converter/unix-timestamp" },

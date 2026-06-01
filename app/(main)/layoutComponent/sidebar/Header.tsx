@@ -12,7 +12,7 @@ import {
   ListItem,
   Box,
 } from "@chakra-ui/react";
-import { FaBars, FaSearch, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaBars, FaSearch, FaChevronLeft, FaChevronRight, FaTasks } from "react-icons/fa";
 import debounce from "lodash.debounce";
 import { features } from "../utils/constant";
 import Link from "next/link";
@@ -222,6 +222,36 @@ export default function Header({
           </List>
         )}
       </Box>
+
+      {/* Task Manager Nav Link */}
+      <Link href="/tools/task-manager">
+        <Flex
+          align="center"
+          gap={2}
+          px={4}
+          py={2}
+          borderRadius="full"
+          bg="rgba(255, 255, 255, 0.15)"
+          backdropFilter="blur(5px)"
+          color="white"
+          cursor="pointer"
+          transition="all 0.3s ease"
+          _hover={{
+            bg: "teal.500",
+            transform: "translateY(-1px)",
+            boxShadow: "0 4px 12px rgba(56, 178, 172, 0.4)",
+          }}
+          _active={{
+            bg: "teal.600",
+          }}
+          mr={{ base: 1, md: 3 }}
+        >
+          <Box as={FaTasks} />
+          <Text fontWeight="bold" fontSize="sm" display={{ base: "none", sm: "block" }}>
+            Task Manager
+          </Text>
+        </Flex>
+      </Link>
 
       {/* Profile Section */}
       <Flex align="center" gap={{ base: 2, md: 3 }} cursor="pointer">

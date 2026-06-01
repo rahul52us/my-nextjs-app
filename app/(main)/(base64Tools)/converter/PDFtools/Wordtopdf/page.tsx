@@ -82,14 +82,14 @@ const WordToPdf = () => {
         <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
             <Container maxW="container.md">
                 <VStack spacing={12} align="stretch">
-                    
+
                     <VStack spacing={4} textAlign="center">
                         <Heading size="2xl" fontWeight="900" letterSpacing="tight">
                             Word to <Text as="span" color="blue.400">PDF</Text>
                         </Heading>
-                        <Badge colorScheme="green" variant="subtle" px={3} py={1} borderRadius="full">
+                        {/* <Badge colorScheme="green" variant="subtle" px={3} py={1} borderRadius="full">
                             <Icon as={ShieldCheck} mr={1} verticalAlign="middle" /> LibreOffice Engine
-                        </Badge>
+                        </Badge> */}
                     </VStack>
 
                     <Card borderRadius="3xl" boxShadow="2xl" overflow="hidden" border="none" bg={cardBg}>

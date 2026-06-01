@@ -129,9 +129,9 @@ const PDFToWordContent = () => {
                         >
                             PDF to <Text as="span" color="blue.400">Word</Text> Converter
                         </Heading>
-                        <Text color={subTextColor} fontSize="lg" maxW="lg">
+                        {/* <Text color={subTextColor} fontSize="lg" maxW="lg">
                             LibreOffice engine — pixel-perfect conversion with full formatting preserved.
-                        </Text>
+                        </Text> */}
                     </VStack>
 
                     <Card borderRadius="3xl" boxShadow="2xl" overflow="hidden" border="none" bg={cardBg}>
@@ -224,7 +224,7 @@ const PDFToWordContent = () => {
                         <FeatureIcon
                             icon={FiZap}
                             title="Accurate"
-                            desc="LibreOffice engine preserves fonts, tables, images."
+                            desc="Toolsahayata gives you perfect conversion of PDF to Word."
                             textColor={textColor}
                             subTextColor={subTextColor}
                             cardBg={cardBg}
@@ -250,7 +250,7 @@ const PDFToWordContent = () => {
                     <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
 
                     <Text textAlign="center" color={subTextColor} fontSize="sm">
-                        Powered by LibreOffice Engine
+                        Powered by Toolsahayata Engine
                     </Text>
                 </VStack>
             </Container>

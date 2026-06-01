@@ -28,9 +28,10 @@ import stores from "../../store/stores";
 interface LoginContentProps {
   isModal?: boolean;
   onLoginSuccess?: () => void;
+  redirectPath?: string;
 }
 
-const LoginContent = observer(({ isModal = false, onLoginSuccess }: LoginContentProps) => {
+const LoginContent = observer(({ isModal = false, onLoginSuccess, redirectPath }: LoginContentProps) => {
   const { auth: { login, openNotification } } = stores;
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +57,7 @@ const LoginContent = observer(({ isModal = false, onLoginSuccess }: LoginContent
         duration: 3000,
       });
       onLoginSuccess?.();
-      router.push("/tools/workflow");
+      router.push(redirectPath || "/tools/workflow");
     } catch (error: any) {
       openNotification({
         title: "Login Failed",

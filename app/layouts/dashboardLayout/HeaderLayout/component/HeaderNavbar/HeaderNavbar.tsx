@@ -11,6 +11,7 @@ import { observer } from "mobx-react-lite";
 import HeaderProfile from "./HeaderProfile/HeaderProfile";
 import HeaderThemeSwitch from "./HeaderThemeSwitch/HeaderThemeSwitch";
 import stores from "../../../../../store/stores";
+import React from "react";
 
 const HeaderNavbar = observer(() => {
   const {
