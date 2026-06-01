@@ -18,6 +18,11 @@ import {
   DrawerOverlay,
   DrawerContent,
   DrawerBody,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalCloseButton,
+  ModalBody,
   VStack,
   Divider,
   Icon,
@@ -36,9 +41,10 @@ import { keyframes } from "@emotion/react";
 import { sidebarData } from "../../../SidebarLayout/utils/SidebarItems";
 import stores from "../../../../../store/stores";
 import React, { useEffect, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AUTH_TOKEN } from "../../../../../config/utils/variables";
 import GlobalSearch from "./GlobalSearch";
+import LoginContent from "../../../../../(authentication)/login/content";
 
 interface SidebarItem {
   id: string | number;
@@ -57,13 +63,18 @@ const HeaderLogo = observer(() => {
 
   const isDesktop = useBreakpointValue({ base: false, xl: true });
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isLoginOpen,
+    onOpen: onLoginOpen,
+    onClose: onLoginClose,
+  } = useDisclosure();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [openMenu, setOpenMenu] = useState<string | number | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [workflowHref, setWorkflowHref] = useState("/tools/workflow");
 
   const textColor = "white";
   const accentColor = themeConfig.colors.brand[300];
@@ -100,6 +111,24 @@ const HeaderLogo = observer(() => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  const getAuthToken = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const tokenKey = AUTH_TOKEN || "auth_token";
+    return localStorage.getItem(tokenKey);
+  }, []);
+
+  const handleWorkflowClick = useCallback(() => {
+    setOpenMenu(null);
+    onClose();
+
+    if (getAuthToken()) {
+      router.push("/tools/workflow");
+      return;
+    }
+
+    onLoginOpen();
+  }, [getAuthToken, onClose, onLoginOpen, router]);
+
   useEffect(() => {
     onClose();
     setOpenMenu(null);
@@ -107,14 +136,6 @@ const HeaderLogo = observer(() => {
       document.activeElement.blur();
     }
   }, [pathname, onClose]);
-
-  useEffect(() => {
-    const tokenKey = AUTH_TOKEN || "auth_token";
-    const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
-    setWorkflowHref(
-      token ? "/tools/workflow" : "/login"
-    );
-  }, []);
 
   const renderIcon = (item: SidebarItem, size: number = 16) => {
     if (!item.icon) return null;
@@ -417,14 +438,13 @@ const HeaderLogo = observer(() => {
 
             {/* ── WORKFLOW (More se pehle) ── */}
             <Box
-              as={Link}
-              href={workflowHref}
               px={{ xl: "10px", "2xl": "14px" }}
               py="6px"
               borderRadius="full"
               transition="all 0.2s"
               _hover={{ bg: hoverBg }}
-              onClick={() => setOpenMenu(null)}
+              cursor="pointer"
+              onClick={handleWorkflowClick}
             >
               <Text
                 fontSize="11px"
@@ -498,7 +518,7 @@ const HeaderLogo = observer(() => {
 
               {/* Workflow - mobile drawer mein bhi */}
               <Divider my={2} opacity={0.5} mx={4} w="auto" />
-              <Box as={Link} href={workflowHref} mx={2} p={4} borderRadius="2xl" onClick={onClose} bg={pathname === "/tools/workflow" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
+              <Box mx={2} p={4} borderRadius="2xl" onClick={handleWorkflowClick} cursor="pointer" bg={pathname === "/tools/workflow" ? mobileLinkHover : "transparent"} _hover={{ bg: mobileLinkHover }} transition="0.2s">
                 <HStack spacing={3}>
                   <Text fontWeight="700">Workflow</Text>
                 </HStack>
@@ -518,6 +538,16 @@ const HeaderLogo = observer(() => {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+
+      <Modal isOpen={isLoginOpen} onClose={onLoginClose} isCentered size="lg">
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(6px)" />
+        <ModalContent borderRadius="3xl" overflow="hidden" mx={4}>
+          <ModalCloseButton zIndex={1} />
+          <ModalBody p={0}>
+            <LoginContent isModal onLoginSuccess={onLoginClose} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </HStack>
   );
 });
