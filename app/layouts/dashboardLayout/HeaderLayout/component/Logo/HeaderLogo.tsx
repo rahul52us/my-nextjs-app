@@ -433,10 +433,10 @@ const HeaderLogo = observer(() => {
       minH="64px"
       py={0}
       alignItems="center"
-      justify="space-between"
+      justify="flex-start"
     >
       {/* ── LOGO ── */}
-      <HStack flexShrink={0} mr={{ xl: 2, "2xl": 4 }}>
+      <HStack flexShrink={0} mr={{ base: 2, md: 3, xl: 4 }}>
         <Link href="/" passHref>
           <Box cursor="pointer" _hover={{ transform: "scale(1.02)" }} transition="0.2s">
             <Text
@@ -456,32 +456,28 @@ const HeaderLogo = observer(() => {
         </Link>
       </HStack>
 
-      {/* ── DESKTOP: Nav pills + Search ── */}
+      {/* ── SEARCH ICON NEXT TO LOGO ── */}
+      {isDesktop && <GlobalSearch variant="compact" />}
+
+      {/* ── DESKTOP: Nav pills ── */}
       {isDesktop ? (
         <Flex flex="1 1 0" minW={0} justify="center" alignItems="center" gap={3}>
 
-          {/* Nav pills */}
           <HStack
-            spacing={0}
+            spacing={2}
             flexWrap="nowrap"
             justify="center"
             alignItems="center"
-            bg={scrolled ? "whiteAlpha.200" : "whiteAlpha.100"}
-            px="6px"
-            py="4px"
-            borderRadius="full"
-            border="1px solid"
-            borderColor="whiteAlpha.200"
-            backdropFilter="blur(12px)"
-            boxShadow={scrolled ? "xl" : "none"}
-            transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+            px="4px"
+            py="2px"
+            transition="all 0.3s ease"
           >
             {/* ── HOME ── */}
             <Box
               as={Link}
               href="/"
               px={{ xl: "10px", "2xl": "14px" }}
-              py="6px"
+              py="4px"
               borderRadius="full"
               transition="all 0.2s"
               _hover={{ bg: hoverBg }}
@@ -524,14 +520,32 @@ const HeaderLogo = observer(() => {
               </Text>
             </Box>
 
+            {/* ── NOTES (After Workflow) ── */}
+            <Box
+              px={{ xl: "10px", "2xl": "14px" }}
+              py="6px"
+              borderRadius="full"
+              transition="all 0.2s"
+              _hover={{ bg: hoverBg }}
+              cursor="pointer"
+              onClick={handleTaskManagerClick}
+            >
+              <Text
+                fontSize="11px"
+                fontWeight="700"
+                color={textColor}
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+                whiteSpace="nowrap"
+              >
+                Notes
+              </Text>
+            </Box>
+
             {/* ── MORE (Last mein) ── */}
             {renderMenu(moreItem)}
 
           </HStack>
-
-          {/* ── Global Search Bar (desktop) ── */}
-          <GlobalSearch />
-
         </Flex>
       ) : (
         /* ── MOBILE: search icon + hamburger ── */

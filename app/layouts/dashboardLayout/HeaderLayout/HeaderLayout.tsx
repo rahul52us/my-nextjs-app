@@ -17,17 +17,18 @@ const HeaderLayout = observer(() => {
     <Flex
       as="header"
       width="full"
-      maxW="100vw"           
+      maxW="100vw"
       overflow="visible"
       direction="row"
       alignItems="center"
       justifyContent="space-between"
       height={headerHeight}
       px={{ base: 2, sm: 3, md: headerPadding }}
-      backdropFilter="blur(10px)"
+      bg={useColorModeValue("whiteAlpha.80", "blackAlpha.550")}
+      backdropFilter="blur(12px)"
       borderBottom="1px solid"
       borderColor={borderColor}
-      boxShadow="sm"
+      boxShadow="none"
       position="sticky"
       top={0}
       zIndex={1000}

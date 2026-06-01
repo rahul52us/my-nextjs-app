@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Flex,
@@ -9,7 +9,6 @@ import {
   Text,
   Button,
   Input,
-  Textarea,
   Select,
   Badge,
   HStack,
@@ -24,6 +23,12 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
   FormControl,
   FormLabel,
   useToast,
@@ -44,10 +49,15 @@ import {
   FaArrowLeft,
   FaCheck,
   FaUndo,
+  FaBold,
+  FaItalic,
+  FaListUl,
 } from "react-icons/fa";
 import axios from "axios";
 import { AUTH_TOKEN, BACKEND_URL } from "../../../../config/utils/variables";
 import Link from "next/link";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
 interface Task {
   id: string;
@@ -59,12 +69,156 @@ interface Task {
   createdAt: string;
   updatedAt: string;
 }
+
+const formatDateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getOffsetDateInput = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return formatDateInput(date);
+};
+
+const getPlainTextFromHtml = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+
+interface RichTextDescriptionEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  isDisabled: boolean;
+  borderColor: string;
+  textMuted: string;
+}
+
+const RichTextDescriptionEditor = ({
+  value,
+  onChange,
+  isDisabled,
+  borderColor,
+  textMuted,
+}: RichTextDescriptionEditorProps) => {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: value || "",
+    editable: !isDisabled,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: "task-description-editor",
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+
+    if (editor.getHTML() !== value) {
+      editor.commands.setContent(value || "", { emitUpdate: false });
+    }
+  }, [editor, value]);
+
+  useEffect(() => {
+    editor?.setEditable(!isDisabled);
+  }, [editor, isDisabled]);
+
+  const toolbarButtonBg = useColorModeValue("gray.100", "whiteAlpha.100");
+  const toolbarActiveBg = useColorModeValue("brand.100", "brand.700");
+
+  if (!editor) return null;
+
+  return (
+    <Box
+      border="1px solid"
+      borderColor={borderColor}
+      borderRadius="lg"
+      overflow="hidden"
+      opacity={isDisabled ? 0.65 : 1}
+    >
+      <HStack
+        spacing={1}
+        p={2}
+        borderBottom="1px solid"
+        borderColor={borderColor}
+        bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)")}
+      >
+        <IconButton
+          aria-label="Bold"
+          icon={<FaBold />}
+          size="sm"
+          variant="ghost"
+          bg={editor.isActive("bold") ? toolbarActiveBg : "transparent"}
+          isDisabled={isDisabled}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          _hover={{ bg: toolbarButtonBg }}
+        />
+        <IconButton
+          aria-label="Italic"
+          icon={<FaItalic />}
+          size="sm"
+          variant="ghost"
+          bg={editor.isActive("italic") ? toolbarActiveBg : "transparent"}
+          isDisabled={isDisabled}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          _hover={{ bg: toolbarButtonBg }}
+        />
+        <IconButton
+          aria-label="Bullet list"
+          icon={<FaListUl />}
+          size="sm"
+          variant="ghost"
+          bg={editor.isActive("bulletList") ? toolbarActiveBg : "transparent"}
+          isDisabled={isDisabled}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          _hover={{ bg: toolbarButtonBg }}
+        />
+        <Text fontSize="xs" color={textMuted} pl={2}>
+          Rich description
+        </Text>
+      </HStack>
+      <Box
+        sx={{
+          ".task-description-editor": {
+            minHeight: "110px",
+            padding: "12px",
+            outline: "none",
+          },
+          ".task-description-editor p": {
+            margin: "0 0 8px",
+          },
+          ".task-description-editor ul": {
+            paddingLeft: "20px",
+            margin: "0 0 8px",
+          },
+        }}
+      >
+        <EditorContent editor={editor} />
+      </Box>
+    </Box>
+  );
+};
+
 export default function TaskManagerContent() {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isTaskSubmitting, setIsTaskSubmitting] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState(() => getOffsetDateInput(-7));
+  const [dateTo, setDateTo] = useState(() => getOffsetDateInput(30));
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   // Drag and Drop States
@@ -73,7 +227,14 @@ export default function TaskManagerContent() {
 
   // Add/Edit Task Modal States
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const deleteCancelRef = useRef<HTMLButtonElement>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [pendingDeleteTask, setPendingDeleteTask] = useState<Task | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
   const [taskStatus, setTaskStatus] = useState<"todo" | "in_progress" | "completed">("todo");
@@ -101,6 +262,15 @@ export default function TaskManagerContent() {
 
   const getApiUrl = (path: string) => `${BACKEND_URL || ""}${path}`;
 
+  const formatDisplayDate = (value: string | null) => {
+    if (!value) return "";
+    return new Date(value).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
     const token = getAuthToken();
@@ -112,7 +282,12 @@ export default function TaskManagerContent() {
 
     try {
       setLoading(true);
-      const url = getApiUrl("/tasks");
+      const params = new URLSearchParams({
+        dateField: "dueDate",
+        dateFrom,
+        dateTo,
+      });
+      const url = getApiUrl(`/tasks?${params.toString()}`);
       const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -136,7 +311,7 @@ export default function TaskManagerContent() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [dateFrom, dateTo, toast]);
 
   useEffect(() => {
     fetchTasks();
@@ -157,9 +332,30 @@ export default function TaskManagerContent() {
       return;
     }
 
+    if (!getPlainTextFromHtml(taskDesc)) {
+      toast({
+        title: "Description is required",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!taskDueDate) {
+      toast({
+        title: "Due date is required",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
+      setIsTaskSubmitting(true);
       const url = getApiUrl("/tasks");
-      const response = await axios.post(
+      await axios.post(
         url,
         {
           title: taskTitle,
@@ -175,7 +371,7 @@ export default function TaskManagerContent() {
         }
       );
 
-      setTasks((prev) => [response.data.data, ...prev]);
+      await fetchTasks();
       toast({
         title: "Task created successfully",
         status: "success",
@@ -192,13 +388,15 @@ export default function TaskManagerContent() {
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setIsTaskSubmitting(false);
     }
   };
 
   // Update Task (Edit or drag drop)
   const handleUpdateTask = async (taskId: string, updatedFields: Partial<Task>) => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) return false;
 
     try {
       const url = getApiUrl(`/tasks/${taskId}`);
@@ -211,6 +409,7 @@ export default function TaskManagerContent() {
       setTasks((prev) =>
         prev.map((task) => (task.id === taskId ? response.data.data : task))
       );
+      return true;
     } catch (error: any) {
       toast({
         title: "Failed to update task",
@@ -219,6 +418,7 @@ export default function TaskManagerContent() {
         duration: 3000,
         isClosable: true,
       });
+      return false;
     }
   };
 
@@ -235,30 +435,59 @@ export default function TaskManagerContent() {
       return;
     }
 
-    await handleUpdateTask(editingTask.id, {
-      title: taskTitle,
-      description: taskDesc,
-      status: taskStatus,
-      priority: taskPriority,
-      dueDate: taskDueDate || null,
-    });
+    if (!getPlainTextFromHtml(taskDesc)) {
+      toast({
+        title: "Description is required",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
 
-    toast({
-      title: "Task updated successfully",
-      status: "success",
-      duration: 2000,
-      isClosable: true,
-    });
-    resetForm();
-    onClose();
+    if (!taskDueDate) {
+      toast({
+        title: "Due date is required",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      setIsTaskSubmitting(true);
+      const isUpdated = await handleUpdateTask(editingTask.id, {
+        title: taskTitle,
+        description: taskDesc,
+        status: taskStatus,
+        priority: taskPriority,
+        dueDate: taskDueDate || null,
+      });
+
+      if (!isUpdated) return;
+
+      toast({
+        title: "Task updated successfully",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+      await fetchTasks();
+      resetForm();
+      onClose();
+    } finally {
+      setIsTaskSubmitting(false);
+    }
   };
 
   // Delete Task
   const handleDeleteTask = async (taskId: string) => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) return false;
 
     try {
+      setDeletingTaskId(taskId);
       const url = getApiUrl(`/tasks/${taskId}`);
       await axios.delete(url, {
         headers: {
@@ -273,6 +502,7 @@ export default function TaskManagerContent() {
         duration: 2000,
         isClosable: true,
       });
+      return true;
     } catch (error: any) {
       toast({
         title: "Failed to delete task",
@@ -281,6 +511,30 @@ export default function TaskManagerContent() {
         duration: 3000,
         isClosable: true,
       });
+      return false;
+    } finally {
+      setDeletingTaskId(null);
+    }
+  };
+
+  const openDeleteConfirm = (task: Task) => {
+    setPendingDeleteTask(task);
+    onDeleteOpen();
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deletingTaskId) return;
+    setPendingDeleteTask(null);
+    onDeleteClose();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteTask) return;
+
+    const isDeleted = await handleDeleteTask(pendingDeleteTask.id);
+    if (isDeleted) {
+      setPendingDeleteTask(null);
+      onDeleteClose();
     }
   };
 
@@ -348,9 +602,10 @@ export default function TaskManagerContent() {
   // Filter Tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      const descriptionText = getPlainTextFromHtml(task.description);
       const matchesSearch =
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchQuery.toLowerCase());
+        descriptionText.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
       return matchesSearch && matchesPriority;
     });
@@ -533,6 +788,33 @@ export default function TaskManagerContent() {
             </Select>
           </HStack>
 
+          {/* Date filter */}
+          <HStack spacing={2}>
+            <Box color="gray.400">
+              <FaCalendarAlt />
+            </Box>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
+              borderColor={borderColor}
+              borderRadius="full"
+              fontSize="sm"
+              maxW={{ base: "full", sm: "150px" }}
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
+              borderColor={borderColor}
+              borderRadius="full"
+              fontSize="sm"
+              maxW={{ base: "full", sm: "150px" }}
+            />
+          </HStack>
+
           {/* Add Task Button */}
           <Button
             leftIcon={<FaPlus />}
@@ -646,11 +928,13 @@ export default function TaskManagerContent() {
                       const isDueDatePassed =
                         task.dueDate &&
                         new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+                      const isDeletingTask = deletingTaskId === task.id;
+                      const descriptionPreview = getPlainTextFromHtml(task.description);
 
                       return (
                         <Box
                           key={task.id}
-                          draggable
+                          draggable={!isDeletingTask}
                           onDragStart={(e) => handleDragStart(e, task.id)}
                           p={4}
                           borderRadius="xl"
@@ -683,6 +967,7 @@ export default function TaskManagerContent() {
                                 aria-label="Edit task"
                                 icon={<FaEdit />}
                                 onClick={() => openEditModal(task)}
+                                isDisabled={isDeletingTask || isTaskSubmitting}
                                 _hover={{ bg: "whiteAlpha.200" }}
                               />
                               <IconButton
@@ -691,7 +976,9 @@ export default function TaskManagerContent() {
                                 color="red.400"
                                 aria-label="Delete task"
                                 icon={<FaTrash />}
-                                onClick={() => handleDeleteTask(task.id)}
+                                onClick={() => openDeleteConfirm(task)}
+                                isLoading={isDeletingTask}
+                                isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
                                 _hover={{ bg: "whiteAlpha.200" }}
                               />
                             </HStack>
@@ -701,9 +988,9 @@ export default function TaskManagerContent() {
                             {task.title}
                           </Heading>
 
-                          {task.description && (
+                          {descriptionPreview && (
                             <Text fontSize="xs" color={textMuted} noOfLines={3} mb={3}>
-                              {task.description}
+                              {descriptionPreview}
                             </Text>
                           )}
 
@@ -719,6 +1006,11 @@ export default function TaskManagerContent() {
                               </Text>
                             </HStack>
                           )}
+
+                          <HStack spacing={1.5} fontSize="2xs" color={textMuted} mt={task.dueDate ? 1 : 0}>
+                            <FaCalendarAlt />
+                            <Text>Created {formatDisplayDate(task.createdAt)}</Text>
+                          </HStack>
 
                           {/* Mobile Transition Actions: Fixes Drag & Drop limitations on mobile/responsive devices */}
                           <Flex
@@ -797,57 +1089,97 @@ export default function TaskManagerContent() {
       )}
 
       {/* Task Modal (Add/Edit) */}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
+      <Modal
+        isOpen={isOpen}
+        onClose={isTaskSubmitting ? () => undefined : onClose}
+        isCentered
+        size="lg"
+        closeOnOverlayClick={!isTaskSubmitting}
+      >
         <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
         <ModalContent
           bg={useColorModeValue("white", "rgba(10, 25, 47, 0.95)")}
           color={useColorModeValue("gray.800", "white")}
-          borderRadius="2xl"
+          borderRadius="xl"
           border="1px solid"
           borderColor={borderColor}
-          boxShadow="2xl"
+          boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+          overflow="hidden"
         >
-          <ModalHeader>
-            <HStack>
-              <Box color="brand.300">
-                <FaClipboardList />
+          <ModalHeader
+            px={{ base: 5, md: 6 }}
+            py={5}
+            bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)")}
+            borderBottom="1px solid"
+            borderColor={borderColor}
+          >
+            <HStack spacing={3} align="start" pr={8}>
+              <Box
+                display="inline-flex"
+                alignItems="center"
+                justifyContent="center"
+                boxSize="42px"
+                borderRadius="lg"
+                bg="brand.500"
+                color="white"
+                boxShadow="0 10px 24px rgba(49, 130, 206, 0.35)"
+                flexShrink={0}
+              >
+                <FaClipboardList size="18px" />
               </Box>
-              <Text>{editingTask ? "Edit Task" : "Add New Task"}</Text>
+              <Box>
+                <Text fontSize="lg" fontWeight="bold" lineHeight="1.2">
+                  {editingTask ? "Edit Task" : "Add New Task"}
+                </Text>
+                <Text mt={1} fontSize="sm" fontWeight="normal" color={textMuted}>
+                  {editingTask ? "Update task details and board status." : "Create a task with priority, status, and due date."}
+                </Text>
+              </Box>
             </HStack>
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton isDisabled={isTaskSubmitting} />
 
-          <ModalBody pb={6}>
-            <VStack spacing={4}>
+          <ModalBody px={{ base: 5, md: 6 }} py={6}>
+            <VStack spacing={5}>
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="semibold">Title</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                  Title
+                </FormLabel>
                 <Input
                   placeholder="Task title"
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
+                  isDisabled={isTaskSubmitting}
+                  size="lg"
+                  borderRadius="lg"
                   borderColor={borderColor}
                   _focus={{ borderColor: "brand.400", boxShadow: "0 0 8px var(--chakra-colors-brand-400)" }}
                 />
               </FormControl>
 
-              <FormControl>
-                <FormLabel fontSize="sm" fontWeight="semibold">Description</FormLabel>
-                <Textarea
-                  placeholder="Enter task details..."
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                  Description
+                </FormLabel>
+                <RichTextDescriptionEditor
                   value={taskDesc}
-                  onChange={(e) => setTaskDesc(e.target.value)}
-                  rows={3}
+                  onChange={setTaskDesc}
+                  isDisabled={isTaskSubmitting}
                   borderColor={borderColor}
-                  _focus={{ borderColor: "brand.400", boxShadow: "0 0 8px var(--chakra-colors-brand-400)" }}
+                  textMuted={textMuted}
                 />
               </FormControl>
 
-              <Grid templateColumns="repeat(2, 1fr)" gap={4} w="full">
-                <FormControl>
-                  <FormLabel fontSize="sm" fontWeight="semibold">Priority</FormLabel>
+              <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4} w="full">
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                    Priority
+                  </FormLabel>
                   <Select
                     value={taskPriority}
                     onChange={(e: any) => setTaskPriority(e.target.value)}
+                    isDisabled={isTaskSubmitting}
+                    borderRadius="lg"
                     borderColor={borderColor}
                   >
                     <option value="low">Low</option>
@@ -856,11 +1188,15 @@ export default function TaskManagerContent() {
                   </Select>
                 </FormControl>
 
-                <FormControl>
-                  <FormLabel fontSize="sm" fontWeight="semibold">Column Status</FormLabel>
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                    Column Status
+                  </FormLabel>
                   <Select
                     value={taskStatus}
                     onChange={(e: any) => setTaskStatus(e.target.value)}
+                    isDisabled={isTaskSubmitting}
+                    borderRadius="lg"
                     borderColor={borderColor}
                   >
                     <option value="todo">To Do</option>
@@ -870,12 +1206,16 @@ export default function TaskManagerContent() {
                 </FormControl>
               </Grid>
 
-              <FormControl>
-                <FormLabel fontSize="sm" fontWeight="semibold">Due Date</FormLabel>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                  Due Date
+                </FormLabel>
                 <Input
                   type="date"
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
+                  isDisabled={isTaskSubmitting}
+                  borderRadius="lg"
                   borderColor={borderColor}
                   _focus={{ borderColor: "brand.400" }}
                 />
@@ -883,8 +1223,21 @@ export default function TaskManagerContent() {
             </VStack>
           </ModalBody>
 
-          <ModalFooter borderTop="1px solid" borderColor={borderColor}>
-            <Button variant="ghost" mr={3} onClick={onClose}>
+          <ModalFooter
+            px={{ base: 5, md: 6 }}
+            py={4}
+            borderTop="1px solid"
+            borderColor={borderColor}
+            bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.03)")}
+            gap={3}
+            flexDirection={{ base: "column-reverse", sm: "row" }}
+          >
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              isDisabled={isTaskSubmitting}
+              w={{ base: "full", sm: "auto" }}
+            >
               Cancel
             </Button>
             <Button
@@ -896,12 +1249,62 @@ export default function TaskManagerContent() {
                 boxShadow: "0 0 15px var(--chakra-colors-brand-500)",
               }}
               onClick={editingTask ? handleSubmitEdit : handleCreateTask}
+              isLoading={isTaskSubmitting}
+              loadingText={editingTask ? "Saving..." : "Creating..."}
+              w={{ base: "full", sm: "auto" }}
+              minW="140px"
             >
               {editingTask ? "Save Changes" : "Create Task"}
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <AlertDialog
+        isOpen={isDeleteOpen}
+        leastDestructiveRef={deleteCancelRef}
+        onClose={closeDeleteConfirm}
+        isCentered
+        closeOnOverlayClick={!deletingTaskId}
+      >
+        <AlertDialogOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
+        <AlertDialogContent
+          bg={useColorModeValue("white", "rgba(10, 25, 47, 0.98)")}
+          color={useColorModeValue("gray.800", "white")}
+          borderRadius="xl"
+          border="1px solid"
+          borderColor={borderColor}
+          boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+        >
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Delete Task
+          </AlertDialogHeader>
+
+          <AlertDialogBody color={textMuted}>
+            Are you sure you want to delete
+            {pendingDeleteTask?.title ? ` "${pendingDeleteTask.title}"` : " this task"}? This action cannot be undone.
+          </AlertDialogBody>
+
+          <AlertDialogFooter gap={3}>
+            <Button
+              ref={deleteCancelRef}
+              onClick={closeDeleteConfirm}
+              isDisabled={Boolean(deletingTaskId)}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+            <Button
+              colorScheme="red"
+              onClick={handleConfirmDelete}
+              isLoading={Boolean(deletingTaskId)}
+              loadingText="Deleting..."
+            >
+              Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Box>
   );
 }

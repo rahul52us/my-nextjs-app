@@ -35,32 +35,42 @@ const modalIn = keyframes`
 `;
 
 // ── trigger button (shown in header) ────────────────────────────────
-export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+type SearchTriggerVariant = "default" | "compact";
+
+export const SearchTrigger: React.FC<{ onClick: () => void; variant?: SearchTriggerVariant }> = ({
+  onClick,
+  variant = "default",
+}) => {
   const bg        = useColorModeValue("whiteAlpha.200", "blackAlpha.300");
   const border    = useColorModeValue("whiteAlpha.400", "whiteAlpha.200");
   const textColor = "whiteAlpha.700";
+  const isCompact = variant === "compact";
 
   return (
     <HStack
       as="button"
       onClick={onClick}
-      spacing={2}
-      px={3}
-      py={1.5}
+      spacing={isCompact ? 0 : 2}
+      px={isCompact ? 0 : 3}
+      py={isCompact ? 0 : 1.5}
       bg={bg}
       border="1px solid"
       borderColor={border}
-      borderRadius="xl"
+      borderRadius={isCompact ? "full" : "xl"}
       backdropFilter="blur(8px)"
       cursor="pointer"
       transition="all 0.2s"
       _hover={{ bg: "whiteAlpha.300", borderColor: "whiteAlpha.500" }}
-      minW={{ base: "36px", md: "200px", lg: "260px" }}
-      maxW="260px"
+      minW={isCompact ? "36px" : { base: "36px", md: "200px", lg: "260px" }}
+      w={isCompact ? "36px" : "auto"}
+      h={isCompact ? "36px" : "auto"}
+      maxW={isCompact ? "36px" : "260px"}
+      justify={isCompact ? "center" : "flex-start"}
+      aria-label="Search tools"
     >
       <Icon as={SearchIcon} boxSize={3.5} color={textColor} />
       <Text
-        display={{ base: "none", md: "block" }}
+        display={isCompact ? "none" : { base: "none", md: "block" }}
         fontSize="13px"
         color={textColor}
         fontWeight="500"
@@ -69,7 +79,7 @@ export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) =>
       >
         Search tools...
       </Text>
-      <HStack display={{ base: "none", md: "flex" }} spacing={1}>
+      <HStack display={isCompact ? "none" : { base: "none", md: "flex" }} spacing={1}>
         <Kbd fontSize="10px" bg="whiteAlpha.200" color={textColor} border="none">
           Ctrl
         </Kbd>
@@ -82,7 +92,7 @@ export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) =>
 };
 
 // ── main modal ───────────────────────────────────────────────────────
-const GlobalSearch: React.FC = () => {
+const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = "default" }) => {
   const [isOpen,  setIsOpen]  = useState(false);
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<SidebarItem[]>([]);
@@ -189,7 +199,7 @@ const GlobalSearch: React.FC = () => {
   return (
     <>
       {/* ── Trigger button ── */}
-      <SearchTrigger onClick={open} />
+      <SearchTrigger onClick={open} variant={variant} />
 
       {/* ── Modal portal ── */}
       {isOpen && (

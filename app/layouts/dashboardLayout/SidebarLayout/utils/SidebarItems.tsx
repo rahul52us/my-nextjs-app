@@ -289,13 +289,6 @@ const sidebarData: SidebarItem[] = [
           { id: 98, name: "AI Chatbot", icon: <FaRobot />, iconColor: "#8e44ad", url: "/converter/Aichatboat" },
         ],
       },
-      {
-        id: 310,
-        name: "Notes",
-        icon: <FaTasks />,
-        iconColor: "#f39c12",
-        url: "/tools/task-manager",
-      },
     ],
   },
 ];
