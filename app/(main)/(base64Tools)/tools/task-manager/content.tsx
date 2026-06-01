@@ -46,7 +46,7 @@ import {
   FaUndo,
 } from "react-icons/fa";
 import axios from "axios";
-import { BACKEND_URL } from "../../../../config/utils/variables";
+import { AUTH_TOKEN, BACKEND_URL } from "../../../../config/utils/variables";
 import Link from "next/link";
 
 interface Task {
@@ -93,10 +93,13 @@ export default function TaskManagerContent() {
   // Get Auth Token
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("auth_token");
+      const tokenKey = AUTH_TOKEN || "auth_token";
+      return localStorage.getItem(tokenKey);
     }
     return null;
   };
+
+  const getApiUrl = (path: string) => `${BACKEND_URL || ""}${path}`;
 
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
@@ -109,7 +112,7 @@ export default function TaskManagerContent() {
 
     try {
       setLoading(true);
-      const url = `${BACKEND_URL || "http://localhost:5000"}/tasks`;
+      const url = getApiUrl("/tasks");
       const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -155,7 +158,7 @@ export default function TaskManagerContent() {
     }
 
     try {
-      const url = `${BACKEND_URL || "http://localhost:5000"}/tasks`;
+      const url = getApiUrl("/tasks");
       const response = await axios.post(
         url,
         {
@@ -198,7 +201,7 @@ export default function TaskManagerContent() {
     if (!token) return;
 
     try {
-      const url = `${BACKEND_URL || "http://localhost:5000"}/tasks/${taskId}`;
+      const url = getApiUrl(`/tasks/${taskId}`);
       const response = await axios.put(url, updatedFields, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -256,7 +259,7 @@ export default function TaskManagerContent() {
     if (!token) return;
 
     try {
-      const url = `${BACKEND_URL || "http://localhost:5000"}/tasks/${taskId}`;
+      const url = getApiUrl(`/tasks/${taskId}`);
       await axios.delete(url, {
         headers: {
           Authorization: `Bearer ${token}`,
