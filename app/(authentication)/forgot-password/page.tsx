@@ -33,7 +33,7 @@ const ToolsahayataLogo = () => {
         boxShadow="md"
       >
         <Text fontFamily="Inter, sans-serif" fontSize="22px" letterSpacing="-0.5px" color="white" userSelect="none">
-          <Box as="span" fontWeight="800">Tools</Box>
+          <Box as="span" fontWeight="800">Tool</Box>
           <Box as="span" fontWeight="300" opacity={0.9}>sahayata</Box>
         </Text>
       </Box>
