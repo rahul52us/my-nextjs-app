@@ -77,7 +77,7 @@ function detectInputType(name: string, path: string): OutputType[] {
   if (n.includes("text to") || n.includes("txt to") || n.includes("case convert") || n.includes("word count") || n.includes("string") || n.includes("lorem")) inputs.push("text");
   if (n.includes("hash") || n.includes("md5") || n.includes("sha")) inputs.push("text", "hash");
   if (n.includes("jwt")) inputs.push("jwt", "text");
-  if ((n.includes("qr") || n.includes("barcode")) && n.includes("read")) inputs.push("qr", "barcode", "image");
+  if ((n.includes("qr") || n.includes("barcode")) && n.includes("read")) inputs.push("qr", "barcode");
   if (n.includes("url decode") || n.includes("url encode")) inputs.push("url", "text");
   if (n.includes("unzip") || n.includes("extract zip") || n.includes("zip to")) inputs.push("zip");
 

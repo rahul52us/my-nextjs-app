@@ -1,74 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as mammoth from "mammoth";
-import { PDFDocument, rgb, StandardFonts, PDFFont } from "pdf-lib";
-
-function cleanHtmlToText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<li>/gi, "• ")
-    .replace(/<\/li>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\u00A0/g, " ")
-    // Fix WinAnsi encoding issues by replacing unsupported unicode characters
-    .replace(/[\u2010\u2011\u2012\u2013\u2014]/g, "-") // Various hyphens and dashes
-    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
-    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
-    .replace(/[\u2022\u2023\u2043]/g, "*") // Various bullet points
-    .replace(/[\u2190\u2191\u2192\u2193]/g, "") // Various arrows (←↑→↓)
-    .replace(/[\u2217\u2218\u2219]/g, "*") // Multiplication/composition symbols
-    .replace(/[\u00AE\u2122\u00A9]/g, "") // Registered, trademark, copyright
-    .replace(/[\u2026]/g, "...") // Ellipsis
-    .replace(/\s+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function wrapText(
-  text: string,
-  maxWidth: number,
-  font: PDFFont,
-  fontSize: number
-): string[] {
-  const lines: string[] = [];
-
-  const paragraphs = text.split(/\n\n+/);
-
-  paragraphs.forEach((paragraph) => {
-    const words = paragraph.split(/\s+/);
-
-    let line = "";
-
-    words.forEach((word) => {
-      const testLine = line ? `${line} ${word}` : word;
-
-      const width = font.widthOfTextAtSize(testLine, fontSize);
-
-      if (width > maxWidth && line) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = testLine;
-      }
-    });
-
-    if (line) {
-      lines.push(line);
-    }
-
-    // Paragraph spacing
-    lines.push("");
-  });
-
-  return lines;
-}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-
     const file = formData.get("file") as File | null;
 
     if (!file) {
@@ -92,81 +26,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Read file buffer
-    const arrayBuffer = await file.arrayBuffer();
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    const backendFormData = new FormData();
+    backendFormData.append("file", file);
 
-    const buffer = Buffer.from(arrayBuffer);
+    const response = await fetch(`${backendUrl}/convert/word-to-pdf`, {
+      method: "POST",
+      body: backendFormData,
+    });
 
-    // Convert DOCX → HTML
-    const result = await mammoth.convertToHtml(
-      { buffer },
-      {
-        styleMap: [
-          "p[style-name='Heading 1'] => h1:fresh",
-          "p[style-name='Heading 2'] => h2:fresh",
-        ],
+    if (!response.ok) {
+      let errDetail = response.statusText;
+      try {
+        const errJson = await response.json();
+        errDetail = errJson.error || errJson.message || errDetail;
+      } catch {
+        try {
+          errDetail = await response.text() || errDetail;
+        } catch {}
       }
-    );
-
-    // Clean HTML → plain text
-    const text = cleanHtmlToText(result.value || "");
-
-    // Create PDF
-    const pdfDoc = await PDFDocument.create();
-
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    const fontSize = 12;
-
-    const margin = 40;
-
-    const pageWidth = 595.28;
-    const pageHeight = 841.89;
-
-    const maxWidth = pageWidth - margin * 2;
-
-    const lineHeight = fontSize * 1.5;
-
-    let page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-    let y = pageHeight - 60;
-
-    // Wrap text
-    const lines = wrapText(text, maxWidth, font, fontSize);
-
-    // Draw text
-    for (const line of lines) {
-      // New page if needed
-      if (y < 60) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        y = pageHeight - 60;
-      }
-
-      if (line.trim() !== "") {
-        page.drawText(line, {
-          x: margin,
-          y,
-          size: fontSize,
-          font,
-          color: rgb(0, 0, 0),
-        });
-      }
-
-      y -= lineHeight;
+      return NextResponse.json(
+        { error: `Backend conversion failed: ${errDetail}` },
+        { status: response.status }
+      );
     }
 
-    // Save PDF
-    const pdfBytes = await pdfDoc.save();
+    const pdfBuffer = await response.arrayBuffer();
+    const outputFileName = file.name.replace(/\.docx$/i, ".pdf");
 
-    // Return PDF
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${file.name.replace(
-          /\.docx$/i,
-          ".pdf"
-        )}"`,
+        "Content-Disposition": `attachment; filename="${outputFileName}"`,
       },
     });
   } catch (error: any) {
@@ -174,8 +66,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error:
-          error.message || "Failed to convert Word document to PDF",
+        error: error.message || "Failed to convert Word document to PDF",
       },
       {
         status: 500,
