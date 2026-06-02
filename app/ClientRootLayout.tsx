@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import stores from './store/stores';
 import Notification from './component/common/Notification/Notification';
 import React from 'react';
+import FeedbackButton from './component/common/FeedbackButton';
 
 const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -52,6 +53,7 @@ const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) 
       <CSSReset />
       <Notification />
       <LayoutComponent>{children}</LayoutComponent>
+      <FeedbackButton />
     </ChakraProvider>
   );
 });
