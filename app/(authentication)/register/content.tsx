@@ -8,7 +8,6 @@ import {
   Flex,
   FormControl,
   FormErrorMessage,
-  FormLabel,
   Heading,
   Input,
   InputGroup,
@@ -41,6 +40,28 @@ const validationSchema = Yup.object({
   termsAccepted: Yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
 });
 
+const ToolsahayataLogo = () => {
+  return (
+    <Flex align="center" justify="center" mb={2}>
+      <Box
+        bg="#0066fe"
+        px={5}
+        py={2.5}
+        borderRadius="xl"
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        boxShadow="md"
+      >
+        <Text fontFamily="Inter, sans-serif" fontSize="22px" letterSpacing="-0.5px" color="white" userSelect="none">
+          <Box as="span" fontWeight="800">Tools</Box>
+          <Box as="span" fontWeight="300" opacity={0.9}>sahayata</Box>
+        </Text>
+      </Box>
+    </Flex>
+  );
+};
+
 const RegisterContent = observer(() => {
   const {
     auth: { register, openNotification },
@@ -48,6 +69,7 @@ const RegisterContent = observer(() => {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const initialValues = {
     name: '',
     email: '',
@@ -84,47 +106,31 @@ const RegisterContent = observer(() => {
     }
   };
 
-  const cardBg = useColorModeValue('whiteAlpha.900', 'rgba(15, 23, 42, 0.92)');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.600', 'gray.300');
-  const headingColor = useColorModeValue('#0F172A', 'whiteAlpha.900');
-  const labelColor = useColorModeValue('gray.700', 'gray.200');
-  const accentBg = useColorModeValue('teal.50', 'teal.900');
-  const accentColor = useColorModeValue('teal.700', 'teal.200');
-  const inputBg = useColorModeValue('gray.50', 'gray.700');
-  const checkboxColor = useColorModeValue('gray.700', 'gray.200');
+  // Theme support colors
+  const cardBg = useColorModeValue("white", "gray.900");
+  const textColor = useColorModeValue("#1A202C", "white");
+  const subtextColor = useColorModeValue("#718096", "gray.400");
+  const inputBg = useColorModeValue("#f8f9fa", "gray.800");
+  const inputTextColor = useColorModeValue("#1A202C", "white");
 
   return (
-    <Box minHeight="auto" px={4} py={{ base: 6, md: 4 }}>
+    <Box minHeight="auto" px={2}>
       <Flex align="center" justify="center">
         <Box
           width="100%"
-          maxWidth="680px"
+          maxWidth="520px"
           bg={cardBg}
           p={{ base: 6, md: 10 }}
           borderRadius="3xl"
           boxShadow="2xl"
-          border="1px solid"
-          borderColor={borderColor}
         >
-          <VStack spacing={4} textAlign="center" mb={6}>
-            <Box
-              display="inline-flex"
-              px={3}
-              py={1}
-              bg={accentBg}
-              color={accentColor}
-              borderRadius="full"
-              fontWeight="semibold"
-              fontSize="sm"
-            >
-              Join the community
-            </Box>
-            <Heading size="xl" color={headingColor}>
+          <VStack spacing={1} textAlign="center" mb={6}>
+            <ToolsahayataLogo />
+            <Heading size="lg" fontWeight="bold" color={textColor} mt={2}>
               Create an account
             </Heading>
-            <Text maxW="lg" color={textColor}>
-              Fill in the details below to register and start using your workflow tools immediately.
+            <Text fontSize="sm" color={subtextColor}>
+              Join us to optimize your automation platform
             </Text>
           </VStack>
 
@@ -135,154 +141,183 @@ const RegisterContent = observer(() => {
           >
             {({ isSubmitting, errors, touched }) => (
               <Form>
-                <Stack spacing={5}>
+                <Stack spacing={4}>
                   <FormControl id="name" isInvalid={!!(touched.name && errors.name)}>
-                    <FormLabel color={labelColor}>Full Name <Text as="span" color="red.500">*</Text></FormLabel>
                     <Field
                       as={Input}
                       type="text"
                       name="name"
-                      placeholder="Enter your full name"
-                      focusBorderColor="teal.500"
+                      placeholder="FULL NAME"
+                      focusBorderColor="blue.500"
                       bg={inputBg}
-                      color={useColorModeValue('gray.800','white')}
+                      border="none"
+                      borderRadius="xl"
+                      h="50px"
+                      px={4}
+                      fontSize="sm"
+                      color={inputTextColor}
+                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
                     />
                     <FormErrorMessage>
                       <ErrorMessage name="name" />
                     </FormErrorMessage>
                   </FormControl>
 
-                  <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
-                    <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
-                      <FormLabel color={labelColor}>Email Address <Text as="span" color="red.500">*</Text></FormLabel>
-                      <Field
-                        as={Input}
-                        type="email"
-                        name="email"
-                        placeholder="Enter your email"
-                        focusBorderColor="teal.500"
-                        bg={inputBg}
-                        color={useColorModeValue('gray.800','white')}
-                      />
-                      <FormErrorMessage>
-                        <ErrorMessage name="email" />
-                      </FormErrorMessage>
-                    </FormControl>
+                  <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
+                    <Field
+                      as={Input}
+                      type="email"
+                      name="email"
+                      placeholder="EMAIL ADDRESS"
+                      focusBorderColor="blue.500"
+                      bg={inputBg}
+                      border="none"
+                      borderRadius="xl"
+                      h="50px"
+                      px={4}
+                      fontSize="sm"
+                      color={inputTextColor}
+                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
+                    />
+                    <FormErrorMessage>
+                      <ErrorMessage name="email" />
+                    </FormErrorMessage>
+                  </FormControl>
 
-                    <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
-                      <FormLabel color={labelColor}>Phone Number</FormLabel>
-                      <Field
-                        as={Input}
-                        type="tel"
-                        name="phone"
-                        placeholder="Enter your phone number"
-                        focusBorderColor="teal.500"
-                        bg={inputBg}
-                        color={useColorModeValue('gray.800','white')}
-                      />
-                      <FormErrorMessage>
-                        <ErrorMessage name="phone" />
-                      </FormErrorMessage>
-                    </FormControl>
-                  </Stack>
+                  <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
+                    <Field
+                      as={Input}
+                      type="tel"
+                      name="phone"
+                      placeholder="PHONE NUMBER"
+                      focusBorderColor="blue.500"
+                      bg={inputBg}
+                      border="none"
+                      borderRadius="xl"
+                      h="50px"
+                      px={4}
+                      fontSize="sm"
+                      color={inputTextColor}
+                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
+                    />
+                    <FormErrorMessage>
+                      <ErrorMessage name="phone" />
+                    </FormErrorMessage>
+                  </FormControl>
 
-                  <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
-                    <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
-                      <FormLabel color={labelColor}>Password <Text as="span" color="red.500">*</Text></FormLabel>
-                      <Field name="password">
-                        {({ field }: any) => (
-                          <InputGroup>
-                            <Input
-                              {...field}
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="Create a password"
-                              focusBorderColor="teal.500"
-                              bg={inputBg}
-                              color={useColorModeValue('gray.800','white')}
-                            />
-                            <InputRightElement h="full">
-                              <Button
-                                variant="ghost"
-                                onClick={() => setShowPassword(!showPassword)}
-                                size="sm"
-                                _hover={{ bg: 'transparent', opacity: 0.8 }}
-                                _active={{ bg: 'transparent' }}
-                              >
-                                {showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                              </Button>
-                            </InputRightElement>
-                          </InputGroup>
-                        )}
-                      </Field>
-                      <FormErrorMessage>
-                        <ErrorMessage name="password" />
-                      </FormErrorMessage>
-                    </FormControl>
+                  <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
+                    <Field name="password">
+                      {({ field }: any) => (
+                        <InputGroup>
+                          <Input
+                            {...field}
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="PASSWORD"
+                            focusBorderColor="blue.500"
+                            bg={inputBg}
+                            border="none"
+                            borderRadius="xl"
+                            h="50px"
+                            px={4}
+                            fontSize="sm"
+                            color={inputTextColor}
+                            _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
+                          />
+                          <InputRightElement h="full" pr={2}>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setShowPassword(!showPassword)}
+                              size="sm"
+                              _hover={{ bg: 'transparent' }}
+                              _active={{ bg: 'transparent' }}
+                            >
+                              {showPassword ? <ViewOffIcon color="gray.500" /> : <ViewIcon color="gray.500" />}
+                            </Button>
+                          </InputRightElement>
+                        </InputGroup>
+                      )}
+                    </Field>
+                    <FormErrorMessage>
+                      <ErrorMessage name="password" />
+                    </FormErrorMessage>
+                  </FormControl>
 
-                    <FormControl
-                      id="confirmPassword"
-                      isInvalid={!!(touched.confirmPassword && errors.confirmPassword)}
-                    >
-                      <FormLabel color={labelColor}>Confirm Password <Text as="span" color="red.500">*</Text></FormLabel>
-                      <Field name="confirmPassword">
-                        {({ field }: any) => (
-                          <InputGroup>
-                            <Input
-                              {...field}
-                              type={showConfirmPassword ? 'text' : 'password'}
-                              placeholder="Confirm password"
-                              focusBorderColor="teal.500"
-                              bg={inputBg}
-                              color={useColorModeValue('gray.800','white')}
-                            />
-                            <InputRightElement h="full">
-                              <Button
-                                variant="ghost"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                size="sm"
-                                _hover={{ bg: 'transparent', opacity: 0.8 }}
-                                _active={{ bg: 'transparent' }}
-                              >
-                                {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                              </Button>
-                            </InputRightElement>
-                          </InputGroup>
-                        )}
-                      </Field>
-                      <FormErrorMessage>
-                        <ErrorMessage name="confirmPassword" />
-                      </FormErrorMessage>
-                    </FormControl>
-                  </Stack>
+                  <FormControl
+                    id="confirmPassword"
+                    isInvalid={!!(touched.confirmPassword && errors.confirmPassword)}
+                  >
+                    <Field name="confirmPassword">
+                      {({ field }: any) => (
+                        <InputGroup>
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="CONFIRM PASSWORD"
+                            focusBorderColor="blue.500"
+                            bg={inputBg}
+                            border="none"
+                            borderRadius="xl"
+                            h="50px"
+                            px={4}
+                            fontSize="sm"
+                            color={inputTextColor}
+                            _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
+                          />
+                          <InputRightElement h="full" pr={2}>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              size="sm"
+                              _hover={{ bg: 'transparent' }}
+                              _active={{ bg: 'transparent' }}
+                            >
+                              {showConfirmPassword ? <ViewOffIcon color="gray.500" /> : <ViewIcon color="gray.500" />}
+                            </Button>
+                          </InputRightElement>
+                        </InputGroup>
+                      )}
+                    </Field>
+                    <FormErrorMessage>
+                      <ErrorMessage name="confirmPassword" />
+                    </FormErrorMessage>
+                  </FormControl>
 
                   <FormControl
                     isInvalid={!!(touched.termsAccepted && errors.termsAccepted)}
                     display="flex"
                     alignItems="center"
+                    pt={1}
                   >
                     <Field name="termsAccepted">
                       {({ field }: any) => (
-                        <Checkbox {...field} isChecked={field.value} colorScheme="teal" color={checkboxColor}>
+                        <Checkbox {...field} isChecked={field.value} colorScheme="blue" color={useColorModeValue("#4A5568", "gray.300")} fontSize="xs">
                           I accept the{' '}
-                          <Link href="/terms" style={{ color: '#065F68', textDecoration: 'underline' }}>
+                          <Link href="/terms" style={{ color: '#0066fe', textDecoration: 'underline' }}>
                             Terms and Conditions
                           </Link>
                         </Checkbox>
                       )}
                     </Field>
-                    <FormErrorMessage>
+                    <FormErrorMessage ml={2}>
                       <ErrorMessage name="termsAccepted" />
                     </FormErrorMessage>
                   </FormControl>
 
                   <Button
                     type="submit"
-                    colorScheme="teal"
+                    bg="#0066fe"
+                    color="white"
                     size="lg"
                     w="full"
+                    h="52px"
                     isLoading={isSubmitting}
                     loadingText="Registering..."
                     borderRadius="xl"
+                    fontSize="sm"
+                    fontWeight="bold"
+                    _hover={{ bg: '#0052cc', opacity: 0.95 }}
+                    _active={{ bg: '#004099' }}
+                    mt={2}
                   >
                     Register
                   </Button>
@@ -291,14 +326,16 @@ const RegisterContent = observer(() => {
             )}
           </Formik>
 
-          <Text mt={6} textAlign="center" color={textColor}>
-            Already have an account?{' '}
-            <Link href="/login">
-              <Text as="span" color={accentColor} fontWeight="semibold">
-                Login
-              </Text>
-            </Link>
-          </Text>
+          <VStack mt={6} align="center">
+            <Text fontSize="xs" color={subtextColor}>
+              Already have an account?{' '}
+              <Link href="/login">
+                <Text as="span" color="#0066fe" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: 'underline' }}>
+                  Login
+                </Text>
+              </Link>
+            </Text>
+          </VStack>
         </Box>
       </Flex>
     </Box>

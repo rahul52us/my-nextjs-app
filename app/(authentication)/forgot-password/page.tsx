@@ -4,7 +4,6 @@ import {
   Box,
   Flex,
   FormControl,
-  FormLabel,
   Heading,
   Input,
   Stack,
@@ -12,27 +11,40 @@ import {
   Spinner,
   useColorModeValue,
   VStack,
-  Link as ChakraLink,
+  Button,
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useState } from "react";
-import CustomButton from "../../component/common/CustomButton/CustomButton";
 import stores from "../../store/stores";
 import { observer } from "mobx-react-lite";
+
+const ToolsahayataLogo = () => {
+  return (
+    <Flex align="center" justify="center" mb={4}>
+      {/* Styled logo mimicking the exact header logo from the screenshot */}
+      <Box
+        bg="#0066fe"
+        px={5}
+        py={2.5}
+        borderRadius="xl"
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        boxShadow="md"
+      >
+        <Text fontFamily="Inter, sans-serif" fontSize="22px" letterSpacing="-0.5px" color="white" userSelect="none">
+          <Box as="span" fontWeight="800">Tools</Box>
+          <Box as="span" fontWeight="300" opacity={0.9}>sahayata</Box>
+        </Text>
+      </Box>
+    </Flex>
+  );
+};
 
 const ForgotPassword = observer(() => {
   const { auth: { openNotification } } = stores;
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const cardBg = useColorModeValue("whiteAlpha.900", "rgba(15, 23, 42, 0.92)");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const textColor = useColorModeValue("gray.600", "gray.300");
-  const headingColor = useColorModeValue("#0F172A", "whiteAlpha.900");
-  const labelColor = useColorModeValue("gray.700", "gray.200");
-  const accentBg = useColorModeValue("teal.50", "teal.900");
-  const accentColor = useColorModeValue("teal.700", "teal.200");
-  const inputBg = useColorModeValue("gray.50", "gray.700");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,78 +73,86 @@ const ForgotPassword = observer(() => {
     }
   };
 
+  // Theme support colors
+  const cardBg = useColorModeValue("white", "gray.900");
+  const textColor = useColorModeValue("#1A202C", "white");
+  const subtextColor = useColorModeValue("#718096", "gray.400");
+  const inputBg = useColorModeValue("#f8f9fa", "gray.800");
+  const inputTextColor = useColorModeValue("#1A202C", "white");
+
   return (
-    <Box minH="100vh" px={4} py={10}>
+    <Box minH="auto" px={2}>
       <Flex align="center" justify="center">
         <Box
           w="full"
-          maxW="480px"
+          maxW="460px"
           bg={cardBg}
           borderRadius="3xl"
           boxShadow="2xl"
-          border="1px solid"
-          borderColor={borderColor}
           p={{ base: 6, md: 10 }}
         >
-          <VStack spacing={3} align="stretch" mb={6} textAlign="left">
-            <Box
-              display="inline-flex"
-              px={3}
-              py={1}
-              bg={accentBg}
-              color={accentColor}
-              fontWeight="semibold"
-              borderRadius="full"
-              fontSize="sm"
-              maxW="fit-content"
-            >
-              Security Center
-            </Box>
-            <Heading size="xl" lineHeight={1.1} color={headingColor}>
+          <VStack spacing={1} align="center" mb={6}>
+            <ToolsahayataLogo />
+            <Heading size="lg" fontWeight="bold" color={textColor} textAlign="center" w="100%" mt={2}>
               Forgot Password
             </Heading>
-            <Text color={textColor} maxW="lg">
-              Enter your email address below and we'll send you a link to reset your password.
+            <Text fontSize="sm" color={subtextColor} textAlign="center">
+              Enter your email to receive a reset link
             </Text>
           </VStack>
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={4}>
               <FormControl id="email" isRequired>
-                <FormLabel fontWeight="semibold" color={labelColor}>
-                  Email Address
-                </FormLabel>
                 <Input
                   type="email"
                   name="email"
-                  placeholder="Enter your email"
+                  placeholder="EMAIL ADDRESS"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  focusBorderColor="teal.500"
+                  focusBorderColor="blue.500"
                   bg={inputBg}
-                  color={useColorModeValue("gray.800", "white")}
+                  border="none"
+                  borderRadius="xl"
+                  h="52px"
+                  px={4}
+                  fontSize="sm"
+                  color={inputTextColor}
+                  _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
                 />
               </FormControl>
 
-              <CustomButton
+              <Button
                 type="submit"
-                width="100%"
-                colorScheme="teal"
-                isDisabled={!email || isLoading}
+                bg="#0066fe"
+                color="white"
+                size="lg"
+                w="full"
+                h="52px"
+                isLoading={isLoading}
+                loadingText="Sending..."
+                borderRadius="xl"
+                fontSize="sm"
+                fontWeight="bold"
+                _hover={{ bg: '#0052cc', opacity: 0.95 }}
+                _active={{ bg: '#004099' }}
+                mt={2}
               >
-                {isLoading ? <Spinner size="sm" color="white" /> : "Send Reset Link"}
-              </CustomButton>
+                Send Reset Link
+              </Button>
             </Stack>
           </form>
 
-          <Text mt={8} textAlign="center" color={textColor}>
-            Remembered your password?{" "}
-            <Link href="/login">
-              <Text as="span" color={accentColor} fontWeight="semibold">
-                Back to Login
-              </Text>
-            </Link>
-          </Text>
+          <VStack mt={6} align="center">
+            <Text fontSize="xs" color={subtextColor}>
+              Remembered your password?{" "}
+              <Link href="/login">
+                <Text as="span" color="#0066fe" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: 'underline' }}>
+                  Back to Login
+                </Text>
+              </Link>
+            </Text>
+          </VStack>
         </Box>
       </Flex>
     </Box>
