@@ -10,6 +10,7 @@ import {
   VStack,
   HStack,
   Input,
+  Textarea,
   Stack,
   Badge,
   Icon,
@@ -56,8 +57,42 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [loadingSaved, setLoadingSaved] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [inputType, setInputType] = useState<"file" | "text">("file");
+  const [textInput, setTextInput] = useState("");
 
   const { state, runWorkflow, reset } = useWorkflowExecution(workflow);
+
+  // Check if first step accepts text input
+  const isTextFirstStep = useMemo(() => {
+    if (!workflow || workflow.steps.length === 0) return false;
+    const name = workflow.steps[0].name.toLowerCase();
+    const path = workflow.steps[0].path.toLowerCase();
+    return name.includes("text") || 
+           name.includes("ascii") || 
+           name.includes("hex") || 
+           name.includes("decimal") || 
+           name.includes("base64") || 
+           name.includes("json") || 
+           name.includes("regex") || 
+           name.includes("chatbot") || 
+           name.includes("cv") ||
+           name.includes("formatter") ||
+           name.includes("color") ||
+           name.includes("timestamp") ||
+           path.includes("encoder") ||
+           path.includes("decoder") ||
+           path.includes("binary") ||
+           path.includes("tools/text") ||
+           path.includes("tools/json");
+  }, [workflow]);
+
+  useEffect(() => {
+    if (isTextFirstStep) {
+      setInputType("text");
+    } else {
+      setInputType("file");
+    }
+  }, [isTextFirstStep]);
 
   // Map features to have access to step icons
   const availableActions = useMemo(() => {
@@ -126,12 +161,23 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   };
 
   const handleStart = async () => {
-    if (!uploadedFile || !workflow || !workflow.isActive) return;
-    await runWorkflow(uploadedFile);
+    if (!workflow || !workflow.isActive) return;
+    if (inputType === "text") {
+      if (!textInput.trim()) return;
+      const firstStepName = workflow.steps[0]?.name.toLowerCase() || "";
+      const extension = firstStepName.includes("json") ? ".json" : ".txt";
+      const mime = firstStepName.includes("json") ? "application/json" : "text/plain";
+      const file = new File([textInput], `input${extension}`, { type: mime });
+      await runWorkflow(file);
+    } else {
+      if (!uploadedFile) return;
+      await runWorkflow(uploadedFile);
+    }
   };
 
   const handleReset = () => {
     setUploadedFile(null);
+    setTextInput("");
     reset();
   };
 
@@ -464,59 +510,104 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
               opacity={workflow.isActive === false ? 0.6 : 1}
             >
               <VStack align="stretch" spacing={5}>
-                <Heading size="md" fontWeight="bold">
-                  Run Automation
-                </Heading>
+                <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
+                  <Heading size="md" fontWeight="bold">
+                    Run Automation
+                  </Heading>
+                  {isTextFirstStep && (
+                    <HStack bg={stepBg} p={1} rounded="xl" borderWidth="1px" borderColor={cardBorder} spacing={1}>
+                      <Button
+                        size="xs"
+                        variant={inputType === "text" ? "solid" : "ghost"}
+                        colorScheme={inputType === "text" ? "blue" : "gray"}
+                        onClick={() => setInputType("text")}
+                        rounded="lg"
+                      >
+                        Paste Text
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant={inputType === "file" ? "solid" : "ghost"}
+                        colorScheme={inputType === "file" ? "blue" : "gray"}
+                        onClick={() => setInputType("file")}
+                        rounded="lg"
+                      >
+                        Upload File
+                      </Button>
+                    </HStack>
+                  )}
+                </Flex>
 
-                {/* Drag and Drop Zone */}
-                <Box
-                  borderWidth="2px"
-                  borderStyle="dashed"
-                  borderColor={isDragging ? "blue.400" : uploadBorder}
-                  bg={isDragging ? uploadHoverBg : uploadBg}
-                  rounded="2xl"
-                  p={8}
-                  textAlign="center"
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  transition="all 0.2s"
-                  cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
-                  position="relative"
-                >
-                  <FormLabel
-                    htmlFor="file-upload"
-                    m={0}
-                    w="full"
-                    h="full"
-                    cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
-                  >
-                    <VStack spacing={3}>
-                      <Icon
-                        as={FaCloudUploadAlt}
-                        color={isDragging ? "blue.500" : "gray.400"}
-                        boxSize={12}
-                        transition="transform 0.15s"
-                        _hover={{ transform: "scale(1.05)" }}
-                      />
-                      <Box>
-                        <Text fontWeight="bold" fontSize="md">
-                          {uploadedFile ? "Selected file:" : "Drag & drop your file here"}
-                        </Text>
-                        <Text fontSize="xs" color={mutedText} mt={1}>
-                          {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : `or click to browse from device. Expected format: ${expectedFormatText}`}
-                        </Text>
-                      </Box>
-                    </VStack>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      display="none"
-                      onChange={handleFileChange}
+                {inputType === "text" ? (
+                  <VStack align="stretch" spacing={2}>
+                    <FormLabel fontSize="sm" fontWeight="semibold" m={0}>
+                      Enter Input Text for {workflow.steps[0]?.name}:
+                    </FormLabel>
+                    <Textarea
+                      placeholder={`Type or paste the text data to process... (e.g. text for ${workflow.steps[0]?.name})`}
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      size="md"
+                      bg={uploadBg}
+                      borderColor={uploadBorder}
+                      _focus={{ borderColor: "blue.400" }}
+                      rows={6}
+                      rounded="xl"
+                      fontFamily="monospace"
                       disabled={workflow.isActive === false}
                     />
-                  </FormLabel>
-                </Box>
+                  </VStack>
+                ) : (
+                  /* Drag and Drop Zone */
+                  <Box
+                    borderWidth="2px"
+                    borderStyle="dashed"
+                    borderColor={isDragging ? "blue.400" : uploadBorder}
+                    bg={isDragging ? uploadHoverBg : uploadBg}
+                    rounded="2xl"
+                    p={8}
+                    textAlign="center"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    transition="all 0.2s"
+                    cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
+                    position="relative"
+                  >
+                    <FormLabel
+                      htmlFor="file-upload"
+                      m={0}
+                      w="full"
+                      h="full"
+                      cursor={workflow.isActive === false ? "not-allowed" : "pointer"}
+                    >
+                      <VStack spacing={3}>
+                        <Icon
+                          as={FaCloudUploadAlt}
+                          color={isDragging ? "blue.500" : "gray.400"}
+                          boxSize={12}
+                          transition="transform 0.15s"
+                          _hover={{ transform: "scale(1.05)" }}
+                        />
+                        <Box>
+                          <Text fontWeight="bold" fontSize="md">
+                            {uploadedFile ? "Selected file:" : "Drag & drop your file here"}
+                          </Text>
+                          <Text fontSize="xs" color={mutedText} mt={1}>
+                            {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : `or click to browse from device. Expected format: ${expectedFormatText}`}
+                          </Text>
+                        </Box>
+                      </VStack>
+                      <Input
+                        id="file-upload"
+                        type="file"
+                        display="none"
+                        onChange={handleFileChange}
+                        disabled={workflow.isActive === false}
+                      />
+                    </FormLabel>
+                  </Box>
+                )}
 
                 {/* Reset or Run actions */}
                 <HStack spacing={3}>
@@ -525,13 +616,16 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                     colorScheme="blue"
                     px={8}
                     rounded="xl"
-                    isDisabled={!uploadedFile || workflow.isActive === false}
+                    isDisabled={
+                      (inputType === "text" ? !textInput.trim() : !uploadedFile) || 
+                      workflow.isActive === false
+                    }
                     onClick={handleStart}
                     fontWeight="bold"
                   >
                     Start Pipeline Processing
                   </Button>
-                  {uploadedFile && (
+                  {(inputType === "text" ? textInput : uploadedFile) && (
                     <Button size="md" variant="ghost" rounded="xl" onClick={handleReset}>
                       Clear Selection
                     </Button>

@@ -16,7 +16,6 @@ import {
 import JsBarcode from "jsbarcode";
 import { FaDownload, FaTrash } from "react-icons/fa";
 import html2canvas from "html2canvas";
-import Image from "next/image";
 import stores from "../../../../../store/stores";
 
 const BarcodeGenerator: React.FC = () => {
@@ -135,7 +134,11 @@ const BarcodeGenerator: React.FC = () => {
           maxWidth="100%"
           boxShadow="md"
         >
-          <Image src={generateBarcode()} alt="Generated Barcode" />
+          <img
+            src={generateBarcode()}
+            alt="Generated Barcode"
+            style={{ display: "block", maxWidth: "100%", height: "auto" }}
+          />
         </Box>
       ) : (
         <Text mt={5} textAlign="center" color="gray.500">
