@@ -128,6 +128,7 @@ const BUILT_ROUTES = new Set([
   "/converter/Codeformatter",
   "/converter/Datavisual",
   "/converter/Aichatboat",
+  "/converter/ocr",
 ]);
 
 const isBuilt = (url: string) => url === "#" || BUILT_ROUTES.has(url);

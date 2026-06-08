@@ -102,6 +102,7 @@ const sidebarData: SidebarItem[] = [
     { id: 7031, name: "Image Type Converter", icon: <FaCropAlt />, iconColor: "#27ae60", url: "/converter/Imagetools/Imagetypeconvert" },
     { id: 7041, name: "BG Remover", icon: <FaMagic />, iconColor: "#2980b9", url: "/converter/Imagetools/Bgremove" },
     { id: 94, name: "Image Extractor", icon: <FaFileImage />, iconColor: "#e67e22", url: "/converter/Imageextract" },
+{ id: 915, name: "OCR Scanner", icon: <FaMagic />, iconColor: "#9b59b6", url: "/converter/ocr" },
   ],
   },
 
