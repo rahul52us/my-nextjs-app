@@ -88,6 +88,15 @@ const HeaderLogo = observer(() => {
     "0 10px 15px -3px rgba(0,0,0,0.12), 0 4px 6px -2px rgba(0,0,0,0.07)",
     "0 25px 50px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06)"
   );
+  const loginModalBg = useColorModeValue(
+    "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+    "linear-gradient(135deg, #0a1f33 0%, #132d47 100%)"
+  );
+  const loginModalBorder = useColorModeValue(
+    "1px solid rgba(2, 91, 151, 0.08)",
+    "1px solid rgba(148, 163, 184, 0.14)"
+  );
+  const loginModalCloseColor = useColorModeValue("#025b97", "rgba(226, 232, 240, 0.92)");
 
   const slideDown = keyframes`
     0%   { opacity: 0; transform: translateY(-10px) scale(0.98); }
@@ -619,11 +628,27 @@ const HeaderLogo = observer(() => {
         </DrawerContent>
       </Drawer>
 
-      <Modal isOpen={isLoginOpen} onClose={onLoginClose} isCentered size="lg">
+      <Modal isOpen={isLoginOpen} onClose={onLoginClose} isCentered>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(6px)" />
-        <ModalContent borderRadius="3xl" overflow="hidden" mx={4}>
-          <ModalCloseButton zIndex={1} />
-          <ModalBody p={0}>
+        <ModalContent
+          borderRadius="2xl"
+          overflow="hidden"
+          mx={4}
+          maxW="540px"
+          w="full"
+          bg={loginModalBg}
+          border={loginModalBorder}
+          boxShadow={shadowColor}
+        >
+          <ModalCloseButton
+            top={4}
+            right={4}
+            zIndex={1}
+            color={loginModalCloseColor}
+            _hover={{ bg: "whiteAlpha.200" }}
+            _active={{ bg: "whiteAlpha.300" }}
+          />
+          <ModalBody p={{ base: 5, md: 7 }}>
             <LoginContent isModal onLoginSuccess={onLoginClose} redirectPath={loginRedirectPath} />
           </ModalBody>
         </ModalContent>

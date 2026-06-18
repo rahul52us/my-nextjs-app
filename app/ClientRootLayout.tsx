@@ -34,7 +34,10 @@ const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) 
   );
 
   const getLayout = () => {
-    if (['/login', '/register', '/forgot-password'].includes(pathname)) {
+    if (
+      ['/login', '/register', '/forgot-password', '/reset-password'].includes(pathname) ||
+      pathname.startsWith('/reset-password/')
+    ) {
       return AuthenticationLayout;
     } else if (pathname.startsWith('/')) {
       return DashboardLayout;

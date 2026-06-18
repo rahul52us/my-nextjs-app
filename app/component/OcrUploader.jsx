@@ -34,8 +34,9 @@ import {
   SimpleGrid,
   Icon,
   IconButton,
+  Textarea,
 } from '@chakra-ui/react';
-import { FiUpload, FiFile, FiX } from 'react-icons/fi';
+import { FiUpload, FiFile, FiX, FiZoomIn, FiZoomOut, FiRotateCw, FiRotateCcw, FiSend } from 'react-icons/fi';
 import stores from '../store/stores';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -50,14 +51,25 @@ function parseOcrResponse(data) {
     if (ocr.paragraphs) {
       if (typeof ocr.paragraphs === 'string') {
         const lines = ocr.paragraphs.split('\n').filter((l) => l.trim());
-        out.paragraphs.push(...lines);
+        lines.forEach((line) => {
+          out.paragraphs.push({ text: line, boundingRegions: null });
+        });
         out.rawText += ocr.paragraphs + '\n';
       } else if (Array.isArray(ocr.paragraphs)) {
         ocr.paragraphs.forEach((p) => {
-          const text = typeof p === 'string' ? p : p?.text ?? p?.content ?? JSON.stringify(p);
-          if (text) out.paragraphs.push(text);
+          if (typeof p === 'string') {
+            out.paragraphs.push({ text: p, boundingRegions: null });
+          } else {
+            const text = p?.text ?? p?.content ?? JSON.stringify(p);
+            if (text) {
+              out.paragraphs.push({
+                text,
+                boundingRegions: p?.boundingRegions ?? null,
+              });
+            }
+          }
         });
-        out.rawText += out.paragraphs.join('\n') + '\n';
+        out.rawText += out.paragraphs.map(p => p.text).join('\n') + '\n';
       }
     }
 
@@ -78,25 +90,41 @@ function parseOcrResponse(data) {
 
 function normaliseTable(tbl, idx) {
   const title = `Table ${idx + 1}`;
-  if (tbl.headers && tbl.rows) return { title, headers: tbl.headers, rows: tbl.rows };
+  if (tbl.headers && tbl.rows) {
+    const headers = tbl.headers.map(h => typeof h === 'string' ? { text: h, boundingRegions: [] } : h);
+    const rows = tbl.rows.map(row => row.map(c => typeof c === 'string' ? { text: c, boundingRegions: [] } : c));
+    return { title, headers, rows, tableBounds: tbl.boundingRegions ?? [] };
+  }
 
   if (Array.isArray(tbl.cells)) {
     const rowCount = tbl.rowCount ?? 0;
     const colCount = tbl.columnCount ?? 0;
-    const grid = Array.from({ length: rowCount }, () => Array(colCount).fill(''));
+    const grid = Array.from({ length: rowCount }, () => Array(colCount).fill(null));
     let headerRowIndex = -1;
 
     tbl.cells.forEach((cell) => {
-      grid[cell.rowIndex][cell.columnIndex] = cell.content ?? '';
+      grid[cell.rowIndex][cell.columnIndex] = {
+        text: cell.content ?? '',
+        boundingRegions: cell.boundingRegions ?? [],
+        kind: cell.kind ?? 'content'
+      };
       if (cell.kind === 'columnHeader') headerRowIndex = cell.rowIndex;
     });
 
+    for (let r = 0; r < rowCount; r++) {
+      for (let c = 0; c < colCount; c++) {
+        if (!grid[r][c]) {
+          grid[r][c] = { text: '', boundingRegions: [], kind: 'content' };
+        }
+      }
+    }
+
     const headers = headerRowIndex >= 0 ? grid[headerRowIndex] : [];
     const rows = grid.filter((_, i) => i !== headerRowIndex);
-    return { title, headers, rows };
+    return { title, headers, rows, tableBounds: tbl.boundingRegions ?? [] };
   }
 
-  return { title, headers: [], rows: [] };
+  return { title, headers: [], rows: [], tableBounds: [] };
 }
 
 function extractBoundingData(tbl, idx) {
@@ -123,12 +151,12 @@ function extractBoundingData(tbl, idx) {
 
 // ─── color palette for bounding boxes ────────────────────────────────────────
 const BOX_COLORS = [
-  { fill: 'rgba(99, 102, 241, 0.12)', stroke: 'rgba(99, 102, 241, 0.9)',  label: '#6366f1' },
-  { fill: 'rgba(236, 72, 153, 0.12)', stroke: 'rgba(236, 72, 153, 0.9)',  label: '#ec4899' },
-  { fill: 'rgba(34, 197, 94, 0.12)',  stroke: 'rgba(34, 197, 94, 0.9)',   label: '#22c55e' },
-  { fill: 'rgba(245, 158, 11, 0.12)', stroke: 'rgba(245, 158, 11, 0.9)',  label: '#f59e0b' },
-  { fill: 'rgba(14, 165, 233, 0.12)', stroke: 'rgba(14, 165, 233, 0.9)',  label: '#0ea5e9' },
-  { fill: 'rgba(168, 85, 247, 0.12)', stroke: 'rgba(168, 85, 247, 0.9)',  label: '#a855f7' },
+  { fill: 'rgba(99, 102, 241, 0.12)', stroke: 'rgba(99, 102, 241, 0.9)', label: '#6366f1' },
+  { fill: 'rgba(236, 72, 153, 0.12)', stroke: 'rgba(236, 72, 153, 0.9)', label: '#ec4899' },
+  { fill: 'rgba(34, 197, 94, 0.12)', stroke: 'rgba(34, 197, 94, 0.9)', label: '#22c55e' },
+  { fill: 'rgba(245, 158, 11, 0.12)', stroke: 'rgba(245, 158, 11, 0.9)', label: '#f59e0b' },
+  { fill: 'rgba(14, 165, 233, 0.12)', stroke: 'rgba(14, 165, 233, 0.9)', label: '#0ea5e9' },
+  { fill: 'rgba(168, 85, 247, 0.12)', stroke: 'rgba(168, 85, 247, 0.9)', label: '#a855f7' },
 ];
 
 const HEADER_COLOR = {
@@ -162,16 +190,48 @@ function isPointInPolygon(px, py, polygon) {
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function ParagraphsPanel({ paragraphs, labelColor, textColor, sectionBg, borderColor }) {
+function ParagraphsPanel({ paragraphs, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
   if (!paragraphs.length) return <Text color={labelColor}>No paragraphs extracted.</Text>;
   return (
     <VStack align="stretch" spacing={2}>
-      {paragraphs.map((text, i) => (
-        <Box key={i} p={3} rounded="xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
-          <Text fontSize="xs" color={labelColor} mb={1}>#{i + 1}</Text>
-          <Text fontSize="sm" color={textColor} whiteSpace="pre-wrap">{text}</Text>
-        </Box>
-      ))}
+      {paragraphs.map((p, i) => {
+        const text = typeof p === 'string' ? p : p.text;
+        const bounds = typeof p === 'string' ? null : p.boundingRegions;
+        return (
+          <Box
+            key={i}
+            p={3}
+            rounded="xl"
+            bg={sectionBg}
+            borderWidth="1px"
+            borderColor={borderColor}
+            transition="all 0.2s"
+            _hover={{
+              borderColor: bounds && bounds.length > 0 ? 'brand.400' : borderColor,
+              shadow: bounds && bounds.length > 0 ? 'sm' : 'none',
+              cursor: bounds && bounds.length > 0 ? 'pointer' : 'default',
+            }}
+            onMouseEnter={() => {
+              if (bounds && bounds.length > 0 && onHoverItem) {
+                onHoverItem({
+                  bounds,
+                  type: 'paragraph',
+                  label: `Paragraph #${i + 1}`,
+                  colorIndex: 0,
+                });
+              }
+            }}
+            onMouseLeave={() => {
+              if (bounds && bounds.length > 0 && onHoverItem) {
+                onHoverItem(null);
+              }
+            }}
+          >
+            <Text fontSize="xs" color={labelColor} mb={1}>#{i + 1}</Text>
+            <Text fontSize="sm" color={textColor} whiteSpace="pre-wrap">{text}</Text>
+          </Box>
+        );
+      })}
     </VStack>
   );
 }
@@ -189,10 +249,10 @@ function TableExportModal({ tables, isOpen, onClose, labelColor, textColor, sect
       csvContent.push(`"${tbl.title}"`);
 
       if (tbl.headers.length > 0) {
-        csvContent.push(tbl.headers.map(h => `"${h}"`).join(','));
+        csvContent.push(tbl.headers.map(h => `"${typeof h === 'string' ? h : h.text}"`).join(','));
       }
       tbl.rows.forEach(row => {
-        csvContent.push(row.map(cell => `"${cell}"`).join(','));
+        csvContent.push(row.map(cell => `"${typeof cell === 'string' ? cell : cell.text}"`).join(','));
       });
     });
 
@@ -254,7 +314,7 @@ function TableExportModal({ tables, isOpen, onClose, labelColor, textColor, sect
   );
 }
 
-function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor }) {
+function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
   const [modalOpen, setModalOpen] = React.useState(false);
 
   if (!tables.length) return <Text color={labelColor}>No tables extracted.</Text>;
@@ -268,35 +328,129 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor }) 
             Export to CSV
           </Button>
         </HStack>
-        {tables.map((tbl, ti) => (
-          <Box key={ti} rounded="2xl" borderWidth="1px" borderColor={borderColor} overflow="hidden">
-            <HStack px={4} py={2} bg={sectionBg} borderBottomWidth="1px" borderColor={borderColor} justify="space-between">
-              <Text fontSize="sm" fontWeight="semibold" color={textColor}>{tbl.title}</Text>
-            </HStack>
-            <TableContainer overflowX="auto">
-              <Table variant="simple" size="sm">
-                {tbl.headers.length > 0 && (
-                  <Thead bg={sectionBg}>
-                    <Tr>
-                      {tbl.headers.map((h, hi) => (
-                        <Th key={hi} color={labelColor} fontSize="xs" textTransform="uppercase">{h}</Th>
-                      ))}
-                    </Tr>
-                  </Thead>
-                )}
-                <Tbody>
-                  {tbl.rows.map((row, ri) => (
-                    <Tr key={ri}>
-                      {row.map((cell, ci) => (
-                        <Td key={ci} fontSize="sm" color={textColor} isNumeric={isNumericCell(cell)}>{cell}</Td>
-                      ))}
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </TableContainer>
-          </Box>
-        ))}
+        {tables.map((tbl, ti) => {
+          const tableBounds = tbl.tableBounds ?? [];
+          return (
+            <Box
+              key={ti}
+              rounded="2xl"
+              borderWidth="1px"
+              borderColor={borderColor}
+              overflow="hidden"
+              onMouseEnter={() => {
+                if (tableBounds.length > 0 && onHoverItem) {
+                  onHoverItem({
+                    bounds: tableBounds,
+                    type: 'table',
+                    label: tbl.title,
+                    colorIndex: ti,
+                  });
+                }
+              }}
+              onMouseLeave={() => {
+                if (tableBounds.length > 0 && onHoverItem) {
+                  onHoverItem(null);
+                }
+              }}
+              _hover={{
+                borderColor: 'brand.300',
+                shadow: 'md',
+              }}
+              transition="all 0.2s"
+            >
+              <HStack px={4} py={2} bg={sectionBg} borderBottomWidth="1px" borderColor={borderColor} justify="space-between">
+                <Text fontSize="sm" fontWeight="semibold" color={textColor}>{tbl.title}</Text>
+              </HStack>
+              <TableContainer overflowX="auto">
+                <Table variant="simple" size="sm">
+                  {tbl.headers.length > 0 && (
+                    <Thead bg={sectionBg}>
+                      <Tr>
+                        {tbl.headers.map((h, hi) => {
+                          const hText = typeof h === 'string' ? h : h.text;
+                          const hBounds = typeof h === 'string' ? null : h.boundingRegions;
+                          return (
+                            <Th
+                              key={hi}
+                              color={labelColor}
+                              fontSize="xs"
+                              textTransform="uppercase"
+                              onMouseEnter={(e) => {
+                                if (hBounds && hBounds.length > 0 && onHoverItem) {
+                                  e.stopPropagation();
+                                  onHoverItem({
+                                    bounds: hBounds,
+                                    type: 'cell',
+                                    label: `${tbl.title} Header: ${hText}`,
+                                    colorIndex: ti,
+                                  });
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                if (hBounds && hBounds.length > 0 && onHoverItem) {
+                                  onHoverItem(null);
+                                }
+                              }}
+                              _hover={{
+                                bg: 'brand.50',
+                                color: 'brand.600',
+                              }}
+                              style={{ cursor: hBounds && hBounds.length > 0 ? 'pointer' : 'default' }}
+                            >
+                              {hText}
+                            </Th>
+                          );
+                        })}
+                      </Tr>
+                    </Thead>
+                  )}
+                  <Tbody>
+                    {tbl.rows.map((row, ri) => (
+                      <Tr key={ri}>
+                        {row.map((cell, ci) => {
+                          const cellText = typeof cell === 'string' ? cell : cell.text;
+                          const cellBounds = typeof cell === 'string' ? null : cell.boundingRegions;
+                          return (
+                            <Td
+                              key={ci}
+                              fontSize="sm"
+                              color={textColor}
+                              isNumeric={isNumericCell(cellText)}
+                              onMouseEnter={(e) => {
+                                if (cellBounds && cellBounds.length > 0 && onHoverItem) {
+                                  e.stopPropagation();
+                                  onHoverItem({
+                                    bounds: cellBounds,
+                                    type: 'cell',
+                                    label: `${tbl.title} Cell (${ri + 1}, ${ci + 1}): ${cellText}`,
+                                    colorIndex: ti,
+                                  });
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                if (cellBounds && cellBounds.length > 0 && onHoverItem) {
+                                  onHoverItem(null);
+                                }
+                              }}
+                              _hover={{
+                                bg: 'brand.50',
+                                color: 'brand.700',
+                                fontWeight: 'medium',
+                              }}
+                              style={{ cursor: cellBounds && cellBounds.length > 0 ? 'pointer' : 'default' }}
+                            >
+                              {cellText}
+                            </Td>
+                          );
+                        })}
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            </Box>
+          );
+        })}
       </VStack>
 
       <TableExportModal
@@ -312,15 +466,33 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor }) 
   );
 }
 
-function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor }) {
+function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
   if (!fields || !Object.keys(fields).length)
     return <Text color={labelColor}>No form fields extracted.</Text>;
 
+  const getFieldValueText = (val) => {
+    if (val === null || val === undefined) return '—';
+    if (typeof val !== 'object') return String(val);
+    if ('valueString' in val) return String(val.valueString);
+    if ('valueDate' in val) return String(val.valueDate);
+    if ('valueNumber' in val) return String(val.valueNumber);
+    if ('valueInteger' in val) return String(val.valueInteger);
+    if ('valuePhoneNumber' in val) return String(val.valuePhoneNumber);
+    if ('valueSelectionMark' in val) return String(val.valueSelectionMark);
+    if ('valueSignature' in val) return String(val.valueSignature);
+    if ('valueCountryRegion' in val) return String(val.valueCountryRegion);
+    if ('content' in val) return String(val.content);
+    return null;
+  };
+
   const renderValue = (value, depth = 0) => {
     if (value === null || value === undefined) return <Text fontSize="sm" color={labelColor}>—</Text>;
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      return <Text fontSize="sm" color={textColor}>{String(value)}</Text>;
+
+    const textVal = getFieldValueText(value);
+    if (textVal !== null) {
+      return <Text fontSize="sm" color={textColor}>{textVal}</Text>;
     }
+
     if (Array.isArray(value)) {
       return (
         <VStack align="stretch" spacing={1} pl={depth > 0 ? 3 : 0}>
@@ -346,12 +518,17 @@ function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor }) 
     if (typeof value === 'object') {
       return (
         <VStack align="stretch" spacing={1} pl={depth > 0 ? 3 : 0}>
-          {Object.entries(value).map(([k, v]) => (
-            <Box key={k}>
-              <Text fontSize="xs" color={labelColor} fontWeight="semibold">{k}</Text>
-              {renderValue(v, depth + 1)}
-            </Box>
-          ))}
+          {Object.entries(value).map(([k, v]) => {
+            if (['boundingRegions', 'spans', 'type', 'content', 'confidence', 'valueString', 'valueDate', 'valueNumber', 'valueInteger', 'valuePhoneNumber', 'valueSelectionMark', 'valueSignature', 'valueCountryRegion'].includes(k)) {
+              return null;
+            }
+            return (
+              <Box key={k}>
+                <Text fontSize="xs" color={labelColor} fontWeight="semibold">{k}</Text>
+                {renderValue(v, depth + 1)}
+              </Box>
+            );
+          })}
         </VStack>
       );
     }
@@ -360,14 +537,45 @@ function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor }) 
 
   return (
     <VStack align="stretch" spacing={2}>
-      {Object.entries(fields).map(([key, value]) => (
-        <Box key={key} p={3} rounded="xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
-          <Text fontSize="xs" color={labelColor} mb={1} fontWeight="semibold" textTransform="uppercase">
-            {key}
-          </Text>
-          {renderValue(value)}
-        </Box>
-      ))}
+      {Object.entries(fields).map(([key, value]) => {
+        const bounds = value?.boundingRegions ?? null;
+        return (
+          <Box
+            key={key}
+            p={3}
+            rounded="xl"
+            bg={sectionBg}
+            borderWidth="1px"
+            borderColor={borderColor}
+            transition="all 0.2s"
+            _hover={{
+              borderColor: bounds && bounds.length > 0 ? 'brand.400' : borderColor,
+              shadow: bounds && bounds.length > 0 ? 'sm' : 'none',
+              cursor: bounds && bounds.length > 0 ? 'pointer' : 'default',
+            }}
+            onMouseEnter={() => {
+              if (bounds && bounds.length > 0 && onHoverItem) {
+                onHoverItem({
+                  bounds,
+                  type: 'field',
+                  label: `Field: ${key}`,
+                  colorIndex: 3,
+                });
+              }
+            }}
+            onMouseLeave={() => {
+              if (bounds && bounds.length > 0 && onHoverItem) {
+                onHoverItem(null);
+              }
+            }}
+          >
+            <Text fontSize="xs" color={labelColor} mb={1} fontWeight="semibold" textTransform="uppercase">
+              {key}
+            </Text>
+            {renderValue(value)}
+          </Box>
+        );
+      })}
     </VStack>
   );
 }
@@ -390,6 +598,88 @@ function RawTextPanel({ rawText, textColor, sectionBg, borderColor }) {
   );
 }
 
+function AiPromptPanel({
+  prompt,
+  setPrompt,
+  apiResponse,
+  onSendPrompt,
+  loading,
+  error,
+  labelColor,
+  textColor,
+  sectionBg,
+  borderColor,
+}) {
+  return (
+    <VStack align="stretch" spacing={4}>
+      {/* <Text fontSize="sm" color={labelColor}>
+        Write your prompt below. On submit, your prompt and the OCR result from this document will be sent together.
+      </Text> */}
+
+      <FormControl isRequired>
+        <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
+          AI Prompt
+        </FormLabel>
+        <Textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="e.g. Summarize this invoice, extract total amount, list all line items..."
+          minH="160px"
+          resize="vertical"
+          borderRadius="xl"
+          bg={sectionBg}
+          borderColor={borderColor}
+          color={textColor}
+          _placeholder={{ color: labelColor }}
+          _focus={{ borderColor: 'brand.400', boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)' }}
+        />
+      </FormControl>
+
+      {error && (
+        <Alert status="error" borderRadius="xl">
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
+
+      <Button
+        leftIcon={<Icon as={FiSend} />}
+        colorScheme="brand"
+        onClick={onSendPrompt}
+        isLoading={loading}
+        loadingText="Sending..."
+        isDisabled={!prompt.trim()}
+        borderRadius="xl"
+        alignSelf="flex-start"
+        px={6}
+      >
+        Submit Prompt
+      </Button>
+
+      {apiResponse && (
+        <FormControl>
+          <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
+            AI Response
+          </FormLabel>
+          <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
+            <Code
+              display="block"
+              whiteSpace="pre-wrap"
+              fontSize="xs"
+              colorScheme="gray"
+              color={textColor}
+              maxH="400px"
+              overflowY="auto"
+            >
+              {apiResponse}
+            </Code>
+          </Box>
+        </FormControl>
+      )}
+    </VStack>
+  );
+}
+
 // ─── BoundingBoxOverlay ───────────────────────────────────────────────────────
 
 /**
@@ -407,12 +697,12 @@ function RawTextPanel({ rawText, textColor, sectionBg, borderColor }) {
  */
 function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, borderColor, textColor, labelColor }) {
   const containerRef = useRef(null);
-  const canvasRef    = useRef(null);
-  const imgRef       = useRef(null);
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
 
-  const [imgLoaded,       setImgLoaded]       = useState(false);
-  const [showCells,       setShowCells]        = useState(true);
-  const [showTableBounds, setShowTableBounds]  = useState(true);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [showCells, setShowCells] = useState(true);
+  const [showTableBounds, setShowTableBounds] = useState(true);
 
   // Azure Document Intelligence polygon coords are in INCHES from page top-left.
   //
@@ -440,17 +730,17 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
 
   const drawBoxes = useCallback(() => {
     const canvas = canvasRef.current;
-    const img    = imgRef.current;
+    const img = imgRef.current;
     if (!canvas || !img || !imgLoaded) return;
 
-    const rect     = img.getBoundingClientRect();
+    const rect = img.getBoundingClientRect();
     const displayW = rect.width;
     const displayH = rect.height;
 
     const dpr = window.devicePixelRatio || 1;
-    canvas.width        = displayW * dpr;
-    canvas.height       = displayH * dpr;
-    canvas.style.width  = `${displayW}px`;
+    canvas.width = displayW * dpr;
+    canvas.height = displayH * dpr;
+    canvas.style.width = `${displayW}px`;
     canvas.style.height = `${displayH}px`;
 
     const ctx = canvas.getContext('2d');
@@ -473,10 +763,10 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
         ctx.lineTo(polygon[i].x * scaleX, polygon[i].y * scaleY);
       }
       ctx.closePath();
-      ctx.fillStyle   = fillColor;
+      ctx.fillStyle = fillColor;
       ctx.fill();
       ctx.strokeStyle = strokeColor;
-      ctx.lineWidth   = lineWidth;
+      ctx.lineWidth = lineWidth;
       ctx.stroke();
     };
 
@@ -493,12 +783,12 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
           const minX = Math.min(...region.polygon.map((p) => p.x)) * scaleX;
           const minY = Math.min(...region.polygon.map((p) => p.y)) * scaleY;
 
-          const labelText   = tbl.title;
-          ctx.font          = 'bold 11px Inter, system-ui, sans-serif';
-          const metrics     = ctx.measureText(labelText);
-          const labelW      = metrics.width + 14;
-          const labelH      = 20;
-          const labelY      = minY - labelH - 4;
+          const labelText = tbl.title;
+          ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+          const metrics = ctx.measureText(labelText);
+          const labelW = metrics.width + 14;
+          const labelH = 20;
+          const labelY = minY - labelH - 4;
 
           // Badge background
           ctx.fillStyle = color.stroke;
@@ -507,7 +797,7 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
           ctx.fill();
 
           // Badge text
-          ctx.fillStyle    = '#ffffff';
+          ctx.fillStyle = '#ffffff';
           ctx.textBaseline = 'middle';
           ctx.fillText(labelText, minX + 7, labelY + labelH / 2);
         });
@@ -660,9 +950,9 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
       {/* Summary cards per table */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
         {boundingData.map((tbl, idx) => {
-          const color       = BOX_COLORS[idx % BOX_COLORS.length];
+          const color = BOX_COLORS[idx % BOX_COLORS.length];
           const headerCount = tbl.cells.filter((c) => c.kind === 'columnHeader').length;
-          const cellCount   = tbl.cells.length - headerCount;
+          const cellCount = tbl.cells.length - headerCount;
           return (
             <Box key={idx} p={3} rounded="xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
               <HStack mb={2} spacing={2}>
@@ -675,7 +965,7 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
               </HStack>
               <HStack spacing={3}>
                 <Badge colorScheme="yellow" fontSize="10px">{headerCount} headers</Badge>
-                <Badge colorScheme="blue"   fontSize="10px">{cellCount} cells</Badge>
+                <Badge colorScheme="blue" fontSize="10px">{cellCount} cells</Badge>
               </HStack>
             </Box>
           );
@@ -689,31 +979,192 @@ function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, border
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function OcrUploader() {
-  const [file,              setFile]              = useState(null);
-  const [fileUrl,           setFileUrl]           = useState(null);   // object URL for image/pdf-render preview
-  const [fileType,          setFileType]          = useState(null);   // 'image' | 'pdf'
+  const [file, setFile] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);   // object URL for image/pdf-render preview
+  const [fileType, setFileType] = useState(null);   // 'image' | 'pdf'
   const pdfFileRef = useRef(null);                                     // holds raw PDF File for rendering
-  const [isDragging,        setIsDragging]        = useState(false);
-  const [pages,             setPages]             = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [pages, setPages] = useState('');
   const [extractParagraphs, setExtractParagraphs] = useState(true);
-  const [extractTables,     setExtractTables]     = useState(false);
-  const [extractFields,     setExtractFields]     = useState(false);
-  const [loading,           setLoading]           = useState(false);
-  const [parsed,            setParsed]            = useState(null);
-  const [error,             setError]             = useState(null);
+  const [extractTables, setExtractTables] = useState(false);
+  const [extractFields, setExtractFields] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [parsed, setParsed] = useState(null);
+  const [error, setError] = useState(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
-  const bg          = useColorModeValue('gray.50',  'gray.950');
-  const cardBg      = useColorModeValue('white',    'gray.800');
+  // States and refs for preview highlight overlay
+  const previewCanvasRef = useRef(null);
+  const previewImgRef = useRef(null);
+  const [previewImgLoaded, setPreviewImgLoaded] = useState(false);
+  const [hoveredBounds, setHoveredBounds] = useState(null);
+
+  const bg = useColorModeValue('gray.50', 'gray.950');
+  const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const labelColor  = useColorModeValue('gray.600', 'gray.300');
-  const textColor   = useColorModeValue('gray.700', 'gray.100');
-  const sectionBg   = useColorModeValue('gray.50',  'gray.900');
-  const statBg      = useColorModeValue('gray.100', 'gray.700');
-  const dragBg      = useColorModeValue('brand.50', 'brand.900');
-  const fileIconBg    = useColorModeValue('blue.50',  'blue.900');
+  const labelColor = useColorModeValue('gray.600', 'gray.300');
+  const textColor = useColorModeValue('gray.700', 'gray.100');
+  const sectionBg = useColorModeValue('gray.50', 'gray.900');
+  const statBg = useColorModeValue('gray.100', 'gray.700');
+  const dragBg = useColorModeValue('brand.50', 'brand.900');
+  const fileIconBg = useColorModeValue('blue.50', 'blue.900');
   const fileIconColor = useColorModeValue('blue.600', 'blue.200');
 
   const { themeStore: { themeConfig } } = stores;
+
+  // States and refs for zoom, rotation, and panning
+  const [zoom, setZoom] = useState(1.0);
+  const [rotation, setRotation] = useState(0);
+  const viewportRef = useRef(null);
+  const isMouseDownRef = useRef(false);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const scrollTopRef = useRef(0);
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3.0));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
+  const handleRotateCw = () => setRotation(prev => (prev + 90) % 360);
+  const handleRotateCcw = () => setRotation(prev => (prev - 90 + 360) % 360);
+  const handleResetZoom = () => {
+    setZoom(1.0);
+    setRotation(0);
+    if (viewportRef.current) {
+      viewportRef.current.scrollLeft = 0;
+      viewportRef.current.scrollTop = 0;
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return; // Only left click drag
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    isMouseDownRef.current = true;
+    startXRef.current = e.pageX - viewport.offsetLeft;
+    startYRef.current = e.pageY - viewport.offsetTop;
+    scrollLeftRef.current = viewport.scrollLeft;
+    scrollTopRef.current = viewport.scrollTop;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isMouseDownRef.current) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    e.preventDefault();
+    const x = e.pageX - viewport.offsetLeft;
+    const y = e.pageY - viewport.offsetTop;
+    const walkX = (x - startXRef.current) * 1.5;
+    const walkY = (y - startYRef.current) * 1.5;
+    viewport.scrollLeft = scrollLeftRef.current - walkX;
+    viewport.scrollTop = scrollTopRef.current - walkY;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isMouseDownRef.current = false;
+  };
+
+  // Compute page width in inches dynamically from all coordinates
+  const pageWidthInches = useMemo(() => {
+    let maxX = 0;
+    if (parsed?.tables) {
+      parsed.tables.forEach((tbl) => {
+        tbl.tableBounds?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
+        tbl.headers?.forEach((h) => h.boundingRegions?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; })));
+        tbl.rows?.forEach((row) => row.forEach((c) => c.boundingRegions?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }))));
+      });
+    }
+    if (parsed?.paragraphs && Array.isArray(parsed.paragraphs)) {
+      parsed.paragraphs.forEach((p) => {
+        if (p.boundingRegions) {
+          p.boundingRegions.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
+        }
+      });
+    }
+    if (parsed?.fields && typeof parsed.fields === 'object') {
+      Object.values(parsed.fields).forEach((val) => {
+        if (val && typeof val === 'object' && val.boundingRegions) {
+          val.boundingRegions.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
+        }
+      });
+    }
+    return maxX > 6 ? maxX + 0.15 : 8.5;
+  }, [parsed]);
+
+  const drawPreviewBoxes = useCallback(() => {
+    const canvas = previewCanvasRef.current;
+    const img = previewImgRef.current;
+    if (!canvas || !img || !previewImgLoaded) return;
+
+    // Set canvas dimensions to image's natural dimensions to scale naturally
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, width, height);
+
+    if (hoveredBounds && hoveredBounds.bounds && hoveredBounds.bounds.length > 0) {
+      const scaleX = width / pageWidthInches;
+      const scaleY = height / (pageWidthInches * (height / width));
+
+      const drawPolygon = (polygon, fillColor, strokeColor, lineWidth = 2) => {
+        if (!polygon || polygon.length < 3) return;
+        ctx.beginPath();
+        ctx.moveTo(polygon[0].x * scaleX, polygon[0].y * scaleY);
+        for (let i = 1; i < polygon.length; i++) {
+          ctx.lineTo(polygon[i].x * scaleX, polygon[i].y * scaleY);
+        }
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth * (width / 500);
+        ctx.stroke();
+      };
+
+      const color = BOX_COLORS[hoveredBounds.colorIndex % BOX_COLORS.length];
+
+      hoveredBounds.bounds.forEach((region) => {
+        if (!region.polygon) return;
+        const fill = hoveredBounds.type === 'cell' ? 'rgba(251, 191, 36, 0.35)' : color.fill.replace('0.12', '0.25').replace('0.22', '0.4').replace('0.05', '0.2');
+        const stroke = hoveredBounds.type === 'cell' ? '#fbbf24' : color.stroke;
+
+        drawPolygon(region.polygon, fill, stroke, 2);
+
+        if (hoveredBounds.label) {
+          const minX = Math.min(...region.polygon.map((p) => p.x)) * scaleX;
+          const minY = Math.min(...region.polygon.map((p) => p.y)) * scaleY;
+
+          const labelText = hoveredBounds.label;
+          const fontSize = Math.max(12, Math.round(width / 60));
+          ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
+          const metrics = ctx.measureText(labelText);
+          const labelW = metrics.width + fontSize * 1.2;
+          const labelH = fontSize * 1.8;
+          const labelY = minY - labelH - 4 > 0 ? minY - labelH - 4 : minY + 4;
+
+          ctx.fillStyle = stroke;
+          ctx.beginPath();
+          ctx.roundRect(minX, labelY, labelW, labelH, fontSize / 4);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(labelText, minX + fontSize * 0.6, labelY + labelH / 2);
+        }
+      });
+    }
+  }, [hoveredBounds, previewImgLoaded, pageWidthInches]);
+
+  useEffect(() => {
+    drawPreviewBoxes();
+  }, [drawPreviewBoxes]);
 
   // ── file selection helpers ─────────────────────────────────────────────────
 
@@ -734,15 +1185,15 @@ export default function OcrUploader() {
       }
 
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf         = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page        = await pdf.getPage(1);
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
 
       // Render at 2x scale for crisp display
-      const scale    = 2;
+      const scale = 2;
       const viewport = page.getViewport({ scale });
-      const canvas   = document.createElement('canvas');
-      canvas.width   = viewport.width;
-      canvas.height  = viewport.height;
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
 
       await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
       return canvas.toDataURL('image/png');
@@ -755,6 +1206,10 @@ export default function OcrUploader() {
   const applyFile = useCallback(async (selected) => {
     if (!selected) return;
     setFile(selected);
+    setPreviewImgLoaded(false);
+    setHoveredBounds(null);
+    setZoom(1.0);
+    setRotation(0);
 
     // Revoke previous object URL to avoid memory leak (only for blob: URLs, not data: URLs)
     if (fileUrl && fileUrl.startsWith('blob:')) URL.revokeObjectURL(fileUrl);
@@ -790,6 +1245,10 @@ export default function OcrUploader() {
     setPages('');
     setError(null);
     setIsDragging(false);
+    setPreviewImgLoaded(false);
+    setHoveredBounds(null);
+    setZoom(1.0);
+    setRotation(0);
   };
 
   // Cleanup URL on unmount
@@ -806,6 +1265,9 @@ export default function OcrUploader() {
     setLoading(true);
     setError(null);
     setParsed(null);
+    setHoveredBounds(null);
+    setZoom(1.0);
+    setRotation(0);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -829,11 +1291,41 @@ export default function OcrUploader() {
     }
   };
 
+  const handleSendAiPrompt = async () => {
+    if (!aiPrompt.trim()) {
+      setAiError('Please enter a prompt.');
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError(null);
+
+    try {
+      // TODO: Connect AI prompt API here
+      // const response = await fetch(`${BACKEND_URL}/api/ai/prompt`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ prompt: aiPrompt, ocrResponse: parsed }),
+      // });
+      // const data = await response.json();
+      // if (!response.ok) throw new Error(data.error || 'AI request failed');
+      // setAiResponse(data.response ?? JSON.stringify(data, null, 2));
+
+      setAiResponse(
+        `Prompt ready for API integration.\n\nPrompt:\n${aiPrompt.trim()}\n\nOCR response will be sent automatically from the current parsed result.`
+      );
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   // Determine which result tabs to show
-  const showParagraphsTab  = extractParagraphs && parsed?.paragraphs?.length > 0;
-  const showTablesTab      = extractTables     && parsed?.tables?.length > 0;
-  const showFieldsTab      = extractFields     && parsed?.fields && Object.keys(parsed.fields).length > 0;
-  const showBoundingBoxTab = extractTables     && parsed?.boundingData?.length > 0;
+  const showParagraphsTab = extractParagraphs && parsed?.paragraphs?.length > 0;
+  const showTablesTab = extractTables && parsed?.tables?.length > 0;
+  const showFieldsTab = extractFields && parsed?.fields && Object.keys(parsed.fields).length > 0;
+  const showBoundingBoxTab = extractTables && parsed?.boundingData?.length > 0;
   const showForm = !parsed;
 
   return (
@@ -853,199 +1345,198 @@ export default function OcrUploader() {
                 </Text>
               </Box>
 
-              {/* Form */}
               {showForm && (
                 <Box as="form" onSubmit={handleSubmit}>
                   <VStack spacing={5} align="stretch">
 
                     {/* Upload zone */}
-                  <FormControl>
-                    <FormLabel color={labelColor} fontSize="sm" fontWeight="medium" mb={2}>
-                      Upload file
-                    </FormLabel>
+                    <FormControl>
+                      <FormLabel color={labelColor} fontSize="sm" fontWeight="medium" mb={2}>
+                        Upload file
+                      </FormLabel>
 
-                    <Box
-                      position="relative"
-                      border="1.5px dashed"
-                      borderColor={isDragging ? 'brand.400' : borderColor}
-                      borderRadius="xl"
-                      bg={isDragging ? dragBg : 'transparent'}
-                      py={8}
-                      px={4}
-                      textAlign="center"
-                      cursor="pointer"
-                      transition="all 0.15s"
-                      _hover={{ borderColor: 'brand.400', bg: dragBg }}
-                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                      onDragLeave={() => setIsDragging(false)}
-                      onDrop={handleDrop}
-                    >
-                      <Input
-                        type="file"
-                        accept="application/pdf,image/*"
-                        onChange={handleFileChange}
-                        position="absolute"
-                        top={0} left={0}
-                        width="100%" height="100%"
-                        opacity={0}
+                      <Box
+                        position="relative"
+                        border="1.5px dashed"
+                        borderColor={isDragging ? 'brand.400' : borderColor}
+                        borderRadius="xl"
+                        bg={isDragging ? dragBg : 'transparent'}
+                        py={8}
+                        px={4}
+                        textAlign="center"
                         cursor="pointer"
-                        zIndex={1}
-                      />
-                      <VStack spacing={2} pointerEvents="none">
-                        <Box
-                          w={11} h={11} borderRadius="lg" bg={sectionBg}
-                          display="flex" alignItems="center" justifyContent="center" mx="auto"
-                        >
-                          <Icon as={FiUpload} boxSize={5} color={labelColor} />
-                        </Box>
-                        <Text fontSize="sm" fontWeight="medium" color={textColor}>
-                          Drop your file here
-                        </Text>
-                        <Text fontSize="xs" color={labelColor}>
-                          or{' '}
-                          <Text as="span" color="brand.400" fontWeight="medium">
-                            browse to upload
+                        transition="all 0.15s"
+                        _hover={{ borderColor: 'brand.400', bg: dragBg }}
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={handleDrop}
+                      >
+                        <Input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          onChange={handleFileChange}
+                          position="absolute"
+                          top={0} left={0}
+                          width="100%" height="100%"
+                          opacity={0}
+                          cursor="pointer"
+                          zIndex={1}
+                        />
+                        <VStack spacing={2} pointerEvents="none">
+                          <Box
+                            w={11} h={11} borderRadius="lg" bg={sectionBg}
+                            display="flex" alignItems="center" justifyContent="center" mx="auto"
+                          >
+                            <Icon as={FiUpload} boxSize={5} color={labelColor} />
+                          </Box>
+                          <Text fontSize="sm" fontWeight="medium" color={textColor}>
+                            Drop your file here
                           </Text>
+                          <Text fontSize="xs" color={labelColor}>
+                            or{' '}
+                            <Text as="span" color="brand.400" fontWeight="medium">
+                              browse to upload
+                            </Text>
+                          </Text>
+                        </VStack>
+                      </Box>
+
+                      <HStack spacing={2} mt={2} flexWrap="wrap">
+                        {['PDF', 'JPG', 'PNG', 'Max 10 MB'].map((t) => (
+                          <Badge key={t} variant="subtle" colorScheme="gray" fontSize="10px" borderRadius="full" px={2}>
+                            {t}
+                          </Badge>
+                        ))}
+                      </HStack>
+
+                      {file && (
+                        <HStack
+                          mt={3} p={2} pl={3}
+                          bg={cardBg}
+                          borderWidth="1px" borderColor={borderColor}
+                          borderRadius="lg"
+                          spacing={3}
+                        >
+                          <Box
+                            w={8} h={8} borderRadius="md" bg={fileIconBg}
+                            display="flex" alignItems="center" justifyContent="center"
+                            flexShrink={0}
+                          >
+                            <Icon as={FiFile} boxSize={4} color={fileIconColor} />
+                          </Box>
+                          <Box flex={1} minW={0}>
+                            <Text fontSize="sm" fontWeight="medium" color={textColor} noOfLines={1}>
+                              {file.name}
+                            </Text>
+                            <Text fontSize="xs" color={labelColor}>
+                              {(file.size / 1024).toFixed(1)} KB
+                              {fileType && (
+                                <Badge ml={2} fontSize="9px" colorScheme={fileType === 'image' ? 'green' : 'blue'}>
+                                  {fileType === 'image' ? 'Image' : 'PDF'}
+                                </Badge>
+                              )}
+                            </Text>
+                          </Box>
+                          <IconButton
+                            size="xs" variant="ghost"
+                            aria-label="Remove file"
+                            icon={<Icon as={FiX} boxSize={3.5} />}
+                            onClick={removeFile}
+                            colorScheme="gray"
+                            mr={1}
+                          />
+                        </HStack>
+                      )}
+                    </FormControl>
+
+                    {/* Page range */}
+                    <FormControl>
+                      <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
+                        Page range
+                      </FormLabel>
+                      <Input
+                        value={pages}
+                        onChange={(e) => setPages(e.target.value)}
+                        placeholder="blank = all pages · 3 · 1-4"
+                        borderRadius="xl"
+                        bg={sectionBg}
+                      />
+                      <Text fontSize="xs" color={labelColor} mt={1.5}>
+                        Will extract:{' '}
+                        <Text as="span" color={textColor} fontWeight="medium">
+                          {(() => {
+                            const val = pages.trim().toLowerCase();
+                            if (!val || val === 'all') return 'all pages';
+                            if (/^\d+-\d+$/.test(val)) return `pages ${val}`;
+                            return `page ${val}`;
+                          })()}
                         </Text>
+                        {' '}·{' '}
+                        <Text as="span" fontWeight="medium" color={textColor}>blank / "all"</Text> = every page,{' '}
+                        <Text as="span" fontWeight="medium" color={textColor}>3</Text> = only page 3,{' '}
+                        <Text as="span" fontWeight="medium" color={textColor}>1-4</Text> = pages 1–4
+                      </Text>
+                    </FormControl>
+
+                    {/* Extract options */}
+                    <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
+                      <Text fontWeight="semibold" mb={3} color={textColor} fontSize="sm">
+                        Extract options
+                      </Text>
+                      <VStack spacing={3} align="start">
+                        <Checkbox
+                          isChecked={extractParagraphs}
+                          onChange={(e) => setExtractParagraphs(e.target.checked)}
+                          colorScheme="brand"
+                        >
+                          <Text fontSize="sm">Paragraphs</Text>
+                        </Checkbox>
+                        <Checkbox
+                          isChecked={extractTables}
+                          onChange={(e) => setExtractTables(e.target.checked)}
+                          colorScheme="brand"
+                        >
+                          <HStack spacing={2}>
+                            <Text fontSize="sm">Tables</Text>
+                            <Badge fontSize="9px" colorScheme="purple">+ bounding boxes</Badge>
+                          </HStack>
+                        </Checkbox>
+                        <Checkbox
+                          isChecked={extractFields}
+                          onChange={(e) => setExtractFields(e.target.checked)}
+                          colorScheme="brand"
+                        >
+                          <Text fontSize="sm">Form fields</Text>
+                        </Checkbox>
                       </VStack>
                     </Box>
 
-                    <HStack spacing={2} mt={2} flexWrap="wrap">
-                      {['PDF', 'JPG', 'PNG', 'Max 10 MB'].map((t) => (
-                        <Badge key={t} variant="subtle" colorScheme="gray" fontSize="10px" borderRadius="full" px={2}>
-                          {t}
-                        </Badge>
-                      ))}
-                    </HStack>
-
-                    {file && (
-                      <HStack
-                        mt={3} p={2} pl={3}
-                        bg={cardBg}
-                        borderWidth="1px" borderColor={borderColor}
-                        borderRadius="lg"
-                        spacing={3}
-                      >
-                        <Box
-                          w={8} h={8} borderRadius="md" bg={fileIconBg}
-                          display="flex" alignItems="center" justifyContent="center"
-                          flexShrink={0}
-                        >
-                          <Icon as={FiFile} boxSize={4} color={fileIconColor} />
-                        </Box>
-                        <Box flex={1} minW={0}>
-                          <Text fontSize="sm" fontWeight="medium" color={textColor} noOfLines={1}>
-                            {file.name}
-                          </Text>
-                          <Text fontSize="xs" color={labelColor}>
-                            {(file.size / 1024).toFixed(1)} KB
-                            {fileType && (
-                              <Badge ml={2} fontSize="9px" colorScheme={fileType === 'image' ? 'green' : 'blue'}>
-                                {fileType === 'image' ? 'Image' : 'PDF'}
-                              </Badge>
-                            )}
-                          </Text>
-                        </Box>
-                        <IconButton
-                          size="xs" variant="ghost"
-                          aria-label="Remove file"
-                          icon={<Icon as={FiX} boxSize={3.5} />}
-                          onClick={removeFile}
-                          colorScheme="gray"
-                          mr={1}
-                        />
-                      </HStack>
+                    {error && (
+                      <Alert status="error" borderRadius="xl">
+                        <AlertIcon />
+                        {error}
+                      </Alert>
                     )}
-                  </FormControl>
 
-                  {/* Page range */}
-                  <FormControl>
-                    <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
-                      Page range
-                    </FormLabel>
-                    <Input
-                      value={pages}
-                      onChange={(e) => setPages(e.target.value)}
-                      placeholder="blank = all pages · 3 · 1-4"
-                      borderRadius="xl"
-                      bg={sectionBg}
-                    />
-                    <Text fontSize="xs" color={labelColor} mt={1.5}>
-                      Will extract:{' '}
-                      <Text as="span" color={textColor} fontWeight="medium">
-                        {(() => {
-                          const val = pages.trim().toLowerCase();
-                          if (!val || val === 'all') return 'all pages';
-                          if (/^\d+-\d+$/.test(val)) return `pages ${val}`;
-                          return `page ${val}`;
-                        })()}
-                      </Text>
-                      {' '}·{' '}
-                      <Text as="span" fontWeight="medium" color={textColor}>blank / "all"</Text> = every page,{' '}
-                      <Text as="span" fontWeight="medium" color={textColor}>3</Text> = only page 3,{' '}
-                      <Text as="span" fontWeight="medium" color={textColor}>1-4</Text> = pages 1–4
-                    </Text>
-                  </FormControl>
-
-                  {/* Extract options */}
-                  <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
-                    <Text fontWeight="semibold" mb={3} color={textColor} fontSize="sm">
-                      Extract options
-                    </Text>
-                    <VStack spacing={3} align="start">
-                      <Checkbox
-                        isChecked={extractParagraphs}
-                        onChange={(e) => setExtractParagraphs(e.target.checked)}
-                        colorScheme="brand"
-                      >
-                        <Text fontSize="sm">Paragraphs</Text>
-                      </Checkbox>
-                      <Checkbox
-                        isChecked={extractTables}
-                        onChange={(e) => setExtractTables(e.target.checked)}
-                        colorScheme="brand"
-                      >
-                        <HStack spacing={2}>
-                          <Text fontSize="sm">Tables</Text>
-                          <Badge fontSize="9px" colorScheme="purple">+ bounding boxes</Badge>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      width="full"
+                      colorScheme="brand"
+                      isDisabled={loading}
+                      borderRadius="2xl"
+                    >
+                      {loading ? (
+                        <HStack justify="center" spacing={3}>
+                          <Spinner size="sm" />
+                          <Text>Processing…</Text>
                         </HStack>
-                      </Checkbox>
-                      <Checkbox
-                        isChecked={extractFields}
-                        onChange={(e) => setExtractFields(e.target.checked)}
-                        colorScheme="brand"
-                      >
-                        <Text fontSize="sm">Form fields</Text>
-                      </Checkbox>
-                    </VStack>
-                  </Box>
-
-                  {error && (
-                    <Alert status="error" borderRadius="xl">
-                      <AlertIcon />
-                      {error}
-                    </Alert>
-                  )}
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    width="full"
-                    colorScheme="brand"
-                    isDisabled={loading}
-                    borderRadius="2xl"
-                  >
-                    {loading ? (
-                      <HStack justify="center" spacing={3}>
-                        <Spinner size="sm" />
-                        <Text>Processing…</Text>
-                      </HStack>
-                    ) : (
-                      'Run OCR'
-                    )}
-                  </Button>
-                </VStack>
-              </Box>
+                      ) : (
+                        'Run OCR'
+                      )}
+                    </Button>
+                  </VStack>
+                </Box>
               )}
 
               {/* Results - Split View */}
@@ -1062,7 +1553,7 @@ export default function OcrUploader() {
                   <Divider mb={6} />
 
                   {/* Stats */}
-                  <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} mb={6}>
+                  {/* <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} mb={6}>
                     <Box bg={statBg} p={3} rounded="xl" textAlign="center">
                       <Text fontSize="xs" color={labelColor} mb={1}>Paragraphs</Text>
                       <Text fontSize="2xl" fontWeight="semibold" color={textColor}>
@@ -1087,28 +1578,114 @@ export default function OcrUploader() {
                         {parsed.rawText.length.toLocaleString()}
                       </Text>
                     </Box>
-                  </SimpleGrid>
+                  </SimpleGrid> */}
 
                   {/* Side-by-side Layout */}
                   <Box display={{ base: 'block', lg: 'grid' }} gridTemplateColumns={{ lg: '1fr 1.2fr' }} gap={6} mb={8}>
                     {/* Left: Document Preview */}
-                    {fileUrl && showBoundingBoxTab && (
+                    {fileUrl && (
                       <Box
                         p={4} rounded="2xl" borderWidth="1px" borderColor={borderColor}
-                        bg={sectionBg} maxH="600px" overflowY="auto"
+                        bg={sectionBg} maxH="750px" display="flex" flexDirection="column"
                       >
-                        <Text fontSize="sm" fontWeight="semibold" color={textColor} mb={3}>
-                          Document
-                        </Text>
+                        <HStack justify="space-between" align="center" mb={3} flexWrap="wrap" gap={2}>
+                          <Text fontSize="sm" fontWeight="semibold" color={textColor}>
+                            Document Preview
+                          </Text>
+                          {/* Controls */}
+                          <HStack spacing={1} bg={cardBg} p={1} rounded="lg" borderWidth="1px" borderColor={borderColor} shadow="sm">
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              aria-label="Zoom Out"
+                              icon={<Icon as={FiZoomOut} />}
+                              onClick={handleZoomOut}
+                              isDisabled={zoom <= 0.5}
+                            />
+                            <Text fontSize="10px" fontWeight="bold" width="35px" textAlign="center">
+                              {Math.round(zoom * 100)}%
+                            </Text>
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              aria-label="Zoom In"
+                              icon={<Icon as={FiZoomIn} />}
+                              onClick={handleZoomIn}
+                              isDisabled={zoom >= 3.0}
+                            />
+                            <Divider orientation="vertical" height="12px" mx={1} />
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              aria-label="Rotate Counter-Clockwise"
+                              icon={<Icon as={FiRotateCcw} />}
+                              onClick={handleRotateCcw}
+                            />
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              aria-label="Rotate Clockwise"
+                              icon={<Icon as={FiRotateCw} />}
+                              onClick={handleRotateCw}
+                            />
+                            <Divider orientation="vertical" height="12px" mx={1} />
+                            <Button size="xs" variant="ghost" height="20px" px={1.5} fontSize="9px" onClick={handleResetZoom}>
+                              Reset
+                            </Button>
+                          </HStack>
+                        </HStack>
+
                         <Box
-                          position="relative" rounded="xl" overflow="hidden"
-                          borderWidth="1px" borderColor={borderColor} bg={sectionBg}
+                          ref={viewportRef}
+                          position="relative"
+                          rounded="xl"
+                          overflow="auto"
+                          flex={1}
+                          minH="450px"
+                          maxH="600px"
+                          borderWidth="1px"
+                          borderColor={borderColor}
+                          bg={sectionBg}
+                          cursor={zoom > 1 ? 'grab' : 'default'}
+                          onMouseDown={handleMouseDown}
+                          onMouseMove={handleMouseMove}
+                          onMouseUp={handleMouseUpOrLeave}
+                          onMouseLeave={handleMouseUpOrLeave}
+                          p={6}
+                          style={{ userSelect: 'none' }}
                         >
-                          <img
-                            src={fileUrl}
-                            alt="Uploaded document"
-                            style={{ width: '100%', display: 'block' }}
-                          />
+                          <Box
+                            style={{
+                              transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                              transformOrigin: 'center center',
+                              transition: 'transform 0.2s ease-out',
+                              width: '100%',
+                              position: 'relative',
+                              margin: '0 auto',
+                            }}
+                          >
+                            <img
+                              ref={previewImgRef}
+                              src={fileUrl}
+                              alt="Uploaded document"
+                              style={{ width: '100%', display: 'block', pointerEvents: 'none' }}
+                              onLoad={() => {
+                                setPreviewImgLoaded(true);
+                                requestAnimationFrame(() => requestAnimationFrame(drawPreviewBoxes));
+                              }}
+                            />
+                            <canvas
+                              ref={previewCanvasRef}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          </Box>
                         </Box>
                         <Text fontSize="xs" color={labelColor} mt={3}>
                           {file?.name} · {fileType === 'image' ? '🖼️ Image' : '📄 PDF'} · {(file?.size / 1024).toFixed(1)} KB
@@ -1120,11 +1697,11 @@ export default function OcrUploader() {
                     <Box>
                       <Tabs variant="soft-rounded" colorScheme="brand" isLazy>
                         <TabList flexWrap="wrap" gap={1} mb={4}>
-                          {showParagraphsTab  && <Tab fontSize="sm">Paragraphs</Tab>}
-                          {showTablesTab      && <Tab fontSize="sm">Tables</Tab>}
-                          {showFieldsTab      && <Tab fontSize="sm">Fields</Tab>}
-                          {showBoundingBoxTab && <Tab fontSize="sm">Bounding Boxes</Tab>}
+                          {showParagraphsTab && <Tab fontSize="sm">Paragraphs</Tab>}
+                          {showTablesTab && <Tab fontSize="sm">Tables</Tab>}
+                          {showFieldsTab && <Tab fontSize="sm">Fields</Tab>}
                           <Tab fontSize="sm">Raw Text</Tab>
+                          <Tab fontSize="sm">AI Prompt</Tab>
                         </TabList>
 
                         <TabPanels>
@@ -1137,6 +1714,7 @@ export default function OcrUploader() {
                                   textColor={textColor}
                                   sectionBg={sectionBg}
                                   borderColor={borderColor}
+                                  onHoverItem={setHoveredBounds}
                                 />
                               </Box>
                             </TabPanel>
@@ -1150,6 +1728,7 @@ export default function OcrUploader() {
                                   textColor={textColor}
                                   sectionBg={sectionBg}
                                   borderColor={borderColor}
+                                  onHoverItem={setHoveredBounds}
                                 />
                               </Box>
                             </TabPanel>
@@ -1163,21 +1742,7 @@ export default function OcrUploader() {
                                   textColor={textColor}
                                   sectionBg={sectionBg}
                                   borderColor={borderColor}
-                                />
-                              </Box>
-                            </TabPanel>
-                          )}
-                          {showBoundingBoxTab && (
-                            <TabPanel px={0} py={4}>
-                              <Box maxH="700px" overflowY="auto" pr={3}>
-                                <BoundingBoxOverlay
-                                  fileUrl={fileUrl}
-                                  fileType={fileType}
-                                  boundingData={parsed.boundingData}
-                                  sectionBg={sectionBg}
-                                  borderColor={borderColor}
-                                  textColor={textColor}
-                                  labelColor={labelColor}
+                                  onHoverItem={setHoveredBounds}
                                 />
                               </Box>
                             </TabPanel>
@@ -1186,6 +1751,22 @@ export default function OcrUploader() {
                             <Box maxH="600px" overflowY="auto" pr={3}>
                               <RawTextPanel
                                 rawText={parsed.rawText}
+                                textColor={textColor}
+                                sectionBg={sectionBg}
+                                borderColor={borderColor}
+                              />
+                            </Box>
+                          </TabPanel>
+                          <TabPanel px={0} py={4}>
+                            <Box maxH="600px" overflowY="auto" pr={3}>
+                              <AiPromptPanel
+                                prompt={aiPrompt}
+                                setPrompt={setAiPrompt}
+                                apiResponse={aiResponse}
+                                onSendPrompt={handleSendAiPrompt}
+                                loading={aiLoading}
+                                error={aiError}
+                                labelColor={labelColor}
                                 textColor={textColor}
                                 sectionBg={sectionBg}
                                 borderColor={borderColor}

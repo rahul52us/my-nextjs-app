@@ -8,13 +8,11 @@ import {
   Flex,
   FormControl,
   FormErrorMessage,
-  Heading,
   Input,
   InputGroup,
   InputRightElement,
-  Stack,
   Text,
-  useColorModeValue,
+  HStack,
   VStack,
 } from '@chakra-ui/react';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
@@ -24,6 +22,8 @@ import * as Yup from 'yup';
 import { observer } from 'mobx-react-lite';
 import { useRouter } from 'next/navigation';
 import stores from '../../store/stores';
+import { AuthSplitLayout } from '../components/AuthCarousel';
+import { useAuthFormStyles } from '../components/authFormStyles';
 
 const validationSchema = Yup.object({
   name: Yup.string().required('Full Name is required'),
@@ -40,36 +40,21 @@ const validationSchema = Yup.object({
   termsAccepted: Yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
 });
 
-const ToolsahayataLogo = () => {
-  return (
-    <Flex align="center" justify="center" mb={2}>
-      <Box
-        bg="#0066fe"
-        px={5}
-        py={2.5}
-        borderRadius="xl"
-        display="inline-flex"
-        alignItems="center"
-        justifyContent="center"
-        boxShadow="md"
-      >
-        <Text fontFamily="Inter, sans-serif" fontSize="22px" letterSpacing="-0.5px" color="white" userSelect="none">
-          <Box as="span" fontWeight="800">Tool</Box>
-          <Box as="span" fontWeight="300" opacity={0.9}>sahayata</Box>
-        </Text>
-      </Box>
-    </Flex>
-  );
-};
-
 const RegisterContent = observer(() => {
-  const {
-    auth: { register, openNotification },
-  } = stores;
+  const { auth: { register, openNotification } } = stores;
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+  const {
+    bgGradient,
+    inputBorder,
+    subtextColor,
+    textColor,
+    inputStyles,
+    primaryButtonStyles,
+    linkStyles,
+  } = useAuthFormStyles();
+
   const initialValues = {
     name: '',
     email: '',
@@ -106,240 +91,236 @@ const RegisterContent = observer(() => {
     }
   };
 
-  // Theme support colors
-  const cardBg = useColorModeValue("white", "gray.900");
-  const textColor = useColorModeValue("#1A202C", "white");
-  const subtextColor = useColorModeValue("#718096", "gray.400");
-  const inputBg = useColorModeValue("#f8f9fa", "gray.800");
-  const inputTextColor = useColorModeValue("#1A202C", "white");
-
-  return (
-    <Box minHeight="auto" px={2}>
-      <Flex align="center" justify="center">
-        <Box
-          width="100%"
-          maxWidth="520px"
-          bg={cardBg}
-          p={{ base: 6, md: 10 }}
-          borderRadius="3xl"
-          boxShadow="2xl"
+  const formPanel = (
+    <Flex
+      flex={{ base: 1, md: 0.5 }}
+      direction="column"
+      justify="center"
+      align="center"
+      px={{ base: 6, md: 8, lg: 10 }}
+      py={{ base: 8, md: 12 }}
+      minH={{ base: 'auto', md: '100dvh' }}
+      bg={bgGradient}
+    >
+      <Box
+        w="full"
+        maxW="520px"
+        bg="transparent"
+        borderRadius="0"
+        p={{ base: 4, md: 6 }}
+        border="none"
+        boxShadow="none"
+        animation="slideIn 0.5s ease-out"
+      >
+        <Text
+          fontSize="xs"
+          fontWeight="600"
+          color="#025b97"
+          textTransform="uppercase"
+          letterSpacing="1px"
+          mb={2}
         >
-          <VStack spacing={1} textAlign="center" mb={6}>
-            <ToolsahayataLogo />
-            <Heading size="lg" fontWeight="bold" color={textColor} mt={2}>
-              Create an account
-            </Heading>
-            <Text fontSize="sm" color={subtextColor}>
-              Join us to optimize your automation platform
-            </Text>
-          </VStack>
+          Welcome Onboard
+        </Text>
 
-          <Formik
-            initialValues={initialValues}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
-          >
-            {({ isSubmitting, errors, touched }) => (
-              <Form>
-                <Stack spacing={4}>
-                  <FormControl id="name" isInvalid={!!(touched.name && errors.name)}>
-                    <Field
-                      as={Input}
-                      type="text"
-                      name="name"
-                      placeholder="FULL NAME"
-                      focusBorderColor="blue.500"
-                      bg={inputBg}
-                      border="none"
-                      borderRadius="xl"
-                      h="50px"
-                      px={4}
-                      fontSize="sm"
-                      color={inputTextColor}
-                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
-                    />
-                    <FormErrorMessage>
-                      <ErrorMessage name="name" />
-                    </FormErrorMessage>
-                  </FormControl>
+        <Text
+          fontSize={{ base: '2xl', md: '2xl' }}
+          fontWeight="700"
+          color={textColor}
+          mb={1}
+          letterSpacing="-0.5px"
+        >
+          Create an account
+        </Text>
 
-                  <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
-                    <Field
-                      as={Input}
-                      type="email"
-                      name="email"
-                      placeholder="EMAIL ADDRESS"
-                      focusBorderColor="blue.500"
-                      bg={inputBg}
-                      border="none"
-                      borderRadius="xl"
-                      h="50px"
-                      px={4}
-                      fontSize="sm"
-                      color={inputTextColor}
-                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
-                    />
-                    <FormErrorMessage>
-                      <ErrorMessage name="email" />
-                    </FormErrorMessage>
-                  </FormControl>
+        <Text fontSize="sm" color={subtextColor} mb={6}>
+          Join us to optimize your automation platform
+        </Text>
 
-                  <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
-                    <Field
-                      as={Input}
-                      type="tel"
-                      name="phone"
-                      placeholder="PHONE NUMBER"
-                      focusBorderColor="blue.500"
-                      bg={inputBg}
-                      border="none"
-                      borderRadius="xl"
-                      h="50px"
-                      px={4}
-                      fontSize="sm"
-                      color={inputTextColor}
-                      _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
-                    />
-                    <FormErrorMessage>
-                      <ErrorMessage name="phone" />
-                    </FormErrorMessage>
-                  </FormControl>
+        <Formik
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ isSubmitting, errors, touched }) => (
+            <Form style={{ width: '100%' }}>
+              <VStack spacing={4}>
+                <FormControl id="name" isInvalid={!!(touched.name && errors.name)}>
+                  <Field
+                    as={Input}
+                    type="text"
+                    name="name"
+                    placeholder="Full Name"
+                    {...inputStyles}
+                  />
+                  <FormErrorMessage fontSize="xs">
+                    <ErrorMessage name="name" />
+                  </FormErrorMessage>
+                </FormControl>
 
-                  <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
-                    <Field name="password">
-                      {({ field }: any) => (
-                        <InputGroup>
-                          <Input
-                            {...field}
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="PASSWORD"
-                            focusBorderColor="blue.500"
-                            bg={inputBg}
-                            border="none"
-                            borderRadius="xl"
-                            h="50px"
-                            px={4}
-                            fontSize="sm"
-                            color={inputTextColor}
-                            _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
-                          />
-                          <InputRightElement h="full" pr={2}>
-                            <Button
-                              variant="ghost"
-                              onClick={() => setShowPassword(!showPassword)}
-                              size="sm"
-                              _hover={{ bg: 'transparent' }}
-                              _active={{ bg: 'transparent' }}
-                            >
-                              {showPassword ? <ViewOffIcon color="gray.500" /> : <ViewIcon color="gray.500" />}
-                            </Button>
-                          </InputRightElement>
-                        </InputGroup>
-                      )}
-                    </Field>
-                    <FormErrorMessage>
-                      <ErrorMessage name="password" />
-                    </FormErrorMessage>
-                  </FormControl>
+                <FormControl id="email" isInvalid={!!(touched.email && errors.email)}>
+                  <Field
+                    as={Input}
+                    type="email"
+                    name="email"
+                    placeholder="Email Address"
+                    {...inputStyles}
+                  />
+                  <FormErrorMessage fontSize="xs">
+                    <ErrorMessage name="email" />
+                  </FormErrorMessage>
+                </FormControl>
 
-                  <FormControl
-                    id="confirmPassword"
-                    isInvalid={!!(touched.confirmPassword && errors.confirmPassword)}
-                  >
-                    <Field name="confirmPassword">
-                      {({ field }: any) => (
-                        <InputGroup>
-                          <Input
-                            {...field}
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            placeholder="CONFIRM PASSWORD"
-                            focusBorderColor="blue.500"
-                            bg={inputBg}
-                            border="none"
-                            borderRadius="xl"
-                            h="50px"
-                            px={4}
-                            fontSize="sm"
-                            color={inputTextColor}
-                            _placeholder={{ color: '#A0AEC0', fontWeight: '500' }}
-                          />
-                          <InputRightElement h="full" pr={2}>
-                            <Button
-                              variant="ghost"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              size="sm"
-                              _hover={{ bg: 'transparent' }}
-                              _active={{ bg: 'transparent' }}
-                            >
-                              {showConfirmPassword ? <ViewOffIcon color="gray.500" /> : <ViewIcon color="gray.500" />}
-                            </Button>
-                          </InputRightElement>
-                        </InputGroup>
-                      )}
-                    </Field>
-                    <FormErrorMessage>
-                      <ErrorMessage name="confirmPassword" />
-                    </FormErrorMessage>
-                  </FormControl>
+                <FormControl id="phone" isInvalid={!!(touched.phone && errors.phone)}>
+                  <Field
+                    as={Input}
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone Number (optional)"
+                    {...inputStyles}
+                  />
+                  <FormErrorMessage fontSize="xs">
+                    <ErrorMessage name="phone" />
+                  </FormErrorMessage>
+                </FormControl>
 
-                  <FormControl
-                    isInvalid={!!(touched.termsAccepted && errors.termsAccepted)}
-                    display="flex"
-                    alignItems="center"
-                    pt={1}
-                  >
-                    <Field name="termsAccepted">
-                      {({ field }: any) => (
-                        <Checkbox {...field} isChecked={field.value} colorScheme="blue" color={useColorModeValue("#4A5568", "gray.300")} fontSize="xs">
+                <FormControl id="password" isInvalid={!!(touched.password && errors.password)}>
+                  <Field name="password">
+                    {({ field }: any) => (
+                      <InputGroup>
+                        <Input
+                          {...field}
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          {...inputStyles}
+                        />
+                        <InputRightElement h="full" pr={2}>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setShowPassword(!showPassword)}
+                            size="sm"
+                            _hover={{ bg: 'transparent', '& svg': { color: '#025b97' } }}
+                            _active={{ bg: 'transparent' }}
+                            color={subtextColor}
+                            transition="all 0.2s ease"
+                          >
+                            {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                          </Button>
+                        </InputRightElement>
+                      </InputGroup>
+                    )}
+                  </Field>
+                  <FormErrorMessage fontSize="xs">
+                    <ErrorMessage name="password" />
+                  </FormErrorMessage>
+                </FormControl>
+
+                <FormControl id="confirmPassword" isInvalid={!!(touched.confirmPassword && errors.confirmPassword)}>
+                  <Field name="confirmPassword">
+                    {({ field }: any) => (
+                      <InputGroup>
+                        <Input
+                          {...field}
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Confirm Password"
+                          {...inputStyles}
+                        />
+                        <InputRightElement h="full" pr={2}>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            size="sm"
+                            _hover={{ bg: 'transparent', '& svg': { color: '#025b97' } }}
+                            _active={{ bg: 'transparent' }}
+                            color={subtextColor}
+                            transition="all 0.2s ease"
+                          >
+                            {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                          </Button>
+                        </InputRightElement>
+                      </InputGroup>
+                    )}
+                  </Field>
+                  <FormErrorMessage fontSize="xs">
+                    <ErrorMessage name="confirmPassword" />
+                  </FormErrorMessage>
+                </FormControl>
+
+                <FormControl
+                  isInvalid={!!(touched.termsAccepted && errors.termsAccepted)}
+                  display="flex"
+                  alignItems="center"
+                  w="full"
+                >
+                  <Field name="termsAccepted">
+                    {({ field }: any) => (
+                      <Checkbox
+                        {...field}
+                        isChecked={field.value}
+                        colorScheme="blue"
+                        size="sm"
+                        borderColor={inputBorder}
+                        // _checked={{
+                        //   bg: '#025b97 !important',
+                        //   borderColor: '#025b97 !important',
+                        // }}
+                      >
+                        <Text fontSize="xs" color={subtextColor} ml={1}>
                           I accept the{' '}
-                          <Link href="/terms" style={{ color: '#0066fe', textDecoration: 'underline' }}>
-                            Terms and Conditions
+                          <Link href="/terms">
+                            <Text
+                              as="span"
+                              {...linkStyles}
+                              fontWeight="600"
+                              _hover={{ textDecoration: 'underline' }}
+                            >
+                              Terms and Conditions
+                            </Text>
                           </Link>
-                        </Checkbox>
-                      )}
-                    </Field>
-                    <FormErrorMessage ml={2}>
-                      <ErrorMessage name="termsAccepted" />
-                    </FormErrorMessage>
-                  </FormControl>
+                        </Text>
+                      </Checkbox>
+                    )}
+                  </Field>
+                  <FormErrorMessage ml={2} fontSize="xs">
+                    <ErrorMessage name="termsAccepted" />
+                  </FormErrorMessage>
+                </FormControl>
 
-                  <Button
-                    type="submit"
-                    bg="#0066fe"
-                    color="white"
-                    size="lg"
-                    w="full"
-                    h="52px"
-                    isLoading={isSubmitting}
-                    loadingText="Registering..."
-                    borderRadius="xl"
-                    fontSize="sm"
-                    fontWeight="bold"
-                    _hover={{ bg: '#0052cc', opacity: 0.95 }}
-                    _active={{ bg: '#004099' }}
-                    mt={2}
-                  >
-                    Register
-                  </Button>
-                </Stack>
-              </Form>
-            )}
-          </Formik>
+                <Button
+                  type="submit"
+                  {...primaryButtonStyles}
+                  isLoading={isSubmitting}
+                  loadingText="Registering..."
+                >
+                  Register
+                </Button>
+              </VStack>
+            </Form>
+          )}
+        </Formik>
 
-          <VStack mt={6} align="center">
-            <Text fontSize="xs" color={subtextColor}>
-              Already have an account?{' '}
-              <Link href="/login">
-                <Text as="span" color="#0066fe" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: 'underline' }}>
-                  Login
-                </Text>
-              </Link>
+        <HStack w="full" justify="center" mt={6} spacing={1}>
+          <Text fontSize="xs" color={subtextColor}>
+            Already have an account?
+          </Text>
+          <Link href="/login">
+            <Text as="span" {...linkStyles} fontWeight="700">
+              Login here
             </Text>
-          </VStack>
-        </Box>
-      </Flex>
-    </Box>
+          </Link>
+        </HStack>
+
+        <style>{`
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+      </Box>
+    </Flex>
   );
+
+  return <AuthSplitLayout>{formPanel}</AuthSplitLayout>;
 });
 
 export default RegisterContent;
