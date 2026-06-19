@@ -100,7 +100,7 @@ const sidebarData: SidebarItem[] = [
     { id: 7011, name: "Image Compressor", icon: <FaCompress />, iconColor: "#e74c3c", url: "/converter/Imagetools/Imagecom" },
     { id: 7021, name: "Image Edit", icon: <FaEdit />, iconColor: "#8e44ad", url: "/converter/Imagetools/Imageedit" },
     { id: 7031, name: "Image Type Converter", icon: <FaCropAlt />, iconColor: "#27ae60", url: "/converter/Imagetools/Imagetypeconvert" },
-    { id: 7041, name: "BG Remover", icon: <FaMagic />, iconColor: "#2980b9", url: "/converter/Imagetools/Bgremove" },
+    { id: 7041, name: "BG Remover", icon: <FaMagic />, iconColor: "#2980b9", url: "/converter/Imagetools/Imageedit" },
     { id: 94, name: "Image Extractor", icon: <FaFileImage />, iconColor: "#e67e22", url: "/converter/Imageextract" },
 { id: 915, name: "OCR Scanner", icon: <FaMagic />, iconColor: "#9b59b6", url: "/converter/ocr" },
   ],
@@ -287,7 +287,7 @@ const sidebarData: SidebarItem[] = [
           { id: 96, name: "Code Formatter", icon: <FaCode />, iconColor: "#e67e22", url: "/converter/Codeformatter" },
           { id: 97, name: "Data Visualizer", icon: <FaChartBar />, iconColor: "#1abc9c", url: "/converter/Datavisual" },
           // { id: 99, name: "Workflow Builder", icon: <FaTools />,    iconColor: "#9b59b6", url: "/tools/workflow"        },
-          { id: 98, name: "AI Chatbot", icon: <FaRobot />, iconColor: "#8e44ad", url: "/converter/Aichatboat" },
+          // { id: 98, name: "AI Chatbot", icon: <FaRobot />, iconColor: "#8e44ad", url: "/converter/Aichatboat" },
         ],
       },
     ],
@@ -371,7 +371,7 @@ const filterSearchData: SidebarItem[] = [
   { id: 96, name: "Code Formatter", icon: <FaCode />, iconColor: "#e67e22", url: "/converter/Codeformatter" },
   { id: 97, name: "Data Visualizer", icon: <FaChartBar />, iconColor: "#1abc9c", url: "/converter/Datavisual" },
   { id: 99, name: "Workflow Builder", icon: <FaTools />, iconColor: "#9b59b6", url: "/tools/workflow" },
-  { id: 98, name: "AI Chatbot", icon: <FaRobot />, iconColor: "#8e44ad", url: "/converter/Aichatboat" },
+  // { id: 98, name: "AI Chatbot", icon: <FaRobot />, iconColor: "#8e44ad", url: "/converter/Aichatboat" },
 ];
 
 export const sidebarFooterData: SidebarItem[] = [
