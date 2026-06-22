@@ -33,13 +33,13 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  Zap, 
-  FileCode, 
-  Copy, 
-  Trash2, 
-  AlertCircle, 
+import {
+  Search,
+  Zap,
+  FileCode,
+  Copy,
+  Trash2,
+  AlertCircle,
   Code2,
   Globe,
   UserCheck,
@@ -111,9 +111,9 @@ export default function RegexTool() {
   const outputBg = useColorModeValue("gray.100", "gray.800");
   const outputTextColor = useColorModeValue("gray.900", "gray.100");
   const tableBg = useColorModeValue("gray.50", "gray.700");
-  const hoverBg = useColorModeValue("purple.50", "purple.700");
-  const highlightBg = useColorModeValue("purple.200", "purple.500");
-  const highlightText = useColorModeValue("purple.900", "white");
+  const hoverBg = useColorModeValue("brand.50", "brand.700");
+  const highlightBg = useColorModeValue("brand.200", "brand.500");
+  const highlightText = useColorModeValue("brand.900", "white");
 
   const { highlighted, matches, error } = useMemo(() => {
     if (!pattern || !testString) return { highlighted: testString, matches: [] as RegExpMatchArray[], error: "" };
@@ -157,7 +157,7 @@ export default function RegexTool() {
         <Container maxW="container.xl">
           <Flex justify="space-between" align="center">
             <HStack spacing={3}>
-              <Box bg="purple.600" p={2} borderRadius="lg">
+              <Box bg="brand.600" p={2} borderRadius="lg">
                 <Icon as={Zap} color="white" boxSize={5} />
               </Box>
               <VStack align="start" spacing={0}>
@@ -176,7 +176,7 @@ export default function RegexTool() {
                   key={tab.id}
                   size="sm"
                   variant={activeTab === tab.id ? "solid" : "ghost"}
-                  colorScheme="purple"
+                  colorScheme="brand"
                   leftIcon={<Icon as={tab.icon} size={16} />}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   px={6}
@@ -215,7 +215,7 @@ export default function RegexTool() {
                             fontFamily="mono"
                             size="lg"
                             bg={inputBg}
-                            focusBorderColor="purple.500"
+                            focusBorderColor="brand.500"
                             borderRadius="xl"
                           />
                         </Box>
@@ -242,7 +242,7 @@ export default function RegexTool() {
                           minH="250px"
                           size="lg"
                           bg={inputBg}
-                          focusBorderColor="purple.500"
+                          focusBorderColor="brand.500"
                           borderRadius="xl"
                         />
                       </Box>
@@ -254,7 +254,7 @@ export default function RegexTool() {
                       <Heading size="sm" color="gray.600" display="flex" alignItems="center">
                         <Icon as={Code2} mr={2} /> Highlighted Output
                       </Heading>
-                      <Badge colorScheme="purple" px={3} py={1} borderRadius="lg" variant="subtle">
+                      <Badge colorScheme="brand" px={3} py={1} borderRadius="lg" variant="subtle">
                         {matches.length} matches
                       </Badge>
                     </HStack>
@@ -265,7 +265,7 @@ export default function RegexTool() {
                 </VStack>
 
                 <VStack align="stretch" spacing={6}>
-                  <Box bg={useColorModeValue("purple.600", "purple.700")} color="white" p={6} borderRadius="3xl" shadow="lg">
+                  <Box bg={useColorModeValue("brand.600", "brand.700")} color="white" p={6} borderRadius="3xl" shadow="lg">
                     <Heading size="sm" mb={4}>Quick Help</Heading>
                     <VStack align="start" spacing={3} fontSize="sm">
                       <HStack><Badge colorScheme="whiteAlpha">g</Badge><Text>Global search</Text></HStack>
@@ -288,8 +288,8 @@ export default function RegexTool() {
                   <Heading size="xl" mb={2}>Regex Library</Heading>
                   <Text color={secondaryTextColor}>Battle-tested patterns for everyday development tasks.</Text>
                 </Box>
-                
-                <Tabs variant="soft-rounded" colorScheme="purple" align="center">
+
+                <Tabs variant="soft-rounded" colorScheme="brand" align="center">
                   <TabList bg={cardBg} p={2} borderRadius="2xl" shadow="sm" border="1px" borderColor={borderColor}>
                     <Tab px={8}><Icon as={UserCheck} mr={2} /> Validation</Tab>
                     <Tab px={8}><Icon as={Globe} mr={2} /> Web & Network</Tab>
@@ -302,11 +302,11 @@ export default function RegexTool() {
                         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
                           {items.map((item) => (
                             <Box key={item.name} p={6} bg={cardBg} borderRadius="2xl" border="1px" borderColor={borderColor} shadow="sm" _hover={{ shadow: "xl", transform: "translateY(-4px)" }} transition="all 0.3s">
-                              <Heading size="xs" mb={1} color="purple.600" textTransform="uppercase" letterSpacing="widest">{item.name}</Heading>
+                              <Heading size="xs" mb={1} color="brand.600" textTransform="uppercase" letterSpacing="widest">{item.name}</Heading>
                               <Text fontSize="xs" color={secondaryTextColor} mb={4}>{item.desc}</Text>
                               <Code p={3} borderRadius="xl" w="100%" mb={4} display="block" overflowX="auto" fontSize="xs" bg={codeBg}>{item.pattern}</Code>
                               <HStack>
-                                <Button size="sm" variant="solid" colorScheme="purple" flex={1} onClick={() => { setPattern(item.pattern); setActiveTab("tester"); }} borderRadius="lg">
+                                <Button size="sm" variant="solid" colorScheme="brand" flex={1} onClick={() => { setPattern(item.pattern); setActiveTab("tester"); }} borderRadius="lg">
                                   Use in Tester
                                 </Button>
                                 <Tooltip label="Copy Pattern">
@@ -343,7 +343,7 @@ export default function RegexTool() {
                     <Tbody>
                       {cheatSheet.map((item, idx) => (
                         <Tr key={idx} _hover={{ bg: hoverBg }} transition="bg 0.2s">
-                          <Td><Code colorScheme="purple" px={3} py={1} borderRadius="md" fontSize="md" fontWeight="bold">{item.symbol}</Code></Td>
+                          <Td><Code colorScheme="brand" px={3} py={1} borderRadius="md" fontSize="md" fontWeight="bold">{item.symbol}</Code></Td>
                           <Td color={secondaryTextColor} fontSize="md" fontWeight="medium">{item.meaning}</Td>
                           <Td textAlign="right">
                             <Button size="xs" variant="ghost" onClick={() => copyToClipboard(item.symbol)}>Copy</Button>

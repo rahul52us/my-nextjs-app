@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+"use client";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Box,
   Button,
@@ -35,29 +42,78 @@ import {
   Icon,
   IconButton,
   Textarea,
-} from '@chakra-ui/react';
-import { FiUpload, FiFile, FiX, FiZoomIn, FiZoomOut, FiRotateCw, FiRotateCcw, FiSend } from 'react-icons/fi';
-import stores from '../store/stores';
+  Tooltip,
+  Flex,
+  useToast,
+  InputGroup,
+  InputLeftElement,
+  useDisclosure,
+  Drawer,
+  DrawerBody,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+} from "@chakra-ui/react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Upload,
+  FileText,
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RotateCcw,
+  RefreshCw,
+  Send,
+  Zap,
+  Table as TableIcon,
+  Layers,
+  Sparkles,
+  Copy,
+  Check,
+  Trash2,
+  Download,
+  Search,
+  ArrowLeft,
+  ChevronRight,
+  ChevronLeft,
+  Info,
+  Lock,
+} from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import stores from "../store/stores";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+// Wrap framer-motion components for Chakra
+const MotionBox = motion(Box);
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function parseOcrResponse(data) {
-  const out = { paragraphs: [], tables: [], fields: null, rawText: '', boundingData: [] };
+  const out = {
+    paragraphs: [],
+    tables: [],
+    fields: null,
+    rawText: "",
+    boundingData: [],
+  };
   if (!data?.results?.length) return out;
 
   for (const page of data.results) {
     const ocr = page?.ocr ?? {};
 
     if (ocr.paragraphs) {
-      if (typeof ocr.paragraphs === 'string') {
-        const lines = ocr.paragraphs.split('\n').filter((l) => l.trim());
+      if (typeof ocr.paragraphs === "string") {
+        const lines = ocr.paragraphs.split("\n").filter((l) => l.trim());
         lines.forEach((line) => {
           out.paragraphs.push({ text: line, boundingRegions: null });
         });
-        out.rawText += ocr.paragraphs + '\n';
+        out.rawText += ocr.paragraphs + "\n";
       } else if (Array.isArray(ocr.paragraphs)) {
         ocr.paragraphs.forEach((p) => {
-          if (typeof p === 'string') {
+          if (typeof p === "string") {
             out.paragraphs.push({ text: p, boundingRegions: null });
           } else {
             const text = p?.text ?? p?.content ?? JSON.stringify(p);
@@ -69,7 +125,7 @@ function parseOcrResponse(data) {
             }
           }
         });
-        out.rawText += out.paragraphs.map(p => p.text).join('\n') + '\n';
+        out.rawText += out.paragraphs.map((p) => p.text).join("\n") + "\n";
       }
     }
 
@@ -80,7 +136,7 @@ function parseOcrResponse(data) {
       });
     }
 
-    if (page.fields && typeof page.fields === 'object') {
+    if (page.fields && typeof page.fields === "object") {
       out.fields = { ...(out.fields ?? {}), ...page.fields };
     }
   }
@@ -91,30 +147,38 @@ function parseOcrResponse(data) {
 function normaliseTable(tbl, idx) {
   const title = `Table ${idx + 1}`;
   if (tbl.headers && tbl.rows) {
-    const headers = tbl.headers.map(h => typeof h === 'string' ? { text: h, boundingRegions: [] } : h);
-    const rows = tbl.rows.map(row => row.map(c => typeof c === 'string' ? { text: c, boundingRegions: [] } : c));
+    const headers = tbl.headers.map((h) =>
+      typeof h === "string" ? { text: h, boundingRegions: [] } : h,
+    );
+    const rows = tbl.rows.map((row) =>
+      row.map((c) =>
+        typeof c === "string" ? { text: c, boundingRegions: [] } : c,
+      ),
+    );
     return { title, headers, rows, tableBounds: tbl.boundingRegions ?? [] };
   }
 
   if (Array.isArray(tbl.cells)) {
     const rowCount = tbl.rowCount ?? 0;
     const colCount = tbl.columnCount ?? 0;
-    const grid = Array.from({ length: rowCount }, () => Array(colCount).fill(null));
+    const grid = Array.from({ length: rowCount }, () =>
+      Array(colCount).fill(null),
+    );
     let headerRowIndex = -1;
 
     tbl.cells.forEach((cell) => {
       grid[cell.rowIndex][cell.columnIndex] = {
-        text: cell.content ?? '',
+        text: cell.content ?? "",
         boundingRegions: cell.boundingRegions ?? [],
-        kind: cell.kind ?? 'content'
+        kind: cell.kind ?? "content",
       };
-      if (cell.kind === 'columnHeader') headerRowIndex = cell.rowIndex;
+      if (cell.kind === "columnHeader") headerRowIndex = cell.rowIndex;
     });
 
     for (let r = 0; r < rowCount; r++) {
       for (let c = 0; c < colCount; c++) {
         if (!grid[r][c]) {
-          grid[r][c] = { text: '', boundingRegions: [], kind: 'content' };
+          grid[r][c] = { text: "", boundingRegions: [], kind: "content" };
         }
       }
     }
@@ -137,8 +201,8 @@ function extractBoundingData(tbl, idx) {
   if (Array.isArray(tbl.cells)) {
     tbl.cells.forEach((cell) => {
       tableData.cells.push({
-        content: cell.content ?? '',
-        kind: cell.kind ?? 'content',
+        content: cell.content ?? "",
+        kind: cell.kind ?? "content",
         rowIndex: cell.rowIndex,
         columnIndex: cell.columnIndex,
         boundingRegions: cell.boundingRegions ?? [],
@@ -151,18 +215,42 @@ function extractBoundingData(tbl, idx) {
 
 // ─── color palette for bounding boxes ────────────────────────────────────────
 const BOX_COLORS = [
-  { fill: 'rgba(99, 102, 241, 0.12)', stroke: 'rgba(99, 102, 241, 0.9)', label: '#6366f1' },
-  { fill: 'rgba(236, 72, 153, 0.12)', stroke: 'rgba(236, 72, 153, 0.9)', label: '#ec4899' },
-  { fill: 'rgba(34, 197, 94, 0.12)', stroke: 'rgba(34, 197, 94, 0.9)', label: '#22c55e' },
-  { fill: 'rgba(245, 158, 11, 0.12)', stroke: 'rgba(245, 158, 11, 0.9)', label: '#f59e0b' },
-  { fill: 'rgba(14, 165, 233, 0.12)', stroke: 'rgba(14, 165, 233, 0.9)', label: '#0ea5e9' },
-  { fill: 'rgba(168, 85, 247, 0.12)', stroke: 'rgba(168, 85, 247, 0.9)', label: '#a855f7' },
+  {
+    fill: "rgba(99, 102, 241, 0.12)",
+    stroke: "rgba(99, 102, 241, 0.9)",
+    label: "#6366f1",
+  },
+  {
+    fill: "rgba(236, 72, 153, 0.12)",
+    stroke: "rgba(236, 72, 153, 0.9)",
+    label: "#ec4899",
+  },
+  {
+    fill: "rgba(34, 197, 94, 0.12)",
+    stroke: "rgba(34, 197, 94, 0.9)",
+    label: "#22c55e",
+  },
+  {
+    fill: "rgba(245, 158, 11, 0.12)",
+    stroke: "rgba(245, 158, 11, 0.9)",
+    label: "#f59e0b",
+  },
+  {
+    fill: "rgba(14, 165, 233, 0.12)",
+    stroke: "rgba(14, 165, 233, 0.9)",
+    label: "#0ea5e9",
+  },
+  {
+    fill: "rgba(168, 85, 247, 0.12)",
+    stroke: "rgba(168, 85, 247, 0.9)",
+    label: "#a855f7",
+  },
 ];
 
 const HEADER_COLOR = {
-  fill: 'rgba(251, 191, 36, 0.22)',
-  stroke: 'rgba(251, 191, 36, 0.95)',
-  label: '#fbbf24',
+  fill: "rgba(251, 191, 36, 0.22)",
+  stroke: "rgba(251, 191, 36, 0.95)",
+  label: "#fbbf24",
 };
 
 function isNumericCell(cell) {
@@ -170,8 +258,8 @@ function isNumericCell(cell) {
 }
 
 function normalizePageRange(input) {
-  const val = (input || '').trim().toLowerCase();
-  if (!val || val === 'all') return 'all';
+  const val = (input || "").trim().toLowerCase();
+  if (!val || val === "all") return "all";
   return val;
 }
 
@@ -179,8 +267,10 @@ function normalizePageRange(input) {
 function isPointInPolygon(px, py, polygon) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
+    const xi = polygon[i].x,
+      yi = polygon[i].y;
+    const xj = polygon[j].x,
+      yj = polygon[j].y;
     const intersect =
       yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
@@ -190,32 +280,46 @@ function isPointInPolygon(px, py, polygon) {
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function ParagraphsPanel({ paragraphs, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
-  if (!paragraphs.length) return <Text color={labelColor}>No paragraphs extracted.</Text>;
+function ParagraphsPanel({
+  paragraphs,
+  labelColor,
+  textColor,
+  sectionBg,
+  borderColor,
+  onHoverItem,
+}) {
+  const toast = useToast();
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
+  const copyToClipboard = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    toast({
+      title: "Copied to clipboard",
+      status: "success",
+      duration: 1500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  if (!paragraphs.length)
+    return <Text color={labelColor}>No paragraphs extracted.</Text>;
+
   return (
-    <VStack align="stretch" spacing={2}>
+    <VStack align="stretch" spacing={5}>
       {paragraphs.map((p, i) => {
-        const text = typeof p === 'string' ? p : p.text;
-        const bounds = typeof p === 'string' ? null : p.boundingRegions;
+        const text = typeof p === "string" ? p : p.text;
+        const bounds = typeof p === "string" ? null : p.boundingRegions;
         return (
-          <Box
+          <FormControl
             key={i}
-            p={3}
-            rounded="xl"
-            bg={sectionBg}
-            borderWidth="1px"
-            borderColor={borderColor}
-            transition="all 0.2s"
-            _hover={{
-              borderColor: bounds && bounds.length > 0 ? 'brand.400' : borderColor,
-              shadow: bounds && bounds.length > 0 ? 'sm' : 'none',
-              cursor: bounds && bounds.length > 0 ? 'pointer' : 'default',
-            }}
             onMouseEnter={() => {
               if (bounds && bounds.length > 0 && onHoverItem) {
                 onHoverItem({
                   bounds,
-                  type: 'paragraph',
+                  type: "paragraph",
                   label: `Paragraph #${i + 1}`,
                   colorIndex: 0,
                 });
@@ -227,38 +331,91 @@ function ParagraphsPanel({ paragraphs, labelColor, textColor, sectionBg, borderC
               }
             }}
           >
-            <Text fontSize="xs" color={labelColor} mb={1}>#{i + 1}</Text>
-            <Text fontSize="sm" color={textColor} whiteSpace="pre-wrap">{text}</Text>
-          </Box>
+            <HStack justify="space-between" mb={1.5}>
+              <FormLabel
+                fontSize="xs"
+                fontWeight="bold"
+                color={labelColor}
+                mb={0}
+              >
+                Paragraph #{i + 1}
+              </FormLabel>
+              <HStack spacing={1}>
+                <IconButton
+                  size="xs"
+                  variant="ghost"
+                  aria-label="Copy paragraph"
+                  icon={
+                    copiedIndex === i ? <Check size={12} /> : <Copy size={12} />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard(text, i);
+                  }}
+                />
+                {/* <Icon as={Lock} boxSize={3.5} color="gray.400" /> */}
+              </HStack>
+            </HStack>
+            <Textarea
+              value={text}
+              // isReadOnly
+              fontSize="sm"
+              color={textColor}
+              bg={useColorModeValue("white", "gray.900")}
+              borderColor={borderColor}
+              borderRadius="xl"
+              // cursor="not-allowed"
+              rows={Math.max(2, Math.ceil(text.length / 85))}
+              _focus={{ borderColor: borderColor }}
+            />
+          </FormControl>
         );
       })}
     </VStack>
   );
 }
 
-function TableExportModal({ tables, isOpen, onClose, labelColor, textColor, sectionBg, borderColor }) {
-  const [selectedTables, setSelectedTables] = useState(new Set(tables.map((_, i) => i)));
+function TableExportModal({
+  tables,
+  isOpen,
+  onClose,
+  labelColor,
+  textColor,
+  sectionBg,
+  borderColor,
+}) {
+  const [selectedTables, setSelectedTables] = useState(
+    new Set(tables.map((_, i) => i)),
+  );
 
-  const exportToCSV = (mode) => {
+  const exportToCSV = () => {
     let csvContent = [];
     const tablesToExport = Array.from(selectedTables).sort((a, b) => a - b);
 
     tablesToExport.forEach((tableIdx) => {
       const tbl = tables[tableIdx];
-      if (csvContent.length > 0) csvContent.push('');
+      if (csvContent.length > 0) csvContent.push("");
       csvContent.push(`"${tbl.title}"`);
 
       if (tbl.headers.length > 0) {
-        csvContent.push(tbl.headers.map(h => `"${typeof h === 'string' ? h : h.text}"`).join(','));
+        csvContent.push(
+          tbl.headers
+            .map((h) => `"${typeof h === "string" ? h : h.text}"`)
+            .join(","),
+        );
       }
-      tbl.rows.forEach(row => {
-        csvContent.push(row.map(cell => `"${typeof cell === 'string' ? cell : cell.text}"`).join(','));
+      tbl.rows.forEach((row) => {
+        csvContent.push(
+          row
+            .map((cell) => `"${typeof cell === "string" ? cell : cell.text}"`)
+            .join(","),
+        );
       });
     });
 
-    const csv = csvContent.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const csv = csvContent.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `ocr-tables-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
@@ -276,33 +433,67 @@ function TableExportModal({ tables, isOpen, onClose, labelColor, textColor, sect
     <>
       {isOpen && (
         <Box
-          position="fixed" inset={0} bg="blackAlpha.600" display="flex"
-          alignItems="center" justifyContent="center" zIndex={50} onClick={onClose}
+          position="fixed"
+          inset={0}
+          bg="blackAlpha.600"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          zIndex={50}
+          onClick={onClose}
         >
           <Box
-            bg={sectionBg} borderWidth="1px" borderColor={borderColor} borderRadius="2xl"
-            p={6} maxW="sm" onClick={(e) => e.stopPropagation()}
+            bg={sectionBg}
+            borderWidth="1px"
+            borderColor={borderColor}
+            borderRadius="2xl"
+            p={6}
+            maxW="sm"
+            onClick={(e) => e.stopPropagation()}
+            boxShadow="2xl"
           >
-            <Text fontSize="lg" fontWeight="bold" color={textColor} mb={4}>Export as CSV</Text>
-            <VStack align="stretch" spacing={3} mb={4}>
+            <Text fontSize="lg" fontWeight="bold" color={textColor} mb={4}>
+              Export as CSV
+            </Text>
+            <VStack align="stretch" spacing={3} mb={5}>
               {tables.map((tbl, idx) => (
-                <label key={idx} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <label
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={selectedTables.has(idx)}
                     onChange={() => toggleTable(idx)}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: "10px" }}
                   />
-                  <Text fontSize="sm" color={textColor}>{tbl.title}</Text>
+                  <Text fontSize="sm" color={textColor}>
+                    {tbl.title}
+                  </Text>
                 </label>
               ))}
             </VStack>
             <HStack spacing={3}>
-              <Button flex={1} size="sm" variant="outline" onClick={onClose}>Cancel</Button>
               <Button
-                flex={1} size="sm" colorScheme="brand"
+                flex={1}
+                size="sm"
+                variant="outline"
+                onClick={onClose}
+                borderRadius="xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                size="sm"
+                colorScheme="brand"
+                borderRadius="xl"
                 isDisabled={selectedTables.size === 0}
-                onClick={() => exportToCSV('selected')}
+                onClick={exportToCSV}
               >
                 Export
               </Button>
@@ -314,34 +505,69 @@ function TableExportModal({ tables, isOpen, onClose, labelColor, textColor, sect
   );
 }
 
-function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
-  const [modalOpen, setModalOpen] = React.useState(false);
+function TablesPanel({
+  tables,
+  labelColor,
+  textColor,
+  sectionBg,
+  borderColor,
+  onHoverItem,
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  if (!tables.length) return <Text color={labelColor}>No tables extracted.</Text>;
+  if (!tables.length)
+    return <Text color={labelColor}>No tables extracted.</Text>;
+
+  const matchesSearch = (text) => {
+    if (!searchQuery) return true;
+    return String(text).toLowerCase().includes(searchQuery.toLowerCase());
+  };
 
   return (
     <Box>
       <VStack align="stretch" spacing={5}>
-        <HStack justify="space-between" align="center" spacing={4} mb={-2}>
-          <Text fontSize="sm" fontWeight="semibold" color={textColor}>Tables</Text>
-          <Button size="sm" colorScheme="brand" onClick={() => setModalOpen(true)}>
+        <HStack justify="space-between" align="center" spacing={4}>
+          <InputGroup maxW="260px" size="sm">
+            <InputLeftElement pointerEvents="none">
+              <Search size={14} color="gray.400" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search table content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              bg={sectionBg}
+              borderColor={borderColor}
+              borderRadius="xl"
+              _focus={{ borderColor: "brand.400", boxShadow: "none" }}
+            />
+          </InputGroup>
+          <Button
+            size="sm"
+            colorScheme="brand"
+            onClick={() => setModalOpen(true)}
+            leftIcon={<Download size={14} />}
+            borderRadius="xl"
+          >
             Export to CSV
           </Button>
         </HStack>
+
         {tables.map((tbl, ti) => {
           const tableBounds = tbl.tableBounds ?? [];
           return (
-            <Box
+            <MotionBox
               key={ti}
               rounded="2xl"
               borderWidth="1px"
               borderColor={borderColor}
               overflow="hidden"
+              bg={sectionBg}
               onMouseEnter={() => {
                 if (tableBounds.length > 0 && onHoverItem) {
                   onHoverItem({
                     bounds: tableBounds,
-                    type: 'table',
+                    type: "table",
                     label: tbl.title,
                     colorIndex: ti,
                   });
@@ -353,49 +579,72 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, on
                 }
               }}
               _hover={{
-                borderColor: 'brand.300',
-                shadow: 'md',
+                borderColor: "brand.300",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
               }}
               transition="all 0.2s"
             >
-              <HStack px={4} py={2} bg={sectionBg} borderBottomWidth="1px" borderColor={borderColor} justify="space-between">
-                <Text fontSize="sm" fontWeight="semibold" color={textColor}>{tbl.title}</Text>
-              </HStack>
+              <Box
+                px={4}
+                py={3}
+                borderBottomWidth="1px"
+                borderColor={borderColor}
+                bg={useColorModeValue("gray.50", "gray.850")}
+              >
+                <Text fontSize="sm" fontWeight="bold" color={textColor}>
+                  {tbl.title}
+                </Text>
+              </Box>
               <TableContainer overflowX="auto">
                 <Table variant="simple" size="sm">
                   {tbl.headers.length > 0 && (
-                    <Thead bg={sectionBg}>
+                    <Thead bg={useColorModeValue("gray.100", "gray.900")}>
                       <Tr>
                         {tbl.headers.map((h, hi) => {
-                          const hText = typeof h === 'string' ? h : h.text;
-                          const hBounds = typeof h === 'string' ? null : h.boundingRegions;
+                          const hText = typeof h === "string" ? h : h.text;
+                          const hBounds =
+                            typeof h === "string" ? null : h.boundingRegions;
                           return (
                             <Th
                               key={hi}
                               color={labelColor}
                               fontSize="xs"
+                              py={3}
                               textTransform="uppercase"
                               onMouseEnter={(e) => {
-                                if (hBounds && hBounds.length > 0 && onHoverItem) {
+                                if (
+                                  hBounds &&
+                                  hBounds.length > 0 &&
+                                  onHoverItem
+                                ) {
                                   e.stopPropagation();
                                   onHoverItem({
                                     bounds: hBounds,
-                                    type: 'cell',
+                                    type: "cell",
                                     label: `${tbl.title} Header: ${hText}`,
                                     colorIndex: ti,
                                   });
                                 }
                               }}
                               onMouseLeave={() => {
-                                if (hBounds && hBounds.length > 0 && onHoverItem) {
+                                if (
+                                  hBounds &&
+                                  hBounds.length > 0 &&
+                                  onHoverItem
+                                ) {
                                   onHoverItem(null);
                                 }
                               }}
                               _hover={{
-                                bg: 'brand.50',
-                                color: 'brand.600',
+                                bg: "brand.50",
+                                color: "brand.600",
                               }}
-                              style={{ cursor: hBounds && hBounds.length > 0 ? 'pointer' : 'default' }}
+                              style={{
+                                cursor:
+                                  hBounds && hBounds.length > 0
+                                    ? "pointer"
+                                    : "default",
+                              }}
                             >
                               {hText}
                             </Th>
@@ -406,38 +655,70 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, on
                   )}
                   <Tbody>
                     {tbl.rows.map((row, ri) => (
-                      <Tr key={ri}>
+                      <Tr
+                        key={ri}
+                        _hover={{
+                          bg: useColorModeValue(
+                            "blackAlpha.50",
+                            "whiteAlpha.50",
+                          ),
+                        }}
+                      >
                         {row.map((cell, ci) => {
-                          const cellText = typeof cell === 'string' ? cell : cell.text;
-                          const cellBounds = typeof cell === 'string' ? null : cell.boundingRegions;
+                          const cellText =
+                            typeof cell === "string" ? cell : cell.text;
+                          const cellBounds =
+                            typeof cell === "string"
+                              ? null
+                              : cell.boundingRegions;
+                          const isMatch =
+                            searchQuery && matchesSearch(cellText);
                           return (
                             <Td
                               key={ci}
                               fontSize="sm"
                               color={textColor}
                               isNumeric={isNumericCell(cellText)}
+                              bg={isMatch ? "yellow.100" : "transparent"}
+                              _dark={{
+                                bg: isMatch ? "yellow.900" : "transparent",
+                              }}
+                              py={3}
                               onMouseEnter={(e) => {
-                                if (cellBounds && cellBounds.length > 0 && onHoverItem) {
+                                if (
+                                  cellBounds &&
+                                  cellBounds.length > 0 &&
+                                  onHoverItem
+                                ) {
                                   e.stopPropagation();
                                   onHoverItem({
                                     bounds: cellBounds,
-                                    type: 'cell',
+                                    type: "cell",
                                     label: `${tbl.title} Cell (${ri + 1}, ${ci + 1}): ${cellText}`,
                                     colorIndex: ti,
                                   });
                                 }
                               }}
                               onMouseLeave={() => {
-                                if (cellBounds && cellBounds.length > 0 && onHoverItem) {
+                                if (
+                                  cellBounds &&
+                                  cellBounds.length > 0 &&
+                                  onHoverItem
+                                ) {
                                   onHoverItem(null);
                                 }
                               }}
                               _hover={{
-                                bg: 'brand.50',
-                                color: 'brand.700',
-                                fontWeight: 'medium',
+                                bg: "brand.50",
+                                color: "brand.700",
+                                fontWeight: "medium",
                               }}
-                              style={{ cursor: cellBounds && cellBounds.length > 0 ? 'pointer' : 'default' }}
+                              style={{
+                                cursor:
+                                  cellBounds && cellBounds.length > 0
+                                    ? "pointer"
+                                    : "default",
+                              }}
                             >
                               {cellText}
                             </Td>
@@ -448,7 +729,7 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, on
                   </Tbody>
                 </Table>
               </TableContainer>
-            </Box>
+            </MotionBox>
           );
         })}
       </VStack>
@@ -466,98 +747,61 @@ function TablesPanel({ tables, labelColor, textColor, sectionBg, borderColor, on
   );
 }
 
-function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
+function FieldsPanel({
+  fields,
+  labelColor,
+  textColor,
+  sectionBg,
+  borderColor,
+  onHoverItem,
+}) {
+  const toast = useToast();
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const copyValue = (key, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    toast({
+      title: `Copied ${key}`,
+      status: "success",
+      duration: 1500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   if (!fields || !Object.keys(fields).length)
     return <Text color={labelColor}>No form fields extracted.</Text>;
 
   const getFieldValueText = (val) => {
-    if (val === null || val === undefined) return '—';
-    if (typeof val !== 'object') return String(val);
-    if ('valueString' in val) return String(val.valueString);
-    if ('valueDate' in val) return String(val.valueDate);
-    if ('valueNumber' in val) return String(val.valueNumber);
-    if ('valueInteger' in val) return String(val.valueInteger);
-    if ('valuePhoneNumber' in val) return String(val.valuePhoneNumber);
-    if ('valueSelectionMark' in val) return String(val.valueSelectionMark);
-    if ('valueSignature' in val) return String(val.valueSignature);
-    if ('valueCountryRegion' in val) return String(val.valueCountryRegion);
-    if ('content' in val) return String(val.content);
+    if (val === null || val === undefined) return "—";
+    if (typeof val !== "object") return String(val);
+    if ("valueString" in val) return String(val.valueString);
+    if ("valueDate" in val) return String(val.valueDate);
+    if ("valueNumber" in val) return String(val.valueNumber);
+    if ("valueInteger" in val) return String(val.valueInteger);
+    if ("valuePhoneNumber" in val) return String(val.valuePhoneNumber);
+    if ("valueSelectionMark" in val) return String(val.valueSelectionMark);
+    if ("valueSignature" in val) return String(val.valueSignature);
+    if ("valueCountryRegion" in val) return String(val.valueCountryRegion);
+    if ("content" in val) return String(val.content);
     return null;
   };
 
-  const renderValue = (value, depth = 0) => {
-    if (value === null || value === undefined) return <Text fontSize="sm" color={labelColor}>—</Text>;
-
-    const textVal = getFieldValueText(value);
-    if (textVal !== null) {
-      return <Text fontSize="sm" color={textColor}>{textVal}</Text>;
-    }
-
-    if (Array.isArray(value)) {
-      return (
-        <VStack align="stretch" spacing={1} pl={depth > 0 ? 3 : 0}>
-          {value.map((item, i) => (
-            <Box key={i}>
-              {typeof item === 'object' ? (
-                <Box pl={2} borderLeftWidth="2px" borderColor={borderColor} mt={1}>
-                  {Object.entries(item).map(([k, v]) => (
-                    <Box key={k} mb={1}>
-                      <Text fontSize="xs" color={labelColor} fontWeight="semibold">{k}</Text>
-                      {renderValue(v, depth + 1)}
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Text fontSize="sm" color={textColor}>• {String(item)}</Text>
-              )}
-            </Box>
-          ))}
-        </VStack>
-      );
-    }
-    if (typeof value === 'object') {
-      return (
-        <VStack align="stretch" spacing={1} pl={depth > 0 ? 3 : 0}>
-          {Object.entries(value).map(([k, v]) => {
-            if (['boundingRegions', 'spans', 'type', 'content', 'confidence', 'valueString', 'valueDate', 'valueNumber', 'valueInteger', 'valuePhoneNumber', 'valueSelectionMark', 'valueSignature', 'valueCountryRegion'].includes(k)) {
-              return null;
-            }
-            return (
-              <Box key={k}>
-                <Text fontSize="xs" color={labelColor} fontWeight="semibold">{k}</Text>
-                {renderValue(v, depth + 1)}
-              </Box>
-            );
-          })}
-        </VStack>
-      );
-    }
-    return <Text fontSize="sm" color={textColor}>{JSON.stringify(value)}</Text>;
-  };
-
   return (
-    <VStack align="stretch" spacing={2}>
+    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
       {Object.entries(fields).map(([key, value]) => {
         const bounds = value?.boundingRegions ?? null;
+        const textValue = getFieldValueText(value) || JSON.stringify(value);
         return (
-          <Box
+          <FormControl
             key={key}
-            p={3}
-            rounded="xl"
-            bg={sectionBg}
-            borderWidth="1px"
-            borderColor={borderColor}
-            transition="all 0.2s"
-            _hover={{
-              borderColor: bounds && bounds.length > 0 ? 'brand.400' : borderColor,
-              shadow: bounds && bounds.length > 0 ? 'sm' : 'none',
-              cursor: bounds && bounds.length > 0 ? 'pointer' : 'default',
-            }}
             onMouseEnter={() => {
               if (bounds && bounds.length > 0 && onHoverItem) {
                 onHoverItem({
                   bounds,
-                  type: 'field',
+                  type: "field",
                   label: `Field: ${key}`,
                   colorIndex: 3,
                 });
@@ -569,30 +813,142 @@ function FieldsPanel({ fields, labelColor, textColor, sectionBg, borderColor, on
               }
             }}
           >
-            <Text fontSize="xs" color={labelColor} mb={1} fontWeight="semibold" textTransform="uppercase">
-              {key}
-            </Text>
-            {renderValue(value)}
-          </Box>
+            <HStack justify="space-between" mb={1.5}>
+              <FormLabel
+                fontSize="xs"
+                fontWeight="bold"
+                color={labelColor}
+                mb={0}
+                textTransform="uppercase"
+                letterSpacing="wider"
+              >
+                {key}
+              </FormLabel>
+              <HStack spacing={1}>
+                <IconButton
+                  size="xs"
+                  variant="ghost"
+                  aria-label="Copy field value"
+                  icon={
+                    copiedKey === key ? <Check size={12} /> : <Copy size={12} />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyValue(key, textValue);
+                  }}
+                />
+                {/* <Icon as={Lock} boxSize={3.5} color="gray.400" /> */}
+              </HStack>
+            </HStack>
+            <Input
+              value={textValue}
+              // isReadOnly
+              fontSize="sm"
+              color={textColor}
+              bg={useColorModeValue("white", "gray.900")}
+              borderColor={borderColor}
+              borderRadius="xl"
+              // cursor="not-allowed"
+              _focus={{ borderColor: borderColor }}
+            />
+          </FormControl>
         );
       })}
-    </VStack>
+    </SimpleGrid>
   );
 }
 
 function RawTextPanel({ rawText, textColor, sectionBg, borderColor }) {
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const copyAll = () => {
+    navigator.clipboard.writeText(rawText);
+    setCopied(true);
+    toast({
+      title: "Copied all text",
+      status: "success",
+      duration: 1500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadTxt = () => {
+    if (!rawText) return;
+    const blob = new Blob([rawText], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `document-raw-${new Date().toISOString().slice(0, 10)}.txt`;
+    link.click();
+    toast({
+      title: "Downloaded as TXT file",
+      status: "success",
+      duration: 1500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+  };
+
   return (
-    <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
+    <Box
+      rounded="2xl"
+      bg={sectionBg}
+      borderWidth="1px"
+      borderColor={borderColor}
+      overflow="hidden"
+    >
+      <HStack
+        px={4}
+        py={2}
+        borderBottomWidth="1px"
+        borderColor={borderColor}
+        justify="space-between"
+        bg={useColorModeValue("gray.50", "gray.850")}
+      >
+        <HStack spacing={2}>
+          <Box w={3} h={3} rounded="full" bg="red.400" />
+          <Box w={3} h={3} rounded="full" bg="yellow.400" />
+          <Box w={3} h={3} rounded="full" bg="green.400" />
+          <Text fontSize="xs" fontWeight="medium" color={textColor} pl={2}>
+            document-raw.txt
+          </Text>
+        </HStack>
+        <HStack spacing={2}>
+          <Button
+            size="xs"
+            variant="outline"
+            leftIcon={copied ? <Check size={12} /> : <Copy size={12} />}
+            onClick={copyAll}
+            borderRadius="lg"
+          >
+            Copy All
+          </Button>
+          <Button
+            size="xs"
+            colorScheme="brand"
+            leftIcon={<Download size={12} />}
+            onClick={downloadTxt}
+            borderRadius="lg"
+            isDisabled={!rawText}
+          >
+            Download TXT
+          </Button>
+        </HStack>
+      </HStack>
       <Code
         display="block"
         whiteSpace="pre-wrap"
         fontSize="xs"
-        colorScheme="gray"
+        p={4}
+        bg="transparent"
         color={textColor}
-        maxH="400px"
+        maxH="500px"
         overflowY="auto"
+        fontFamily="JetBrains Mono, SFMono-Regular, Consolas, Monaco, monospace"
       >
-        {rawText || 'No raw text available.'}
+        {rawText || "No raw text available."}
       </Code>
     </Box>
   );
@@ -610,28 +966,78 @@ function AiPromptPanel({
   sectionBg,
   borderColor,
 }) {
+  const presets = [
+    {
+      label: "Summarize document",
+      text: "Provide a concise summary of this document, listing the main points.",
+    },
+    {
+      label: "List line items",
+      text: "Extract all table line items and list them in a structured table or bullet list.",
+    },
+    {
+      label: "Extract metadata",
+      text: "Find the key dates, invoice numbers, total amounts, and participant names.",
+    },
+    {
+      label: "Convert to JSON",
+      text: "Convert the main structured data in this document to a clean JSON object.",
+    },
+  ];
+
   return (
     <VStack align="stretch" spacing={4}>
-      {/* <Text fontSize="sm" color={labelColor}>
-        Write your prompt below. On submit, your prompt and the OCR result from this document will be sent together.
-      </Text> */}
+      <Box>
+        <Text
+          fontSize="10px"
+          color={labelColor}
+          fontWeight="bold"
+          mb={2}
+          letterSpacing="wide"
+        >
+          SUGGESTED TASKS
+        </Text>
+        <HStack flexWrap="wrap" gap={2}>
+          {presets.map((p, i) => (
+            <Badge
+              key={i}
+              px={3}
+              py={1.5}
+              borderRadius="full"
+              variant="subtle"
+              colorScheme="brand"
+              fontSize="xs"
+              cursor="pointer"
+              transition="all 0.15s"
+              _hover={{
+                transform: "translateY(-1px)",
+                boxShadow: "sm",
+                opacity: 0.8,
+              }}
+              onClick={() => setPrompt(p.text)}
+            >
+              {p.label}
+            </Badge>
+          ))}
+        </HStack>
+      </Box>
 
       <FormControl isRequired>
-        <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
-          AI Prompt
+        <FormLabel color={labelColor} fontSize="xs" fontWeight="bold">
+          INSTRUCTION
         </FormLabel>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="e.g. Summarize this invoice, extract total amount, list all line items..."
-          minH="160px"
+          minH="120px"
           resize="vertical"
           borderRadius="xl"
           bg={sectionBg}
           borderColor={borderColor}
           color={textColor}
-          _placeholder={{ color: labelColor }}
-          _focus={{ borderColor: 'brand.400', boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)' }}
+          _placeholder={{ color: "gray.400" }}
+          _focus={{ borderColor: "brand.400", boxShadow: "none" }}
         />
       </FormControl>
 
@@ -643,7 +1049,7 @@ function AiPromptPanel({
       )}
 
       <Button
-        leftIcon={<Icon as={FiSend} />}
+        leftIcon={<Send size={14} />}
         colorScheme="brand"
         onClick={onSendPrompt}
         isLoading={loading}
@@ -653,23 +1059,41 @@ function AiPromptPanel({
         alignSelf="flex-start"
         px={6}
       >
-        Submit Prompt
+        Submit Instruction
       </Button>
 
       {apiResponse && (
-        <FormControl>
-          <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
-            AI Response
+        <FormControl mt={2}>
+          <FormLabel color={labelColor} fontSize="xs" fontWeight="bold">
+            AI RESPONSE
           </FormLabel>
-          <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
+          <Box
+            p={4}
+            rounded="2xl"
+            bg={sectionBg}
+            borderWidth="1px"
+            borderColor={borderColor}
+            position="relative"
+          >
+            <IconButton
+              size="xs"
+              position="absolute"
+              top={3}
+              right={3}
+              variant="ghost"
+              aria-label="Copy AI response"
+              icon={<Copy size={12} />}
+              onClick={() => navigator.clipboard.writeText(apiResponse)}
+            />
             <Code
               display="block"
               whiteSpace="pre-wrap"
               fontSize="xs"
-              colorScheme="gray"
+              bg="transparent"
               color={textColor}
-              maxH="400px"
+              maxH="300px"
               overflowY="auto"
+              fontFamily="system-ui, sans-serif"
             >
               {apiResponse}
             </Code>
@@ -680,342 +1104,58 @@ function AiPromptPanel({
   );
 }
 
-// ─── BoundingBoxOverlay ───────────────────────────────────────────────────────
-
-/**
- * Renders an image with interactive bounding box overlays for table cells.
- *
- * Key fix: Azure Document Intelligence returns polygon coordinates in INCHES
- * measured from the top-left of the page. We scale inch coords to rendered
- * pixel positions using the formula:
- *
- *   pixelX = inchX * (displayWidth  / (naturalWidth  / DPI))
- *   pixelY = inchY * (displayHeight / (naturalHeight / DPI))
- *
- * where DPI = 96 (Azure's rendering DPI for images).
- * For PDFs, Azure uses 72 DPI by default unless you set a custom DPI.
- */
-function BoundingBoxOverlay({ fileUrl, fileType, boundingData, sectionBg, borderColor, textColor, labelColor }) {
-  const containerRef = useRef(null);
-  const canvasRef = useRef(null);
-  const imgRef = useRef(null);
-
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [showCells, setShowCells] = useState(true);
-  const [showTableBounds, setShowTableBounds] = useState(true);
-
-  // Azure Document Intelligence polygon coords are in INCHES from page top-left.
-  //
-  // Correct scale:
-  //   scaleX = displayWidth  / pageWidthInches
-  //   scaleY = displayHeight / pageHeightInches
-  //
-  // We get pageWidthInches from the max X across all polygons (the table that
-  // spans the page width gives us the real page width).
-  //
-  // CRITICAL: pageHeightInches must NOT come from max polygon Y — tables only
-  // cover part of the page, so maxY ≈ 5.3" but the page is actually ~11".
-  // Instead we derive pageH from the image's natural aspect ratio:
-  //   pageH = pageW * (naturalHeight / naturalWidth)
-  // This guarantees Y positions map correctly even when no table spans the
-  // full page height.
-  const pageWidthInches = useMemo(() => {
-    let maxX = 0;
-    boundingData.forEach((tbl) => {
-      tbl.tableBounds?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
-      tbl.cells?.forEach((c) => c.boundingRegions?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; })));
-    });
-    return maxX > 6 ? maxX + 0.15 : 8.5;
-  }, [boundingData]);
-
-  const drawBoxes = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img || !imgLoaded) return;
-
-    const rect = img.getBoundingClientRect();
-    const displayW = rect.width;
-    const displayH = rect.height;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = displayW * dpr;
-    canvas.height = displayH * dpr;
-    canvas.style.width = `${displayW}px`;
-    canvas.style.height = `${displayH}px`;
-
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, displayW, displayH);
-
-    // Correct scale: inches → display pixels
-    // pageH derived from image aspect ratio so Y coords map accurately
-    // even when tables don't cover the full page height.
-    const img2 = imgRef.current;
-    const pageH = pageWidthInches * (img2.naturalHeight / img2.naturalWidth);
-    const scaleX = displayW / pageWidthInches;
-    const scaleY = displayH / pageH;
-
-    const drawPolygon = (polygon, fillColor, strokeColor, lineWidth = 1.5) => {
-      if (!polygon || polygon.length < 3) return;
-      ctx.beginPath();
-      ctx.moveTo(polygon[0].x * scaleX, polygon[0].y * scaleY);
-      for (let i = 1; i < polygon.length; i++) {
-        ctx.lineTo(polygon[i].x * scaleX, polygon[i].y * scaleY);
-      }
-      ctx.closePath();
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-    };
-
-    boundingData.forEach((tbl, tblIdx) => {
-      const color = BOX_COLORS[tblIdx % BOX_COLORS.length];
-
-      // Table-level bounding box + label badge
-      if (showTableBounds && tbl.tableBounds?.length > 0) {
-        tbl.tableBounds.forEach((region) => {
-          if (!region.polygon) return;
-          drawPolygon(region.polygon, 'rgba(99,102,241,0.05)', color.stroke, 2.5);
-
-          // Compute top-left corner for label badge
-          const minX = Math.min(...region.polygon.map((p) => p.x)) * scaleX;
-          const minY = Math.min(...region.polygon.map((p) => p.y)) * scaleY;
-
-          const labelText = tbl.title;
-          ctx.font = 'bold 11px Inter, system-ui, sans-serif';
-          const metrics = ctx.measureText(labelText);
-          const labelW = metrics.width + 14;
-          const labelH = 20;
-          const labelY = minY - labelH - 4;
-
-          // Badge background
-          ctx.fillStyle = color.stroke;
-          ctx.beginPath();
-          ctx.roundRect(minX, labelY, labelW, labelH, 4);
-          ctx.fill();
-
-          // Badge text
-          ctx.fillStyle = '#ffffff';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(labelText, minX + 7, labelY + labelH / 2);
-        });
-      }
-
-      // Cell-level bounding boxes
-      if (showCells) {
-        tbl.cells.forEach((cell) => {
-          cell.boundingRegions?.forEach((region) => {
-            if (!region.polygon) return;
-            const cellColor = cell.kind === 'columnHeader' ? HEADER_COLOR : color;
-            drawPolygon(region.polygon, cellColor.fill, cellColor.stroke, 1.2);
-          });
-        });
-      }
-    });
-  }, [boundingData, imgLoaded, showCells, showTableBounds, pageWidthInches]);
-
-  // Re-draw whenever deps change or window resizes.
-  // requestAnimationFrame ensures the canvas has non-zero dimensions even
-  // when the tab was hidden on first render (display:none → zero getBoundingClientRect).
-  useEffect(() => {
-    const run = () => requestAnimationFrame(drawBoxes);
-    run();
-    // Retry once after a short delay in case the tab just became visible
-    const timer = setTimeout(run, 100);
-    window.addEventListener('resize', run);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', run);
-    };
-  }, [drawBoxes]);
-
-
-  // ── if no image URL yet, show a loading/info state ─────────────────────────
-  if (!fileUrl) {
-    return (
-      <Box
-        p={6}
-        rounded="2xl"
-        bg={sectionBg}
-        borderWidth="1px"
-        borderColor={borderColor}
-        textAlign="center"
-      >
-        <Spinner size="sm" color="brand.400" mb={2} />
-        <Text fontSize="sm" color={labelColor}>
-          Rendering PDF preview…
-        </Text>
-      </Box>
-    );
-  }
-
-  return (
-    <VStack align="stretch" spacing={4}>
-
-      {/* Controls */}
-      <HStack spacing={4} flexWrap="wrap">
-        <Checkbox
-          isChecked={showTableBounds}
-          onChange={(e) => setShowTableBounds(e.target.checked)}
-          colorScheme="purple"
-          size="sm"
-        >
-          <Text fontSize="sm">Table bounds</Text>
-        </Checkbox>
-        <Checkbox
-          isChecked={showCells}
-          onChange={(e) => setShowCells(e.target.checked)}
-          colorScheme="blue"
-          size="sm"
-        >
-          <Text fontSize="sm">Cell bounds</Text>
-        </Checkbox>
-
-        {/* Legend */}
-        <HStack spacing={3} ml="auto" flexWrap="wrap">
-          <HStack spacing={1}>
-            <Box
-              w={3} h={3} borderRadius="sm"
-              bg="rgba(251,191,36,0.4)"
-              border="1.5px solid" borderColor="#fbbf24"
-            />
-            <Text fontSize="xs" color={labelColor}>Header cell</Text>
-          </HStack>
-          <HStack spacing={1}>
-            <Box
-              w={3} h={3} borderRadius="sm"
-              bg="rgba(99,102,241,0.2)"
-              border="1.5px solid" borderColor="#6366f1"
-            />
-            <Text fontSize="xs" color={labelColor}>Content cell</Text>
-          </HStack>
-          {BOX_COLORS.slice(0, Math.min(boundingData.length, 3)).map((c, i) => (
-            <HStack key={i} spacing={1}>
-              <Box
-                w={3} h={3} borderRadius="sm"
-                bg={c.fill}
-                border="2px solid" borderColor={c.stroke}
-              />
-              <Text fontSize="xs" color={labelColor}>Table {i + 1}</Text>
-            </HStack>
-          ))}
-        </HStack>
-      </HStack>
-
-      {/* Image + Canvas overlay */}
-      <Box
-        ref={containerRef}
-        position="relative"
-        rounded="2xl"
-        overflow="hidden"
-        borderWidth="1px"
-        borderColor={borderColor}
-        bg={sectionBg}
-      >
-        <img
-          ref={imgRef}
-          src={fileUrl}
-          alt="Uploaded document with bounding boxes"
-          style={{ width: '100%', display: 'block' }}
-          onLoad={() => {
-            setImgLoaded(true);
-            // Force redraw after image loads — needed when tab was already active
-            requestAnimationFrame(() => requestAnimationFrame(drawBoxes));
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* Loading overlay while image loads */}
-        {!imgLoaded && (
-          <Box
-            position="absolute" top={0} left={0} right={0} bottom={0}
-            display="flex" alignItems="center" justifyContent="center"
-            bg={sectionBg}
-          >
-            <Spinner size="md" color="brand.400" />
-          </Box>
-        )}
-      </Box>
-
-      {/* Summary cards per table */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
-        {boundingData.map((tbl, idx) => {
-          const color = BOX_COLORS[idx % BOX_COLORS.length];
-          const headerCount = tbl.cells.filter((c) => c.kind === 'columnHeader').length;
-          const cellCount = tbl.cells.length - headerCount;
-          return (
-            <Box key={idx} p={3} rounded="xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
-              <HStack mb={2} spacing={2}>
-                <Box
-                  w={3} h={3} borderRadius="sm" flexShrink={0}
-                  bg={color.fill}
-                  border="2px solid" borderColor={color.stroke}
-                />
-                <Text fontSize="sm" fontWeight="semibold" color={textColor}>{tbl.title}</Text>
-              </HStack>
-              <HStack spacing={3}>
-                <Badge colorScheme="yellow" fontSize="10px">{headerCount} headers</Badge>
-                <Badge colorScheme="blue" fontSize="10px">{cellCount} cells</Badge>
-              </HStack>
-            </Box>
-          );
-        })}
-      </SimpleGrid>
-
-    </VStack>
-  );
-}
-
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function OcrUploader() {
   const [file, setFile] = useState(null);
-  const [fileUrl, setFileUrl] = useState(null);   // object URL for image/pdf-render preview
-  const [fileType, setFileType] = useState(null);   // 'image' | 'pdf'
-  const pdfFileRef = useRef(null);                                     // holds raw PDF File for rendering
+  const [pdfPages, setPdfPages] = useState([]); // Holds rendered pages: [{ url, width, height, pageNum }]
+  const [fileType, setFileType] = useState(null);
+  const pdfFileRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [pages, setPages] = useState('');
+  const [pages, setPages] = useState("");
   const [extractParagraphs, setExtractParagraphs] = useState(true);
   const [extractTables, setExtractTables] = useState(false);
   const [extractFields, setExtractFields] = useState(false);
   const [loading, setLoading] = useState(false);
   const [parsed, setParsed] = useState(null);
   const [error, setError] = useState(null);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
 
+  // Chrome PDF viewer page states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageInput, setCurrentPageInput] = useState("1");
+
+  // AI Drawer Disclosure
+  const {
+    isOpen: isAiOpen,
+    onOpen: onAiOpen,
+    onClose: onAiClose,
+  } = useDisclosure();
+
   // States and refs for preview highlight overlay
-  const previewCanvasRef = useRef(null);
-  const previewImgRef = useRef(null);
-  const [previewImgLoaded, setPreviewImgLoaded] = useState(false);
+  const canvasRefs = useRef([]);
   const [hoveredBounds, setHoveredBounds] = useState(null);
 
-  const bg = useColorModeValue('gray.50', 'gray.950');
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const labelColor = useColorModeValue('gray.600', 'gray.300');
-  const textColor = useColorModeValue('gray.700', 'gray.100');
-  const sectionBg = useColorModeValue('gray.50', 'gray.900');
-  const statBg = useColorModeValue('gray.100', 'gray.700');
-  const dragBg = useColorModeValue('brand.50', 'brand.900');
-  const fileIconBg = useColorModeValue('blue.50', 'blue.900');
-  const fileIconColor = useColorModeValue('blue.600', 'blue.200');
+  // Colors
+  const bg = useColorModeValue("gray.50", "gray.950");
+  const cardBg = useColorModeValue("white", "gray.900");
+  const borderColor = useColorModeValue("gray.200", "gray.800");
+  const labelColor = useColorModeValue("gray.500", "gray.400");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+  const sectionBg = useColorModeValue("gray.50", "gray.950");
+  const dragBg = useColorModeValue("brand.50", "rgba(99, 102, 241, 0.08)");
+  const fileIconBg = useColorModeValue("blue.50", "rgba(10, 110, 240, 0.1)");
+  const fileIconColor = useColorModeValue("blue.600", "blue.300");
 
-  const { themeStore: { themeConfig } } = stores;
+  const {
+    themeStore: { themeConfig },
+  } = stores;
+  const brandColor = themeConfig.colors?.brand?.[500] || "#3182ce";
 
-  // States and refs for zoom, rotation, and panning
+  // Zoom / Pan / Rotation states
   const [zoom, setZoom] = useState(1.0);
   const [rotation, setRotation] = useState(0);
   const viewportRef = useRef(null);
@@ -1025,10 +1165,10 @@ export default function OcrUploader() {
   const scrollLeftRef = useRef(0);
   const scrollTopRef = useRef(0);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3.0));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
-  const handleRotateCw = () => setRotation(prev => (prev + 90) % 360);
-  const handleRotateCcw = () => setRotation(prev => (prev - 90 + 360) % 360);
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3.0));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
+  const handleRotateCw = () => setRotation((prev) => (prev + 90) % 360);
+  const handleRotateCcw = () => setRotation((prev) => (prev - 90 + 360) % 360);
   const handleResetZoom = () => {
     setZoom(1.0);
     setRotation(0);
@@ -1038,8 +1178,28 @@ export default function OcrUploader() {
     }
   };
 
+  const handleFitWidth = () => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const padding = 32;
+    const availableWidth = viewport.clientWidth - padding;
+    const baseWidth = 600;
+    const newZoom = availableWidth / baseWidth;
+    setZoom(Math.max(0.5, Math.min(newZoom, 3.0)));
+  };
+
+  const handleFitPage = () => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const padding = 32;
+    const availableHeight = viewport.clientHeight - padding;
+    const baseHeight = 800;
+    const newZoom = availableHeight / baseHeight;
+    setZoom(Math.max(0.5, Math.min(newZoom, 3.0)));
+  };
+
   const handleMouseDown = (e) => {
-    if (e.button !== 0) return; // Only left click drag
+    if (e.button !== 0) return;
     const viewport = viewportRef.current;
     if (!viewport) return;
 
@@ -1050,6 +1210,48 @@ export default function OcrUploader() {
     scrollTopRef.current = viewport.scrollTop;
   };
 
+  const clearAll = () => {
+    // File & Preview
+    setFile(null);
+    setPdfPages([]);
+    setFileType(null);
+    pdfFileRef.current = null;
+
+    // OCR Data
+    setParsed(null);
+    setError(null);
+
+    // Form Fields
+    setPages("");
+    setExtractParagraphs(true);
+    setExtractTables(false);
+    setExtractFields(false);
+
+    // AI
+    setAiPrompt("");
+    setAiResponse("");
+    setAiError(null);
+
+    // Preview States
+    setHoveredBounds(null);
+    setZoom(1.0);
+    setRotation(0);
+
+    // PDF Navigation
+    setCurrentPage(1);
+    setCurrentPageInput("1");
+
+    // Loading States
+    setLoading(false);
+    setAiLoading(false);
+
+    // Cleanup blob URLs
+    pdfPages.forEach((page) => {
+      if (page.url?.startsWith("blob:")) {
+        URL.revokeObjectURL(page.url);
+      }
+    });
+  };
   const handleMouseMove = (e) => {
     if (!isMouseDownRef.current) return;
     const viewport = viewportRef.current;
@@ -1068,27 +1270,52 @@ export default function OcrUploader() {
     isMouseDownRef.current = false;
   };
 
-  // Compute page width in inches dynamically from all coordinates
   const pageWidthInches = useMemo(() => {
     let maxX = 0;
     if (parsed?.tables) {
       parsed.tables.forEach((tbl) => {
-        tbl.tableBounds?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
-        tbl.headers?.forEach((h) => h.boundingRegions?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; })));
-        tbl.rows?.forEach((row) => row.forEach((c) => c.boundingRegions?.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }))));
+        tbl.tableBounds?.forEach((r) =>
+          r.polygon?.forEach((p) => {
+            if (p.x > maxX) maxX = p.x;
+          }),
+        );
+        tbl.headers?.forEach((h) =>
+          h.boundingRegions?.forEach((r) =>
+            r.polygon?.forEach((p) => {
+              if (p.x > maxX) maxX = p.x;
+            }),
+          ),
+        );
+        tbl.rows?.forEach((row) =>
+          row.forEach((c) =>
+            c.boundingRegions?.forEach((r) =>
+              r.polygon?.forEach((p) => {
+                if (p.x > maxX) maxX = p.x;
+              }),
+            ),
+          ),
+        );
       });
     }
     if (parsed?.paragraphs && Array.isArray(parsed.paragraphs)) {
       parsed.paragraphs.forEach((p) => {
         if (p.boundingRegions) {
-          p.boundingRegions.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
+          p.boundingRegions.forEach((r) =>
+            r.polygon?.forEach((p) => {
+              if (p.x > maxX) maxX = p.x;
+            }),
+          );
         }
       });
     }
-    if (parsed?.fields && typeof parsed.fields === 'object') {
+    if (parsed?.fields && typeof parsed.fields === "object") {
       Object.values(parsed.fields).forEach((val) => {
-        if (val && typeof val === 'object' && val.boundingRegions) {
-          val.boundingRegions.forEach((r) => r.polygon?.forEach((p) => { if (p.x > maxX) maxX = p.x; }));
+        if (val && typeof val === "object" && val.boundingRegions) {
+          val.boundingRegions.forEach((r) =>
+            r.polygon?.forEach((p) => {
+              if (p.x > maxX) maxX = p.x;
+            }),
+          );
         }
       });
     }
@@ -1096,20 +1323,33 @@ export default function OcrUploader() {
   }, [parsed]);
 
   const drawPreviewBoxes = useCallback(() => {
-    const canvas = previewCanvasRef.current;
-    const img = previewImgRef.current;
-    if (!canvas || !img || !previewImgLoaded) return;
+    // Clear all page canvases
+    canvasRefs.current.forEach((canvas) => {
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    });
 
-    // Set canvas dimensions to image's natural dimensions to scale naturally
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
-    canvas.width = width;
-    canvas.height = height;
+    if (
+      !hoveredBounds ||
+      !hoveredBounds.bounds ||
+      hoveredBounds.bounds.length === 0
+    )
+      return;
 
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
+    hoveredBounds.bounds.forEach((region) => {
+      const pageNum = region.pageNumber || 1;
+      const canvas = canvasRefs.current[pageNum - 1];
+      if (!canvas) return;
 
-    if (hoveredBounds && hoveredBounds.bounds && hoveredBounds.bounds.length > 0) {
+      const page = pdfPages[pageNum - 1];
+      if (!page) return;
+
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+
       const scaleX = width / pageWidthInches;
       const scaleY = height / (pageWidthInches * (height / width));
 
@@ -1129,138 +1369,197 @@ export default function OcrUploader() {
       };
 
       const color = BOX_COLORS[hoveredBounds.colorIndex % BOX_COLORS.length];
+      const fill =
+        hoveredBounds.type === "cell"
+          ? "rgba(251, 191, 36, 0.35)"
+          : color.fill
+              .replace("0.12", "0.25")
+              .replace("0.22", "0.4")
+              .replace("0.05", "0.2");
+      const stroke = hoveredBounds.type === "cell" ? "#fbbf24" : color.stroke;
 
-      hoveredBounds.bounds.forEach((region) => {
-        if (!region.polygon) return;
-        const fill = hoveredBounds.type === 'cell' ? 'rgba(251, 191, 36, 0.35)' : color.fill.replace('0.12', '0.25').replace('0.22', '0.4').replace('0.05', '0.2');
-        const stroke = hoveredBounds.type === 'cell' ? '#fbbf24' : color.stroke;
+      drawPolygon(region.polygon, fill, stroke, 2);
 
-        drawPolygon(region.polygon, fill, stroke, 2);
+      if (hoveredBounds.label) {
+        const minX = Math.min(...region.polygon.map((p) => p.x)) * scaleX;
+        const minY = Math.min(...region.polygon.map((p) => p.y)) * scaleY;
 
-        if (hoveredBounds.label) {
-          const minX = Math.min(...region.polygon.map((p) => p.x)) * scaleX;
-          const minY = Math.min(...region.polygon.map((p) => p.y)) * scaleY;
+        const labelText = hoveredBounds.label;
+        const fontSize = Math.max(12, Math.round(width / 60));
+        ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
+        const metrics = ctx.measureText(labelText);
+        const labelW = metrics.width + fontSize * 1.2;
+        const labelH = fontSize * 1.8;
+        const labelY = minY - labelH - 4 > 0 ? minY - labelH - 4 : minY + 4;
 
-          const labelText = hoveredBounds.label;
-          const fontSize = Math.max(12, Math.round(width / 60));
-          ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
-          const metrics = ctx.measureText(labelText);
-          const labelW = metrics.width + fontSize * 1.2;
-          const labelH = fontSize * 1.8;
-          const labelY = minY - labelH - 4 > 0 ? minY - labelH - 4 : minY + 4;
+        ctx.fillStyle = stroke;
+        ctx.beginPath();
+        ctx.roundRect(minX, labelY, labelW, labelH, fontSize / 4);
+        ctx.fill();
 
-          ctx.fillStyle = stroke;
-          ctx.beginPath();
-          ctx.roundRect(minX, labelY, labelW, labelH, fontSize / 4);
-          ctx.fill();
-
-          ctx.fillStyle = '#ffffff';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(labelText, minX + fontSize * 0.6, labelY + labelH / 2);
-        }
-      });
-    }
-  }, [hoveredBounds, previewImgLoaded, pageWidthInches]);
+        ctx.fillStyle = "#ffffff";
+        ctx.textBaseline = "middle";
+        ctx.fillText(labelText, minX + fontSize * 0.6, labelY + labelH / 2);
+      }
+    });
+  }, [hoveredBounds, pdfPages, pageWidthInches]);
 
   useEffect(() => {
     drawPreviewBoxes();
   }, [drawPreviewBoxes]);
 
-  // ── file selection helpers ─────────────────────────────────────────────────
+  // Sync scroll position with page number indicator
+  const handleScroll = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const pageContainers = viewport.querySelectorAll(".pdf-page-container");
+    const viewportRect = viewport.getBoundingClientRect();
+    let detectedPage = 1;
+    let minDiff = Infinity;
 
-  /** Render the first page of a PDF to a data-URL using PDF.js */
-  const renderPdfToImage = useCallback(async (pdfFile) => {
-    try {
-      // Load PDF.js from CDN if not already loaded
-      if (!window.pdfjsLib) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pageContainers.forEach((el, index) => {
+      const rect = el.getBoundingClientRect();
+      const diff = Math.abs(rect.top - viewportRect.top);
+      if (diff < minDiff) {
+        minDiff = diff;
+        detectedPage = index + 1;
       }
+    });
 
+    setCurrentPage(detectedPage);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPageInput(currentPage.toString());
+  }, [currentPage]);
+
+  // Jump to specific page
+  const jumpToPage = useCallback(
+    (pageNum) => {
+      if (pageNum < 1 || pageNum > pdfPages.length) return;
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      const targetPage = viewport.querySelector(
+        `#pdf-page-container-${pageNum}`,
+      );
+      if (targetPage) {
+        const offsetTop = targetPage.offsetTop;
+        viewport.scrollTo({ top: offsetTop, behavior: "smooth" });
+        setCurrentPage(pageNum);
+      }
+    },
+    [pdfPages.length],
+  );
+
+  // Render all PDF pages to data URL array
+  const renderPdfToPages = useCallback(async (pdfFile) => {
+    try {
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      const pagesData = [];
 
-      // Render at 2x scale for crisp display
-      const scale = 2;
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const scale = 1.5; // Good balance of resolution and speed
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        if (!context) continue;
 
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-      return canvas.toDataURL('image/png');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob((b) => resolve(b), "image/jpeg", 0.9),
+        );
+        const url = URL.createObjectURL(blob);
+
+        pagesData.push({
+          url,
+          width: viewport.width,
+          height: viewport.height,
+          aspectRatio: viewport.width / viewport.height,
+          pageNum: i,
+        });
+      }
+      return pagesData;
     } catch (err) {
-      console.error('PDF render error:', err);
-      return null;
+      console.error("PDF render error:", err);
+      return [];
     }
   }, []);
 
-  const applyFile = useCallback(async (selected) => {
-    if (!selected) return;
-    setFile(selected);
-    setPreviewImgLoaded(false);
-    setHoveredBounds(null);
-    setZoom(1.0);
-    setRotation(0);
+  const applyFile = useCallback(
+    async (selected) => {
+      if (!selected) return;
+      setFile(selected);
+      setFileType(selected.type.startsWith("image/") ? "image" : "pdf");
+      setPdfPages([]);
+      setZoom(1.0);
+      setRotation(0);
+      setCurrentPage(1);
+      setCurrentPageInput("1");
 
-    // Revoke previous object URL to avoid memory leak (only for blob: URLs, not data: URLs)
-    if (fileUrl && fileUrl.startsWith('blob:')) URL.revokeObjectURL(fileUrl);
+      if (selected.type.startsWith("image/")) {
+        const objectUrl = URL.createObjectURL(selected);
+        setPdfPages([{ url: objectUrl, pageNum: 1 }]);
+      } else {
+        pdfFileRef.current = selected;
+        const pagesData = await renderPdfToPages(selected);
+        setPdfPages(pagesData);
+      }
+    },
+    [renderPdfToPages],
+  );
 
-    if (selected.type.startsWith('image/')) {
-      setFileUrl(URL.createObjectURL(selected));
-      setFileType('image');
-      pdfFileRef.current = null;
-    } else {
-      // PDF: render first page to image for bounding box overlay
-      setFileType('pdf');
-      setFileUrl(null);   // clear while rendering
-      pdfFileRef.current = selected;
-      const dataUrl = await renderPdfToImage(selected);
-      if (dataUrl) setFileUrl(dataUrl);
-    }
-  }, [fileUrl, renderPdfToImage]);
-
-  const handleFileChange = (e) => { applyFile(e.target.files?.[0]); };
+  const handleFileChange = (e) => {
+    applyFile(e.target.files?.[0]);
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    applyFile(e.dataTransfer.files?.[0]); // async – fileUrl updates when PDF renders
+    applyFile(e.dataTransfer.files?.[0]);
   };
 
   const removeFile = () => {
-    if (fileUrl && fileUrl.startsWith('blob:')) URL.revokeObjectURL(fileUrl);
+    pdfPages.forEach((p) => {
+      if (p.url && p.url.startsWith("blob:")) URL.revokeObjectURL(p.url);
+    });
     setFile(null);
-    setFileUrl(null);
+    setPdfPages([]);
     setFileType(null);
     setParsed(null);
-    setPages('');
+    setPages("");
     setError(null);
     setIsDragging(false);
-    setPreviewImgLoaded(false);
     setHoveredBounds(null);
     setZoom(1.0);
     setRotation(0);
+    setCurrentPage(1);
+    setCurrentPageInput("1");
   };
 
-  // Cleanup URL on unmount
   useEffect(() => {
-    return () => { if (fileUrl && fileUrl.startsWith('blob:')) URL.revokeObjectURL(fileUrl); };
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      pdfPages.forEach((p) => {
+        if (p.url && p.url.startsWith("blob:")) URL.revokeObjectURL(p.url);
+      });
+    };
+  }, [pdfPages]);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const BACKEND_URL =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) { setError('Please select a file'); return; }
+    if (!file) {
+      setError("Please select a file");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -1270,19 +1569,19 @@ export default function OcrUploader() {
     setRotation(0);
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('pages', normalizePageRange(pages));
-    formData.append('extractParagraphs', extractParagraphs);
-    formData.append('extractTables', extractTables);
-    formData.append('extractFields', extractFields);
+    formData.append("file", file);
+    formData.append("pages", normalizePageRange(pages));
+    formData.append("extractParagraphs", extractParagraphs);
+    formData.append("extractTables", extractTables);
+    formData.append("extractFields", extractFields);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/ocr`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'OCR request failed');
+      if (!response.ok) throw new Error(data.error || "OCR request failed");
       setParsed(parseOcrResponse(data));
     } catch (err) {
       setError(err.message);
@@ -1293,7 +1592,7 @@ export default function OcrUploader() {
 
   const handleSendAiPrompt = async () => {
     if (!aiPrompt.trim()) {
-      setAiError('Please enter a prompt.');
+      setAiError("Please enter a prompt.");
       return;
     }
 
@@ -1301,18 +1600,8 @@ export default function OcrUploader() {
     setAiError(null);
 
     try {
-      // TODO: Connect AI prompt API here
-      // const response = await fetch(`${BACKEND_URL}/api/ai/prompt`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ prompt: aiPrompt, ocrResponse: parsed }),
-      // });
-      // const data = await response.json();
-      // if (!response.ok) throw new Error(data.error || 'AI request failed');
-      // setAiResponse(data.response ?? JSON.stringify(data, null, 2));
-
       setAiResponse(
-        `Prompt ready for API integration.\n\nPrompt:\n${aiPrompt.trim()}\n\nOCR response will be sent automatically from the current parsed result.`
+        `AI Analysis Complete.\n\nInstruction: "${aiPrompt.trim()}"\n\nResult:\nThis is a custom response from the AI helper drawer. Connect to your live API backend endpoints to execute instructions on paragraphs, table layouts, and metadata attributes.`,
       );
     } catch (err) {
       setAiError(err.message);
@@ -1321,53 +1610,98 @@ export default function OcrUploader() {
     }
   };
 
-  // Determine which result tabs to show
   const showParagraphsTab = extractParagraphs && parsed?.paragraphs?.length > 0;
   const showTablesTab = extractTables && parsed?.tables?.length > 0;
-  const showFieldsTab = extractFields && parsed?.fields && Object.keys(parsed.fields).length > 0;
-  const showBoundingBoxTab = extractTables && parsed?.boundingData?.length > 0;
+  const showFieldsTab =
+    extractFields && parsed?.fields && Object.keys(parsed.fields).length > 0;
   const showForm = !parsed;
+  const isRenderingPdf = file && fileType === "pdf" && pdfPages.length === 0;
 
   return (
-    <Box minH="80vh" py={10} px={{ base: 4, md: 8 }} bg={bg} color={textColor}>
-      <Box maxW={showForm ? '4xl' : '100%'} mx="auto" w="full">
-        <Card w="full" bg={cardBg} borderWidth="1px" borderColor={borderColor} borderRadius="3xl" boxShadow="xl">
-          <CardBody p={{ base: 6, md: 10 }}>
-            <VStack align="stretch" spacing={6}>
-
-              {/* Header */}
-              <Box>
-                <Heading size="xl" color={themeConfig.colors?.brand?.[300] ?? 'brand.500'} mb={2}>
-                  OCR Scanner
-                </Heading>
-                <Text fontSize="md" color={labelColor}>
-                  Upload a PDF or image to extract text, tables, and form fields.
-                </Text>
+    <Box minH="100vh" bg={bg} color={textColor} p={0} m={0}>
+      <AnimatePresence mode="wait">
+        {showForm ? (
+          // ─── Welcome/Upload View (Edge-to-Edge Full Screen) ───
+          <MotionBox
+            key="upload-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            w="100%"
+            minH="100vh"
+          >
+            <Box bg={cardBg} minH="100vh" display="flex" flexDirection="column">
+              <Box
+                bg={`linear-gradient(135deg, ${brandColor}10, transparent)`}
+                p={8}
+                borderBottomWidth="1px"
+                borderColor={borderColor}
+              >
+                <HStack spacing={3} mb={2} maxW="7xl" mx="auto" w="full">
+                  <Box
+                    p={2.5}
+                    borderRadius="2xl"
+                    bg="brand.500"
+                    color="white"
+                    shadow="md"
+                  >
+                    <Zap size={22} />
+                  </Box>
+                  <VStack align="start" spacing={0}>
+                    <Heading
+                      size="lg"
+                      fontWeight="extrabold"
+                      letterSpacing="-0.5px"
+                    >
+                      OCR Document Workspace
+                    </Heading>
+                    <Text fontSize="sm" color={labelColor}>
+                      Extract structured tables, flow paragraphs, and key-value
+                      forms seamlessly.
+                    </Text>
+                  </VStack>
+                </HStack>
               </Box>
 
-              {showForm && (
-                <Box as="form" onSubmit={handleSubmit}>
-                  <VStack spacing={5} align="stretch">
-
-                    {/* Upload zone */}
-                    <FormControl>
-                      <FormLabel color={labelColor} fontSize="sm" fontWeight="medium" mb={2}>
-                        Upload file
+              <Box flex={1} p={{ base: 6, md: 12 }}>
+                <form onSubmit={handleSubmit} style={{ height: "100%" }}>
+                  <SimpleGrid
+                    columns={{ base: 1, md: 2 }}
+                    spacing={12}
+                    maxW="7xl"
+                    mx="auto"
+                    w="full"
+                  >
+                    {/* Left: Drag & Drop Zone */}
+                    <VStack align="stretch" spacing={4}>
+                      <FormLabel
+                        color={labelColor}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        textTransform="uppercase"
+                      >
+                        Upload Document
                       </FormLabel>
 
-                      <Box
+                      <MotionBox
                         position="relative"
-                        border="1.5px dashed"
-                        borderColor={isDragging ? 'brand.400' : borderColor}
-                        borderRadius="xl"
-                        bg={isDragging ? dragBg : 'transparent'}
-                        py={8}
-                        px={4}
+                        border="2px dashed"
+                        borderColor={isDragging ? "brand.400" : borderColor}
+                        borderRadius="2xl"
+                        bg={isDragging ? dragBg : "transparent"}
+                        py={16}
+                        px={6}
                         textAlign="center"
                         cursor="pointer"
-                        transition="all 0.15s"
-                        _hover={{ borderColor: 'brand.400', bg: dragBg }}
-                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ duration: 0.2 }}
+                        _hover={{ borderColor: "brand.400", bg: dragBg }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDragging(true);
+                        }}
                         onDragLeave={() => setIsDragging(false)}
                         onDrop={handleDrop}
                       >
@@ -1376,414 +1710,1070 @@ export default function OcrUploader() {
                           accept="application/pdf,image/*"
                           onChange={handleFileChange}
                           position="absolute"
-                          top={0} left={0}
-                          width="100%" height="100%"
+                          top={0}
+                          left={0}
+                          width="100%"
+                          height="100%"
                           opacity={0}
                           cursor="pointer"
                           zIndex={1}
                         />
-                        <VStack spacing={2} pointerEvents="none">
-                          <Box
-                            w={11} h={11} borderRadius="lg" bg={sectionBg}
-                            display="flex" alignItems="center" justifyContent="center" mx="auto"
+                        <VStack spacing={3} pointerEvents="none">
+                          <MotionBox
+                            animate={isDragging ? { y: -5 } : { y: 0 }}
+                            transition={{
+                              repeat: Infinity,
+                              duration: 1.5,
+                              repeatType: "reverse",
+                            }}
+                            w={14}
+                            h={14}
+                            borderRadius="2xl"
+                            bg={useColorModeValue("gray.50", "gray.800")}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            mx="auto"
+                            shadow="inner"
                           >
-                            <Icon as={FiUpload} boxSize={5} color={labelColor} />
-                          </Box>
-                          <Text fontSize="sm" fontWeight="medium" color={textColor}>
-                            Drop your file here
+                            <Upload size={24} color={brandColor} />
+                          </MotionBox>
+                          <Text
+                            fontSize="sm"
+                            fontWeight="semibold"
+                            color={textColor}
+                          >
+                            Drag and drop document here
                           </Text>
                           <Text fontSize="xs" color={labelColor}>
-                            or{' '}
-                            <Text as="span" color="brand.400" fontWeight="medium">
-                              browse to upload
+                            or{" "}
+                            <Text as="span" color="brand.400" fontWeight="bold">
+                              browse files
                             </Text>
                           </Text>
                         </VStack>
-                      </Box>
+                      </MotionBox>
 
-                      <HStack spacing={2} mt={2} flexWrap="wrap">
-                        {['PDF', 'JPG', 'PNG', 'Max 10 MB'].map((t) => (
-                          <Badge key={t} variant="subtle" colorScheme="gray" fontSize="10px" borderRadius="full" px={2}>
-                            {t}
+                      <HStack spacing={2} flexWrap="wrap">
+                        {["PDF", "JPG", "PNG", "MAX 10MB"].map((tag) => (
+                          <Badge
+                            key={tag}
+                            px={3}
+                            py={1}
+                            borderRadius="full"
+                            fontSize="10px"
+                            colorScheme="gray"
+                            variant="solid"
+                          >
+                            {tag}
                           </Badge>
                         ))}
                       </HStack>
 
                       {file && (
-                        <HStack
-                          mt={3} p={2} pl={3}
-                          bg={cardBg}
-                          borderWidth="1px" borderColor={borderColor}
-                          borderRadius="lg"
-                          spacing={3}
-                        >
-                          <Box
-                            w={8} h={8} borderRadius="md" bg={fileIconBg}
-                            display="flex" alignItems="center" justifyContent="center"
-                            flexShrink={0}
-                          >
-                            <Icon as={FiFile} boxSize={4} color={fileIconColor} />
-                          </Box>
-                          <Box flex={1} minW={0}>
-                            <Text fontSize="sm" fontWeight="medium" color={textColor} noOfLines={1}>
-                              {file.name}
-                            </Text>
-                            <Text fontSize="xs" color={labelColor}>
-                              {(file.size / 1024).toFixed(1)} KB
-                              {fileType && (
-                                <Badge ml={2} fontSize="9px" colorScheme={fileType === 'image' ? 'green' : 'blue'}>
-                                  {fileType === 'image' ? 'Image' : 'PDF'}
-                                </Badge>
-                              )}
-                            </Text>
-                          </Box>
-                          <IconButton
-                            size="xs" variant="ghost"
-                            aria-label="Remove file"
-                            icon={<Icon as={FiX} boxSize={3.5} />}
-                            onClick={removeFile}
-                            colorScheme="gray"
-                            mr={1}
-                          />
-                        </HStack>
-                      )}
-                    </FormControl>
-
-                    {/* Page range */}
-                    <FormControl>
-                      <FormLabel color={labelColor} fontSize="sm" fontWeight="medium">
-                        Page range
-                      </FormLabel>
-                      <Input
-                        value={pages}
-                        onChange={(e) => setPages(e.target.value)}
-                        placeholder="blank = all pages · 3 · 1-4"
-                        borderRadius="xl"
-                        bg={sectionBg}
-                      />
-                      <Text fontSize="xs" color={labelColor} mt={1.5}>
-                        Will extract:{' '}
-                        <Text as="span" color={textColor} fontWeight="medium">
-                          {(() => {
-                            const val = pages.trim().toLowerCase();
-                            if (!val || val === 'all') return 'all pages';
-                            if (/^\d+-\d+$/.test(val)) return `pages ${val}`;
-                            return `page ${val}`;
-                          })()}
-                        </Text>
-                        {' '}·{' '}
-                        <Text as="span" fontWeight="medium" color={textColor}>blank / "all"</Text> = every page,{' '}
-                        <Text as="span" fontWeight="medium" color={textColor}>3</Text> = only page 3,{' '}
-                        <Text as="span" fontWeight="medium" color={textColor}>1-4</Text> = pages 1–4
-                      </Text>
-                    </FormControl>
-
-                    {/* Extract options */}
-                    <Box p={4} rounded="2xl" bg={sectionBg} borderWidth="1px" borderColor={borderColor}>
-                      <Text fontWeight="semibold" mb={3} color={textColor} fontSize="sm">
-                        Extract options
-                      </Text>
-                      <VStack spacing={3} align="start">
-                        <Checkbox
-                          isChecked={extractParagraphs}
-                          onChange={(e) => setExtractParagraphs(e.target.checked)}
-                          colorScheme="brand"
-                        >
-                          <Text fontSize="sm">Paragraphs</Text>
-                        </Checkbox>
-                        <Checkbox
-                          isChecked={extractTables}
-                          onChange={(e) => setExtractTables(e.target.checked)}
-                          colorScheme="brand"
-                        >
-                          <HStack spacing={2}>
-                            <Text fontSize="sm">Tables</Text>
-                            <Badge fontSize="9px" colorScheme="purple">+ bounding boxes</Badge>
-                          </HStack>
-                        </Checkbox>
-                        <Checkbox
-                          isChecked={extractFields}
-                          onChange={(e) => setExtractFields(e.target.checked)}
-                          colorScheme="brand"
-                        >
-                          <Text fontSize="sm">Form fields</Text>
-                        </Checkbox>
-                      </VStack>
-                    </Box>
-
-                    {error && (
-                      <Alert status="error" borderRadius="xl">
-                        <AlertIcon />
-                        {error}
-                      </Alert>
-                    )}
-
-                    <Button
-                      type="submit"
-                      size="lg"
-                      width="full"
-                      colorScheme="brand"
-                      isDisabled={loading}
-                      borderRadius="2xl"
-                    >
-                      {loading ? (
-                        <HStack justify="center" spacing={3}>
-                          <Spinner size="sm" />
-                          <Text>Processing…</Text>
-                        </HStack>
-                      ) : (
-                        'Run OCR'
-                      )}
-                    </Button>
-                  </VStack>
-                </Box>
-              )}
-
-              {/* Results - Split View */}
-              {parsed && (
-                <Box pt={4}>
-                  <Box display="flex" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={3} mb={4}>
-                    <Text fontSize="sm" color={labelColor}>
-                      Showing results for: {file?.name ?? 'uploaded file'}
-                    </Text>
-                    <Button size="sm" colorScheme="red" variant="outline" onClick={removeFile}>
-                      Remove file
-                    </Button>
-                  </Box>
-                  <Divider mb={6} />
-
-                  {/* Stats */}
-                  {/* <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} mb={6}>
-                    <Box bg={statBg} p={3} rounded="xl" textAlign="center">
-                      <Text fontSize="xs" color={labelColor} mb={1}>Paragraphs</Text>
-                      <Text fontSize="2xl" fontWeight="semibold" color={textColor}>
-                        {parsed.paragraphs.length}
-                      </Text>
-                    </Box>
-                    <Box bg={statBg} p={3} rounded="xl" textAlign="center">
-                      <Text fontSize="xs" color={labelColor} mb={1}>Tables</Text>
-                      <Text fontSize="2xl" fontWeight="semibold" color={textColor}>
-                        {parsed.tables.length}
-                      </Text>
-                    </Box>
-                    <Box bg={statBg} p={3} rounded="xl" textAlign="center">
-                      <Text fontSize="xs" color={labelColor} mb={1}>Fields</Text>
-                      <Text fontSize="2xl" fontWeight="semibold" color={textColor}>
-                        {parsed.fields ? Object.keys(parsed.fields).length : 0}
-                      </Text>
-                    </Box>
-                    <Box bg={statBg} p={3} rounded="xl" textAlign="center">
-                      <Text fontSize="xs" color={labelColor} mb={1}>Characters</Text>
-                      <Text fontSize="2xl" fontWeight="semibold" color={textColor}>
-                        {parsed.rawText.length.toLocaleString()}
-                      </Text>
-                    </Box>
-                  </SimpleGrid> */}
-
-                  {/* Side-by-side Layout */}
-                  <Box display={{ base: 'block', lg: 'grid' }} gridTemplateColumns={{ lg: '1fr 1.2fr' }} gap={6} mb={8}>
-                    {/* Left: Document Preview */}
-                    {fileUrl && (
-                      <Box
-                        p={4} rounded="2xl" borderWidth="1px" borderColor={borderColor}
-                        bg={sectionBg} maxH="750px" display="flex" flexDirection="column"
-                      >
-                        <HStack justify="space-between" align="center" mb={3} flexWrap="wrap" gap={2}>
-                          <Text fontSize="sm" fontWeight="semibold" color={textColor}>
-                            Document Preview
-                          </Text>
-                          {/* Controls */}
-                          <HStack spacing={1} bg={cardBg} p={1} rounded="lg" borderWidth="1px" borderColor={borderColor} shadow="sm">
-                            <IconButton
-                              size="xs"
-                              variant="ghost"
-                              aria-label="Zoom Out"
-                              icon={<Icon as={FiZoomOut} />}
-                              onClick={handleZoomOut}
-                              isDisabled={zoom <= 0.5}
-                            />
-                            <Text fontSize="10px" fontWeight="bold" width="35px" textAlign="center">
-                              {Math.round(zoom * 100)}%
-                            </Text>
-                            <IconButton
-                              size="xs"
-                              variant="ghost"
-                              aria-label="Zoom In"
-                              icon={<Icon as={FiZoomIn} />}
-                              onClick={handleZoomIn}
-                              isDisabled={zoom >= 3.0}
-                            />
-                            <Divider orientation="vertical" height="12px" mx={1} />
-                            <IconButton
-                              size="xs"
-                              variant="ghost"
-                              aria-label="Rotate Counter-Clockwise"
-                              icon={<Icon as={FiRotateCcw} />}
-                              onClick={handleRotateCcw}
-                            />
-                            <IconButton
-                              size="xs"
-                              variant="ghost"
-                              aria-label="Rotate Clockwise"
-                              icon={<Icon as={FiRotateCw} />}
-                              onClick={handleRotateCw}
-                            />
-                            <Divider orientation="vertical" height="12px" mx={1} />
-                            <Button size="xs" variant="ghost" height="20px" px={1.5} fontSize="9px" onClick={handleResetZoom}>
-                              Reset
-                            </Button>
-                          </HStack>
-                        </HStack>
-
-                        <Box
-                          ref={viewportRef}
-                          position="relative"
-                          rounded="xl"
-                          overflow="auto"
-                          flex={1}
-                          minH="450px"
-                          maxH="600px"
+                        <MotionBox
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          p={3}
+                          bg={useColorModeValue("gray.50", "gray.850")}
                           borderWidth="1px"
                           borderColor={borderColor}
-                          bg={sectionBg}
-                          cursor={zoom > 1 ? 'grab' : 'default'}
-                          onMouseDown={handleMouseDown}
-                          onMouseMove={handleMouseMove}
-                          onMouseUp={handleMouseUpOrLeave}
-                          onMouseLeave={handleMouseUpOrLeave}
-                          p={6}
-                          style={{ userSelect: 'none' }}
+                          borderRadius="xl"
                         >
-                          <Box
-                            style={{
-                              transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                              transformOrigin: 'center center',
-                              transition: 'transform 0.2s ease-out',
-                              width: '100%',
-                              position: 'relative',
-                              margin: '0 auto',
-                            }}
-                          >
-                            <img
-                              ref={previewImgRef}
-                              src={fileUrl}
-                              alt="Uploaded document"
-                              style={{ width: '100%', display: 'block', pointerEvents: 'none' }}
-                              onLoad={() => {
-                                setPreviewImgLoaded(true);
-                                requestAnimationFrame(() => requestAnimationFrame(drawPreviewBoxes));
-                              }}
+                          <HStack spacing={3}>
+                            <Box
+                              w={10}
+                              h={10}
+                              borderRadius="lg"
+                              bg={fileIconBg}
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              flexShrink={0}
+                            >
+                              <FileText size={18} color={fileIconColor} />
+                            </Box>
+                            <Box flex={1} minW={0}>
+                              <Text
+                                fontSize="sm"
+                                fontWeight="bold"
+                                color={textColor}
+                                noOfLines={1}
+                              >
+                                {file.name}
+                              </Text>
+                              <Text fontSize="xs" color={labelColor}>
+                                {(file.size / 1024).toFixed(1)} KB
+                                {fileType && (
+                                  <Badge
+                                    ml={2}
+                                    colorScheme={
+                                      fileType === "image" ? "green" : "blue"
+                                    }
+                                    variant="subtle"
+                                    fontSize="9px"
+                                  >
+                                    {fileType.toUpperCase()}
+                                  </Badge>
+                                )}
+                              </Text>
+                            </Box>
+                            <IconButton
+                              size="sm"
+                              variant="ghost"
+                              aria-label="Remove file"
+                              icon={<X size={16} />}
+                              onClick={removeFile}
+                              borderRadius="full"
                             />
-                            <canvas
-                              ref={previewCanvasRef}
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                pointerEvents: 'none',
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                        <Text fontSize="xs" color={labelColor} mt={3}>
-                          {file?.name} · {fileType === 'image' ? '🖼️ Image' : '📄 PDF'} · {(file?.size / 1024).toFixed(1)} KB
+                          </HStack>
+                        </MotionBox>
+                      )}
+                    </VStack>
+
+                    {/* Right: Extraction Configuration */}
+                    <VStack align="stretch" spacing={5}>
+                      <FormLabel
+                        color={labelColor}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        textTransform="uppercase"
+                      >
+                        Analysis Settings
+                      </FormLabel>
+
+                      <FormControl>
+                        <FormLabel
+                          fontSize="xs"
+                          color={labelColor}
+                          fontWeight="semibold"
+                        >
+                          PAGE RANGE
+                        </FormLabel>
+                        <Input
+                          value={pages}
+                          onChange={(e) => setPages(e.target.value)}
+                          placeholder="e.g. 1, 3, 5-8 (leave blank for all)"
+                          borderRadius="xl"
+                          bg={sectionBg}
+                          borderColor={borderColor}
+                          _focus={{
+                            borderColor: "brand.400",
+                            boxShadow: "none",
+                          }}
+                        />
+                        <Text fontSize="11px" color={labelColor} mt={1}>
+                          Currently active:{" "}
+                          <Text as="span" fontWeight="bold" color={textColor}>
+                            {pages.trim() ? `Pages ${pages}` : "All Pages"}
+                          </Text>
                         </Text>
+                      </FormControl>
+
+                      <Box
+                        p={4}
+                        rounded="2xl"
+                        border="1px solid"
+                        borderColor={borderColor}
+                        bg={sectionBg}
+                      >
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          color={labelColor}
+                          mb={3}
+                          letterSpacing="wider"
+                          textTransform="uppercase"
+                        >
+                          EXTRACT FEATURES
+                        </Text>
+                        <VStack spacing={3} align="stretch">
+                          <HStack
+                            p={3}
+                            rounded="xl"
+                            borderWidth="1px"
+                            borderColor={
+                              extractParagraphs ? "brand.400" : borderColor
+                            }
+                            bg={
+                              extractParagraphs
+                                ? `${brandColor}05`
+                                : "transparent"
+                            }
+                            cursor="pointer"
+                            onClick={() =>
+                              setExtractParagraphs(!extractParagraphs)
+                            }
+                            _hover={{ borderColor: "brand.300" }}
+                            transition="all 0.15s"
+                          >
+                            <Box
+                              color={
+                                extractParagraphs ? brandColor : "gray.400"
+                              }
+                              mr={1}
+                            >
+                              <FileText size={18} />
+                            </Box>
+                            <VStack align="start" spacing={0} flex={1}>
+                              <Text fontSize="xs" fontWeight="bold">
+                                Flowing Paragraphs
+                              </Text>
+                              <Text fontSize="10px" color={labelColor}>
+                                Reads standard sentence structures and page
+                                layout blocks
+                              </Text>
+                            </VStack>
+                            <Checkbox
+                              isChecked={extractParagraphs}
+                              pointerEvents="none"
+                              colorScheme="brand"
+                            />
+                          </HStack>
+
+                          <HStack
+                            p={3}
+                            rounded="xl"
+                            borderWidth="1px"
+                            borderColor={
+                              extractTables ? "brand.400" : borderColor
+                            }
+                            bg={
+                              extractTables ? `${brandColor}05` : "transparent"
+                            }
+                            cursor="pointer"
+                            onClick={() => setExtractTables(!extractTables)}
+                            _hover={{ borderColor: "brand.300" }}
+                            transition="all 0.15s"
+                          >
+                            <Box
+                              color={extractTables ? brandColor : "gray.400"}
+                              mr={1}
+                            >
+                              <TableIcon size={18} />
+                            </Box>
+                            <VStack align="start" spacing={0} flex={1}>
+                              <Text fontSize="xs" fontWeight="bold">
+                                Structured Tables
+                              </Text>
+                              <Text fontSize="10px" color={labelColor}>
+                                Maps tabular items into digital spreadsheets +
+                                bounding boxes
+                              </Text>
+                            </VStack>
+                            <Checkbox
+                              isChecked={extractTables}
+                              pointerEvents="none"
+                              colorScheme="brand"
+                            />
+                          </HStack>
+
+                          <HStack
+                            p={3}
+                            rounded="xl"
+                            borderWidth="1px"
+                            borderColor={
+                              extractFields ? "brand.400" : borderColor
+                            }
+                            bg={
+                              extractFields ? `${brandColor}05` : "transparent"
+                            }
+                            cursor="pointer"
+                            onClick={() => setExtractFields(!extractFields)}
+                            _hover={{ borderColor: "brand.300" }}
+                            transition="all 0.15s"
+                          >
+                            <Box
+                              color={extractFields ? brandColor : "gray.400"}
+                              mr={1}
+                            >
+                              <Layers size={18} />
+                            </Box>
+                            <VStack align="start" spacing={0} flex={1}>
+                              <Text fontSize="xs" fontWeight="bold">
+                                Form Fields & Key-Values
+                              </Text>
+                              <Text fontSize="10px" color={labelColor}>
+                                Identifies metadata labels, dates, fields, and
+                                checkboxes
+                              </Text>
+                            </VStack>
+                            <Checkbox
+                              isChecked={extractFields}
+                              pointerEvents="none"
+                              colorScheme="brand"
+                            />
+                          </HStack>
+                        </VStack>
                       </Box>
-                    )}
 
-                    {/* Right: Results with Tabs */}
-                    <Box>
-                      <Tabs variant="soft-rounded" colorScheme="brand" isLazy>
-                        <TabList flexWrap="wrap" gap={1} mb={4}>
-                          {showParagraphsTab && <Tab fontSize="sm">Paragraphs</Tab>}
-                          {showTablesTab && <Tab fontSize="sm">Tables</Tab>}
-                          {showFieldsTab && <Tab fontSize="sm">Fields</Tab>}
-                          <Tab fontSize="sm">Raw Text</Tab>
-                          <Tab fontSize="sm">AI Prompt</Tab>
-                        </TabList>
+                      {error && (
+                        <Alert status="error" borderRadius="xl">
+                          <AlertIcon />
+                          {error}
+                        </Alert>
+                      )}
 
-                        <TabPanels>
-                          {showParagraphsTab && (
-                            <TabPanel px={0} py={4}>
-                              <Box maxH="600px" overflowY="auto" pr={3}>
-                                <ParagraphsPanel
-                                  paragraphs={parsed.paragraphs}
-                                  labelColor={labelColor}
-                                  textColor={textColor}
-                                  sectionBg={sectionBg}
-                                  borderColor={borderColor}
-                                  onHoverItem={setHoveredBounds}
-                                />
-                              </Box>
-                            </TabPanel>
-                          )}
-                          {showTablesTab && (
-                            <TabPanel px={0} py={4}>
-                              <Box maxH="600px" overflowY="auto" pr={3}>
-                                <TablesPanel
-                                  tables={parsed.tables}
-                                  labelColor={labelColor}
-                                  textColor={textColor}
-                                  sectionBg={sectionBg}
-                                  borderColor={borderColor}
-                                  onHoverItem={setHoveredBounds}
-                                />
-                              </Box>
-                            </TabPanel>
-                          )}
-                          {showFieldsTab && (
-                            <TabPanel px={0} py={4}>
-                              <Box maxH="600px" overflowY="auto" pr={3}>
-                                <FieldsPanel
-                                  fields={parsed.fields}
-                                  labelColor={labelColor}
-                                  textColor={textColor}
-                                  sectionBg={sectionBg}
-                                  borderColor={borderColor}
-                                  onHoverItem={setHoveredBounds}
-                                />
-                              </Box>
-                            </TabPanel>
-                          )}
-                          <TabPanel px={0} py={4}>
-                            <Box maxH="600px" overflowY="auto" pr={3}>
-                              <RawTextPanel
-                                rawText={parsed.rawText}
-                                textColor={textColor}
-                                sectionBg={sectionBg}
-                                borderColor={borderColor}
-                              />
-                            </Box>
-                          </TabPanel>
-                          <TabPanel px={0} py={4}>
-                            <Box maxH="600px" overflowY="auto" pr={3}>
-                              <AiPromptPanel
-                                prompt={aiPrompt}
-                                setPrompt={setAiPrompt}
-                                apiResponse={aiResponse}
-                                onSendPrompt={handleSendAiPrompt}
-                                loading={aiLoading}
-                                error={aiError}
-                                labelColor={labelColor}
-                                textColor={textColor}
-                                sectionBg={sectionBg}
-                                borderColor={borderColor}
-                              />
-                            </Box>
-                          </TabPanel>
-                        </TabPanels>
-                      </Tabs>
-                    </Box>
-                  </Box>
+                      <Button
+                        type="submit"
+                        size="lg"
+                        width="full"
+                        colorScheme="brand"
+                        isDisabled={loading || !file || isRenderingPdf}
+                        borderRadius="2xl"
+                        shadow="md"
+                        _hover={{ shadow: "lg" }}
+                      >
+                        {loading ? (
+                          <HStack justify="center" spacing={3}>
+                            <Spinner size="sm" />
+                            <Text fontSize="sm">
+                              Reading document stream...
+                            </Text>
+                          </HStack>
+                        ) : isRenderingPdf ? (
+                          <HStack justify="center" spacing={3}>
+                            <Spinner size="sm" />
+                            <Text fontSize="sm">Rendering PDF pages...</Text>
+                          </HStack>
+                        ) : (
+                          <HStack spacing={2}>
+                            <Zap size={18} />
+                            <Text>Execute Analysis</Text>
+                          </HStack>
+                        )}
+                      </Button>
+                    </VStack>
+                  </SimpleGrid>
+                </form>
+              </Box>
+            </Box>
+          </MotionBox>
+        ) : (
+          // ─── Workspace View (Edge-to-Edge Split Screen) ───
+          <MotionBox
+            key="workspace-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            w="100%"
+            minH="100vh"
+            display="flex"
+            flexDirection="column"
+          >
+            {/* Top Navigation Bar */}
+            <Flex
+              justify="space-between"
+              align="center"
+              bg={cardBg}
+              px={6}
+              py={4}
+              borderBottomWidth="1px"
+              borderColor={borderColor}
+              flexDirection={{ base: "column", md: "row" }}
+              gap={4}
+            >
+              <HStack spacing={3}>
+                <IconButton
+                  size="sm"
+                  variant="outline"
+                  aria-label="Back to config"
+                  icon={<ArrowLeft size={16} />}
+                  onClick={removeFile}
+                  borderRadius="xl"
+                />
+                <VStack align="start" spacing={0}>
+                  <HStack>
+                    <Heading size="xs" fontWeight="bold">
+                      {file?.name}
+                    </Heading>
+                    <Badge colorScheme="green" variant="subtle" fontSize="9px">
+                      PROCESSED
+                    </Badge>
+                  </HStack>
+                  <Text fontSize="xs" color={labelColor}>
+                    Size: {(file?.size / 1024).toFixed(1)} KB · Format:{" "}
+                    {fileType?.toUpperCase()}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              {/* Stats Summary */}
+              {/* <HStack spacing={6} flexWrap="wrap">
+                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
+                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">PARAGRAPHS</Text>
+                  <Text fontSize="md" fontWeight="bold" color="brand.500">{parsed.paragraphs.length}</Text>
                 </Box>
-              )}
+                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
+                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">TABLES</Text>
+                  <Text fontSize="md" fontWeight="bold" color="purple.500">{parsed.tables.length}</Text>
+                </Box>
+                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
+                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">FIELDS</Text>
+                  <Text fontSize="md" fontWeight="bold" color="teal.500">{parsed.fields ? Object.keys(parsed.fields).length : 0}</Text>
+                </Box>
+                <Box textAlign="center" px={3}>
+                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">CHARACTERS</Text>
+                  <Text fontSize="md" fontWeight="bold" color="orange.500">{parsed.rawText.length.toLocaleString()}</Text>
+                </Box>
+              </HStack> */}
+              <IconButton
+                size="sm"
+                variant="ghost"
+                icon={<Trash2 size={18} />}
+                aria-label="clear"
+                onClick={clearAll}
+              />
+            </Flex>
 
-            </VStack>
-          </CardBody>
-        </Card>
-      </Box>
+            {/* Split Panels Container */}
+            <Flex
+              flex={1}
+              flexDirection={{ base: "column", lg: "row" }}
+              minH={0}
+            >
+              {/* Left Side: Document Preview (45% split) */}
+              <Box
+                flex={{ base: "none", lg: 4.5 }}
+                borderRightWidth={{ base: "0px", lg: "1px" }}
+                borderBottomWidth={{ base: "1px", lg: "0px" }}
+                borderColor={borderColor}
+                bg={sectionBg}
+                p={6}
+                display="flex"
+                flexDirection="column"
+                maxH={{ lg: "calc(100vh - 73px)" }}
+                overflow="hidden"
+              >
+                <Flex align="center" justify="space-between" mb={4}>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    color={labelColor}
+                    letterSpacing="wider"
+                    textTransform="uppercase"
+                  >
+                    DOCUMENT WORKSPACE MAP
+                  </Text>
+                </Flex>
+
+                {pdfPages.length === 0 ? (
+                  <Box
+                    p={8}
+                    textAlign="center"
+                    rounded="2xl"
+                    borderWidth="1px"
+                    borderColor={borderColor}
+                    bg={sectionBg}
+                    flex={1}
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Spinner size="md" color="brand.400" mb={3} />
+                    <Text fontSize="sm" color={labelColor}>
+                      Loading document preview pages...
+                    </Text>
+                  </Box>
+                ) : (
+                  <>
+                    {/* Chrome-like PDF Toolbar */}
+                    <HStack
+                      w="100%"
+                      bg={useColorModeValue("white", "gray.900")}
+                      p={2}
+                      mb={4}
+                      rounded="2xl"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                      shadow="md"
+                      spacing={2}
+                      justify="space-between"
+                      flexWrap="wrap"
+                    >
+                      {/* Left: Page Navigation */}
+                      <HStack
+                        spacing={1}
+                        bg={useColorModeValue("gray.50", "gray.800")}
+                        px={2}
+                        py={1}
+                        borderRadius="xl"
+                        border="1px solid"
+                        borderColor={borderColor}
+                      >
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          aria-label="Previous Page"
+                          icon={<ChevronLeft size={14} />}
+                          isDisabled={currentPage <= 1}
+                          onClick={() => jumpToPage(currentPage - 1)}
+                        />
+                        <Input
+                          size="xs"
+                          value={currentPageInput}
+                          onChange={(e) => setCurrentPageInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const val = parseInt(currentPageInput);
+                              if (
+                                !isNaN(val) &&
+                                val >= 1 &&
+                                val <= pdfPages.length
+                              ) {
+                                jumpToPage(val);
+                              } else {
+                                setCurrentPageInput(currentPage.toString());
+                              }
+                            }
+                          }}
+                          w="32px"
+                          textAlign="center"
+                          variant="unstyled"
+                          fontWeight="bold"
+                          fontSize="xs"
+                          p={0}
+                          height="20px"
+                        />
+                        <Text
+                          fontSize="xs"
+                          color={labelColor}
+                          fontWeight="bold"
+                          userSelect="none"
+                        >
+                          / {pdfPages.length}
+                        </Text>
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          aria-label="Next Page"
+                          icon={<ChevronRight size={14} />}
+                          isDisabled={currentPage >= pdfPages.length}
+                          onClick={() => jumpToPage(currentPage + 1)}
+                        />
+                      </HStack>
+
+                      {/* Center: Zoom Controls */}
+                      <HStack spacing={1}>
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          aria-label="Zoom Out"
+                          icon={<ZoomOut size={14} />}
+                          onClick={handleZoomOut}
+                          isDisabled={zoom <= 0.5}
+                        />
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          width="45px"
+                          textAlign="center"
+                          userSelect="none"
+                        >
+                          {Math.round(zoom * 100)}%
+                        </Text>
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          aria-label="Zoom In"
+                          icon={<ZoomIn size={14} />}
+                          onClick={handleZoomIn}
+                          isDisabled={zoom >= 3.0}
+                        />
+                      </HStack>
+
+                      {/* Right: Fit & Rotate */}
+                      <HStack spacing={1.5}>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          fontSize="10px"
+                          borderRadius="lg"
+                          onClick={handleFitWidth}
+                          px={2}
+                          height="24px"
+                        >
+                          Fit Width
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          fontSize="10px"
+                          borderRadius="lg"
+                          onClick={handleFitPage}
+                          px={2}
+                          height="24px"
+                        >
+                          Fit Page
+                        </Button>
+                        <Divider
+                          orientation="vertical"
+                          height="16px"
+                          borderColor={borderColor}
+                        />
+                        <Tooltip label="Rotate Counter-Clockwise" fontSize="xs">
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            aria-label="Rotate CCW"
+                            icon={<RotateCcw size={14} />}
+                            onClick={handleRotateCcw}
+                          />
+                        </Tooltip>
+                        <Tooltip label="Rotate Clockwise" fontSize="xs">
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            aria-label="Rotate CW"
+                            icon={<RotateCw size={14} />}
+                            onClick={handleRotateCw}
+                          />
+                        </Tooltip>
+                      </HStack>
+                    </HStack>
+
+                    {/* Scrollable Viewport Container */}
+                    <Box
+                      ref={viewportRef}
+                      position="relative"
+                      rounded="2xl"
+                      overflow="auto"
+                      flex={1}
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                      bg={useColorModeValue("white", "gray.900")}
+                      cursor={zoom > 1 ? "grab" : "default"}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUpOrLeave}
+                      onMouseLeave={handleMouseUpOrLeave}
+                      onScroll={handleScroll}
+                      p={4}
+                      style={{ userSelect: "none" }}
+                    >
+                      {/* Stacked PDF Page container list */}
+                      <VStack spacing={6} align="center" width="100%" py={4}>
+                        {pdfPages.map((page, index) => {
+                          const pageNum = index + 1;
+                          const aspect =
+                            page.aspectRatio ||
+                            (page.width && page.height
+                              ? page.width / page.height
+                              : 0.77);
+                          const standardPageWidth = 600;
+                          const scaledWidth = standardPageWidth * zoom;
+
+                          const w = scaledWidth;
+                          const h = scaledWidth / aspect;
+                          const isRotated90or270 = rotation % 180 !== 0;
+
+                          return (
+                            <Box
+                              key={index}
+                              id={`pdf-page-container-${pageNum}`}
+                              className="pdf-page-container"
+                              position="relative"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              style={{
+                                width: isRotated90or270 ? `${h}px` : `${w}px`,
+                                height: isRotated90or270 ? `${w}px` : `${h}px`,
+                                transition:
+                                  "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                              }}
+                            >
+                              <Box
+                                position="absolute"
+                                style={{
+                                  width: `${w}px`,
+                                  height: `${h}px`,
+                                  transform: `rotate(${rotation}deg)`,
+                                  transformOrigin: "center center",
+                                  transition:
+                                    "transform 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out",
+                                }}
+                              >
+                                <img
+                                  src={page.url}
+                                  alt={`Page ${pageNum}`}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "block",
+                                    borderRadius: "8px",
+                                    pointerEvents: "none",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                                  }}
+                                  onLoad={(e) => {
+                                    const img = e.currentTarget;
+                                    const canvas = canvasRefs.current[index];
+                                    if (canvas) {
+                                      canvas.width = img.naturalWidth;
+                                      canvas.height = img.naturalHeight;
+                                    }
+                                    drawPreviewBoxes();
+                                  }}
+                                />
+                                <canvas
+                                  ref={(el) => {
+                                    canvasRefs.current[index] = el;
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    pointerEvents: "none",
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </VStack>
+                    </Box>
+                  </>
+                )}
+              </Box>
+
+              {/* Right Side: Data Inspector (55% split) */}
+              <Box
+                flex={{ base: "none", lg: 5.5 }}
+                p={6}
+                bg={cardBg}
+                maxH={{ lg: "calc(100vh - 73px)" }}
+                overflowY="auto"
+              >
+                {/* Inline AI Assistant Trigger Banner */}
+                <Box
+                  p={3.5}
+                  mb={5}
+                  bg={useColorModeValue("brand.50", "rgba(99, 102, 241, 0.08)")}
+                  borderWidth="1px"
+                  borderColor={useColorModeValue(
+                    "brand.200",
+                    "rgba(99, 102, 241, 0.2)",
+                  )}
+                  borderRadius="2xl"
+                  shadow="sm"
+                >
+                  <HStack
+                    justify="space-between"
+                    align="center"
+                    flexWrap="wrap"
+                    gap={2}
+                  >
+                    <HStack spacing={3.5}>
+                      <Box
+                        p={2}
+                        borderRadius="xl"
+                        bg="brand.500"
+                        color="white"
+                        shadow="sm"
+                      >
+                        <Sparkles size={14} />
+                      </Box>
+                      <VStack align="start" spacing={0.5}>
+                        <Text fontSize="xs" fontWeight="bold">
+                          AI Assistance
+                        </Text>
+                        <Text fontSize="10px" color={labelColor}>
+                          You can run AI instructions, translations, or
+                          summaries on this result.
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Button
+                      size="xs"
+                      colorScheme="brand"
+                      onClick={onAiOpen}
+                      leftIcon={<Sparkles size={12} />}
+                      borderRadius="xl"
+                      px={4.5}
+                    >
+                      Open AI drawer
+                    </Button>
+                  </HStack>
+                </Box>
+
+                <Tabs variant="unstyled" colorScheme="brand" isLazy>
+                  <TabList
+                    display="flex"
+                    width="100%"
+                    bg={useColorModeValue("gray.100", "gray.950")}
+                    p={1.5}
+                    borderRadius="2xl"
+                    mb={6}
+                    overflowX="auto"
+                    whiteSpace="nowrap"
+                    gap={1}
+                  >
+                    {showParagraphsTab && (
+                      <Tab
+                        flex={1}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        px={4}
+                        py={2}
+                        borderRadius="xl"
+                        _selected={{
+                          bg: useColorModeValue("white", "gray.900"),
+                          color: brandColor,
+                          shadow: "sm",
+                        }}
+                      >
+                        <HStack spacing={1.5} justify="center">
+                          <FileText size={13} />
+                          <Text>Paragraphs</Text>
+                          <Badge
+                            colorScheme="brand"
+                            variant="solid"
+                            borderRadius="full"
+                            fontSize="9px"
+                          >
+                            {parsed.paragraphs.length}
+                          </Badge>
+                        </HStack>
+                      </Tab>
+                    )}
+                    {showTablesTab && (
+                      <Tab
+                        flex={1}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        px={4}
+                        py={2}
+                        borderRadius="xl"
+                        _selected={{
+                          bg: useColorModeValue("white", "gray.900"),
+                          color: "purple.400",
+                          shadow: "sm",
+                        }}
+                      >
+                        <HStack spacing={1.5} justify="center">
+                          <TableIcon size={13} />
+                          <Text>Tables</Text>
+                          <Badge
+                            colorScheme="purple"
+                            variant="solid"
+                            borderRadius="full"
+                            fontSize="9px"
+                          >
+                            {parsed.tables.length}
+                          </Badge>
+                        </HStack>
+                      </Tab>
+                    )}
+                    {showFieldsTab && (
+                      <Tab
+                        flex={1}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        px={4}
+                        py={2}
+                        borderRadius="xl"
+                        _selected={{
+                          bg: useColorModeValue("white", "gray.900"),
+                          color: "teal.400",
+                          shadow: "sm",
+                        }}
+                      >
+                        <HStack spacing={1.5} justify="center">
+                          <Layers size={13} />
+                          <Text>Fields</Text>
+                          <Badge
+                            colorScheme="teal"
+                            variant="solid"
+                            borderRadius="full"
+                            fontSize="9px"
+                          >
+                            {Object.keys(parsed.fields).length}
+                          </Badge>
+                        </HStack>
+                      </Tab>
+                    )}
+                    <Tab
+                      flex={1}
+                      fontSize="xs"
+                      fontWeight="bold"
+                      px={4}
+                      py={2}
+                      borderRadius="xl"
+                      _selected={{
+                        bg: useColorModeValue("white", "gray.900"),
+                        color: "gray.500",
+                        shadow: "sm",
+                      }}
+                    >
+                      <HStack spacing={1.5} justify="center">
+                        <FileText size={13} />
+                        <Text>Raw</Text>
+                      </HStack>
+                    </Tab>
+                  </TabList>
+
+                  <TabPanels>
+                    {showParagraphsTab && (
+                      <TabPanel px={0} py={1}>
+                        <ParagraphsPanel
+                          paragraphs={parsed.paragraphs}
+                          labelColor={labelColor}
+                          textColor={textColor}
+                          sectionBg={sectionBg}
+                          borderColor={borderColor}
+                          onHoverItem={setHoveredBounds}
+                        />
+                      </TabPanel>
+                    )}
+                    {showTablesTab && (
+                      <TabPanel px={0} py={1}>
+                        <TablesPanel
+                          tables={parsed.tables}
+                          labelColor={labelColor}
+                          textColor={textColor}
+                          sectionBg={sectionBg}
+                          borderColor={borderColor}
+                          onHoverItem={setHoveredBounds}
+                        />
+                      </TabPanel>
+                    )}
+                    {showFieldsTab && (
+                      <TabPanel px={0} py={1}>
+                        <FieldsPanel
+                          fields={parsed.fields}
+                          labelColor={labelColor}
+                          textColor={textColor}
+                          sectionBg={sectionBg}
+                          borderColor={borderColor}
+                          onHoverItem={setHoveredBounds}
+                        />
+                      </TabPanel>
+                    )}
+                    <TabPanel px={0} py={1}>
+                      <RawTextPanel
+                        rawText={parsed.rawText}
+                        textColor={textColor}
+                        sectionBg={sectionBg}
+                        borderColor={borderColor}
+                      />
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
+              </Box>
+            </Flex>
+
+            {/* Floating Action Trigger for AI Drawer
+            <Box
+              position="fixed"
+              bottom={6}
+              right={6}
+              zIndex={99}
+            >
+              <Tooltip label="Ask AI Copilot" placement="left" fontSize="xs" borderRadius="lg" hasArrow>
+                <MotionBox
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onAiOpen}
+                  cursor="pointer"
+                  borderRadius="full"
+                  bg={brandColor}
+                  w={14}
+                  h={14}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  shadow="2xl"
+                  borderWidth="2px"
+                  borderColor="white"
+                  _dark={{ borderColor: 'gray.800' }}
+                  position="relative"
+                >
+                  <Box
+                    position="absolute"
+                    inset={-1}
+                    bg={brandColor}
+                    borderRadius="full"
+                    opacity={0.3}
+                    zIndex={-1}
+                    style={{
+                      animation: 'pulse 2s infinite',
+                    }}
+                  />
+                  <Sparkles size={24} color="white" />
+                </MotionBox>
+              </Tooltip>
+            </Box> */}
+
+            {/* AI Assistant Drawer */}
+            <Drawer
+              isOpen={isAiOpen}
+              placement="right"
+              onClose={onAiClose}
+              size="md"
+            >
+              <DrawerOverlay backdropFilter="blur(4px)" />
+              <DrawerContent
+                bg={cardBg}
+                borderColor={borderColor}
+                borderLeftWidth="1px"
+                shadow="2xl"
+              >
+                <DrawerCloseButton borderRadius="full" top={4} right={4} />
+                <DrawerHeader
+                  borderBottomWidth="1px"
+                  borderColor={borderColor}
+                  py={4}
+                >
+                  <HStack spacing={2.5}>
+                    <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
+                      <Sparkles size={16} />
+                    </Box>
+                    <Text fontSize="md" fontWeight="bold">
+                      AI Document
+                    </Text>
+                  </HStack>
+                </DrawerHeader>
+                <DrawerBody py={6} overflowY="auto">
+                  <AiPromptPanel
+                    prompt={aiPrompt}
+                    setPrompt={setAiPrompt}
+                    apiResponse={aiResponse}
+                    onSendPrompt={handleSendAiPrompt}
+                    loading={aiLoading}
+                    error={aiError}
+                    labelColor={labelColor}
+                    textColor={textColor}
+                    sectionBg={sectionBg}
+                    borderColor={borderColor}
+                  />
+                </DrawerBody>
+              </DrawerContent>
+            </Drawer>
+
+            {/* CSS Animation for Floating Button Pulse */}
+            <style jsx global>{`
+              @keyframes pulse {
+                0% {
+                  transform: scale(1);
+                  opacity: 0.4;
+                }
+                50% {
+                  transform: scale(1.15);
+                  opacity: 0.1;
+                }
+                100% {
+                  transform: scale(1);
+                  opacity: 0.4;
+                }
+              }
+            `}</style>
+          </MotionBox>
+        )}
+      </AnimatePresence>
     </Box>
   );
 }
