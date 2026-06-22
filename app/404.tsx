@@ -1,4 +1,4 @@
-//  // // // // //ś // // // // //pages/404.tsx
+// //pages/404.tsx
 
 import React from 'react';
 import Link from 'next/link';
