@@ -16,13 +16,13 @@ import {
   IconButton,
   useColorModeValue,
   useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerFooter,
+  DrawerBody,
+  DrawerCloseButton,
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
@@ -33,6 +33,13 @@ import {
   FormLabel,
   useToast,
   Spinner,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
 } from "@chakra-ui/react";
 import {
   FaPlus,
@@ -52,6 +59,8 @@ import {
   FaBold,
   FaItalic,
   FaListUl,
+  FaListOl,
+  FaFolder,
 } from "react-icons/fa";
 import axios from "axios";
 import { AUTH_TOKEN, BACKEND_URL } from "../../../../config/utils/variables";
@@ -61,11 +70,21 @@ import StarterKit from "@tiptap/starter-kit";
 
 interface Task {
   id: string;
+  bucketId?: string | null;
   title: string;
   description: string;
   status: "todo" | "in_progress" | "completed";
   priority: "low" | "medium" | "high";
   dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Bucket {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  taskCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,6 +109,14 @@ const getPlainTextFromHtml = (html: string) =>
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
+
+const sanitizeRichTextHtml = (html: string) =>
+  html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "")
+    .replace(/\son\w+='[^']*'/gi, "")
+    .replace(/\s(href|src)=["']javascript:[^"']*["']/gi, "");
 
 interface RichTextDescriptionEditorProps {
   value: string;
@@ -135,6 +162,7 @@ const RichTextDescriptionEditor = ({
 
   const toolbarButtonBg = useColorModeValue("gray.100", "whiteAlpha.100");
   const toolbarActiveBg = useColorModeValue("brand.100", "brand.700");
+  const toolbarBg = useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)");
 
   if (!editor) return null;
 
@@ -151,7 +179,7 @@ const RichTextDescriptionEditor = ({
         p={2}
         borderBottom="1px solid"
         borderColor={borderColor}
-        bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)")}
+        bg={toolbarBg}
       >
         <IconButton
           aria-label="Bold"
@@ -183,6 +211,16 @@ const RichTextDescriptionEditor = ({
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           _hover={{ bg: toolbarButtonBg }}
         />
+        <IconButton
+          aria-label="Numbered list"
+          icon={<FaListOl />}
+          size="sm"
+          variant="ghost"
+          bg={editor.isActive("orderedList") ? toolbarActiveBg : "transparent"}
+          isDisabled={isDisabled}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          _hover={{ bg: toolbarButtonBg }}
+        />
         <Text fontSize="xs" color={textMuted} pl={2}>
           Rich description
         </Text>
@@ -198,14 +236,97 @@ const RichTextDescriptionEditor = ({
             margin: "0 0 8px",
           },
           ".task-description-editor ul": {
-            paddingLeft: "20px",
+            listStyleType: "disc",
+            listStylePosition: "outside",
+            paddingInlineStart: "22px",
             margin: "0 0 8px",
+          },
+          ".task-description-editor ol": {
+            listStyleType: "decimal",
+            listStylePosition: "outside",
+            paddingInlineStart: "22px",
+            margin: "0 0 8px",
+          },
+          ".task-description-editor li": {
+            marginBottom: "4px",
+          },
+          ".task-description-editor li p": {
+            margin: 0,
+          },
+          ".task-description-editor li::marker": {
+            color: "currentColor",
+          },
+          ".task-description-editor strong": {
+            fontWeight: 700,
+          },
+          ".task-description-editor em": {
+            fontStyle: "italic",
           },
         }}
       >
         <EditorContent editor={editor} />
       </Box>
     </Box>
+  );
+};
+
+interface TaskDescriptionPreviewProps {
+  value: string;
+  textMuted: string;
+  strongColor: string;
+}
+
+const TaskDescriptionPreview = ({
+  value,
+  textMuted,
+  strongColor,
+}: TaskDescriptionPreviewProps) => {
+  if (!getPlainTextFromHtml(value)) return null;
+
+  return (
+    <Box
+      fontSize="xs"
+      color={textMuted}
+      mb={3}
+      wordBreak="break-word"
+      sx={{
+        "& p": {
+          margin: "0 0 6px",
+        },
+        "& p:last-child": {
+          marginBottom: 0,
+        },
+        "& ul": {
+          listStyleType: "disc",
+          listStylePosition: "outside",
+          paddingInlineStart: "20px",
+          margin: "0 0 6px",
+        },
+        "& ol": {
+          listStyleType: "decimal",
+          listStylePosition: "outside",
+          paddingInlineStart: "20px",
+          margin: "0 0 6px",
+        },
+        "& li": {
+          marginBottom: "3px",
+        },
+        "& li p": {
+          margin: 0,
+        },
+        "& li::marker": {
+          color: "currentColor",
+        },
+        "& strong": {
+          color: strongColor,
+          fontWeight: 700,
+        },
+        "& em": {
+          fontStyle: "italic",
+        },
+      }}
+      dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(value) }}
+    />
   );
 };
 
@@ -225,7 +346,7 @@ export default function TaskManagerContent() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
 
-  // Add/Edit Task Modal States
+  // Add/Edit Task Drawer States
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -241,6 +362,26 @@ export default function TaskManagerContent() {
   const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">("medium");
   const [taskDueDate, setTaskDueDate] = useState("");
 
+  // Buckets States
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
+  const [activeBucketId, setActiveBucketId] = useState<string>("");
+  const [loadingBuckets, setLoadingBuckets] = useState(true);
+
+  // Bucket CRUD Modal/Alert States
+  const { isOpen: isBucketModalOpen, onOpen: onBucketModalOpen, onClose: onBucketModalClose } = useDisclosure();
+  const { isOpen: isBucketDeleteOpen, onOpen: onBucketDeleteOpen, onClose: onBucketDeleteClose } = useDisclosure();
+  const bucketDeleteCancelRef = useRef<HTMLButtonElement>(null);
+
+  const [bucketModalMode, setBucketModalMode] = useState<"create" | "rename">("create");
+  const [editingBucket, setEditingBucket] = useState<Bucket | null>(null);
+  const [pendingDeleteBucket, setPendingDeleteBucket] = useState<Bucket | null>(null);
+  const [bucketNameInput, setBucketNameInput] = useState("");
+  const [isBucketSubmitting, setIsBucketSubmitting] = useState(false);
+  const [isBucketDeleting, setIsBucketDeleting] = useState(false);
+
+  // Task Drawer Bucket selection
+  const [taskBucketId, setTaskBucketId] = useState("");
+
   const toast = useToast();
 
   // Premium colors
@@ -250,6 +391,7 @@ export default function TaskManagerContent() {
   const cardHoverBg = useColorModeValue("gray.50", "rgba(30, 57, 95, 0.95)");
   const textMuted = useColorModeValue("gray.600", "gray.400");
   const borderColor = useColorModeValue("gray.200", "rgba(255, 255, 255, 0.08)");
+  const taskTitleColor = useColorModeValue("gray.800", "white");
 
   // Get Auth Token
   const getAuthToken = () => {
@@ -271,6 +413,54 @@ export default function TaskManagerContent() {
     });
   };
 
+  // Fetch buckets from API
+  const fetchBuckets = useCallback(async (selectDefault = false) => {
+    const token = getAuthToken();
+    if (!token) {
+      setIsAuthenticated(false);
+      setLoadingBuckets(false);
+      return;
+    }
+
+    try {
+      setLoadingBuckets(true);
+      const url = getApiUrl("/buckets");
+      const response = await axios.get(url, {
+        params: {
+          dateField: "dueDate",
+          dateFrom,
+          dateTo,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = response.data.data;
+      setBuckets(data);
+
+      if (data.length > 0) {
+        setActiveBucketId((prev) => {
+          if (prev && !selectDefault && data.some((b: Bucket) => b.id === prev)) {
+            return prev;
+          }
+          const defaultBucket = data.find((b: Bucket) => b.isDefault);
+          return defaultBucket ? defaultBucket.id : data[0].id;
+        });
+      }
+    } catch (error: any) {
+      console.error("Error fetching buckets:", error);
+      toast({
+        title: "Error fetching buckets",
+        description: error.response?.data?.message || "Something went wrong",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoadingBuckets(false);
+    }
+  }, [dateFrom, dateTo, toast]);
+
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
     const token = getAuthToken();
@@ -287,6 +477,9 @@ export default function TaskManagerContent() {
         dateFrom,
         dateTo,
       });
+      if (activeBucketId) {
+        params.append("bucketId", activeBucketId);
+      }
       const url = getApiUrl(`/tasks?${params.toString()}`);
       const response = await axios.get(url, {
         headers: {
@@ -311,11 +504,20 @@ export default function TaskManagerContent() {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, toast]);
+  }, [dateFrom, dateTo, activeBucketId, toast]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    fetchBuckets();
+  }, [fetchBuckets]);
+
+  useEffect(() => {
+    if (activeBucketId) {
+      fetchTasks();
+    } else {
+      setTasks([]);
+      setLoading(false);
+    }
+  }, [activeBucketId, fetchTasks]);
 
   // Create Task
   const handleCreateTask = async () => {
@@ -363,6 +565,7 @@ export default function TaskManagerContent() {
           status: taskStatus,
           priority: taskPriority,
           dueDate: taskDueDate || null,
+          bucketId: taskBucketId || activeBucketId || null,
         },
         {
           headers: {
@@ -372,6 +575,7 @@ export default function TaskManagerContent() {
       );
 
       await fetchTasks();
+      await fetchBuckets();
       toast({
         title: "Task created successfully",
         status: "success",
@@ -409,6 +613,7 @@ export default function TaskManagerContent() {
       setTasks((prev) =>
         prev.map((task) => (task.id === taskId ? response.data.data : task))
       );
+      fetchBuckets();
       return true;
     } catch (error: any) {
       toast({
@@ -422,7 +627,7 @@ export default function TaskManagerContent() {
     }
   };
 
-  // Submit Edit Modal
+  // Submit Edit Drawer
   const handleSubmitEdit = async () => {
     if (!editingTask) return;
     if (!taskTitle.trim()) {
@@ -463,6 +668,7 @@ export default function TaskManagerContent() {
         status: taskStatus,
         priority: taskPriority,
         dueDate: taskDueDate || null,
+        bucketId: taskBucketId || activeBucketId || null,
       });
 
       if (!isUpdated) return;
@@ -474,6 +680,7 @@ export default function TaskManagerContent() {
         isClosable: true,
       });
       await fetchTasks();
+      await fetchBuckets();
       resetForm();
       onClose();
     } finally {
@@ -496,6 +703,7 @@ export default function TaskManagerContent() {
       });
 
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      fetchBuckets();
       toast({
         title: "Task deleted successfully",
         status: "info",
@@ -578,14 +786,150 @@ export default function TaskManagerContent() {
     setDraggedTaskId(null);
   };
 
-  // Open Edit Modal
-  const openEditModal = (task: Task) => {
+  // Bucket CRUD Handlers
+  const handleBucketSubmit = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    if (!bucketNameInput.trim()) {
+      toast({
+        title: "Bucket name is required",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      setIsBucketSubmitting(true);
+      if (bucketModalMode === "create") {
+        const url = getApiUrl("/buckets");
+        const response = await axios.post(
+          url,
+          { name: bucketNameInput.trim() },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast({
+          title: "Bucket created successfully",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+        const newBucket = response.data.data;
+        await fetchBuckets();
+        setActiveBucketId(newBucket.id);
+      } else {
+        if (!editingBucket) return;
+        const url = getApiUrl(`/buckets/${editingBucket.id}`);
+        await axios.put(
+          url,
+          { name: bucketNameInput.trim() },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast({
+          title: "Bucket renamed successfully",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+        await fetchBuckets();
+      }
+      onBucketModalClose();
+      setBucketNameInput("");
+      setEditingBucket(null);
+    } catch (error: any) {
+      toast({
+        title: `Failed to ${bucketModalMode} bucket`,
+        description: error.response?.data?.message || "Server error",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsBucketSubmitting(false);
+    }
+  };
+
+  const handleConfirmDeleteBucket = async () => {
+    if (!pendingDeleteBucket) return;
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+      setIsBucketDeleting(true);
+      const url = getApiUrl(`/buckets/${pendingDeleteBucket.id}`);
+      await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast({
+        title: "Bucket deleted successfully",
+        description: "All tasks inside have been removed.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      if (activeBucketId === pendingDeleteBucket.id) {
+        const defaultBucket = buckets.find((b) => b.isDefault);
+        setActiveBucketId(defaultBucket ? defaultBucket.id : "");
+      }
+
+      await fetchBuckets(true);
+      onBucketDeleteClose();
+      setPendingDeleteBucket(null);
+    } catch (error: any) {
+      toast({
+        title: "Failed to delete bucket",
+        description: error.response?.data?.message || "Server error",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsBucketDeleting(false);
+    }
+  };
+
+  const openCreateBucketModal = () => {
+    setBucketModalMode("create");
+    setBucketNameInput("");
+    setEditingBucket(null);
+    onBucketModalOpen();
+  };
+
+  const openRenameBucketModal = (bucket: Bucket) => {
+    setBucketModalMode("rename");
+    setBucketNameInput(bucket.name);
+    setEditingBucket(bucket);
+    onBucketModalOpen();
+  };
+
+  const openDeleteBucketAlert = (bucket: Bucket) => {
+    setPendingDeleteBucket(bucket);
+    onBucketDeleteOpen();
+  };
+
+  // Open Edit Drawer
+  const openEditDrawer = (task: Task) => {
     setEditingTask(task);
     setTaskTitle(task.title);
     setTaskDesc(task.description);
     setTaskStatus(task.status);
     setTaskPriority(task.priority);
     setTaskDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
+    setTaskBucketId(task.bucketId || "");
     onOpen();
   };
 
@@ -597,6 +941,7 @@ export default function TaskManagerContent() {
     setTaskStatus("todo");
     setTaskPriority("medium");
     setTaskDueDate("");
+    setTaskBucketId(activeBucketId || "");
   };
 
   // Filter Tasks
@@ -843,270 +1188,382 @@ export default function TaskManagerContent() {
       </Flex>
 
       {/* Task board layout */}
-      {loading ? (
-        <Flex minH="400px" justify="center" align="center">
-          <VStack spacing={4}>
-            <Spinner size="xl" color="brand.400" thickness="4px" />
-            <Text color={textMuted} fontSize="sm">
-              Loading board data...
-            </Text>
-          </VStack>
-        </Flex>
-      ) : (
-        <Grid
-          templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
-          gap={6}
-          alignItems="start"
+      <Flex direction={{ base: "column", lg: "row" }} gap={6} align="stretch">
+        {/* Buckets Sidebar */}
+        <Box
+          w={{ base: "full", lg: "260px" }}
+          flexShrink={0}
+          bg={boardBg}
+          borderRadius="2xl"
+          p={4}
+          border="1px solid"
+          borderColor={borderColor}
+          backdropFilter="blur(10px)"
+          alignSelf="flex-start"
         >
-          {columns.map((col) => {
-            const isHovered = hoveredColumn === col.id;
-            return (
-              <Box
-                key={col.id}
-                onDragOver={(e) => handleDragOver(e, col.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, col.id)}
-                p={4}
-                bg={boardBg}
-                borderRadius="2xl"
-                border="2px dashed"
-                borderColor={isHovered ? `${col.colorScheme}.400` : "transparent"}
-                boxShadow={isHovered ? `0 0 20px ${col.glowColor}` : "none"}
-                transition="all 0.25s ease"
-                minH="600px"
-                backdropFilter="blur(10px)"
-              >
-                {/* Column Header */}
-                <Flex
-                  p={3}
-                  borderRadius="xl"
-                  bgGradient={col.headerBg}
-                  color="white"
-                  align="center"
-                  justify="space-between"
-                  boxShadow={`0 4px 14px ${col.glowColor}`}
-                  mb={5}
-                >
-                  <HStack spacing={2}>
-                    <Box as={col.icon} />
-                    <Text fontWeight="bold" fontSize="md">
-                      {col.title}
-                    </Text>
-                  </HStack>
-                  <Badge colorScheme="blackAlpha" variant="solid" borderRadius="full" px={2.5}>
-                    {col.tasksList.length}
-                  </Badge>
-                </Flex>
+          <Flex justify="space-between" align="center" mb={4}>
+            <Heading size="xs" textTransform="uppercase" letterSpacing="wider" color={textMuted}>
+              Buckets
+            </Heading>
+            <IconButton
+              size="xs"
+              colorScheme="brand"
+              bg="brand.500"
+              color="white"
+              icon={<FaPlus />}
+              aria-label="Add Bucket"
+              _hover={{ bg: "brand.600" }}
+              onClick={openCreateBucketModal}
+            />
+          </Flex>
 
-                {/* Task Cards Stack */}
-                <VStack spacing={4} align="stretch" w="full">
-                  {col.tasksList.length === 0 ? (
-                    <Flex
-                      direction="column"
-                      align="center"
-                      justify="center"
-                      py={10}
-                      px={4}
-                      borderRadius="xl"
-                      bg="whiteAlpha.50"
-                      border="1px dashed"
-                      borderColor={borderColor}
-                    >
-                      <Text fontSize="xs" color="gray.500" textAlign="center">
-                        No tasks. Drag tasks here.
+          <VStack spacing={2} align="stretch">
+            {loadingBuckets ? (
+              <Flex justify="center" py={4}>
+                <Spinner size="sm" color="brand.400" />
+              </Flex>
+            ) : buckets.length === 0 ? (
+              <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
+                No buckets found.
+              </Text>
+            ) : (
+              buckets.map((bucket) => {
+                const isActive = bucket.id === activeBucketId;
+                return (
+                  <Flex
+                    key={bucket.id}
+                    align="center"
+                    justify="space-between"
+                    p={3}
+                    borderRadius="xl"
+                    bg={isActive ? "brand.500" : "transparent"}
+                    color={isActive ? "white" : taskTitleColor}
+                    cursor="pointer"
+                    onClick={() => setActiveBucketId(bucket.id)}
+                    transition="all 0.2s"
+                    _hover={{
+                      bg: isActive ? "brand.600" : cardHoverBg,
+                    }}
+                    role="group"
+                  >
+                    <HStack spacing={2.5} flex={1} minW={0}>
+                      {bucket.isDefault ? <FaLock size="12px" /> : <FaFolder size="14px" />}
+                      <Text fontSize="sm" fontWeight={isActive ? "bold" : "medium"} isTruncated flex={1}>
+                        {bucket.name}
                       </Text>
+                      <Badge
+                        colorScheme={isActive ? "blackAlpha" : "brand"}
+                        variant={isActive ? "solid" : "subtle"}
+                        borderRadius="full"
+                        px={2}
+                        py={0.5}
+                        fontSize="2xs"
+                      >
+                        {bucket.taskCount || 0}
+                      </Badge>
+                    </HStack>
+
+                    {!bucket.isDefault && (
+                      <HStack spacing={1} display="none" _groupHover={{ display: "flex" }} ml={2}>
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          color={isActive ? "white" : "brand.400"}
+                          icon={<FaEdit size="10px" />}
+                          aria-label="Rename bucket"
+                          _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openRenameBucketModal(bucket);
+                          }}
+                        />
+                        <IconButton
+                          size="xs"
+                          variant="ghost"
+                          color={isActive ? "white" : "red.400"}
+                          icon={<FaTrash size="10px" />}
+                          aria-label="Delete bucket"
+                          _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteBucketAlert(bucket);
+                          }}
+                        />
+                      </HStack>
+                    )}
+                  </Flex>
+                );
+              })
+            )}
+          </VStack>
+        </Box>
+
+        {/* Task Board Area */}
+        <Box flex={1} minW={0}>
+          {loading ? (
+            <Flex minH="400px" justify="center" align="center">
+              <VStack spacing={4}>
+                <Spinner size="xl" color="brand.400" thickness="4px" />
+                <Text color={textMuted} fontSize="sm">
+                  Loading tasks...
+                </Text>
+              </VStack>
+            </Flex>
+          ) : (
+            <Grid
+              templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+              gap={6}
+              alignItems="start"
+            >
+              {columns.map((col) => {
+                const isHovered = hoveredColumn === col.id;
+                return (
+                  <Box
+                    key={col.id}
+                    onDragOver={(e) => handleDragOver(e, col.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, col.id)}
+                    p={4}
+                    bg={boardBg}
+                    borderRadius="2xl"
+                    border="2px dashed"
+                    borderColor={isHovered ? `${col.colorScheme}.400` : "transparent"}
+                    boxShadow={isHovered ? `0 0 20px ${col.glowColor}` : "none"}
+                    transition="all 0.25s ease"
+                    minH="600px"
+                    backdropFilter="blur(10px)"
+                  >
+                    {/* Column Header */}
+                    <Flex
+                      p={3}
+                      borderRadius="xl"
+                      bgGradient={col.headerBg}
+                      color="white"
+                      align="center"
+                      justify="space-between"
+                      boxShadow={`0 4px 14px ${col.glowColor}`}
+                      mb={5}
+                    >
+                      <HStack spacing={2}>
+                        <Box as={col.icon} />
+                        <Text fontWeight="bold" fontSize="md">
+                          {col.title}
+                        </Text>
+                      </HStack>
+                      <Badge colorScheme="blackAlpha" variant="solid" borderRadius="full" px={2.5}>
+                        {col.tasksList.length}
+                      </Badge>
                     </Flex>
-                  ) : (
-                    col.tasksList.map((task) => {
-                      const priorityColor =
-                        task.priority === "high"
-                          ? "red"
-                          : task.priority === "medium"
-                          ? "orange"
-                          : "blue";
 
-                      const isDueDatePassed =
-                        task.dueDate &&
-                        new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
-                      const isDeletingTask = deletingTaskId === task.id;
-                      const descriptionPreview = getPlainTextFromHtml(task.description);
-
-                      return (
-                        <Box
-                          key={task.id}
-                          draggable={!isDeletingTask}
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          p={4}
+                    {/* Task Cards Stack */}
+                    <VStack spacing={4} align="stretch" w="full">
+                      {col.tasksList.length === 0 ? (
+                        <Flex
+                          direction="column"
+                          align="center"
+                          justify="center"
+                          py={10}
+                          px={4}
                           borderRadius="xl"
-                          bg={cardBg}
-                          border="1px solid"
+                          bg="whiteAlpha.50"
+                          border="1px dashed"
                           borderColor={borderColor}
-                          boxShadow="0 4px 10px rgba(0, 0, 0, 0.15)"
-                          cursor="grab"
-                          transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
-                          _hover={{
-                            transform: "translateY(-4px)",
-                            boxShadow: `0 8px 20px ${col.glowColor}`,
-                            bg: cardHoverBg,
-                            borderColor: `${col.colorScheme}.400`,
-                          }}
-                          _active={{
-                            cursor: "grabbing",
-                          }}
-                          position="relative"
                         >
-                          <Flex justify="space-between" align="start" mb={2}>
-                            <Badge colorScheme={priorityColor} variant="subtle" borderRadius="md" px={2}>
-                              {task.priority}
-                            </Badge>
-                            <HStack spacing={1}>
-                              <IconButton
-                                size="xs"
-                                variant="ghost"
-                                color="brand.400"
-                                aria-label="Edit task"
-                                icon={<FaEdit />}
-                                onClick={() => openEditModal(task)}
-                                isDisabled={isDeletingTask || isTaskSubmitting}
-                                _hover={{ bg: "whiteAlpha.200" }}
+                          <Text fontSize="xs" color="gray.500" textAlign="center">
+                            No tasks. Drag tasks here.
+                          </Text>
+                        </Flex>
+                      ) : (
+                        col.tasksList.map((task) => {
+                          const priorityColor =
+                            task.priority === "high"
+                              ? "red"
+                              : task.priority === "medium"
+                              ? "orange"
+                              : "blue";
+
+                          const isDueDatePassed =
+                            task.dueDate &&
+                            new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+                          const isDeletingTask = deletingTaskId === task.id;
+                          return (
+                            <Box
+                              key={task.id}
+                              draggable={!isDeletingTask}
+                              onDragStart={(e) => handleDragStart(e, task.id)}
+                              p={4}
+                              borderRadius="xl"
+                              bg={cardBg}
+                              border="1px solid"
+                              borderColor={borderColor}
+                              boxShadow="0 4px 10px rgba(0, 0, 0, 0.15)"
+                              cursor="grab"
+                              transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                              _hover={{
+                                transform: "translateY(-4px)",
+                                boxShadow: `0 8px 20px ${col.glowColor}`,
+                                bg: cardHoverBg,
+                                borderColor: `${col.colorScheme}.400`,
+                              }}
+                              _active={{
+                                cursor: "grabbing",
+                              }}
+                              position="relative"
+                            >
+                              <Flex justify="space-between" align="start" mb={2}>
+                                <Badge colorScheme={priorityColor} variant="subtle" borderRadius="md" px={2}>
+                                  {task.priority}
+                                </Badge>
+                                <HStack spacing={1}>
+                                  <IconButton
+                                    size="xs"
+                                    variant="ghost"
+                                    color="brand.400"
+                                    aria-label="Edit task"
+                                    icon={<FaEdit />}
+                                    onClick={() => openEditDrawer(task)}
+                                    isDisabled={isDeletingTask || isTaskSubmitting}
+                                    _hover={{ bg: "whiteAlpha.200" }}
+                                  />
+                                  <IconButton
+                                    size="xs"
+                                    variant="ghost"
+                                    color="red.400"
+                                    aria-label="Delete task"
+                                    icon={<FaTrash />}
+                                    onClick={() => openDeleteConfirm(task)}
+                                    isLoading={isDeletingTask}
+                                    isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
+                                    _hover={{ bg: "whiteAlpha.200" }}
+                                  />
+                                </HStack>
+                              </Flex>
+
+                              <Heading size="sm" mb={2} color={taskTitleColor}>
+                                {task.title}
+                              </Heading>
+
+                              <TaskDescriptionPreview
+                                value={task.description}
+                                textMuted={textMuted}
+                                strongColor={taskTitleColor}
                               />
-                              <IconButton
-                                size="xs"
-                                variant="ghost"
-                                color="red.400"
-                                aria-label="Delete task"
-                                icon={<FaTrash />}
-                                onClick={() => openDeleteConfirm(task)}
-                                isLoading={isDeletingTask}
-                                isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
-                                _hover={{ bg: "whiteAlpha.200" }}
-                              />
-                            </HStack>
-                          </Flex>
 
-                          <Heading size="sm" mb={2} color={useColorModeValue("gray.800", "white")}>
-                            {task.title}
-                          </Heading>
+                              {task.dueDate && (
+                                <HStack spacing={1.5} fontSize="2xs" color={isDueDatePassed ? "red.400" : "brand.300"}>
+                                  <FaCalendarAlt />
+                                  <Text fontWeight={isDueDatePassed ? "bold" : "normal"}>
+                                    {new Date(task.dueDate).toLocaleDateString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                    {isDueDatePassed && " (Overdue)"}
+                                  </Text>
+                                </HStack>
+                              )}
 
-                          {descriptionPreview && (
-                            <Text fontSize="xs" color={textMuted} noOfLines={3} mb={3}>
-                              {descriptionPreview}
-                            </Text>
-                          )}
+                              <HStack spacing={1.5} fontSize="2xs" color={textMuted} mt={task.dueDate ? 1 : 0}>
+                                <FaCalendarAlt />
+                                <Text>Created {formatDisplayDate(task.createdAt)}</Text>
+                              </HStack>
 
-                          {task.dueDate && (
-                            <HStack spacing={1.5} fontSize="2xs" color={isDueDatePassed ? "red.400" : "brand.300"}>
-                              <FaCalendarAlt />
-                              <Text fontWeight={isDueDatePassed ? "bold" : "normal"}>
-                                {new Date(task.dueDate).toLocaleDateString(undefined, {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                                {isDueDatePassed && " (Overdue)"}
-                              </Text>
-                            </HStack>
-                          )}
-
-                          <HStack spacing={1.5} fontSize="2xs" color={textMuted} mt={task.dueDate ? 1 : 0}>
-                            <FaCalendarAlt />
-                            <Text>Created {formatDisplayDate(task.createdAt)}</Text>
-                          </HStack>
-
-                          {/* Mobile Transition Actions: Fixes Drag & Drop limitations on mobile/responsive devices */}
-                          <Flex
-                            display={{ base: "flex", md: "none" }}
-                            mt={3}
-                            pt={3}
-                            borderTop="1px solid"
-                            borderColor={borderColor}
-                            justify="space-between"
-                            gap={2}
-                          >
-                            {task.status === "todo" && (
-                              <Button
-                                size="xs"
-                                leftIcon={<FaPlay />}
-                                colorScheme="orange"
-                                variant="solid"
-                                onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
-                                w="full"
-                                borderRadius="lg"
+                              {/* Mobile Transition Actions: Fixes Drag & Drop limitations on mobile/responsive devices */}
+                              <Flex
+                                display={{ base: "flex", md: "none" }}
+                                mt={3}
+                                pt={3}
+                                borderTop="1px solid"
+                                borderColor={borderColor}
+                                justify="space-between"
+                                gap={2}
                               >
-                                Start
-                              </Button>
-                            )}
+                                {task.status === "todo" && (
+                                  <Button
+                                    size="xs"
+                                    leftIcon={<FaPlay />}
+                                    colorScheme="orange"
+                                    variant="solid"
+                                    onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
+                                    w="full"
+                                    borderRadius="lg"
+                                  >
+                                    Start
+                                  </Button>
+                                )}
 
-                            {task.status === "in_progress" && (
-                              <>
-                                <Button
-                                  size="xs"
-                                  leftIcon={<FaArrowLeft />}
-                                  colorScheme="purple"
-                                  variant="outline"
-                                  onClick={() => handleUpdateTask(task.id, { status: "todo" })}
-                                  w="full"
-                                  borderRadius="lg"
-                                >
-                                  Back
-                                </Button>
-                                <Button
-                                  size="xs"
-                                  leftIcon={<FaCheck />}
-                                  colorScheme="teal"
-                                  variant="solid"
-                                  onClick={() => handleUpdateTask(task.id, { status: "completed" })}
-                                  w="full"
-                                  borderRadius="lg"
-                                >
-                                  Finish
-                                </Button>
-                              </>
-                            )}
+                                {task.status === "in_progress" && (
+                                  <>
+                                    <Button
+                                      size="xs"
+                                      leftIcon={<FaArrowLeft />}
+                                      colorScheme="purple"
+                                      variant="outline"
+                                      onClick={() => handleUpdateTask(task.id, { status: "todo" })}
+                                      w="full"
+                                      borderRadius="lg"
+                                    >
+                                      Back
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      leftIcon={<FaCheck />}
+                                      colorScheme="teal"
+                                      variant="solid"
+                                      onClick={() => handleUpdateTask(task.id, { status: "completed" })}
+                                      w="full"
+                                      borderRadius="lg"
+                                    >
+                                      Finish
+                                    </Button>
+                                  </>
+                                )}
 
-                            {task.status === "completed" && (
-                              <Button
-                                size="xs"
-                                leftIcon={<FaUndo />}
-                                colorScheme="orange"
-                                variant="outline"
-                                onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
-                                w="full"
-                                borderRadius="lg"
-                              >
-                                Reopen
-                              </Button>
-                            )}
-                          </Flex>
-                        </Box>
-                      );
-                    })
-                  )}
-                </VStack>
-              </Box>
-            );
-          })}
-        </Grid>
-      )}
+                                {task.status === "completed" && (
+                                  <Button
+                                    size="xs"
+                                    leftIcon={<FaUndo />}
+                                    colorScheme="orange"
+                                    variant="outline"
+                                    onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
+                                    w="full"
+                                    borderRadius="lg"
+                                  >
+                                    Reopen
+                                  </Button>
+                                )}
+                              </Flex>
+                            </Box>
+                          );
+                        })
+                      )}
+                    </VStack>
+                  </Box>
+                );
+              })}
+            </Grid>
+          )}
+        </Box>
+      </Flex>
 
-      {/* Task Modal (Add/Edit) */}
-      <Modal
+      {/* Task Drawer (Add/Edit) */}
+      <Drawer
         isOpen={isOpen}
         onClose={isTaskSubmitting ? () => undefined : onClose}
-        isCentered
-        size="lg"
+        placement="right"
+        size={{ base: "full", md: "lg" }}
         closeOnOverlayClick={!isTaskSubmitting}
       >
-        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
-        <ModalContent
+        <DrawerOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
+        <DrawerContent
           bg={useColorModeValue("white", "rgba(10, 25, 47, 0.95)")}
           color={useColorModeValue("gray.800", "white")}
-          borderRadius="xl"
+          borderLeftRadius={{ base: "none", md: "xl" }}
           border="1px solid"
           borderColor={borderColor}
           boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
           overflow="hidden"
         >
-          <ModalHeader
+          <DrawerHeader
             px={{ base: 5, md: 6 }}
             py={5}
             bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)")}
@@ -1136,10 +1593,10 @@ export default function TaskManagerContent() {
                 </Text>
               </Box>
             </HStack>
-          </ModalHeader>
-          <ModalCloseButton isDisabled={isTaskSubmitting} />
+          </DrawerHeader>
+          <DrawerCloseButton isDisabled={isTaskSubmitting} />
 
-          <ModalBody px={{ base: 5, md: 6 }} py={6}>
+          <DrawerBody px={{ base: 5, md: 6 }} py={6} overflowY="auto">
             <VStack spacing={5}>
               <FormControl isRequired>
                 <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
@@ -1155,6 +1612,26 @@ export default function TaskManagerContent() {
                   borderColor={borderColor}
                   _focus={{ borderColor: "brand.400", boxShadow: "0 0 8px var(--chakra-colors-brand-400)" }}
                 />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                  Bucket
+                </FormLabel>
+                <Select
+                  value={taskBucketId}
+                  onChange={(e) => setTaskBucketId(e.target.value)}
+                  isDisabled={isTaskSubmitting}
+                  size="lg"
+                  borderRadius="lg"
+                  borderColor={borderColor}
+                >
+                  {buckets.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.isDefault ? "(Default)" : ""}
+                    </option>
+                  ))}
+                </Select>
               </FormControl>
 
               <FormControl isRequired>
@@ -1221,9 +1698,9 @@ export default function TaskManagerContent() {
                 />
               </FormControl>
             </VStack>
-          </ModalBody>
+          </DrawerBody>
 
-          <ModalFooter
+          <DrawerFooter
             px={{ base: 5, md: 6 }}
             py={4}
             borderTop="1px solid"
@@ -1256,10 +1733,11 @@ export default function TaskManagerContent() {
             >
               {editingTask ? "Save Changes" : "Create Task"}
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
+      {/* Delete Task Alert */}
       <AlertDialog
         isOpen={isDeleteOpen}
         leastDestructiveRef={deleteCancelRef}
@@ -1298,6 +1776,112 @@ export default function TaskManagerContent() {
               colorScheme="red"
               onClick={handleConfirmDelete}
               isLoading={Boolean(deletingTaskId)}
+              loadingText="Deleting..."
+            >
+              Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Create / Rename Bucket Modal */}
+      <Modal isOpen={isBucketModalOpen} onClose={onBucketModalClose} isCentered>
+        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
+        <ModalContent
+          bg={useColorModeValue("white", "rgba(10, 25, 47, 0.98)")}
+          color={useColorModeValue("gray.800", "white")}
+          borderRadius="xl"
+          border="1px solid"
+          borderColor={borderColor}
+          boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+        >
+          <ModalHeader fontSize="lg" fontWeight="bold">
+            {bucketModalMode === "create" ? "Create New Bucket" : "Rename Bucket"}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl isRequired>
+              <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                Bucket Name
+              </FormLabel>
+              <Input
+                placeholder="e.g. Work, Personal, Shopping"
+                value={bucketNameInput}
+                onChange={(e) => setBucketNameInput(e.target.value)}
+                isDisabled={isBucketSubmitting}
+                borderRadius="lg"
+                borderColor={borderColor}
+                _focus={{ borderColor: "brand.400" }}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter gap={3}>
+            <Button
+              onClick={onBucketModalClose}
+              isDisabled={isBucketSubmitting}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+            <Button
+              colorScheme="brand"
+              bg="brand.500"
+              color="white"
+              _hover={{
+                bg: "brand.600",
+                boxShadow: "0 0 15px var(--chakra-colors-brand-500)",
+              }}
+              onClick={handleBucketSubmit}
+              isLoading={isBucketSubmitting}
+            >
+              {bucketModalMode === "create" ? "Create" : "Save"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Delete Bucket Alert */}
+      <AlertDialog
+        isOpen={isBucketDeleteOpen}
+        leastDestructiveRef={bucketDeleteCancelRef}
+        onClose={onBucketDeleteClose}
+        isCentered
+        closeOnOverlayClick={!isBucketDeleting}
+      >
+        <AlertDialogOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
+        <AlertDialogContent
+          bg={useColorModeValue("white", "rgba(10, 25, 47, 0.98)")}
+          color={useColorModeValue("gray.800", "white")}
+          borderRadius="xl"
+          border="1px solid"
+          borderColor={borderColor}
+          boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+        >
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Delete Bucket
+          </AlertDialogHeader>
+
+          <AlertDialogBody color={textMuted}>
+            Are you sure you want to delete the bucket
+            {pendingDeleteBucket?.name ? ` "${pendingDeleteBucket.name}"` : ""}? 
+            <Text mt={2} color="red.400" fontWeight="bold">
+              Warning: All tasks within this bucket will be deleted permanently. This action cannot be undone.
+            </Text>
+          </AlertDialogBody>
+
+          <AlertDialogFooter gap={3}>
+            <Button
+              ref={bucketDeleteCancelRef}
+              onClick={onBucketDeleteClose}
+              isDisabled={isBucketDeleting}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+            <Button
+              colorScheme="red"
+              onClick={handleConfirmDeleteBucket}
+              isLoading={isBucketDeleting}
               loadingText="Deleting..."
             >
               Delete
