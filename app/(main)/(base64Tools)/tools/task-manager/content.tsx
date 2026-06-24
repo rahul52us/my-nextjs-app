@@ -45,6 +45,7 @@ import {
   FaPlus,
   FaTrash,
   FaEdit,
+  FaEye,
   FaSearch,
   FaCalendarAlt,
   FaLock,
@@ -289,12 +290,18 @@ const TaskDescriptionPreview = ({
       color={textMuted}
       mb={3}
       wordBreak="break-word"
+      lineHeight="1.45"
+      overflow="hidden"
       sx={{
+        display: "-webkit-box",
+        WebkitBoxOrient: "vertical",
+        WebkitLineClamp: "2",
         "& p": {
-          margin: "0 0 6px",
+          display: "inline",
+          margin: 0,
         },
-        "& p:last-child": {
-          marginBottom: 0,
+        "& p:not(:last-child)::after": {
+          content: '" "',
         },
         "& ul": {
           listStyleType: "disc",
@@ -355,6 +362,7 @@ export default function TaskManagerContent() {
   } = useDisclosure();
   const deleteCancelRef = useRef<HTMLButtonElement>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [pendingDeleteTask, setPendingDeleteTask] = useState<Task | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
@@ -383,6 +391,11 @@ export default function TaskManagerContent() {
   const [taskBucketId, setTaskBucketId] = useState("");
 
   const toast = useToast();
+  const {
+    isOpen: isViewOpen,
+    onOpen: onViewOpen,
+    onClose: onViewClose,
+  } = useDisclosure();
 
   // Premium colors
   const pageBg = useColorModeValue("gray.50", "gray.900");
@@ -933,6 +946,11 @@ export default function TaskManagerContent() {
     onOpen();
   };
 
+  const openViewDrawer = (task: Task) => {
+    setViewingTask(task);
+    onViewOpen();
+  };
+
   // Reset form inputs
   const resetForm = () => {
     setEditingTask(null);
@@ -1418,6 +1436,16 @@ export default function TaskManagerContent() {
                                   <IconButton
                                     size="xs"
                                     variant="ghost"
+                                    color="blue.400"
+                                    aria-label="View task"
+                                    icon={<FaEye />}
+                                    onClick={() => openViewDrawer(task)}
+                                    isDisabled={isDeletingTask || isTaskSubmitting}
+                                    _hover={{ bg: "whiteAlpha.200" }}
+                                  />
+                                  <IconButton
+                                    size="xs"
+                                    variant="ghost"
                                     color="brand.400"
                                     aria-label="Edit task"
                                     icon={<FaEdit />}
@@ -1544,6 +1572,219 @@ export default function TaskManagerContent() {
           )}
         </Box>
       </Flex>
+
+      {/* View Task Drawer */}
+      <Drawer
+        isOpen={isViewOpen}
+        onClose={onViewClose}
+        placement="right"
+        size={{ base: "full", md: "lg" }}
+      >
+        <DrawerOverlay bg="blackAlpha.800" backdropFilter="blur(5px)" />
+        <DrawerContent
+          bg={useColorModeValue("white", "rgba(10, 25, 47, 0.95)")}
+          color={useColorModeValue("gray.800", "white")}
+          borderLeftRadius={{ base: "none", md: "xl" }}
+          border="1px solid"
+          borderColor={borderColor}
+          boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+          overflow="hidden"
+        >
+          <DrawerHeader
+            px={{ base: 5, md: 6 }}
+            py={5}
+            bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.04)")}
+            borderBottom="1px solid"
+            borderColor={borderColor}
+          >
+            <HStack spacing={3} align="start" pr={8}>
+              <Box
+                display="inline-flex"
+                alignItems="center"
+                justifyContent="center"
+                boxSize="42px"
+                borderRadius="lg"
+                bg="blue.500"
+                color="white"
+                boxShadow="0 10px 24px rgba(49, 130, 206, 0.35)"
+                flexShrink={0}
+              >
+                <FaEye size="18px" />
+              </Box>
+              <Box minW={0}>
+                <Text fontSize="lg" fontWeight="bold" lineHeight="1.2" noOfLines={2}>
+                  {viewingTask?.title || "View Task"}
+                </Text>
+                <Text mt={1} fontSize="sm" fontWeight="normal" color={textMuted}>
+                  Complete task details
+                </Text>
+              </Box>
+            </HStack>
+          </DrawerHeader>
+          <DrawerCloseButton />
+
+          <DrawerBody px={{ base: 5, md: 6 }} py={6} overflowY="auto">
+            {viewingTask && (
+              <VStack spacing={5} align="stretch">
+                <Box>
+                  <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                    Title
+                  </Text>
+                  <Heading size="md" color={taskTitleColor}>
+                    {viewingTask.title}
+                  </Heading>
+                </Box>
+
+                <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Priority
+                    </Text>
+                    <Badge
+                      colorScheme={
+                        viewingTask.priority === "high"
+                          ? "red"
+                          : viewingTask.priority === "medium"
+                          ? "orange"
+                          : "blue"
+                      }
+                      borderRadius="md"
+                      px={2}
+                    >
+                      {viewingTask.priority}
+                    </Badge>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Status
+                    </Text>
+                    <Badge colorScheme="brand" borderRadius="md" px={2}>
+                      {columns.find((column) => column.id === viewingTask.status)?.title || viewingTask.status}
+                    </Badge>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Bucket
+                    </Text>
+                    <Text fontSize="sm">
+                      {buckets.find((bucket) => bucket.id === viewingTask.bucketId)?.name || "No bucket"}
+                    </Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Due Date
+                    </Text>
+                    <Text fontSize="sm">
+                      {viewingTask.dueDate ? formatDisplayDate(viewingTask.dueDate) : "No due date"}
+                    </Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Created
+                    </Text>
+                    <Text fontSize="sm">{formatDisplayDate(viewingTask.createdAt)}</Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                      Updated
+                    </Text>
+                    <Text fontSize="sm">{formatDisplayDate(viewingTask.updatedAt)}</Text>
+                  </Box>
+                </Grid>
+
+                <Box>
+                  <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                    Description
+                  </Text>
+                  {getPlainTextFromHtml(viewingTask.description) ? (
+                    <Box
+                      fontSize="sm"
+                      color={textMuted}
+                      lineHeight="1.7"
+                      wordBreak="break-word"
+                      p={4}
+                      borderRadius="lg"
+                      border="1px solid"
+                      borderColor={borderColor}
+                      bg={useColorModeValue("gray.50", "whiteAlpha.50")}
+                      sx={{
+                        "& p": {
+                          margin: "0 0 10px",
+                        },
+                        "& p:last-child": {
+                          marginBottom: 0,
+                        },
+                        "& ul": {
+                          listStyleType: "disc",
+                          listStylePosition: "outside",
+                          paddingInlineStart: "22px",
+                          margin: "0 0 10px",
+                        },
+                        "& ol": {
+                          listStyleType: "decimal",
+                          listStylePosition: "outside",
+                          paddingInlineStart: "22px",
+                          margin: "0 0 10px",
+                        },
+                        "& li": {
+                          marginBottom: "4px",
+                        },
+                        "& li p": {
+                          margin: 0,
+                        },
+                        "& strong": {
+                          color: taskTitleColor,
+                          fontWeight: 700,
+                        },
+                        "& em": {
+                          fontStyle: "italic",
+                        },
+                      }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(viewingTask.description) }}
+                    />
+                  ) : (
+                    <Text fontSize="sm" color={textMuted}>
+                      No description.
+                    </Text>
+                  )}
+                </Box>
+              </VStack>
+            )}
+          </DrawerBody>
+
+          <DrawerFooter
+            px={{ base: 5, md: 6 }}
+            py={4}
+            borderTop="1px solid"
+            borderColor={borderColor}
+            bg={useColorModeValue("gray.50", "rgba(255, 255, 255, 0.03)")}
+            gap={3}
+          >
+            <Button variant="ghost" onClick={onViewClose}>
+              Close
+            </Button>
+            {viewingTask && (
+              <Button
+                leftIcon={<FaEdit />}
+                colorScheme="brand"
+                bg="brand.500"
+                color="white"
+                onClick={() => {
+                  onViewClose();
+                  openEditDrawer(viewingTask);
+                }}
+              >
+                Edit Task
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* Task Drawer (Add/Edit) */}
       <Drawer
