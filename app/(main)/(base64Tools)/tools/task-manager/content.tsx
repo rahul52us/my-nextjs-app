@@ -41,6 +41,8 @@ import {
   ModalBody,
   ModalCloseButton,
 } from "@chakra-ui/react";
+import AttachmentUpload from "../../../../component/attachments/AttachmentUpload";
+import AttachmentsList from "../../../../component/attachments/AttachmentsList";
 import {
   FaPlus,
   FaTrash,
@@ -74,11 +76,12 @@ interface Task {
   bucketId?: string | null;
   title: string;
   description: string;
-  status: "todo" | "in_progress" | "completed";
+  status: "future" | "todo" | "in_progress" | "completed";
   priority: "low" | "medium" | "high";
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
+  attachments?: any[];
 }
 
 interface Bucket {
@@ -366,9 +369,10 @@ export default function TaskManagerContent() {
   const [pendingDeleteTask, setPendingDeleteTask] = useState<Task | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
-  const [taskStatus, setTaskStatus] = useState<"todo" | "in_progress" | "completed">("todo");
+  const [taskStatus, setTaskStatus] = useState<"future" | "todo" | "in_progress" | "completed">("todo");
   const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">("medium");
   const [taskDueDate, setTaskDueDate] = useState("");
+  const attachmentsRef = useRef<any>(null);
 
   // Buckets States
   const [buckets, setBuckets] = useState<Bucket[]>([]);
@@ -567,15 +571,36 @@ export default function TaskManagerContent() {
       return;
     }
 
+    // Prevent selecting past dates
+    const _today = new Date();
+    _today.setHours(0, 0, 0, 0);
+    const _selected = new Date(taskDueDate);
+    if (_selected.getTime() < _today.getTime()) {
+      toast({
+        title: "Due date cannot be in the past",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       setIsTaskSubmitting(true);
       const url = getApiUrl("/tasks");
-      await axios.post(
+      // Determine status based on due date: if due date is strictly after today (UTC), mark as 'future'
+      const todayUtc = new Date();
+      todayUtc.setUTCHours(0, 0, 0, 0);
+      const selectedDate = new Date(taskDueDate);
+      selectedDate.setUTCHours(0, 0, 0, 0);
+      const statusToSave = selectedDate.getTime() > todayUtc.getTime() ? "future" : (taskStatus === "future" ? "todo" : taskStatus);
+
+      const response = await axios.post(
         url,
         {
           title: taskTitle,
           description: taskDesc,
-          status: taskStatus,
+          status: statusToSave,
           priority: taskPriority,
           dueDate: taskDueDate || null,
           bucketId: taskBucketId || activeBucketId || null,
@@ -586,6 +611,15 @@ export default function TaskManagerContent() {
           },
         }
       );
+
+      const createdTask = response.data.data;
+
+      // If there are attachments pending, upload them now
+      if (attachmentsRef.current && createdTask && createdTask.id) {
+        // uploadAll will handle its own errors
+        // eslint-disable-next-line no-await-in-loop
+        await attachmentsRef.current.uploadAll(createdTask.id);
+      }
 
       await fetchTasks();
       await fetchBuckets();
@@ -675,16 +709,29 @@ export default function TaskManagerContent() {
 
     try {
       setIsTaskSubmitting(true);
+      // Determine status based on due date for edits too
+      const todayUtcEdit = new Date();
+      todayUtcEdit.setUTCHours(0, 0, 0, 0);
+      const selectedEdit = new Date(taskDueDate);
+      selectedEdit.setUTCHours(0, 0, 0, 0);
+      const statusToSaveEdit = selectedEdit.getTime() > todayUtcEdit.getTime() ? "future" : (taskStatus === "future" ? "todo" : taskStatus);
+
       const isUpdated = await handleUpdateTask(editingTask.id, {
         title: taskTitle,
         description: taskDesc,
-        status: taskStatus,
+        status: statusToSaveEdit,
         priority: taskPriority,
         dueDate: taskDueDate || null,
         bucketId: taskBucketId || activeBucketId || null,
       });
 
       if (!isUpdated) return;
+
+      // If attachments pending, upload them for this task
+      if (attachmentsRef.current) {
+        // eslint-disable-next-line no-await-in-loop
+        await attachmentsRef.current.uploadAll(editingTask.id);
+      }
 
       toast({
         title: "Task updated successfully",
@@ -777,7 +824,7 @@ export default function TaskManagerContent() {
     setHoveredColumn(null);
   };
 
-  const handleDrop = async (e: React.DragEvent, status: "todo" | "in_progress" | "completed") => {
+  const handleDrop = async (e: React.DragEvent, status: "future" | "todo" | "in_progress" | "completed") => {
     e.preventDefault();
     setHoveredColumn(null);
     const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
@@ -976,11 +1023,21 @@ export default function TaskManagerContent() {
 
   // Grouped Tasks for columns
   const todoTasks = useMemo(() => filteredTasks.filter((t) => t.status === "todo"), [filteredTasks]);
+  const futureTasks = useMemo(() => filteredTasks.filter((t) => t.status === "future"), [filteredTasks]);
   const inProgressTasks = useMemo(() => filteredTasks.filter((t) => t.status === "in_progress"), [filteredTasks]);
   const completedTasks = useMemo(() => filteredTasks.filter((t) => t.status === "completed"), [filteredTasks]);
 
   // Columns Configuration
   const columns = [
+    {
+      id: "future" as const,
+      title: "Future Tasks",
+      icon: FaFolder,
+      colorScheme: "indigo",
+      tasksList: futureTasks,
+      headerBg: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+      glowColor: "rgba(59, 130, 246, 0.35)",
+    },
     {
       id: "todo" as const,
       title: "To Do",
@@ -1329,7 +1386,7 @@ export default function TaskManagerContent() {
             </Flex>
           ) : (
             <Grid
-              templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+              templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
               gap={6}
               alignItems="start"
             >
@@ -1699,6 +1756,13 @@ export default function TaskManagerContent() {
 
                 <Box>
                   <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
+                    Attachments
+                  </Text>
+                  <AttachmentsList taskId={viewingTask.id} />
+                </Box>
+
+                <Box>
+                  <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={2}>
                     Description
                   </Text>
                   {getPlainTextFromHtml(viewingTask.description) ? (
@@ -1888,6 +1952,14 @@ export default function TaskManagerContent() {
                 />
               </FormControl>
 
+              {/* Attachments */}
+              <Box w="full">
+                <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
+                  Attachments
+                </FormLabel>
+                <AttachmentUpload ref={attachmentsRef} taskId={editingTask ? editingTask.id : undefined} />
+              </Box>
+
               <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4} w="full">
                 <FormControl isRequired>
                   <FormLabel fontSize="sm" fontWeight="semibold" color={textMuted}>
@@ -1917,6 +1989,7 @@ export default function TaskManagerContent() {
                     borderRadius="lg"
                     borderColor={borderColor}
                   >
+                    <option value="future">Future Tasks</option>
                     <option value="todo">To Do</option>
                     <option value="in_progress">Running</option>
                     <option value="completed">Finished</option>
@@ -1933,8 +2006,9 @@ export default function TaskManagerContent() {
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
                   isDisabled={isTaskSubmitting}
-                  borderRadius="lg"
+                    borderRadius="lg"
                   borderColor={borderColor}
+                    min={formatDateInput(new Date())}
                   _focus={{ borderColor: "brand.400" }}
                 />
               </FormControl>

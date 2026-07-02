@@ -6,14 +6,21 @@ import {
     Icon, Progress, HStack, ScaleFade, Flex, Divider,
     Center, SimpleGrid, Card, CardBody, useColorModeValue
 } from '@chakra-ui/react';
-import { FiUploadCloud, FiFileText, FiShield, FiZap, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
+import { FiUploadCloud, FiShield, FiCheckCircle, FiTrash2, FiEye } from 'react-icons/fi';
 import stores from "../../../../../store/stores";
 import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
+import ConversionPreviewModal from "../../../../../component/common/ConversionPreviewModal";
 
 const PDFToWordContent = () => {
     const [isConverting, setIsConverting] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    // Preview modal state
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+
     const toast = useToast();
 
     const bgColor = useColorModeValue("gray.50", "gray.800");
@@ -21,7 +28,7 @@ const PDFToWordContent = () => {
     const textColor = useColorModeValue("gray.800", "gray.100");
     const subTextColor = useColorModeValue("gray.500", "gray.400");
     const dropzoneBg = useColorModeValue("gray.50", "gray.600");
-    const dropzoneActiveBg = useColorModeValue("blue.50", "blue.900");
+    const dropzoneActiveBg = useColorModeValue("brand.50", "brand.900");
 
     const { themeStore: { themeConfig } } = stores;
     const { advanceWorkflow } = useWorkflowAutoAdvance();
@@ -31,6 +38,8 @@ const PDFToWordContent = () => {
         if (file && file.type === 'application/pdf') {
             setFileName(file.name);
             setSelectedFile(file);
+            setPreviewUrl(null);
+            setDownloadUrl(null);
         } else {
             toast({
                 title: "Selection Error",
@@ -45,44 +54,50 @@ const PDFToWordContent = () => {
         if (!selectedFile) return;
         setIsConverting(true);
 
+        // Open modal immediately (shows loading spinner inside)
+        setPreviewUrl(null);
+        setDownloadUrl(null);
+        setPreviewOpen(true);
+
         try {
             const formData = new FormData();
             formData.append("file", selectedFile);
 
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word`,
-                {
-                    method: "POST",
-                    body: formData,
-                }
+            // Step 1: Get a PDF preview of the converted DOCX
+            const previewRes = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word/preview`,
+                { method: "POST", body: formData }
             );
 
-            if (!response.ok) {
-                const err = await response.json();
+            if (!previewRes.ok) {
+                const err = await previewRes.json().catch(() => ({}));
+                throw new Error(err.error || "Preview generation failed");
+            }
+
+            const previewBlob = await previewRes.blob();
+            const pUrl = URL.createObjectURL(previewBlob);
+            setPreviewUrl(pUrl);
+
+            // Step 2: Also fetch the actual DOCX so it's ready to download
+            const formData2 = new FormData();
+            formData2.append("file", selectedFile);
+
+            const docxRes = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word`,
+                { method: "POST", body: formData2 }
+            );
+
+            if (!docxRes.ok) {
+                const err = await docxRes.json().catch(() => ({}));
                 throw new Error(err.error || "Conversion failed");
             }
 
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileName?.replace('.pdf', '.docx') || 'converted.docx';
-            a.click();
-            URL.revokeObjectURL(url);
-
-            toast({
-                title: "Conversion Successful",
-                description: "Your document is downloading...",
-                status: "success",
-                duration: 5000,
-                isClosable: true,
-            });
-
-            setTimeout(() => {
-                advanceWorkflow();
-            }, 1200);
+            const docxBlob = await docxRes.blob();
+            const dUrl = URL.createObjectURL(docxBlob);
+            setDownloadUrl(dUrl);
 
         } catch (error: any) {
+            setPreviewOpen(false);
             console.error("Conversion Error:", error);
             toast({
                 title: "Conversion Failed",
@@ -94,10 +109,27 @@ const PDFToWordContent = () => {
         }
     };
 
+    const handlePreviewClose = () => {
+        setPreviewOpen(false);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (downloadUrl) {
+            URL.revokeObjectURL(downloadUrl);
+            setTimeout(() => advanceWorkflow(), 500);
+        }
+        setPreviewUrl(null);
+        setDownloadUrl(null);
+    };
+
     const handleClear = () => {
         setFileName(null);
         setSelectedFile(null);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+        setPreviewUrl(null);
+        setDownloadUrl(null);
     };
+
+    const downloadName = fileName?.replace('.pdf', '.docx') || 'converted.docx';
 
     return (
         <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
@@ -121,17 +153,14 @@ const PDFToWordContent = () => {
 
                     <VStack spacing={4} textAlign="center">
                         <Heading
-                            color={themeConfig.colors.brand[300]}
+                            color="brand.300"
                             size="2xl"
                             fontWeight="900"
                             letterSpacing="tight"
                             textTransform="uppercase"
                         >
-                            PDF to <Text as="span" color="blue.400">Word</Text> Converter
+                            PDF to <Text as="span" color="brand.400">Word</Text> Converter
                         </Heading>
-                        {/* <Text color={subTextColor} fontSize="lg" maxW="lg">
-                            LibreOffice engine — pixel-perfect conversion with full formatting preserved.
-                        </Text> */}
                     </VStack>
 
                     <Card borderRadius="3xl" boxShadow="2xl" overflow="hidden" border="none" bg={cardBg}>
@@ -142,7 +171,7 @@ const PDFToWordContent = () => {
                                     position="relative"
                                     p={10}
                                     border="2px dashed"
-                                    borderColor={fileName ? "blue.400" : "gray.500"}
+                                    borderColor={fileName ? "brand.400" : "gray.500"}
                                     borderRadius="2xl"
                                     bg={fileName ? dropzoneActiveBg : dropzoneBg}
                                     transition="all 0.3s"
@@ -160,7 +189,7 @@ const PDFToWordContent = () => {
                                     <VStack spacing={4}>
                                         <Center
                                             boxSize="60px"
-                                            bg={fileName ? "blue.500" : "blue.900"}
+                                            bg={fileName ? "brand.500" : "brand.900"}
                                             color="white"
                                             borderRadius="xl"
                                         >
@@ -180,29 +209,37 @@ const PDFToWordContent = () => {
                                 {isConverting && (
                                     <Box w="full">
                                         <Flex justify="space-between" mb={2}>
-                                            <Text fontSize="xs" fontWeight="bold" color="blue.400" textTransform="uppercase">
-                                                Converting via LibreOffice...
+                                            <Text fontSize="xs" fontWeight="bold" color="brand.400" textTransform="uppercase">
+                                                Converting &amp; generating preview
                                             </Text>
                                             <Text fontSize="xs" color={subTextColor}>Please wait</Text>
                                         </Flex>
-                                        <Progress size="xs" isIndeterminate colorScheme="blue" borderRadius="full" />
+                                        <Progress size="xs" isIndeterminate colorScheme="brand" borderRadius="full" />
                                     </Box>
                                 )}
 
                                 <ScaleFade in={!!fileName} unmountOnExit style={{ width: '100%' }}>
                                     <HStack spacing={4}>
                                         <Button
-                                            leftIcon={<FiFileText />}
-                                            colorScheme="blue"
+                                            leftIcon={<FiEye />}
                                             w="full"
                                             size="lg"
                                             height="60px"
                                             onClick={convertToWord}
                                             isLoading={isConverting}
-                                            loadingText="Converting..."
+                                            loadingText="Converting…"
                                             borderRadius="xl"
+                                            bgGradient="linear(to-r, brand.500, brand.700)"
+                                            color="white"
+                                            _hover={{
+                                                bgGradient: "linear(to-r, brand.600, brand.800)",
+                                                transform: "translateY(-2px)",
+                                                boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                                            }}
+                                            _active={{ transform: "translateY(0)" }}
+                                            transition="all 0.2s"
                                         >
-                                            Convert to .docx
+                                            Convert &amp; Preview
                                         </Button>
                                         <Button
                                             size="lg"
@@ -222,9 +259,9 @@ const PDFToWordContent = () => {
 
                     <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
                         <FeatureIcon
-                            icon={FiZap}
-                            title="Accurate"
-                            desc="Toolsahayata gives you perfect conversion of PDF to Word."
+                            icon={FiEye}
+                            title="Preview First"
+                            desc="Inspect the converted document before downloading."
                             textColor={textColor}
                             subTextColor={subTextColor}
                             cardBg={cardBg}
@@ -254,13 +291,23 @@ const PDFToWordContent = () => {
                     </Text>
                 </VStack>
             </Container>
+
+            {/* Preview Modal */}
+            <ConversionPreviewModal
+                isOpen={previewOpen}
+                onClose={handlePreviewClose}
+                previewUrl={previewUrl}
+                downloadUrl={downloadUrl}
+                downloadName={downloadName}
+                outputLabel=".docx"
+            />
         </Box>
     );
 };
 
 const FeatureIcon = ({ icon, title, desc, textColor, subTextColor, cardBg }: any) => (
     <HStack spacing={4} align="start">
-        <Center boxSize="40px" bg={cardBg} borderRadius="lg" shadow="md" color="blue.400" flexShrink={0}>
+        <Center boxSize="40px" bg={cardBg} borderRadius="lg" shadow="md" color="brand.400" flexShrink={0}>
             <Icon as={icon} />
         </Center>
         <VStack align="start" spacing={0}>

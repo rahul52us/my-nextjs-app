@@ -25,12 +25,13 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'
 
 const DataVizStudio = () => {
   // WORKFLOW STATE
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1);
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [mapping, setMapping] = useState({ label: '', value: '' });
   const [chartType, setChartType] = useState('bar');
   const [jsonValue, setJsonValue] = useState('[\n  {"label": "Jan", "value": 400},\n  {"label": "Feb", "value": 300}\n]');
+  const [isParsing, setIsParsing] = useState(false);
   
   const chartRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -59,33 +60,94 @@ const DataVizStudio = () => {
     };
   }, [data, mapping.value]);
 
+  const parseNumericValue = (value: any) => {
+    if (value === null || value === undefined) return NaN;
+    if (typeof value === 'number' && !Number.isNaN(value)) return value;
+    const normalized = String(value).replace(/,/g, '').trim();
+    if (normalized === '') return NaN;
+    return Number(normalized);
+  };
+
+  const isNumericValue = (value: any) => {
+    const num = parseNumericValue(value);
+    return typeof num === 'number' && !Number.isNaN(num);
+  };
+
   const syncColumns = (newData: any[]) => {
     if (Array.isArray(newData) && newData.length > 0) {
       const cols = Object.keys(newData[0]);
+      const numericCandidates = cols.filter(col => newData.some(row => isNumericValue(row[col])));
+      const stringCandidates = cols.filter(col => newData.some(row => typeof row[col] === 'string' && String(row[col]).trim() !== ''));
+      const defaultValueColumn = numericCandidates[0] || cols[1] || cols[0];
+      const defaultLabelColumn = stringCandidates.find(col => col !== defaultValueColumn) || cols[0];
+
       setColumns(cols);
       setData(newData);
       setMapping({ 
-        label: cols.find(c => typeof newData[0][c] === 'string') || cols[0], 
-        value: cols.find(c => typeof newData[0][c] === 'number') || cols[1] || cols[0] 
+        label: defaultLabelColumn,
+        value: defaultValueColumn,
       });
     }
   };
 
+  const normalizeChartData = (rows: any[]) => {
+    return rows
+      .map((row, index) => {
+        const labelRaw = row[mapping.label];
+        const valueRaw = row[mapping.value];
+        const label = labelRaw === null || labelRaw === undefined ? '' : String(labelRaw).trim();
+        const value = parseNumericValue(valueRaw);
+        return { index, label, value, original: row };
+      })
+      .filter(item => item.label !== '' && !Number.isNaN(item.value));
+  };
+
+  const chartData = useMemo(() => normalizeChartData(data), [data, mapping.label, mapping.value]);
+
+  const barChartXAxisAngle = chartData.length > 20 ? -45 : 0;
+  const barChartMinWidth = Math.max(720, chartData.length * 46);
+
+  const pieChartData = useMemo(() => {
+    const cleaned = chartData
+      .filter(item => !Number.isNaN(item.value) && item.value > 0)
+      .map(item => ({ label: item.label, value: item.value }));
+
+    if (cleaned.length <= 12) return cleaned;
+
+    const sorted = [...cleaned].sort((a, b) => b.value - a.value);
+    const top = sorted.slice(0, 10);
+    const othersValue = sorted.slice(10).reduce((sum, item) => sum + item.value, 0);
+    return [...top, { label: 'Others', value: othersValue }];
+  }, [chartData]);
+
+  const showPieGroupingNote = chartData.length > 12;
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsParsing(true);
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const json: any[] = XLSX.utils.sheet_to_json(ws);
+        const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: null, raw: false });
+        if (!Array.isArray(json) || json.length === 0) {
+          throw new Error('Uploaded file contains no usable rows.');
+        }
         syncColumns(json);
         toast({ title: "Dataset Loaded", status: "success", position: 'top-right', variant: 'subtle' });
-      } catch (err) {
-        toast({ title: "Format error", status: "error" });
+      } catch (err: any) {
+        console.error('Excel parse error', err);
+        toast({ title: err?.message || "Format error", status: "error", position: 'top-right', variant: 'subtle' });
+      } finally {
+        setIsParsing(false);
       }
+    };
+    reader.onerror = () => {
+      setIsParsing(false);
+      toast({ title: "File read error", status: "error", position: 'top-right', variant: 'subtle' });
     };
     reader.readAsBinaryString(file);
   };
@@ -168,6 +230,14 @@ const DataVizStudio = () => {
                         border="2px dashed" borderColor={useColorModeValue("indigo.200", "whiteAlpha.200")} borderRadius="30px" p={{ base: 10, md: 16 }} textAlign="center" position="relative" 
                         _hover={{ bg: uploadHoverBg, borderColor: useColorModeValue("indigo.400", "indigo.300") }} transition="all 0.3s ease" cursor="pointer"
                       >
+                        {isParsing && (
+                          <Box position="absolute" inset={0} bg="blackAlpha.300" zIndex={2} display="flex" alignItems="center" justifyContent="center" borderRadius="30px">
+                            <Stack spacing={3} align="center" bg={glassBg} p={4} borderRadius="20px" boxShadow="lg">
+                              <Text fontSize="md" fontWeight="700">Processing file...</Text>
+                              <Text fontSize="sm" color={secondaryText}>Large datasets may take a few moments.</Text>
+                            </Stack>
+                          </Box>
+                        )}
                         <FiUploadCloud size={48} style={{ margin: '0 auto 20px' }} color={iconColor} />
                         <Input type="file" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleFileUpload} />
                         <Heading size="sm" mb={2}>Drop your dataset here</Heading>
@@ -255,36 +325,65 @@ const DataVizStudio = () => {
               </Flex>
 
               <Box ref={chartRef} h={{ base: "360px", md: "500px" }} w="100%">
-                <ResponsiveContainer width="100%" height="100%">
-                    {chartType === 'bar' ? (
-                        <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
-                        <XAxis dataKey={mapping.label} fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} dy={10} />
-                        <YAxis fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                        <Bar dataKey={mapping.value} radius={[10, 10, 0, 0]} barSize={35}>
-                            {data.map((_, i) => <Cell key={i} fill="url(#indigoGradient)" />)}
+                {chartType === 'bar' ? (
+                  <Box overflowX="auto" w="100%" h="100%" pb={2}>
+                    <Box minW={`${barChartMinWidth}px`} h="100%">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridStroke} />
+                          <XAxis
+                            dataKey="label"
+                            fontSize={11}
+                            tick={{ fill: secondaryText, angle: barChartXAxisAngle, textAnchor: barChartXAxisAngle === 0 ? 'middle' : 'end' }}
+                            axisLine={false}
+                            tickLine={false}
+                            dy={10}
+                            interval={0}
+                            minTickGap={10}
+                          />
+                          <YAxis fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                          <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={35}>
+                            {chartData.map((_, i) => <Cell key={i} fill="url(#indigoGradient)" />)}
                             <defs>
-                            <linearGradient id="indigoGradient" x1="0" y1="0" x2="0" y2="1">
+                              <linearGradient id="indigoGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#818cf8" />
                                 <stop offset="100%" stopColor="#6366f1" />
-                            </linearGradient>
+                              </linearGradient>
                             </defs>
-                        </Bar>
+                          </Bar>
                         </BarChart>
-                    ) : (
-                        <PieChart>
-                        <Pie 
-                            data={data} dataKey={mapping.value} nameKey={mapping.label} 
-                            cx="50%" cy="50%" innerRadius={80} outerRadius={150} paddingAngle={5} stroke="none"
-                        >
-                            {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip />
-                        <Legend iconType="circle" />
-                        </PieChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box w="100%" h="100%">
+                    {showPieGroupingNote && (
+                      <Text mb={3} fontSize="sm" color={secondaryText}>
+                        Showing top 10 categories plus “Others” for better readability with large datasets.
+                      </Text>
                     )}
-                </ResponsiveContainer>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          dataKey="value"
+                          nameKey="label"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          stroke="none"
+                        >
+                          {pieChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        <Legend iconType="circle" verticalAlign="bottom" height={60} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Box>
+                )}
               </Box>
             </Box>
           </Stack>

@@ -8,19 +8,34 @@ import {
     Input,
     Text,
     VStack,
+    HStack,
+    Center,
+    Icon,
+    Progress,
+    ScaleFade,
     useToast,
+    useColorModeValue,
 } from "@chakra-ui/react";
-import { FaFileUpload, FaDownload } from "react-icons/fa";
-import mammoth from "mammoth"; // For extracting .docx content
-import { PDFDocument } from "pdf-lib"; // For creating PDFs
+import { FiUploadCloud, FiCheckCircle, FiTrash2, FiEye } from "react-icons/fi";
+import ConversionPreviewModal from "../../../../component/common/ConversionPreviewModal";
 
 const WordToPdfConverterContent = () => {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+    // Preview modal state
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
     const toast = useToast();
 
-    // Handle file selection
+    const bgColor = useColorModeValue("gray.50", "gray.800");
+    const cardBg = useColorModeValue("white", "gray.700");
+    const textColor = useColorModeValue("gray.800", "gray.100");
+    const subTextColor = useColorModeValue("gray.500", "gray.400");
+    const dropzoneBg = useColorModeValue("gray.50", "gray.600");
+    const dropzoneActiveBg = useColorModeValue("brand.50", "brand.900");
+
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (
@@ -29,7 +44,9 @@ const WordToPdfConverterContent = () => {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ) {
             setFile(selectedFile);
-            setPdfUrl(null); // Reset previous PDF
+            // Clear any previous preview
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
         } else {
             toast({
                 title: "Invalid file",
@@ -42,107 +59,46 @@ const WordToPdfConverterContent = () => {
         }
     };
 
-    // Convert .docx to PDF
     const handleConvert = async () => {
         if (!file) return;
-
         setLoading(true);
 
+        // Open modal immediately with loading state
+        setPreviewUrl(null);
+        setPreviewOpen(true);
+
         try {
-            // Read the .docx file as an ArrayBuffer
-            const arrayBuffer = await file.arrayBuffer();
+            const formData = new FormData();
+            formData.append("file", file);
 
-            // Extract text and basic HTML from .docx using mammoth
-            const { value: htmlContent } = await mammoth.convertToHtml({ arrayBuffer });
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/word-to-pdf`,
+                { method: "POST", body: formData }
+            );
 
-            // Create a new PDF document
-            const pdfDoc = await PDFDocument.create();
-            let page: any = pdfDoc.addPage([595, 842]); // A4 size in points (width, height)
-
-            // Add text to the PDF (basic text extraction)
-            const font = await pdfDoc.embedFont("Helvetica"); // Use a standard font
-            const fontSize = 12;
-            const maxWidth = 500; // Max width for text wrapping
-            let yPosition = 800; // Starting Y position (top of page)
-
-            // Split text into lines and handle basic formatting
-            const lines = htmlContent
-                .replace(/<[^>]+>/g, " ") // Strip HTML tags for simplicity
-                .split("\n")
-                .filter((line) => line.trim());
-
-            for (const line of lines) {
-                const textWidth = font.widthOfTextAtSize(line, fontSize);
-                if (textWidth > maxWidth) {
-                    // Simple word wrap for long lines
-                    const words = line.split(" ");
-                    let currentLine = "";
-                    for (const word of words) {
-                        const testLine = currentLine + (currentLine ? " " : "") + word;
-                        if (font.widthOfTextAtSize(testLine, fontSize) <= maxWidth) {
-                            currentLine = testLine;
-                        } else {
-                            if (yPosition < 50) {
-                                page = pdfDoc.addPage([595, 842]);
-                                yPosition = 800;
-                            }
-                            page.drawText(currentLine, {
-                                x: 50,
-                                y: yPosition,
-                                size: fontSize,
-                                font,
-                                color: { r: 0, g: 0, b: 0 }, // Black text
-                            });
-                            yPosition -= fontSize + 5; // Line spacing
-                            currentLine = word;
-                        }
-                    }
-                    if (currentLine && yPosition > 50) {
-                        page.drawText(currentLine, {
-                            x: 50,
-                            y: yPosition,
-                            size: fontSize,
-                            font,
-                            color: { r: 0, g: 0, b: 0 },
-                        });
-                        yPosition -= fontSize + 5;
-                    }
-                } else {
-                    if (yPosition < 50) {
-                        page = pdfDoc.addPage([595, 842]);
-                        yPosition = 800;
-                    }
-                    page.drawText(line, {
-                        x: 50,
-                        y: yPosition,
-                        size: fontSize,
-                        font,
-                        color: { r: 0, g: 0, b: 0 },
-                    });
-                    yPosition -= fontSize + 5;
-                }
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || "Conversion failed");
             }
 
-            // Serialize the PDF to bytes
-            const pdfBytes: any = await pdfDoc.save();
-
-            // Create a Blob and URL for download
-            const blob = new Blob([pdfBytes], { type: "application/pdf" });
+            // The result is already a PDF — use it directly as the preview
+            const blob = await response.blob();
             const url = URL.createObjectURL(blob);
-            setPdfUrl(url);
+            setPreviewUrl(url);
 
             toast({
-                title: "Success",
-                description: "File converted successfully!",
+                title: "Conversion Successful",
+                description: "Review the preview, then download your PDF.",
                 status: "success",
-                duration: 3000,
+                duration: 4000,
                 isClosable: true,
             });
-        } catch (error) {
+        } catch (error: any) {
+            setPreviewOpen(false);
             console.error("Conversion error:", error);
             toast({
                 title: "Error",
-                description: "Failed to convert file",
+                description: error.message || "Failed to convert file",
                 status: "error",
                 duration: 3000,
                 isClosable: true,
@@ -152,73 +108,171 @@ const WordToPdfConverterContent = () => {
         }
     };
 
+    const handlePreviewClose = () => {
+        setPreviewOpen(false);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+    };
+
+    const handleClear = () => {
+        setFile(null);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+    };
+
+    const downloadName = `${file?.name.replace(/\.[^.]+$/, "") || "converted"}.pdf`;
+
     return (
-        <Flex minH="100vh" justify="center" align="center" bg="gray.50" p={4}>
-            <Box
-                bg="white"
-                p={{ base: 6, md: 8 }}
-                borderRadius="lg"
-                boxShadow="xl"
-                w={{ base: "100%", md: "md" }}
-            >
-                <VStack spacing={6} align="stretch">
-                    <Heading size="lg" textAlign="center" color="teal.600">
-                        Word to PDF Converter
+        <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
+            <Flex direction="column" align="center" gap={10} px={4}>
+
+                {/* Title */}
+                <VStack spacing={2} textAlign="center">
+                    <Heading size="2xl" fontWeight="900" letterSpacing="tight" color={textColor}>
+                        Word to{" "}
+                        <Text as="span" color="brand.400">
+                            PDF
+                        </Text>{" "}
+                        Converter
                     </Heading>
-
-                    <Text textAlign="center" color="gray.600">
-                        Upload a .docx file to convert it to PDF (client-side)
+                    <Text color={subTextColor} fontSize="md">
+                        Upload a .docx file — preview the PDF before downloading
                     </Text>
-
-                    <Input
-                        type="file"
-                        accept=".docx"
-                        onChange={handleFileChange}
-                        display="none"
-                        id="file-upload"
-                    />
-                    <label htmlFor="file-upload">
-                        <Button
-                            as="span"
-                            leftIcon={<FaFileUpload />}
-                            colorScheme="teal"
-                            variant="outline"
-                            w="full"
-                            py={6}
-                            borderStyle="dashed"
-                            borderColor={file ? "teal.500" : "gray.300"}
-                            _hover={{ borderColor: "teal.400" }}
-                        >
-                            {file ? file.name : "Choose a .docx file"}
-                        </Button>
-                    </label>
-
-                    <Button
-                        colorScheme="teal"
-                        onClick={handleConvert}
-                        isLoading={loading}
-                        loadingText="Converting..."
-                        isDisabled={!file || loading}
-                        w="full"
-                    >
-                        Convert to PDF
-                    </Button>
-
-                    {pdfUrl && (
-                        <Button
-                            as="a"
-                            href={pdfUrl}
-                            download={`${file?.name.split(".")[0] || "converted"}.pdf`}
-                            leftIcon={<FaDownload />}
-                            colorScheme="blue"
-                            w="full"
-                        >
-                            Download PDF
-                        </Button>
-                    )}
                 </VStack>
-            </Box>
-        </Flex>
+
+                {/* Upload card */}
+                <Box
+                    bg={cardBg}
+                    borderRadius="3xl"
+                    boxShadow="2xl"
+                    p={8}
+                    w={{ base: "100%", md: "lg" }}
+                >
+                    <VStack spacing={8}>
+                        {/* Dropzone */}
+                        <Box
+                            w="full"
+                            position="relative"
+                            p={10}
+                            border="2px dashed"
+                            borderColor={file ? "brand.400" : "gray.500"}
+                            borderRadius="2xl"
+                            bg={file ? dropzoneActiveBg : dropzoneBg}
+                            transition="all 0.3s"
+                            cursor="pointer"
+                        >
+                            <Input
+                                type="file"
+                                accept=".docx"
+                                onChange={handleFileChange}
+                                position="absolute"
+                                top={0}
+                                left={0}
+                                w="full"
+                                h="full"
+                                opacity={0}
+                                cursor="pointer"
+                                zIndex={1}
+                            />
+                            <VStack spacing={4}>
+                                <Center
+                                    boxSize="60px"
+                                    bg={file ? "brand.500" : "brand.900"}
+                                    color="white"
+                                    borderRadius="xl"
+                                >
+                                    <Icon
+                                        as={file ? FiCheckCircle : FiUploadCloud}
+                                        boxSize={8}
+                                    />
+                                </Center>
+                                <VStack spacing={1}>
+                                    <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                                        {file ? file.name : "Upload your .docx file"}
+                                    </Text>
+                                    <Text fontSize="sm" color={subTextColor}>
+                                        Click or drag and drop your file here
+                                    </Text>
+                                </VStack>
+                            </VStack>
+                        </Box>
+
+                        {/* Progress bar while converting */}
+                        {loading && (
+                            <Box w="full">
+                                <Flex justify="space-between" mb={2}>
+                                    <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="brand.400"
+                                        textTransform="uppercase"
+                                    >
+                                        Converting &amp; generating preview
+                                    </Text>
+                                    <Text fontSize="xs" color={subTextColor}>
+                                        Please wait
+                                    </Text>
+                                </Flex>
+                                <Progress
+                                    size="xs"
+                                    isIndeterminate
+                                    colorScheme="brand"
+                                    borderRadius="full"
+                                />
+                            </Box>
+                        )}
+
+                        {/* Action buttons */}
+                        <ScaleFade in={!!file} unmountOnExit style={{ width: "100%" }}>
+                            <HStack spacing={4}>
+                                <Button
+                                    leftIcon={<FiEye />}
+                                    w="full"
+                                    size="lg"
+                                    height="60px"
+                                    onClick={handleConvert}
+                                    isLoading={loading}
+                                    loadingText="Converting…"
+                                    borderRadius="xl"
+                                    bgGradient="linear(to-r, brand.400, brand.600)"
+                                    color="white"
+                                    _hover={{
+                                        bgGradient: "linear(to-r, brand.500, brand.700)",
+                                        transform: "translateY(-2px)",
+                                        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                                    }}
+                                    _active={{ transform: "translateY(0)" }}
+                                    transition="all 0.2s"
+                                >
+                                    Convert &amp; Preview
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    height="60px"
+                                    variant="ghost"
+                                    colorScheme="red"
+                                    onClick={handleClear}
+                                    borderRadius="xl"
+                                    isDisabled={loading}
+                                >
+                                    <FiTrash2 />
+                                </Button>
+                            </HStack>
+                        </ScaleFade>
+                    </VStack>
+                </Box>
+            </Flex>
+
+            {/* Preview Modal */}
+            <ConversionPreviewModal
+                isOpen={previewOpen}
+                onClose={handlePreviewClose}
+                previewUrl={previewUrl}
+                downloadUrl={previewUrl}
+                downloadName={downloadName}
+                outputLabel="PDF"
+            />
+        </Box>
     );
 };
 

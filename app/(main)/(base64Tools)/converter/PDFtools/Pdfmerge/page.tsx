@@ -4,7 +4,8 @@ import React, { useState, useRef } from 'react';
 import {
   Box, Button, Container, VStack, HStack, Text, Heading, Icon, IconButton,
   List, ListItem, useToast, Center, Spinner, Badge, Tooltip, Image, AspectRatio,
-  useColorModeValue
+  FormControl, FormLabel, Input, Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalCloseButton, ModalBody, ModalFooter, useColorModeValue
 } from '@chakra-ui/react';
 import { 
   FiFileText, FiX, FiArrowUp, FiArrowDown, FiFilePlus, FiEye, FiDownload
@@ -27,6 +28,9 @@ interface FileWithId {
 const PdfMerger = () => {
   const [files, setFiles] = useState<FileWithId[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [downloadName, setDownloadName] = useState('merged');
+  const [isFilenameModalOpen, setIsFilenameModalOpen] = useState(false);
+  const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
@@ -35,8 +39,8 @@ const PdfMerger = () => {
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const textPrimary = useColorModeValue("gray.800", "gray.100");
-  const textSecondary = useColorModeValue("gray.500", "gray.400");
-  const hoverBg = useColorModeValue("blue.50", "gray.700");
+  const textSecondary = useColorModeValue("gray.505", "gray.400");
+  const hoverBg = useColorModeValue("brand.50", "gray.700");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -86,20 +90,15 @@ const PdfMerger = () => {
     return await mergedPdf.save();
   };
 
-  const handleAction = async (action: 'download' | 'preview') => {
+  const handleDownloadClick = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
     try {
       const pdfBytes = await generateMergedPdf();
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
-      if (action === 'download') {
-        saveAs(blob, `merged_${Date.now()}.pdf`);
-        toast({ title: "Downloaded Successfully", status: "success" });
-      } else {
-        window.open(url, '_blank');
-      }
+      setDownloadBlob(blob);
+      setDownloadName('merged');
+      setIsFilenameModalOpen(true);
     } catch (error) {
       console.error(error);
       toast({ title: "Error processing files", status: "error" });
@@ -108,14 +107,40 @@ const PdfMerger = () => {
     }
   };
 
+  const handlePreview = async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const pdfBytes = await generateMergedPdf();
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error processing files", status: "error" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const confirmDownload = () => {
+    if (!downloadBlob) return;
+    const trimmed = downloadName.trim() || 'merged';
+    const filename = trimmed.toLowerCase().endsWith('.pdf') ? trimmed : `${trimmed}.pdf`;
+    saveAs(downloadBlob, filename);
+    toast({ title: "Downloaded Successfully", status: "success" });
+    setIsFilenameModalOpen(false);
+    setDownloadBlob(null);
+  };
+
   return (
     <Box minH="100vh" bg={pageBg} py={10} px={4}>
       <Container maxW="container.md">
         <VStack spacing={8} align="stretch">
           <VStack spacing={2} textAlign="center">
-            <Badge colorScheme="purple" borderRadius="full" px={3}>All-in-One</Badge>
+            <Badge colorScheme="brand" borderRadius="full" px={3}>All-in-One</Badge>
             <Heading size="xl" color={textPrimary}>
-              Merge PDF & Image <Text as="span" color="blue.500">Converter</Text>
+              Merge PDF & Image <Text as="span" color="brand.500">Converter</Text>
             </Heading>
             <Text color={textSecondary}>Combine PDFs and Images into a single document</Text>
           </VStack>
@@ -126,14 +151,14 @@ const PdfMerger = () => {
             p={10}
             cursor="pointer"
             border="2px dashed"
-            borderColor="blue.300"
+            borderColor="brand.300"
             borderRadius="2xl"
             bg={cardBg}
-            _hover={{ bg: hoverBg, borderColor: 'blue.500' }}
+            _hover={{ bg: hoverBg, borderColor: 'brand.500' }}
             transition="all 0.2s"
           >
             <VStack>
-              <Icon as={FiFilePlus} boxSize={10} color="blue.500" />
+              <Icon as={FiFilePlus} boxSize={10} color="brand.500" />
               <Text fontWeight="bold" color={textPrimary}>Click to upload PDFs or Images</Text>
               <Text fontSize="xs" color={textSecondary}>Supports PDF, PNG, JPG</Text>
             </VStack>
@@ -187,10 +212,10 @@ const PdfMerger = () => {
                 </Box>
 
                 <HStack spacing={4}>
-                  <Button flex={1} leftIcon={<FiEye />} size="lg" variant="outline" colorScheme="blue" isDisabled={isProcessing} onClick={() => handleAction('preview')}>
+                  <Button flex={1} leftIcon={<FiEye />} size="lg" variant="outline" colorScheme="brand" isDisabled={isProcessing} onClick={handlePreview}>
                     Preview Merge
                   </Button>
-                  <Button flex={2} leftIcon={isProcessing ? <Spinner size="sm" /> : <FiDownload />} size="lg" colorScheme="blue" isDisabled={files.length < 1 || isProcessing} onClick={() => handleAction('download')}>
+                  <Button flex={2} leftIcon={isProcessing ? <Spinner size="sm" /> : <FiDownload />} size="lg" colorScheme="brand" isDisabled={files.length < 1 || isProcessing} onClick={handleDownloadClick}>
                     {isProcessing ? 'Processing...' : 'Merge & Download'}
                   </Button>
                 </HStack>
@@ -199,6 +224,32 @@ const PdfMerger = () => {
           </AnimatePresence>
         </VStack>
       </Container>
+
+      <Modal isOpen={isFilenameModalOpen} onClose={() => setIsFilenameModalOpen(false)} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Save merged PDF</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl>
+              <FormLabel>File name</FormLabel>
+              <Input
+                value={downloadName}
+                onChange={(e) => setDownloadName(e.target.value)}
+                placeholder="Enter a filename"
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsFilenameModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme="brand" onClick={confirmDownload}>
+              Save & Download
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

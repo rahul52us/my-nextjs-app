@@ -38,10 +38,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import stores from '../../../../../store/stores';
 
 const MotionBox = motion(Box);
 
 type ExcelRow = (string | number | null)[];
+
+const hexToRgb = (hex: string): [number, number, number] => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+    return result
+        ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+        : [0, 122, 204]; // fallback to blue
+};
 
 const ExcelToPdfContent = () => {
     const [data, setData] = useState<ExcelRow[]>([]);
@@ -57,10 +67,10 @@ const ExcelToPdfContent = () => {
     const secondaryBg = useColorModeValue("gray.50", "gray.700");
     const textColor = useColorModeValue("gray.500", "gray.400");
     const tableHeaderBg = useColorModeValue("gray.50", "gray.900");
-    const hoverBg = useColorModeValue("blue.50/30", "whiteAlpha.50");
+    const hoverBg = useColorModeValue("brand.50", "whiteAlpha.50");
     const gradient = useColorModeValue(
-        "radial(circle at 10% 10%, blue.50 0%, transparent 30%), radial(circle at 90% 90%, purple.50 0%, transparent 30%)",
-        "radial(circle at 10% 10%, blue.900/20 0%, transparent 30%), radial(circle at 90% 90%, purple.900/20 0%, transparent 30%)"
+        "radial(circle at 10% 10%, brand.50 0%, transparent 30%), radial(circle at 90% 90%, purple.50 0%, transparent 30%)",
+        "radial(circle at 10% 10%, brand.900/20 0%, transparent 30%), radial(circle at 90% 90%, purple.900/20 0%, transparent 30%)"
     );
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,37 +111,70 @@ const ExcelToPdfContent = () => {
         if (data.length === 0) return;
         try {
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            // A4 landscape usable width: 297mm - 14mm left - 14mm right = 269mm
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginLeft = 14;
+            const marginRight = 14;
+            const usableWidth = pageWidth - marginLeft - marginRight;
+
+            const headers = (data[0] as string[]) || [];
+            const colCount = headers.length;
+
+            // Distribute width equally across all columns; min 10mm per col
+            const colWidth = Math.max(10, usableWidth / colCount);
+
+            // Build columnStyles: fixed width + ellipsis overflow for every column
+            const columnStyles: Record<number, object> = {};
+            headers.forEach((_, i) => {
+                columnStyles[i] = { cellWidth: colWidth, overflow: 'ellipsize' };
+            });
+
             doc.setFontSize(18);
-            doc.text('Professional Data Report', 14, 15);
+            doc.text('Professional Data Report', marginLeft, 15);
             doc.setFontSize(10);
             doc.setTextColor(100);
-            doc.text(`Source: ${fileName} | Generated: ${new Date().toLocaleDateString()}`, 14, 22);
+            doc.text(
+                `Source: ${fileName} | Generated: ${new Date().toLocaleDateString()}`,
+                marginLeft,
+                22
+            );
+
+            const brand500 = stores.themeStore.themeConfig.colors.brand[500];
 
             autoTable(doc, {
-                head: [data[0] as string[]],
+                head: [headers],
                 body: data.slice(1) as any[][],
                 startY: 30,
                 theme: 'striped',
+                margin: { left: marginLeft, right: marginRight },
+
+                // Keep ALL columns on the same horizontal page — never split sideways
+                horizontalPageBreak: false,
+
+                columnStyles,
 
                 styles: {
-                    fontSize: 6,
-                    cellPadding: 2,
-                    overflow: 'linebreak'
+                    fontSize: colCount > 15 ? 5 : colCount > 10 ? 6 : 7,
+                    cellPadding: 1.5,
+                    overflow: 'ellipsize',
+                    halign: 'left',
                 },
 
                 headStyles: {
-                    fillColor: [49, 130, 206],
+                    fillColor: hexToRgb(brand500),
                     textColor: 255,
-                    fontSize: 7
+                    fontSize: colCount > 15 ? 5 : colCount > 10 ? 6 : 7,
+                    fontStyle: 'bold',
                 },
-
-                horizontalPageBreak: true // ⭐ FIX
             });
+
             doc.save(`${fileName.split('.')[0]}_Export.pdf`);
         } catch (error) {
             toast({ title: "PDF Generation Failed", status: "error" });
         }
     };
+
 
     const reset = () => {
         setData([]);
@@ -155,7 +198,7 @@ const ExcelToPdfContent = () => {
                             Excel Engine v2.0
                         </Badge>
                         <Heading size="2xl" fontWeight="900" letterSpacing="tight">
-                            Excel <Text as="span" color="blue.500">to PDF</Text>
+                            Excel <Text as="span" color="brand.500">to PDF</Text>
                         </Heading>
                         <Text color={textColor} fontSize="lg">
                             Convert complex spreadsheets into clean, printable reports.
@@ -180,11 +223,11 @@ const ExcelToPdfContent = () => {
                                     borderRadius="3xl"
                                     bg={cardBg}
                                     transition="all 0.3s"
-                                    _hover={{ borderColor: 'blue.500', shadow: '2xl', bg: useColorModeValue('blue.50/20', 'whiteAlpha.50') }}
+                                    _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: useColorModeValue('brand.50', 'whiteAlpha.50') }}
                                     flexDirection="column"
                                 >
                                     <VStack spacing={4}>
-                                        <Box bg="blue.500" color="white" p={5} borderRadius="2xl" shadow="lg">
+                                        <Box bg="brand.500" color="white" p={5} borderRadius="2xl" shadow="lg">
                                             {isProcessing ? <Spinner size="lg" /> : <Icon as={FiUploadCloud} boxSize={10} />}
                                         </Box>
                                         <VStack spacing={1}>
@@ -210,14 +253,14 @@ const ExcelToPdfContent = () => {
                                 <Box px={6} py={4} bg={secondaryBg} borderBottom="1px solid" borderColor={cardBorder}>
                                     <HStack justify="space-between">
                                         <HStack>
-                                            <Icon as={FiGrid} color="blue.500" />
+                                            <Icon as={FiGrid} color="brand.500" />
                                             <Text fontWeight="bold" fontSize="sm">Sheet Preview: {fileName}</Text>
                                         </HStack>
                                         <HStack spacing={2}>
                                             <Tooltip label="Reset and upload new file">
                                                 <IconButton aria-label="reset" icon={<FiRefreshCw />} size="sm" variant="ghost" onClick={reset} />
                                             </Tooltip>
-                                            <Button leftIcon={<FiDownload />} colorScheme="blue" size="sm" onClick={generatePDF} borderRadius="full">
+                                            <Button leftIcon={<FiDownload />} colorScheme="brand" size="sm" onClick={generatePDF} borderRadius="full">
                                                 Export PDF
                                             </Button>
                                         </HStack>

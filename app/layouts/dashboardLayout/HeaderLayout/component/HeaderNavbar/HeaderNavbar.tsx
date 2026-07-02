@@ -42,7 +42,7 @@ const HeaderNavbar = observer(() => {
         _hover={{ borderColor: "whiteAlpha.500", boxShadow: "sm" }}
       >
         <Tooltip label="Toggle Theme" fontSize="xs" placement="bottom">
-          <Box px={1} display={{ base: "none", sm: "block" }}>
+          <Box px={1}>
             <HeaderThemeSwitch />
           </Box>
         </Tooltip>
@@ -53,7 +53,6 @@ const HeaderNavbar = observer(() => {
           mx={2}
           borderColor={borderColor}
           opacity={0.6}
-          display={{ base: "none", sm: "block" }}
         />
 
         <Box px={1}>

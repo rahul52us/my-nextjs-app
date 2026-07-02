@@ -184,9 +184,9 @@ const SidebarPopover = observer(({
             color={
               itemIsActive
                 ? useColorModeValue(
-                    themeConfig.colors.custom.light.primary,
-                    themeConfig.colors.custom.dark.primary
-                  )
+                  themeConfig.colors.custom.light.primary,
+                  themeConfig.colors.custom.dark.primary
+                )
                 : "inherit"
             }
             fontWeight={itemIsActive ? "600" : "inherit"}
@@ -330,7 +330,8 @@ const SidebarAccordion = observer(({
       width={"100%"}
       px={3}
       allowMultiple
-      defaultIndex={expandedIndex !== null ? [expandedIndex] : []}
+      allowToggle
+      index={expandedIndex !== null ? [expandedIndex] : []}
     >
       {items.map((item) => {
         const itemIsActive = isActive(item);
@@ -355,8 +356,6 @@ const SidebarAccordion = observer(({
                     e.stopPropagation();
                     if (!item.children) {
                       onLeafClick(item);
-                    } else {
-                      onClick(item);
                     }
                   }}
                 >
@@ -370,9 +369,9 @@ const SidebarAccordion = observer(({
                     color={
                       activeItemId === item.id
                         ? useColorModeValue(
-                            themeConfig.colors.custom.light.primary,
-                            themeConfig.colors.custom.dark.primary
-                          )
+                          themeConfig.colors.custom.light.primary,
+                          themeConfig.colors.custom.dark.primary
+                        )
                         : "inherit"
                     }
                     fontWeight={activeItemId === item.id ? "600" : "inherit"}
@@ -457,6 +456,9 @@ const SidebarLayout: React.FC<SidebarProps> = observer(({
     setActiveItemId(item.id);
     onLeafItemClick(item);
     router.push(item.url); // Replace navigate with router.push
+    if (isMobile) {
+      setOpenMobileSideDrawer(false);
+    }
   };
 
   useEffect(() => {
@@ -475,10 +477,16 @@ const SidebarLayout: React.FC<SidebarProps> = observer(({
       <Drawer
         isOpen={openMobileSideDrawer}
         placement="right"
-        onClose={() => setOpenMobileSideDrawer(false)} // Changed to false directly
+        size="full"
+        onClose={() => setOpenMobileSideDrawer(false)}
       >
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent
+          maxW={{ base: "100%", md: sidebarWidth }}
+          w={{ base: "100%", md: sidebarWidth }}
+          minW={{ base: "100%", md: sidebarWidth }}
+          bg={colorMode === "dark" ? "gray.900" : "white"}
+        >
           <DrawerCloseButton
             variant="ghost"
             fontSize="xl"
@@ -489,7 +497,7 @@ const SidebarLayout: React.FC<SidebarProps> = observer(({
             _focus={{ boxShadow: "none" }}
           />
           <SidebarLogo />
-          <DrawerBody px={2} className="customScrollBar">
+          <DrawerBody px={2} overflowY="auto" overflowX="hidden" h="100%">
             <SidebarAccordion
               items={sidebarData}
               onClick={onItemClick}

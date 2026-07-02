@@ -229,14 +229,30 @@ const JsonToExcel = () => {
       });
 
       // Convert JSON to row data for AG Grid
+      const formatCellValue = (value: any) => {
+        if (value == null) return "";
+        if (Array.isArray(value)) {
+          return value
+            .map((item) =>
+              item && typeof item === "object"
+                ? JSON.stringify(item)
+                : String(item),
+            )
+            .join(", ");
+        }
+        if (typeof value === "object") {
+          return Object.entries(value)
+            .map(([key, val]) => `${key}: ${val}`)
+            .join(", ");
+        }
+        return value;
+      };
+
       const rowData = parsedData.map((item) => {
         const row: Record<string, any> = {};
         headers.forEach((header, i) => {
           const key = uniqueHeaders[i];
-          row[key] = item[header] != null ? item[header] : "";
-          if (typeof row[key] === "object") {
-            row[key] = JSON.stringify(row[key], null, 2);
-          }
+          row[key] = formatCellValue(item[header]);
         });
         return row;
       });

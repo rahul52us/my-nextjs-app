@@ -72,7 +72,7 @@ const LoginContent = observer(
           duration: 3000,
         });
         onLoginSuccess?.();
-        router.push(redirectPath || "/tools/workflow");
+        router.push(redirectPath || "/");
       } catch (error: any) {
         openNotification({
           title: "Login Failed",

@@ -91,18 +91,18 @@ const PdfSplitter: React.FC = () => {
   const bgPage        = useColorModeValue('gray.50',   'gray.950');
   const bgCard        = useColorModeValue('white',     'gray.900');
   const borderColor   = useColorModeValue('gray.100',  'gray.700');
-  const textMuted     = useColorModeValue('gray.500',  'gray.400');
+  const textMuted     = useColorModeValue('gray.555',  'gray.400');
   const previewBg     = useColorModeValue('gray.100',  'gray.800');
   const headingColor  = useColorModeValue('gray.800',  'gray.100');
-  const labelColor    = useColorModeValue('gray.400',  'gray.500');
+  const labelColor    = useColorModeValue('gray.400',  'gray.555');
   const pageNavBorder = useColorModeValue('gray.100',  'gray.700');
   const pageNavColor  = useColorModeValue('gray.600',  'gray.300');
   const dropBorder    = useColorModeValue('gray.200',  'gray.600');
   const dropBg        = useColorModeValue('white',     'gray.900');
-  const dropHoverBorder = useColorModeValue('blue.400','blue.400');
+  const dropHoverBorder = useColorModeValue('brand.400','brand.400');
   const inputBg       = useColorModeValue('white',     'gray.800');
   const emptyIconColor = useColorModeValue('gray.300', 'gray.600');
-  const emptyTextColor = useColorModeValue('gray.400', 'gray.500');
+  const emptyTextColor = useColorModeValue('gray.400', 'gray.555');
 
   useEffect(() => {
     return () => {
@@ -398,7 +398,7 @@ const PdfSplitter: React.FC = () => {
             <VStack align="stretch" spacing={6}>
               <Box>
                 <Heading size="lg" display="flex" alignItems="center" gap={2} color={headingColor}>
-                  <Icon as={FaLayerGroup} color="blue.500" /> PDF Toolset
+                  <Icon as={FaLayerGroup} color="brand.500" /> PDF Toolset
                 </Heading>
                 <Text color={textMuted} fontSize="sm">Extract or Split into individual files</Text>
               </Box>
@@ -407,15 +407,15 @@ const PdfSplitter: React.FC = () => {
                 <Center
                   {...getRootProps()}
                   border="2px" borderStyle="dashed"
-                  borderColor={isDragActive ? "blue.500" : dropBorder}
-                  bg={isDragActive ? useColorModeValue("blue.50", "blue.900") : dropBg}
+                  borderColor={isDragActive ? "brand.500" : dropBorder}
+                  bg={isDragActive ? useColorModeValue("brand.50", "brand.900") : dropBg}
                   rounded="2xl" p={10} cursor="pointer"
                   _hover={{ borderColor: dropHoverBorder }}
                   transition="all 0.2s"
                 >
                   <input {...getInputProps()} />
                   <VStack>
-                    <Icon as={FaFilePdf} w={10} h={10} color="blue.400" />
+                    <Icon as={FaFilePdf} w={10} h={10} color="brand.400" />
                     <Text fontWeight="bold" color={headingColor}>Drop PDF file here</Text>
                     <Text fontSize="xs" color={textMuted}>or click to browse</Text>
                   </VStack>
@@ -458,7 +458,7 @@ const PdfSplitter: React.FC = () => {
                           value={range.to} bg={inputBg}
                           onChange={e => setRange({ ...range, to: e.target.value })}
                         />
-                        <IconButton aria-label="Add" icon={<AddIcon />} size="sm" colorScheme="blue" onClick={handleAddRange} />
+                        <IconButton aria-label="Add" icon={<AddIcon />} size="sm" colorScheme="brand" onClick={handleAddRange} />
                       </HStack>
                     </Box>
 
@@ -466,7 +466,7 @@ const PdfSplitter: React.FC = () => {
                       <Flex justify="space-between" align="center" mb={2}>
                         <Text fontSize="xs" fontWeight="bold" color={labelColor}>SELECTION</Text>
                         <HStack spacing={1}>
-                          <Button variant="link" size="xs" colorScheme="blue" onClick={selectAll}>All</Button>
+                          <Button variant="link" size="xs" colorScheme="brand" onClick={selectAll}>All</Button>
                           <Button variant="link" size="xs" colorScheme="red" onClick={() => setSelectedPages([])}>Clear</Button>
                         </HStack>
                       </Flex>
@@ -474,7 +474,7 @@ const PdfSplitter: React.FC = () => {
                         {Array.from({ length: fileData.pageCount }).map((_, i) => (
                           <Button
                             key={i} size="xs"
-                            colorScheme={selectedPages.includes(i) ? "blue" : "gray"}
+                            colorScheme={selectedPages.includes(i) ? "brand" : "gray"}
                             variant={selectedPages.includes(i) ? "solid" : "outline"}
                             onClick={() => togglePage(i)}
                           >
@@ -488,7 +488,7 @@ const PdfSplitter: React.FC = () => {
 
                     <VStack spacing={3}>
                       <Button
-                        w="full" colorScheme="blue"
+                        w="full" colorScheme="brand"
                         leftIcon={isProcessing ? <Spinner size="xs" /> : <DownloadIcon />}
                         onClick={handleDownloadSelected}
                         isDisabled={selectedPages.length === 0 || isProcessing}
@@ -496,7 +496,7 @@ const PdfSplitter: React.FC = () => {
                         Download Selected ({selectedPages.length})
                       </Button>
                       <Button
-                        w="full" variant="outline" colorScheme="purple"
+                        w="full" variant="outline" colorScheme="brand"
                         leftIcon={isProcessing ? <Spinner size="xs" /> : <Icon as={FaFileArchive} />}
                         onClick={handleDownloadAllAsZip}
                         isDisabled={isProcessing}
@@ -559,14 +559,14 @@ const PdfSplitter: React.FC = () => {
               <Box flex={1} bg={previewBg} overflowY="auto" p={4} pr={{ base: 4, md: 16 }}>
                 {fileData ? (
                   <Center>
-                    <Document file={fileData.url} loading={<Spinner color="blue.500" m={10} />}>
+                    <Document file={fileData.url} loading={<Spinner color="brand.500" m={10} />}>
                       <Stack spacing={8} align="center">
                         {Array.from({ length: fileData.pageCount }).map((_, i) => (
                           <Flex key={i} align="center" gap={3} position="relative">
                             <Box
                               position="relative"
                               border="4px solid"
-                              borderColor={activePage === i ? "blue.500" : selectedPages.includes(i) ? "blue.300" : "transparent"}
+                              borderColor={activePage === i ? "brand.500" : selectedPages.includes(i) ? "brand.300" : "transparent"}
                               borderRadius="md"
                               onClick={() => handlePageClick(i)}
                               cursor="pointer"
@@ -589,7 +589,7 @@ const PdfSplitter: React.FC = () => {
                                 {i + 1}
                               </Box>
                               {selectedPages.includes(i) && (
-                                <Box position="absolute" top={2} right={2} bg="blue.500" color="white" rounded="full" p={1}>
+                                <Box position="absolute" top={2} right={2} bg="brand.500" color="white" rounded="full" p={1}>
                                   <FaCheckDouble size={12} />
                                 </Box>
                               )}
@@ -686,10 +686,10 @@ const PdfSplitter: React.FC = () => {
               >
                 <Document file={fileData.url}>
                   <Page
-                    pageNumber={cropPageIndex + 1}
-                    width={CROP_MODAL_PAGE_WIDTH}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
+                     pageNumber={cropPageIndex + 1}
+                     width={CROP_MODAL_PAGE_WIDTH}
+                     renderTextLayer={false}
+                     renderAnnotationLayer={false}
                   />
                 </Document>
                 {cropRect && cropRect.width > 0 && cropRect.height > 0 && (
@@ -700,8 +700,8 @@ const PdfSplitter: React.FC = () => {
                     width={`${cropRect.width}px`}
                     height={`${cropRect.height}px`}
                     border="2px dashed"
-                    borderColor="blue.400"
-                    bg="blue.200"
+                    borderColor="brand.400"
+                    bg="brand.200"
                     opacity={0.35}
                     pointerEvents="none"
                   />
@@ -712,7 +712,7 @@ const PdfSplitter: React.FC = () => {
           <ModalFooter>
             <Button variant="ghost" mr={3} onClick={closeCropModal}>Cancel</Button>
             <Button
-              colorScheme="blue"
+              colorScheme="brand"
               onClick={handleApplyCrop}
               isLoading={isProcessing}
               isDisabled={!cropRect || cropRect.width < 10 || cropRect.height < 10}

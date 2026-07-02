@@ -52,7 +52,7 @@ const DashPageHeader = observer(
     const headingColor = useColorModeValue(theme.colors.gray[800], theme.colors.gray[200]);
     const textColor = useColorModeValue(theme.colors.gray[600], theme.colors.gray[400]);
 
-    const defaultFavicon = metaData?.faviconUrl || "/favicon.ico";
+    const defaultFavicon = metaData?.faviconUrl || "/favicon.png";
     const [favicon, setFavicon] = useState(defaultFavicon);
 
     useEffect(() => {

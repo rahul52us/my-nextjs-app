@@ -43,70 +43,91 @@ const HeaderProfile = observer(() => {
 
   return user ? (
     <Menu closeOnSelect={false} placement="bottom-end">
-      <MenuButton
-        as={IconButton}
-        aria-label="User Menu"
-        icon={
-          <Avatar
-            src={user?.pic?.url || undefined}
-            size="sm"
-            borderRadius={10}
-            name={user?.name}
-          />
-        }
-        size="sm"
-        variant="ghost"
-      />
-      {/* Portal renders outside the navbar DOM node — no z-index clipping */}
-      <Portal>
-        <MenuList
-          minWidth="220px"
-          boxShadow="xl"
-          borderRadius="md"
-          zIndex={9999}   // ← HIGH enough to always sit above the sticky header (zIndex 1000)
-          p={2}
-        >
-          <VStack spacing={2}>
-            <Box textAlign="center">
+      {({ onClose }) => (
+        <>
+          <MenuButton
+            as={IconButton}
+            aria-label="User Menu"
+            icon={
               <Avatar
                 src={user?.pic?.url || undefined}
-                size="lg"
+                size="sm"
+                borderRadius={10}
                 name={user?.name}
               />
-              <Text mt={2} fontWeight="bold">
-                {user?.name}
-              </Text>
-              <Text mt={0.5} fontWeight="xl" fontSize="sm" cursor="pointer">
-                {WEBSITE_TITLE?.split('-').join(' ')}
-              </Text>
-            </Box>
-            <Divider />
-            {user && pathname !== main.home && (
-              <MenuItem onClick={() => router.push(main.home)}>
-                <FaHome style={{ marginRight: "8px" }} /> Home
-              </MenuItem>
-            )}
-            <MenuItem display="none" onClick={() => router.push(main.profile)}>
-              <FaCog style={{ marginRight: "8px" }} /> Profile Settings
-            </MenuItem>
-            <MenuItem display="none" onClick={() => router.push(main.changePassword)}>
-              <FaLock style={{ marginRight: "8px" }} /> Change Password
-            </MenuItem>
-            <MenuItem onClick={() => themeStore.setOpenThemeDrawer()}>
-              <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
-            </MenuItem>
-            <Divider />
-            <MenuItem
-              onClick={() => {
-                doLogout();
-                router.push(authentication.login);
-              }}
+            }
+            size="sm"
+            variant="ghost"
+          />
+          {/* Portal renders outside the navbar DOM node — no z-index clipping */}
+          <Portal>
+            <MenuList
+              minWidth="220px"
+              boxShadow="xl"
+              borderRadius="md"
+              zIndex={9999}   // ← HIGH enough to always sit above the sticky header (zIndex 1000)
+              p={2}
             >
-              <FaSignOutAlt style={{ marginRight: "8px" }} /> Logout
-            </MenuItem>
-          </VStack>
-        </MenuList>
-      </Portal>
+              <VStack spacing={2}>
+                <Box textAlign="center">
+                  <Avatar
+                    src={user?.pic?.url || undefined}
+                    size="lg"
+                    name={user?.name}
+                  />
+                  <Text mt={2} fontWeight="bold">
+                    {user?.name}
+                  </Text>
+                  <Text mt={0.5} fontWeight="xl" fontSize="sm" cursor="pointer">
+                    {WEBSITE_TITLE?.split('-').join(' ')}
+                  </Text>
+                </Box>
+                <Divider />
+                {user && pathname !== main.home && (
+                  <MenuItem
+                    onClick={() => {
+                      onClose();
+                      router.push(main.home);
+                    }}
+                  >
+                    <FaHome style={{ marginRight: "8px" }} /> Home
+                  </MenuItem>
+                )}
+                <MenuItem display="none" onClick={() => {
+                    onClose();
+                    router.push(main.profile);
+                  }}>
+                  <FaCog style={{ marginRight: "8px" }} /> Profile Settings
+                </MenuItem>
+                <MenuItem display="none" onClick={() => {
+                    onClose();
+                    router.push(main.changePassword);
+                  }}>
+                  <FaLock style={{ marginRight: "8px" }} /> Change Password
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    onClose();
+                    themeStore.setOpenThemeDrawer();
+                  }}
+                >
+                  <FaPalette style={{ marginRight: "8px" }} /> Customize Theme
+                </MenuItem>
+                <Divider />
+                <MenuItem
+                  onClick={() => {
+                    onClose();
+                    doLogout();
+                    router.push(authentication.login);
+                  }}
+                >
+                  <FaSignOutAlt style={{ marginRight: "8px" }} /> Logout
+                </MenuItem>
+              </VStack>
+            </MenuList>
+          </Portal>
+        </>
+      )}
     </Menu>
   ) : (
     <Button

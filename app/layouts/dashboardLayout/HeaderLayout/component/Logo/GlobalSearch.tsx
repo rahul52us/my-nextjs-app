@@ -29,9 +29,11 @@ const backdropIn = keyframes`
   to   { opacity: 1; }
 `;
 
+// KEY FIX: both keyframe states include translateX(-50%) so the centering
+// transform is never overridden during the animation.
 const modalIn = keyframes`
-  from { opacity: 0; transform: translateY(-20px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)     scale(1);    }
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)      scale(1);    }
 `;
 
 // ── trigger button (shown in header) ────────────────────────────────
@@ -215,12 +217,12 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
             animation={`${backdropIn} 0.18s ease`}
           />
 
-          {/* modal */}
+          {/* modal — left="50%" + translateX(-50%) is baked into the keyframe,
+              so the centering is preserved for the entire animation duration */}
           <Box
             position="fixed"
             top={{ base: "10%", md: "15%" }}
             left="50%"
-            transform="translateX(-50%)"
             w={{ base: "92vw", md: "600px", lg: "680px" }}
             maxH="70vh"
             bg={modalBg}
@@ -230,7 +232,7 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
             borderColor={borderClr}
             zIndex={10001}
             overflow="hidden"
-            animation={`${modalIn} 0.22s cubic-bezier(0.34,1.56,0.64,1)`}
+            animation={`${modalIn} 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards`}
             display="flex"
             flexDirection="column"
           >

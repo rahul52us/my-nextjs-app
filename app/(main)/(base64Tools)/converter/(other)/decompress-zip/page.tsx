@@ -8,7 +8,6 @@ import {
   Spinner,
   Text,
   useToast,
-  Link,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -17,28 +16,169 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  VStack,
-  Card,
-  CardHeader,
-  CardBody,
-  IconButton,
   Wrap,
   WrapItem,
   Heading,
   useColorModeValue,
   Icon,
+  Link,
 } from "@chakra-ui/react";
 import JSZip from "jszip";
-import { FaUpload, FaEye, FaDownload, FaTrash } from "react-icons/fa";
+import {
+  FaUpload,
+  FaEye,
+  FaDownload,
+  FaTrash,
+  FaFolder,
+  FaFolderOpen,
+  FaFileAlt,
+  FaChevronRight,
+} from "react-icons/fa";
 import Image from "next/image";
 import stores from "../../../../../store/stores";
+
+interface ZipEntry {
+  name: string;
+  content: Blob;
+}
+
+interface ZipTreeNode {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  size?: number;
+  children: ZipTreeNode[];
+  content?: Blob;
+}
+
+interface FolderTreeItemProps {
+  node: ZipTreeNode;
+  depth: number;
+  expandedPaths: Record<string, boolean>;
+  toggleFolder: (path: string) => void;
+  downloadNode: (node: ZipTreeNode) => Promise<void> | void;
+  handleViewFile: (file: { name: string; content: Blob }) => void;
+}
+
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const FolderTreeItem = React.memo<FolderTreeItemProps>(
+  ({ node, depth, expandedPaths, toggleFolder, downloadNode, handleViewFile }) => {
+    const isExpanded = expandedPaths[node.path];
+
+    return (
+      <Box key={node.path} pl={depth * 5} py={2}>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          bg={useColorModeValue("white", "gray.800")}
+          borderRadius="md"
+          p={2}
+          _hover={node.isDirectory ? { bg: useColorModeValue("gray.50", "gray.700") } : undefined}
+        >
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={2}
+            flex="1"
+            cursor={node.isDirectory ? "pointer" : "default"}
+            onClick={() => node.isDirectory && toggleFolder(node.path)}
+          >
+            {node.isDirectory ? (
+              <Icon
+                as={FaChevronRight}
+                boxSize={4}
+                style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
+              />
+            ) : (
+              <Box boxSize={4} />
+            )}
+            <Icon as={node.isDirectory ? (isExpanded ? FaFolderOpen : FaFolder) : FaFileAlt} boxSize={4} color="gray.500" />
+            <Box>
+              <Text fontWeight={node.isDirectory ? "bold" : "normal"} noOfLines={1}>
+                {node.name}{node.isDirectory ? " /" : ""}
+              </Text>
+              {!node.isDirectory && node.size !== undefined && (
+                <Text fontSize="xs" color="gray.500">
+                  {formatBytes(node.size)}
+                </Text>
+              )}
+            </Box>
+          </Box>
+          <Box display="flex" gap={2} alignItems="center" flexShrink={0}>
+            {node.isDirectory ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  downloadNode(node);
+                }}
+              >
+                Download Folder
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    downloadNode(node);
+                  }}
+                >
+                  Download
+                </Button>
+                {/[.](jpg|jpeg|png|gif)$/i.test(node.name) && node.content && (
+                  <Button
+                    size="sm"
+                    variant="solid"
+                    colorScheme="blue"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleViewFile({ name: node.name, content: node.content! });
+                    }}
+                  >
+                    View
+                  </Button>
+                )}
+              </>
+            )}
+          </Box>
+        </Box>
+        {node.isDirectory && isExpanded && node.children.length > 0 && (
+          <Box mt={2}>
+            {node.children.map((child) => (
+              <FolderTreeItem
+                key={child.path}
+                node={child}
+                depth={depth + 1}
+                expandedPaths={expandedPaths}
+                toggleFolder={toggleFolder}
+                downloadNode={downloadNode}
+                handleViewFile={handleViewFile}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+    );
+  }
+);
 
 const ZipDecompression: React.FC = () => {
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [output, setOutput] = useState<any[]>([]);
+  const [treeData, setTreeData] = useState<ZipTreeNode[]>([]);
+  const [expandedPaths, setExpandedPaths] = useState<Record<string, boolean>>({});
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [fileToView, setFileToView] = useState<any | null>(null);
+  const [loadedZipData, setLoadedZipData] = useState<JSZip | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -50,6 +190,113 @@ const ZipDecompression: React.FC = () => {
   const {
     themeStore: { themeConfig },
   } = stores;
+
+  const buildTree = (entries: ZipEntry[]): ZipTreeNode[] => {
+    const root: ZipTreeNode[] = [];
+
+    const findOrCreateChild = (
+      nodes: ZipTreeNode[],
+      segment: string,
+      fullPath: string,
+      isDirectory: boolean,
+    ) => {
+      let child = nodes.find((node) => node.name === segment);
+      if (!child) {
+        child = {
+          name: segment,
+          path: fullPath,
+          isDirectory,
+          children: [],
+        };
+        nodes.push(child);
+      }
+      return child;
+    };
+
+    entries.forEach((entry) => {
+      const segments = entry.name.split("/").filter(Boolean);
+      let currentNodes = root;
+      let currentPath = "";
+
+      segments.forEach((segment, index) => {
+        currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+        const isLast = index === segments.length - 1;
+        const node = findOrCreateChild(currentNodes, segment, currentPath, !isLast ? true : false);
+
+        if (isLast) {
+          node.isDirectory = false;
+          node.content = entry.content;
+          node.size = entry.content.size;
+        }
+
+        currentNodes = node.children;
+      });
+    });
+
+    const sortTree = (nodes: ZipTreeNode[]) => {
+      nodes.sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+        return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+      });
+      nodes.forEach((node) => sortTree(node.children));
+    };
+
+    sortTree(root);
+    return root;
+  };
+
+  const countFiles = (nodes: ZipTreeNode[]): number =>
+    nodes.reduce((count, node) => count + (node.isDirectory ? countFiles(node.children) : 1), 0);
+
+  const toggleFolder = (path: string) => {
+    setExpandedPaths((prev) => ({
+      ...prev,
+      [path]: !prev[path],
+    }));
+  };
+
+  const downloadNode = async (node: ZipTreeNode) => {
+    if (node.isDirectory) {
+      const zip = new JSZip();
+      const addFiles = (tree: ZipTreeNode[], folder: JSZip) => {
+        tree.forEach((child) => {
+          if (child.isDirectory) {
+            addFiles(child.children, folder.folder(child.name)!);
+          } else if (child.content) {
+            folder.file(child.name, child.content);
+          }
+        });
+      };
+      addFiles(node.children, zip.folder(node.name)!);
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipContent);
+      link.download = `${node.name}.zip`;
+      link.click();
+      return;
+    }
+
+    if (node.content) {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(node.content);
+      link.download = node.path;
+      link.click();
+    }
+  };
+
+  const handleViewFile = (file: { name: string; content: Blob }) => {
+    const fileType = file.name.split(".").pop()?.toLowerCase();
+    const fileURL = URL.createObjectURL(file.content);
+
+    if (fileType === "pdf") {
+      setFileToView({ type: "pdf", url: fileURL, name: file.name, content: file.content });
+    } else if (["jpg", "jpeg", "png", "gif"].includes(fileType || "")) {
+      setFileToView({ type: "image", url: fileURL, name: file.name, content: file.content });
+    } else {
+      setFileToView({ type: "download", url: fileURL, name: file.name, content: file.content });
+    }
+    onOpen();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
@@ -73,7 +320,9 @@ const ZipDecompression: React.FC = () => {
 
     try {
       const zipData = await zip.loadAsync(zipFile);
-      const files = Object.keys(zipData.files);
+      const files = Object.keys(zipData.files).filter(
+        (filename) => !zipData.files[filename].dir,
+      );
 
       if (files.length === 0) {
         toast({
@@ -93,7 +342,8 @@ const ZipDecompression: React.FC = () => {
         })
       );
 
-      setOutput(extractedFiles);
+      setTreeData(buildTree(extractedFiles));
+      setLoadedZipData(zip);
       toast({
         title: "ZIP Decompression Successful",
         description: "ZIP file has been decompressed successfully.",
@@ -115,34 +365,47 @@ const ZipDecompression: React.FC = () => {
     }
   };
 
-  const handleViewFile = (file: { name: string; content: Blob }) => {
-    const fileType = file.name.split(".").pop()?.toLowerCase();
-    const fileURL = URL.createObjectURL(file.content);
+  const handleDownloadAll = async () => {
+    if (treeData.length === 0) return;
 
-    if (fileType === "pdf") {
-      setFileToView({ type: "pdf", url: fileURL, name: file.name, content: file.content });
-    } else if (["jpg", "jpeg", "png", "gif"].includes(fileType || "")) {
-      setFileToView({ type: "image", url: fileURL, name: file.name, content: file.content });
-    } else {
-      setFileToView({ type: "download", url: fileURL, name: file.name, content: file.content });
-    }
-    onOpen();
-  };
+    const zip = new JSZip();
+    const addFiles = (nodes: ZipTreeNode[], folder: JSZip) => {
+      nodes.forEach((node) => {
+        if (node.isDirectory) {
+          addFiles(node.children, folder.folder(node.name)!);
+        } else if (node.content) {
+          folder.file(node.name, node.content);
+        }
+      });
+    };
 
-  const handleDownloadAll = () => {
-    output.forEach((file) => {
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(file.content);
-      link.download = file.name;
-      link.click();
-    });
+    addFiles(treeData, zip);
+    const zipContent = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(zipContent);
+    link.download = `${zipFile?.name.replace(/\.zip$/i, "") || "archive"}_all.zip`;
+    link.click();
   };
 
   const handleClearAll = () => {
     setZipFile(null);
-    setOutput([]);
+    setTreeData([]);
+    setExpandedPaths({});
+    setLoadedZipData(null);
     setFileToView(null);
   };
+
+  const renderTreeNode = (node: ZipTreeNode, depth: number) => (
+    <FolderTreeItem
+      key={node.path}
+      node={node}
+      depth={depth}
+      expandedPaths={expandedPaths}
+      toggleFolder={toggleFolder}
+      downloadNode={downloadNode}
+      handleViewFile={handleViewFile}
+    />
+  );
 
   return (
     <Box p={{ base: 4, md: 6 }} bg={bgColor} color={textColor} minH="78vh">
@@ -161,7 +424,7 @@ const ZipDecompression: React.FC = () => {
         textAlign="center"
         mb={6}
       >
-        Upload a ZIP file to extract its contents and download individual files.
+        Upload a ZIP file to extract its contents and download individual files or folders.
       </Text>
 
       {/* ✅ Hidden file input */}
@@ -229,64 +492,12 @@ const ZipDecompression: React.FC = () => {
       )}
 
       {/* Extracted Files List */}
-      {!isLoading && output.length > 0 && (
+      {!isLoading && treeData.length > 0 && (
         <>
           <Text mt={3} mb={2} fontSize="lg" fontWeight="bold">
-            Extracted Files ({output.length}):
+            Extracted Files ({countFiles(treeData)}):
           </Text>
-          {output.map((file, index) => (
-            <Card
-              key={index}
-              mt={3}
-              borderWidth="1px"
-              borderRadius="lg"
-              shadow="md"
-              bg={cardBg}
-              _hover={{ boxShadow: "lg" }}
-            >
-              <CardHeader pb={1}>
-                <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }} isTruncated>
-                  📄 {file.name}
-                </Text>
-              </CardHeader>
-              <CardBody pt={1}>
-                <VStack spacing={0} align="start">
-                  <Wrap spacing={2}>
-                    <WrapItem>
-                      <Link
-                        href={URL.createObjectURL(file.content)}
-                        download={file.name}
-                        isExternal
-                      >
-                        <IconButton
-                          icon={<FaDownload />}
-                          aria-label="Download file"
-                          size="sm"
-                          variant="outline"
-                          colorScheme="blue"
-                        />
-                      </Link>
-                    </WrapItem>
-                    {["jpg", "jpeg", "png", "gif"].includes(
-                      file.name.split(".").pop()?.toLowerCase() || ""
-                    ) && (
-                      <WrapItem>
-                        <Button
-                          colorScheme="blue"
-                          onClick={() => handleViewFile(file)}
-                          leftIcon={<FaEye />}
-                          size="sm"
-                          variant="outline"
-                        >
-                          View
-                        </Button>
-                      </WrapItem>
-                    )}
-                  </Wrap>
-                </VStack>
-              </CardBody>
-            </Card>
-          ))}
+          <Box>{treeData.map((node) => renderTreeNode(node, 0))}</Box>
         </>
       )}
 
@@ -316,7 +527,7 @@ const ZipDecompression: React.FC = () => {
             colorScheme="blue"
             onClick={handleDownloadAll}
             leftIcon={<FaDownload />}
-            isDisabled={output.length === 0}
+            isDisabled={treeData.length === 0}
             width="100%"
             size="lg"
             fontSize={{ base: "md", md: "lg" }}
@@ -334,7 +545,7 @@ const ZipDecompression: React.FC = () => {
             colorScheme="red"
             onClick={handleClearAll}
             leftIcon={<FaTrash />}
-            isDisabled={!zipFile && output.length === 0}
+            isDisabled={!zipFile && treeData.length === 0}
             width="100%"
             size="lg"
             fontSize={{ base: "md", md: "lg" }}

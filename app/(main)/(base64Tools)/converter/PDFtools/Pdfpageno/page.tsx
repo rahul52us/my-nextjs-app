@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box, Button, Container, Heading, VStack, HStack, Select, SimpleGrid,
   Text, useToast, FormControl, FormLabel, Card, Icon, Input, Badge, IconButton,
@@ -26,9 +26,13 @@ const PDFNumberingPage: React.FC = () => {
   // Settings State
   const [prefix, setPrefix] = useState<string>('Page');
   const [format, setFormat] = useState<string>('of');
-  const [position, setPosition] = useState<string>('bottom-center');
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 50, y: 92 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [startNumber, setStartNumber] = useState<number>(1);
+  const [pageRange, setPageRange] = useState<string>('all');
+  const [pageRangeError, setPageRangeError] = useState<string>('');
   const [color, setColor] = useState<string>('#4A5568'); // Professional Slate Gray
+  const previewRef = useRef<HTMLDivElement | null>(null);
   const [fontSize, setFontSize] = useState<number>(11);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const pageBg = useColorModeValue("gray.50", "gray.900");
@@ -43,11 +47,11 @@ const PDFNumberingPage: React.FC = () => {
   const inputTextColor = useColorModeValue("gray.800", "gray.100");
   const inputIconColor = useColorModeValue("#718096", "#A0AEC0");
   const dropzoneBg = useColorModeValue("white", "gray.800");
-  const dropzoneHoverBg = useColorModeValue("blue.50", "gray.700");
-  const selectedFileBg = useColorModeValue("blue.50", "blue.900");
-  const selectedFileBorder = useColorModeValue("blue.100", "blue.700");
-  const selectedFileText = useColorModeValue("blue.700", "blue.100");
-  const selectedFileMeta = useColorModeValue("blue.600", "blue.200");
+  const dropzoneHoverBg = useColorModeValue("brand.50", "gray.700");
+  const selectedFileBg = useColorModeValue("brand.50", "brand.900");
+  const selectedFileBorder = useColorModeValue("brand.100", "brand.700");
+  const selectedFileText = useColorModeValue("brand.700", "brand.100");
+  const selectedFileMeta = useColorModeValue("brand.600", "brand.200");
   const previewPanelBg = useColorModeValue("gray.50", "gray.800");
   const emptyIconBg = useColorModeValue("white", "gray.700");
   const sliderTrackBg = useColorModeValue("gray.200", "gray.700");
@@ -82,27 +86,87 @@ const PDFNumberingPage: React.FC = () => {
     return base;
   }, [prefix, format, startNumber, currPreviewPage, numPages]);
 
-  const getOverlayStyles = (): React.CSSProperties => {
-    const styles: React.CSSProperties = {
-      position: 'absolute',
-      color: color,
-      fontSize: `${fontSize}px`,
-      fontWeight: '500',
-      pointerEvents: 'none',
-      width: '100%',
-      display: 'flex',
-      padding: '25px 45px',
-      zIndex: 10,
-      fontFamily: 'Helvetica, Arial, sans-serif'
-    };
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-    if (position.includes('bottom')) styles.bottom = '0';
-    if (position.includes('top')) styles.top = '0';
-    if (position.includes('center')) styles.justifyContent = 'center';
-    if (position.includes('left')) styles.justifyContent = 'flex-start';
-    if (position.includes('right')) styles.justifyContent = 'flex-end';
+  const parsePageRanges = (range: string, pageCount: number): Set<number> => {
+    const selected = new Set<number>();
+    const trimmed = range.trim().toLowerCase();
 
-    return styles;
+    if (!trimmed || trimmed === 'all') {
+      for (let i = 1; i <= pageCount; i += 1) selected.add(i);
+      return selected;
+    }
+
+    const parts = trimmed.split(',').map((chunk) => chunk.trim()).filter(Boolean);
+    for (const part of parts) {
+      if (/^\d+$/.test(part)) {
+        const page = Number(part);
+        if (page >= 1 && page <= pageCount) selected.add(page);
+        else throw new Error('Page number out of range');
+      } else if (/^\d+-\d+$/.test(part)) {
+        const [start, end] = part.split('-').map(Number);
+        if (start < 1 || end < 1 || start > pageCount || end > pageCount || start > end) {
+          throw new Error('Invalid page range');
+        }
+        for (let p = start; p <= end; p += 1) selected.add(p);
+      } else {
+        throw new Error('Invalid page range syntax');
+      }
+    }
+
+    return selected;
+  };
+
+  const validatePageRange = (range: string, pageCount: number) => {
+    try {
+      parsePageRanges(range, pageCount);
+      return '';
+    } catch (error) {
+      return error instanceof Error ? error.message : 'Invalid page range';
+    }
+  };
+
+  const selectedPreviewPages = useMemo(() => {
+    try {
+      return parsePageRanges(pageRange, numPages);
+    } catch {
+      return new Set<number>();
+    }
+  }, [pageRange, numPages]);
+
+  useEffect(() => {
+    setPageRangeError(validatePageRange(pageRange, numPages));
+  }, [pageRange, numPages]);
+
+  const pageIsSelected = selectedPreviewPages.has(currPreviewPage);
+
+  const updatePosition = (clientX: number, clientY: number) => {
+    if (!previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+
+    setPosition({
+      x: clamp(x, 0, 100),
+      y: clamp(y, 0, 100),
+    });
+  };
+
+  const handlePreviewPointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const point = 'touches' in e ? e.touches[0] : e;
+    updatePosition(point.clientX, point.clientY);
+    setIsDragging(true);
+  };
+
+  const handlePreviewPointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    const point = 'touches' in e ? e.touches[0] : e;
+    updatePosition(point.clientX, point.clientY);
+  };
+
+  const handlePreviewPointerUp = () => {
+    setIsDragging(false);
   };
 
   const handleDownload = async () => {
@@ -119,9 +183,14 @@ const PDFNumberingPage: React.FC = () => {
       const g = parseInt(color.slice(3, 5), 16) / 255;
       const b = parseInt(color.slice(5, 7), 16) / 255;
 
+      const selectedPages = parsePageRanges(pageRange, pages.length);
+
       pages.forEach((page, index) => {
+        const pageNumber = index + 1;
+        if (!selectedPages.has(pageNumber)) return;
+
         const { width, height } = page.getSize();
-        const current = index + startNumber;
+        const current = pageNumber + (startNumber - 1);
         const total = pages.length + (startNumber - 1);
         const base = prefix ? `${prefix} ${current}` : `${current}`;
 
@@ -130,12 +199,10 @@ const PDFNumberingPage: React.FC = () => {
         if (format === 'bracket') text = `[ ${base} ]`;
 
         const textWidth = font.widthOfTextAtSize(text, fontSize);
-        let x = width / 2 - textWidth / 2;
-        let y = 35;
+        const textHeight = font.heightAtSize(fontSize);
 
-        if (position.includes('left')) x = 50;
-        if (position.includes('right')) x = width - textWidth - 50;
-        if (position.includes('top')) y = height - 45;
+        const x = (width * position.x) / 100 - textWidth / 2;
+        const y = height - (height * position.y) / 100 - textHeight / 2;
 
         page.drawText(text, { x, y, size: fontSize, font, color: rgb(r, g, b) });
       });
@@ -159,7 +226,7 @@ const PDFNumberingPage: React.FC = () => {
     <Container maxW="container.xl" py={10} bg={pageBg}>
       <VStack align="start" spacing={1} mb={8}>
         <Heading size="lg" fontWeight="extrabold" color={textPrimary}>PDF Editor</Heading>
-<Text color={textSecondary}>Configure page numbering...</Text>
+        <Text color={textSecondary}>Configure page numbering...</Text>
       </VStack>
 
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={10}>
@@ -179,7 +246,7 @@ const PDFNumberingPage: React.FC = () => {
                   {...getRootProps()}
                   w="full" py={10} border="2px dashed" borderColor={borderColor}
                   borderRadius="lg" bg={dropzoneBg} cursor="pointer" textAlign="center"
-                  _hover={{ borderColor: "blue.400", bg: dropzoneHoverBg }} transition="all 0.2s"
+                  _hover={{ borderColor: "brand.400", bg: dropzoneHoverBg }} transition="all 0.2s"
                 >
                   <input {...getInputProps()} />
                   <Icon as={FileUp} w={8} h={8} color={textMuted} mb={3} />
@@ -188,7 +255,7 @@ const PDFNumberingPage: React.FC = () => {
                 </Box>
               ) : (
                 <HStack w="full" p={4} bg={selectedFileBg} borderRadius="lg" border="1px solid" borderColor={selectedFileBorder}>
-                  <Icon as={FileText} color="blue.500" />
+                  <Icon as={FileText} color="brand.500" />
                   <VStack align="start" spacing={0} flex={1}>
                     <Text fontWeight="bold" fontSize="sm" noOfLines={1} color={selectedFileText}>{file.name}</Text>
                     <Text fontSize="xs" color={selectedFileMeta}>{(file.size / 1024 / 1024).toFixed(2)} MB</Text>
@@ -224,21 +291,47 @@ const PDFNumberingPage: React.FC = () => {
                 </FormControl>
                 <FormControl>
                   <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>POSITION</FormLabel>
-                  <Select bg={inputBg} color={inputTextColor} borderColor={borderColor} size="sm" rounded="md" value={position} onChange={(e) => setPosition(e.target.value)}>
-                    <option value="bottom-center">Bottom Center</option>
-                    <option value="bottom-right">Bottom Right</option>
-                    <option value="bottom-left">Bottom Left</option>
-                    <option value="top-right">Top Right</option>
-                  </Select>
+                  <HStack spacing={3} alignItems="center">
+                    <Badge colorScheme="gray" px={2} py={1} borderRadius="md">X: {Math.round(position.x)}%</Badge>
+                    <Badge colorScheme="gray" px={2} py={1} borderRadius="md">Y: {Math.round(position.y)}%</Badge>
+                  </HStack>
+                  <Button size="sm" variant="outline" mt={2} onClick={() => setPosition({ x: 50, y: 92 })}>Reset Position</Button>
+                  <Text fontSize="xs" color={textMuted} mt={2}>
+                    Drag the page number directly on the preview to place it anywhere.
+                  </Text>
                 </FormControl>
               </SimpleGrid>
+
+              <FormControl>
+                <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>PAGE RANGE</FormLabel>
+                <Input
+                  size="sm"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  borderColor={borderColor}
+                  rounded="md"
+                  value={pageRange}
+                  onChange={(e) => setPageRange(e.target.value)}
+                  placeholder="all or 1-3,5"
+                />
+                <Text fontSize="xs" color={textMuted} mt={2}>
+                  Enter pages or ranges, e.g. <strong>1-3,5</strong>. Use <strong>all</strong> to number every page.
+                </Text>
+                {pageRangeError ? (
+                  <Text fontSize="xs" color="red.400" mt={2}>{pageRangeError}</Text>
+                ) : (
+                  <Text fontSize="xs" color={textSecondary} mt={2}>
+                    Currently selecting {pageRange === 'all' ? 'all pages' : `${selectedPreviewPages.size} page(s)`}.
+                  </Text>
+                )}
+              </FormControl>
 
               <FormControl>
                 <FormLabel fontSize="xs" fontWeight="bold" color={textPrimary}>STYLE (COLOR & SIZE)</FormLabel>
                 <HStack spacing={4}>
                   <Input type="color" w="50px" h="34px" p={1} value={color} onChange={(e) => setColor(e.target.value)} cursor="pointer" bg={inputBg} borderColor={borderColor} />
                   <Slider flex="1" value={fontSize} min={8} max={24} onChange={(v) => setFontSize(v)}>
-                    <SliderTrack bg={sliderTrackBg}><SliderFilledTrack bg="blue.500" /></SliderTrack>
+                    <SliderTrack bg={sliderTrackBg}><SliderFilledTrack bg="brand.500" /></SliderTrack>
                     <SliderThumb boxSize={4} />
                   </Slider>
                   <Text fontSize="sm" fontWeight="bold" color={textSecondary}>{fontSize}px</Text>
@@ -246,7 +339,7 @@ const PDFNumberingPage: React.FC = () => {
               </FormControl>
 
               <Button
-                w="full" size="lg" colorScheme="blue" leftIcon={<Hash size={18} />}
+                w="full" size="lg" colorScheme="brand" leftIcon={<Hash size={18} />}
                 isDisabled={!file} isLoading={isProcessing} onClick={handleDownload}
                 h="56px" fontSize="md"
               >
@@ -261,18 +354,40 @@ const PDFNumberingPage: React.FC = () => {
           <Card variant="outline" borderRadius="xl" bg={previewPanelBg} h="full" minH="650px" shadow="inner" borderStyle="dashed" borderColor={borderColor}>
             <HStack p={4} bg={headerBg} borderBottom="1px solid" borderColor={softBorderColor} justifyContent="space-between">
               <HStack>
-                <Icon as={Eye} size={16} color="blue.500" />
+                <Icon as={Eye} size={16} color="brand.500" />
                 <Text fontSize="sm" fontWeight="bold" color={textPrimary}>Visual Preview</Text>
               </HStack>
               {file && (
                 <HStack spacing={3}>
                   <IconButton size="xs" variant="outline" icon={<ChevronLeft size={16} />} onClick={() => setCurrPreviewPage(p => Math.max(1, p - 1))} isDisabled={currPreviewPage === 1} aria-label="prev" />
                   <Badge colorScheme="gray" px={2} py={1} borderRadius="md" variant="solid">Page {currPreviewPage} / {numPages}</Badge>
+                  <Badge colorScheme={pageIsSelected ? 'green' : 'red'} px={2} py={1} borderRadius="md" variant="solid">
+                    {pageIsSelected ? 'Numbered' : 'Skipped'}
+                  </Badge>
                   <IconButton size="xs" variant="outline" icon={<ChevronRight size={16} />} onClick={() => setCurrPreviewPage(p => Math.min(numPages, p + 1))} isDisabled={currPreviewPage === numPages} aria-label="next" />
                 </HStack>
               )}
             </HStack>
-            <Box flex={1} display="flex" justifyContent="center" alignItems="center" p={10} position="relative" overflow="hidden">
+            <Box
+              flex={1}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              p={10}
+              position="relative"
+              overflow="hidden"
+              ref={previewRef}
+              onMouseMove={handlePreviewPointerMove}
+              onMouseUp={handlePreviewPointerUp}
+              onMouseLeave={handlePreviewPointerUp}
+              onTouchMove={handlePreviewPointerMove}
+              onTouchEnd={handlePreviewPointerUp}
+              onClick={(e) => {
+                if (e.target === previewRef.current) {
+                  updatePosition(e.clientX, e.clientY);
+                }
+              }}
+            >
               {previewUrl ? (
                 <Box position="relative" bg="white" shadow="2xl" border="1px solid" borderColor={borderColor}>
                   <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
@@ -284,9 +399,21 @@ const PDFNumberingPage: React.FC = () => {
                     />
                   </Document>
                   {/* LIVE OVERLAY */}
-                  <div style={getOverlayStyles()}>
-                    {previewText}
-                  </div>
+                  <Box
+                    position="absolute"
+                    left={`${position.x}%`}
+                    top={`${position.y}%`}
+                    transform="translate(-50%, -50%)"
+                    cursor={isDragging ? 'grabbing' : 'grab'}
+                    onMouseDown={handlePreviewPointerDown}
+                    onTouchStart={handlePreviewPointerDown}
+                    zIndex={10}
+                    userSelect="none"
+                  >
+                    <Text fontSize={`${fontSize}px`} fontWeight="semibold" color={color} bg="rgba(255,255,255,0.85)" px={3} py={2} borderRadius="lg" boxShadow="md">
+                      {previewText}
+                    </Text>
+                  </Box>
                 </Box>
               ) : (
                 <VStack spacing={4} color={textMuted}>

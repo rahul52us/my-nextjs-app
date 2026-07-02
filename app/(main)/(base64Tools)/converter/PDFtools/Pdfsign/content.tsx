@@ -173,15 +173,15 @@ const PdfSignatureContent: React.FC = () => {
                         <VStack align="stretch" spacing={6}>
                             <Box>
                                 <Heading size="md" display="flex" alignItems="center" gap={2}>
-                                    <Icon as={FaSignature} color="blue.500" /> Signature Maker
+                                    <Icon as={FaSignature} color="brand.500" /> Signature Maker
                                 </Heading>
                                 <Text fontSize="xs" color={textMuted} fontWeight="bold" mt={1}>PRO WORKSPACE</Text>
                             </Box>
 
                             <HStack bg={tabBg} p={1} rounded="xl">
-                                <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')} leftIcon={<EditIcon />}> Draw </Button>
-                                <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'blue' : 'gray'} onClick={() => setActiveTab('type')} leftIcon={<Icon as={FaFont} />}> Type </Button>
-                                <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'blue' : 'gray'} onClick={() => setActiveTab('upload')} leftIcon={<Icon as={FaImage} />}> Image </Button>
+                                <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'brand' : 'gray'} onClick={() => setActiveTab('draw')} leftIcon={<EditIcon />}> Draw </Button>
+                                <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'brand' : 'gray'} onClick={() => setActiveTab('type')} leftIcon={<Icon as={FaFont} />}> Type </Button>
+                                <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'brand' : 'gray'} onClick={() => setActiveTab('upload')} leftIcon={<Icon as={FaImage} />}> Image </Button>
                             </HStack>
 
                             {activeTab === 'draw' && (
@@ -199,10 +199,10 @@ const PdfSignatureContent: React.FC = () => {
                             )}
 
                             {activeTab === 'upload' && (
-                                <Box {...getSigProps()} p={6} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "blue.400" }}>
+                                <Box {...getSigProps()} p={6} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "brand.400" }}>
                                     <input {...getSigInputProps()} />
                                     {uploadedSig ? (
-                                        <VStack><Box as="img" src={uploadedSig} maxH="80px" alt="Signature" /><Text fontSize="xs" color="blue.500">Click to change</Text></VStack>
+                                        <VStack><Box as="img" src={uploadedSig} maxH="80px" alt="Signature" /><Text fontSize="xs" color="brand.500">Click to change</Text></VStack>
                                     ) : (
                                         <VStack color={textSecondary}><Icon as={FaImage} w={8} h={8} /><Text fontSize="sm">Upload PNG/JPG Signature</Text></VStack>
                                     )}
@@ -213,7 +213,7 @@ const PdfSignatureContent: React.FC = () => {
 
                             {/* New Feature UI: Page Settings */}
                             <VStack align="stretch" spacing={3}>
-                                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} colorScheme="blue" size="sm">
+                                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} colorScheme="brand" size="sm">
                                     Apply signature to all pages
                                 </Checkbox>
                                 {!applyToAll && (
@@ -226,11 +226,11 @@ const PdfSignatureContent: React.FC = () => {
                                 )}
                             </VStack>
 
-                            <Button colorScheme="blue" size="lg" h="60px" rounded="2xl" shadow="lg" onClick={handleExport} isDisabled={!pdfFile || isProcessing} leftIcon={isProcessing ? <Spinner size="xs" /> : <DownloadIcon />}>
+                            <Button colorScheme="brand" size="lg" h="60px" rounded="2xl" shadow="lg" onClick={handleExport} isDisabled={!pdfFile || isProcessing} leftIcon={isProcessing ? <Spinner size="xs" /> : <DownloadIcon />}>
                                 {isProcessing ? "Processing..." : "Export Signed PDF"}
                             </Button>
 
-                            <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor={borderColor} rounded="2xl" textAlign="center" bg={canvasBg} _hover={{ borderColor: 'blue.400' }}>
+                            <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor={borderColor} rounded="2xl" textAlign="center" bg={canvasBg} _hover={{ borderColor: 'brand.400' }}>
                                 <input {...getInputProps()} />
                                 <HStack justify="center" spacing={2} color={textSecondary}><Icon as={FaFileUpload} /><Text fontSize="sm" fontWeight="bold">Change PDF</Text></HStack>
                             </Box>
@@ -240,7 +240,7 @@ const PdfSignatureContent: React.FC = () => {
                     {/* RIGHT: PREVIEW (Unchanged Structure) */}
                     <Box gridColumn={{ lg: "span 8" }} bg={panelBg} rounded="3xl" overflow="hidden" border="1px" borderColor={borderColor} position="relative">
                         <HStack position="absolute" top={4} left={4} zIndex={10} bg={previewBadgeBg} px={3} py={1} rounded="full" shadow="sm">
-                            <Icon as={FaRegEye} color="blue.500" />
+                            <Icon as={FaRegEye} color="brand.500" />
                             <Text fontSize="xs" fontWeight="black" color={previewBadgeText}>PREVIEW</Text>
                         </HStack>
 

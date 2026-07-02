@@ -46,7 +46,7 @@ const ProSignatureMaker: React.FC = () => {
   const signatureOverlayBg = "transparent";
   const signatureOverlayHoverBg = "transparent";
   const emptyDropBg = useColorModeValue("transparent", "gray.800");
-  const emptyDropActiveBg = useColorModeValue("blue.50", "blue.900");
+  const emptyDropActiveBg = useColorModeValue("brand.50", "brand.900");
   const emptyDropBorder = useColorModeValue("gray.300", "gray.600");
   const emptyDropIcon = useColorModeValue("gray.300", "gray.500");
   const removeTextColor = useColorModeValue("gray.400", "gray.500");
@@ -228,7 +228,7 @@ const ProSignatureMaker: React.FC = () => {
       <Box
         position="absolute" top={`${position.y}px`} left={`${position.x}px`}
         zIndex={100} cursor="move" onMouseDown={handleMouseDown}
-        border="2px dashed" borderColor="blue.400"
+        border="2px dashed" borderColor="brand.400"
         bg={signatureOverlayBg} borderRadius="md"
         _hover={{ bg: signatureOverlayHoverBg }}
       >
@@ -240,7 +240,7 @@ const ProSignatureMaker: React.FC = () => {
         />
         <Icon
           as={FaArrowsAlt} position="absolute" top="-12px" left="-12px"
-          color="blue.500" bg={cardBg} rounded="full" p={1} boxSize="24px" cursor="grab"
+          color="brand.500" bg={cardBg} rounded="full" p={1} boxSize="24px" cursor="grab"
         />
       </Box>
     );
@@ -255,14 +255,14 @@ const ProSignatureMaker: React.FC = () => {
           <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
             <VStack align="stretch" spacing={6}>
               <Heading size="md">
-                <Icon as={FaSignature} color="blue.500" mr={2} /> Signature Maker
+                <Icon as={FaSignature} color="brand.500" mr={2} /> Signature Maker
               </Heading>
 
               {/* Tabs */}
               <HStack bg={tabBg} p={1} rounded="xl">
-                <Button flex={1} size="sm" variant={activeTab === 'draw'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw'   ? 'blue' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
-                <Button flex={1} size="sm" variant={activeTab === 'type'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'type'   ? 'blue' : 'gray'} onClick={() => setActiveTab('type')}>Type</Button>
-                <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'blue' : 'gray'} onClick={() => setActiveTab('upload')}>Image</Button>
+                <Button flex={1} size="sm" variant={activeTab === 'draw'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw'   ? 'brand' : 'gray'} onClick={() => setActiveTab('draw')}>Draw</Button>
+                <Button flex={1} size="sm" variant={activeTab === 'type'   ? 'solid' : 'ghost'} colorScheme={activeTab === 'type'   ? 'brand' : 'gray'} onClick={() => setActiveTab('type')}>Type</Button>
+                <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'brand' : 'gray'} onClick={() => setActiveTab('upload')}>Image</Button>
               </HStack>
 
               {/* Draw canvas */}
@@ -289,7 +289,7 @@ const ProSignatureMaker: React.FC = () => {
               {/* Upload signature image */}
               {activeTab === 'upload' && (
                 <Box {...getSigProps()} p={4} border="2px dashed" borderColor={borderColor}
-                  rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "blue.400" }}>
+                  rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "brand.400" }}>
                   <input {...getSigInputProps()} />
                   {uploadedSig
                     ? <Box as="img" src={uploadedSig} maxH="60px" mx="auto" />
@@ -310,7 +310,7 @@ const ProSignatureMaker: React.FC = () => {
 
               {/* Page settings */}
               <VStack align="stretch" spacing={3}>
-                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)}>
+                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} colorScheme="brand">
                   Apply to all pages
                 </Checkbox>
                 {!applyToAll && (
@@ -325,7 +325,7 @@ const ProSignatureMaker: React.FC = () => {
               </VStack>
 
               {/* Export */}
-              <Button colorScheme="blue" size="lg" h="60px" rounded="2xl"
+              <Button colorScheme="brand" size="lg" h="60px" rounded="2xl"
                 onClick={handleExport} isLoading={isProcessing} leftIcon={<DownloadIcon />}
                 isDisabled={!pdfFile}>
                 {fromCV ? "Save Signature" : "Export PDF"}
@@ -335,7 +335,7 @@ const ProSignatureMaker: React.FC = () => {
               {pdfFile && (
                 <Text
                   fontSize="xs" color={removeTextColor} textAlign="center" cursor="pointer"
-                  textDecoration="underline" _hover={{ color: "blue.400" }}
+                  textDecoration="underline" _hover={{ color: "brand.400" }}
                   onClick={() => {
                     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
                     setPdfFile(null); setPdfUrl(null); setNumPages(0);
@@ -364,7 +364,7 @@ const ProSignatureMaker: React.FC = () => {
               bg={badgeBg} px={3} py={1} rounded="full" shadow="sm"
               pointerEvents="none"
             >
-              <Icon as={FaRegEye} color="blue.500" />
+              <Icon as={FaRegEye} color="brand.500" />
               <Text fontSize="xs" fontWeight="black" color={badgeText}>PREVIEW</Text>
             </HStack>
 
@@ -402,7 +402,7 @@ const ProSignatureMaker: React.FC = () => {
                     <Box
                       p={10} borderRadius="2xl"
                       border="2px dashed"
-                      borderColor={isPdfDragActive ? "blue.400" : emptyDropBorder}
+                      borderColor={isPdfDragActive ? "brand.400" : emptyDropBorder}
                       bg={isPdfDragActive ? emptyDropActiveBg : emptyDropBg}
                       transition="all 0.2s"
                       textAlign="center"
@@ -410,11 +410,11 @@ const ProSignatureMaker: React.FC = () => {
                       <VStack color={textSubtle} spacing={4}>
                         <Icon
                           as={FaFileUpload} w={14} h={14}
-                          color={isPdfDragActive ? "blue.400" : emptyDropIcon}
+                          color={isPdfDragActive ? "brand.400" : emptyDropIcon}
                           transition="color 0.2s"
                         />
                         <VStack spacing={1}>
-                          <Text fontWeight="700" fontSize="lg" color={isPdfDragActive ? "blue.500" : textMuted}>
+                          <Text fontWeight="700" fontSize="lg" color={isPdfDragActive ? "brand.500" : textMuted}>
                             {isPdfDragActive ? "Drop PDF here" : "Upload PDF to sign"}
                           </Text>
                           <Text fontSize="sm" color={textSubtle}>

@@ -73,6 +73,7 @@ const HeaderLogo = observer(() => {
 
   const [openMenu, setOpenMenu] = useState<string | number | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [openMobileSections, setOpenMobileSections] = useState<Record<string | number, boolean>>({});
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -259,26 +260,56 @@ const HeaderLogo = observer(() => {
     }
   };
 
+  const toggleMobileSection = (id: string | number) => {
+    setOpenMobileSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   const renderMobileMenu = (child: SidebarItem, depth: number = 0) => {
+    const isOpenSection = Boolean(openMobileSections[child.id]);
+
     if (child.children && child.children.length > 0) {
       return (
-        <Box key={child.id} mb={depth === 0 ? 2 : 1}>
-          <HStack px={5} py={2} spacing={3} opacity={0.8}>
-            {renderIcon(child, 18 - depth * 2)}
-            <Text fontSize="sm" fontWeight="700">
-              {child.name}
-            </Text>
-          </HStack>
-          <VStack
-            align="stretch"
-            spacing={1}
-            mt={1}
-            ml={5 + depth * 3}
-            borderLeft="1.5px solid"
-            borderColor={borderColor}
+        <Box key={child.id} mb={depth === 0 ? 2 : 1} mx={2}>
+          <Box
+            px={4}
+            py={3.5 - depth * 0.5}
+            borderRadius={depth === 0 ? "2xl" : "0 12px 12px 0"}
+            bg={isOpenSection ? mobileLinkHover : "transparent"}
+            cursor="pointer"
+            _hover={{ bg: mobileLinkHover }}
+            onClick={() => toggleMobileSection(child.id)}
           >
-            {child.children.map((nested) => renderMobileMenu(nested, depth + 1))}
-          </VStack>
+            <HStack spacing={3} justify="space-between">
+              <HStack spacing={3}>
+                {renderIcon(child, 20 - depth * 2)}
+                <Text fontSize="sm" fontWeight="700">
+                  {child.name}
+                </Text>
+              </HStack>
+              <Icon
+                as={ChevronRightIcon}
+                transform={isOpenSection ? "rotate(90deg)" : "rotate(0deg)"}
+                transition="transform 0.2s ease"
+                w={4}
+                h={4}
+              />
+            </HStack>
+          </Box>
+          {isOpenSection && (
+            <VStack
+              align="stretch"
+              spacing={1}
+              mt={1}
+              ml={5 + depth * 3}
+              borderLeft="1.5px solid"
+              borderColor={borderColor}
+            >
+              {child.children.map((nested) => renderMobileMenu(nested, depth + 1))}
+            </VStack>
+          )}
         </Box>
       );
     } else {
@@ -573,9 +604,9 @@ const HeaderLogo = observer(() => {
       )}
 
       {/* ── MOBILE DRAWER ── */}
-      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="xs">
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="full">
         <DrawerOverlay backdropFilter="blur(8px)" />
-        <DrawerContent bg={menuBg} borderLeftRadius="3xl">
+        <DrawerContent bg={menuBg} borderLeftRadius={{ base: "0", md: "3xl" }} maxW="100%">
           <HStack p={6} justify="space-between" align="center">
             <Text fontSize="xl" fontWeight="800" letterSpacing="-0.02em">Navigation</Text>
             <IconButton size="sm" variant="ghost" aria-label="Close" icon={<CloseIcon boxSize={3} />} onClick={onClose} borderRadius="full" />

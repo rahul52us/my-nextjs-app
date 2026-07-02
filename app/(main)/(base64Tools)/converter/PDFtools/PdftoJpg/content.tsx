@@ -52,8 +52,8 @@ const PdfToJpgContent = () => {
     const cardBg = useColorModeValue('gray.50', 'gray.700');
     const borderColor = useColorModeValue('gray.100', 'gray.700');
     const textColor = useColorModeValue('gray.500', 'gray.400');
-    const dropzoneHoverBg = useColorModeValue('blue.50', 'gray.700');
-    const iconContainerBg = useColorModeValue('blue.50', 'blue.900');
+    const dropzoneHoverBg = useColorModeValue('brand.50', 'gray.700');
+    const iconContainerBg = useColorModeValue('brand.50', 'brand.900');
 
     const clearImages = () => {
         images.forEach((img) => URL.revokeObjectURL(img.url));
@@ -135,7 +135,7 @@ const PdfToJpgContent = () => {
             <HStack justifyContent="space-between" mb={8} flexWrap="wrap" spacing={4}>
                 <VStack align="start" spacing={0}>
                     <HStack>
-                        <Box bg="blue.600" p={2} borderRadius="lg" color="white">
+                        <Box bg="brand.600" p={2} borderRadius="lg" color="white">
                             <Icon as={FiFileText} boxSize={6} />
                         </Box>
                         <Heading size="lg" letterSpacing="tight">PDF to JPG</Heading>
@@ -154,7 +154,7 @@ const PdfToJpgContent = () => {
                             Reset
                         </Button>
                         <Button
-                            colorScheme="messenger"
+                            colorScheme="brand"
                             leftIcon={<FiArchive />}
                             onClick={downloadAllAsZip}
                             boxShadow="lg"
@@ -184,11 +184,11 @@ const PdfToJpgContent = () => {
                         borderRadius="2xl"
                         h="300px"
                         transition="all 0.2s"
-                        _hover={{ borderColor: 'blue.400', bg: dropzoneHoverBg }}
+                        _hover={{ borderColor: 'brand.400', bg: dropzoneHoverBg }}
                         flexDirection="column"
                     >
                         <VStack spacing={4}>
-                            <Box bg={iconContainerBg} color="blue.600" p={4} borderRadius="full">
+                            <Box bg={iconContainerBg} color="brand.600" p={4} borderRadius="full">
                                 <Icon as={FiUpload} boxSize={8} />
                             </Box>
                             <VStack spacing={1}>
@@ -213,7 +213,7 @@ const PdfToJpgContent = () => {
                                 size="xs"
                                 width="200px"
                                 borderRadius="full"
-                                colorScheme="blue"
+                                colorScheme="brand"
                                 isAnimated
                             />
                             <VStack>

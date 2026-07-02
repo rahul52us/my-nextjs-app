@@ -39,7 +39,7 @@ const AIRotator: React.FC = () => {
   const previewBg = useColorModeValue("gray.200", "gray.700");
   const topBarBg = useColorModeValue("gray.50", "gray.700");
   const uploadBg = useColorModeValue("white", "gray.800");
-  const uploadInner = useColorModeValue("blue.50", "blue.900");
+  const uploadInner = useColorModeValue("brand.50", "brand.900");
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'application/pdf': ['.pdf'] },
@@ -107,7 +107,7 @@ const AIRotator: React.FC = () => {
       <Container maxW="container.xl">
         <Flex justify="space-between" align="center" mb={8}>
           <VStack align="start" spacing={0}>
-            <Heading size="lg" color="blue.600" display="flex" alignItems="center" gap={3}>
+            <Heading size="lg" color="brand.600" display="flex" alignItems="center" gap={3}>
               <Icon as={FaSyncAlt} /> PDF Rotator
             </Heading>
             <Text color={textGray}>Rotate specific pages or the entire document</Text>
@@ -122,13 +122,13 @@ const AIRotator: React.FC = () => {
         {!file ? (
           <Center 
             {...getRootProps()} 
-            p={20} border="3px dashed" borderColor={isDragActive ? "blue.400" : borderClr}
-            rounded="3xl" bg={uploadBg} cursor="pointer" transition="all 0.2s" _hover={{ borderColor: "blue.300" }}
+            p={20} border="3px dashed" borderColor={isDragActive ? "brand.400" : borderClr}
+            rounded="3xl" bg={uploadBg} cursor="pointer" transition="all 0.2s" _hover={{ borderColor: "brand.300" }}
           >
             <input {...getInputProps()} />
             <VStack spacing={4}>
               <Box p={6} bg={uploadInner} rounded="2xl">
-                <Icon as={FaUpload} w={10} h={10} color="blue.500" />
+                <Icon as={FaUpload} w={10} h={10} color="brand.500" />
               </Box>
               <Text fontWeight="bold" fontSize="xl">Drop your PDF here</Text>
               <Text color={textLight}>or click to browse files</Text>
@@ -171,17 +171,17 @@ const AIRotator: React.FC = () => {
                 <Box bg={cardBg} p={6} rounded="2xl" shadow="sm" border="1px" borderColor={borderLight}>
                   <VStack align="stretch" spacing={5}>
                     <HStack>
-                      <Icon as={FaTools} color="blue.500" />
+                      <Icon as={FaTools} color="brand.500" />
                       <Heading size="sm">Tools</Heading>
                     </HStack>
                     
                     <Box>
                       <Text fontSize="xs" fontWeight="bold" color={textLight} mb={2}>ROTATION</Text>
                       <HStack>
-                        <Button leftIcon={<RepeatIcon />} flex={1} onClick={handleRotate} colorScheme="blue" variant="outline">
+                        <Button leftIcon={<RepeatIcon />} flex={1} onClick={handleRotate} colorScheme="brand" variant="outline">
                           +90°
                         </Button>
-                        <Box flex={1} textAlign="center" py={2} bg="blue.500" color="white" rounded="md" fontWeight="bold">
+                        <Box flex={1} textAlign="center" py={2} bg="brand.500" color="white" rounded="md" fontWeight="bold">
                           {rotation}°
                         </Box>
                       </HStack>
@@ -193,7 +193,7 @@ const AIRotator: React.FC = () => {
                         placeholder="all, 1-3, 5" 
                         value={pageSelection} 
                         onChange={(e) => setPageSelection(e.target.value)} 
-                        focusBorderColor="blue.400"
+                        focusBorderColor="brand.400"
                       />
                       <Text fontSize="10px" color={textLight} mt={1}>
                         Example: "all" or "1, 2-5, 8"
@@ -201,7 +201,7 @@ const AIRotator: React.FC = () => {
                     </Box>
 
                     <Button 
-                      colorScheme="blue" 
+                      colorScheme="brand" 
                       size="lg" 
                       h="60px"
                       leftIcon={isProcessing ? <Spinner size="sm" /> : <DownloadIcon />}

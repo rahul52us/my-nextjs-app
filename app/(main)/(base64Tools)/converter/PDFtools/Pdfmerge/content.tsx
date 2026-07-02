@@ -99,7 +99,7 @@ const PdfMergerContent = () => {
         <Box
             minH="100vh"
             bg="gray.50"
-            bgGradient="radial(circle at 20% 20%, blue.50 0%, transparent 40%), radial(circle at 80% 80%, pink.50 0%, transparent 40%)"
+            bgGradient="radial(circle at 20% 20%, brand.50 0%, transparent 40%), radial(circle at 80% 80%, brand.50 0%, transparent 40%)"
             py={20}
         >
             <Container maxW="container.md">
@@ -107,11 +107,11 @@ const PdfMergerContent = () => {
 
                     {/* Header Section */}
                     <VStack spacing={3} textAlign="center">
-                        <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full" textTransform="uppercase" letterSpacing="widest">
+                        <Badge colorScheme="brand" variant="subtle" px={3} py={1} borderRadius="full" textTransform="uppercase" letterSpacing="widest">
                             PDF Toolbox
                         </Badge>
                         <Heading size="2xl" color="gray.900" fontWeight="900" letterSpacing="tight">
-                            PDF <Text as="span" color="blue.500">Merger</Text>
+                            PDF <Text as="span" color="brand.500">Merger</Text>
                         </Heading>
                         <Text color="gray.500" fontSize="lg" fontWeight="medium">
                             Drag, reorder, and combine your documents with ease.
@@ -129,18 +129,18 @@ const PdfMergerContent = () => {
                             p={12}
                             cursor="pointer"
                             border="2px dashed"
-                            borderColor="blue.200"
+                            borderColor="brand.200"
                             borderRadius="3xl"
                             bg="white"
                             shadow="sm"
                             transition="all 0.3s ease"
-                            _hover={{ borderColor: 'blue.500', shadow: '2xl', bg: 'blue.50/30' }}
+                            _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: 'brand.50' }}
                             flexDirection="column"
                             position="relative"
                             overflow="hidden"
                         >
                             <VStack spacing={4}>
-                                <Box bg="blue.500" color="white" p={4} borderRadius="2xl" shadow="0 10px 20px -5px rgba(66, 153, 225, 0.6)">
+                                <Box bg="brand.500" color="white" p={4} borderRadius="2xl" shadow="0 10px 20px -5px rgba(0, 0, 0, 0.15)">
                                     <Icon as={FiFilePlus} boxSize={8} />
                                 </Box>
                                 <VStack spacing={1}>
@@ -169,10 +169,10 @@ const PdfMergerContent = () => {
                                 <Box px={6} py={4} bg="white" borderBottom="1px solid" borderColor="gray.50">
                                     <HStack justify="space-between">
                                         <HStack spacing={3}>
-                                            <Text fontWeight="800" fontSize="xs" color="blue.500" textTransform="uppercase" letterSpacing="widest">
+                                            <Text fontWeight="800" fontSize="xs" color="brand.500" textTransform="uppercase" letterSpacing="widest">
                                                 Queue
                                             </Text>
-                                            <Badge borderRadius="full" px={2} colorScheme="blue">{files.length}</Badge>
+                                            <Badge borderRadius="full" px={2} colorScheme="brand">{files.length}</Badge>
                                         </HStack>
                                         <Button leftIcon={<FiTrash2 />} size="xs" variant="ghost" colorScheme="red" onClick={clearAll} borderRadius="full">
                                             Clear All
@@ -194,7 +194,7 @@ const PdfMergerContent = () => {
                                                 display="flex"
                                                 alignItems="center"
                                                 justifyContent="space-between"
-                                                _hover={{ bg: 'blue.50/20' }}
+                                                _hover={{ bg: 'brand.50' }}
                                             >
                                                 <HStack spacing={4} overflow="hidden">
                                                     <Text fontSize="xs" fontWeight="bold" color="gray.300" w="18px">{index + 1}</Text>
@@ -228,7 +228,7 @@ const PdfMergerContent = () => {
                     {/* Merge Button */}
                     <Button
                         size="lg"
-                        colorScheme="blue"
+                        colorScheme="brand"
                         h="70px"
                         borderRadius="2xl"
                         fontSize="lg"
@@ -236,8 +236,8 @@ const PdfMergerContent = () => {
                         leftIcon={isMerging ? <Spinner size="sm" /> : <FiLink />}
                         isDisabled={files.length < 2 || isMerging}
                         onClick={mergePdfs}
-                        shadow="0 20px 40px -10px rgba(66, 153, 225, 0.5)"
-                        _hover={{ transform: 'translateY(-2px)', shadow: '0 25px 50px -12px rgba(66, 153, 225, 0.6)' }}
+                        shadow="0 20px 40px -10px rgba(0, 0, 0, 0.15)"
+                        _hover={{ transform: 'translateY(-2px)', shadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)' }}
                         _active={{ transform: 'translateY(0)' }}
                         transition="all 0.3s cubic-bezier(.23,1,.32,1)"
                     >

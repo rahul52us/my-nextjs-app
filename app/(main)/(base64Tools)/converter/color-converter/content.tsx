@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   VStack,
@@ -27,7 +27,9 @@ import {
   FaDownload,
   FaExclamationTriangle,
   FaEyeDropper,
+  FaTimes,
 } from "react-icons/fa";
+import { ChromePicker } from "react-color";
 import { saveAs } from "file-saver";
 import stores from "../../../../store/stores";
 
@@ -214,8 +216,8 @@ const ColorConverterContent: React.FC = () => {
   const [previewColor, setPreviewColor] = useState("#3ecfb2");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showColorPickerModal, setShowColorPickerModal] = useState(false);
 
-  const colorPickerRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   const {
@@ -244,6 +246,17 @@ const ColorConverterContent: React.FC = () => {
     [toast]
   );
 
+  useEffect(() => {
+    if (!showColorPickerModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowColorPickerModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showColorPickerModal]);
+
   const applyOutputs = (hex: string, rgb: string, hsl: string) => {
     setHexOutput(hex);
     setRgbOutput(rgb);
@@ -253,8 +266,8 @@ const ColorConverterContent: React.FC = () => {
   };
 
   // ── Real-time picker change ──
-  const handlePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const hex = e.target.value.toUpperCase();
+  const handlePickerChange = (color: any) => {
+    const hex = color.hex.toUpperCase();
     setPickerColor(hex);
     setColorInput(hex);
     try {
@@ -426,13 +439,11 @@ const ColorConverterContent: React.FC = () => {
                 Color Picker
               </Text>
 
-              {/* Swatch — clicking it opens native color picker */}
+              {/* Swatch — clicking it opens centered picker modal */}
               <Box position="relative" w="110px" h="110px">
                 <Box
-                  as="label"
-                  htmlFor="native-color-picker"
                   cursor="pointer"
-                  display="block"
+                  display="flex"
                   w="110px"
                   h="110px"
                   borderRadius="2xl"
@@ -441,11 +452,10 @@ const ColorConverterContent: React.FC = () => {
                   borderColor={borderColor}
                   transition="border-color 0.2s, transform 0.15s"
                   _hover={{ borderColor: "teal.400", transform: "scale(1.04)" }}
-                  // display="flex"
                   alignItems="center"
                   justifyContent="center"
+                  onClick={() => setShowColorPickerModal(true)}
                 >
-                  {/* Eyedropper icon overlay */}
                   <Flex
                     bg="blackAlpha.350"
                     borderRadius="full"
@@ -456,26 +466,81 @@ const ColorConverterContent: React.FC = () => {
                     <Icon as={FaEyeDropper} color="white" boxSize={4} />
                   </Flex>
                 </Box>
-
-                {/* Hidden native input — covers swatch area to trigger picker */}
-                <input
-                  id="native-color-picker"
-                  ref={colorPickerRef}
-                  type="color"
-                  value={pickerColor}
-                  onChange={handlePickerChange}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    opacity: 0,
-                    cursor: "pointer",
-                    border: "none",
-                    padding: 0,
-                  }}
-                />
               </Box>
+
+              {showColorPickerModal && (
+                <Box
+                  position="fixed"
+                  inset={0}
+                  zIndex={9999}
+                  bg="blackAlpha.700"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  p={4}
+                  onClick={() => setShowColorPickerModal(false)}
+                >
+                  <Box
+                    bg={cardBg}
+                    borderRadius="2xl"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    maxW="min(100%, 520px)"
+                    w="full"
+                    maxH="min(100%, 680px)"
+                    overflow="auto"
+                    boxShadow="0 24px 80px rgba(0, 0, 0, 0.35)"
+                    position="relative"
+                    p={4}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <IconButton
+                      icon={<FaTimes />}
+                      aria-label="Close color picker"
+                      size="sm"
+                      position="absolute"
+                      top={3}
+                      right={3}
+                      variant="ghost"
+                      colorScheme="gray"
+                      onClick={() => setShowColorPickerModal(false)}
+                    />
+                    <Text fontSize="lg" fontWeight="700" mb={3} color={textColor}>
+                      Pick a color
+                    </Text>
+                    <ChromePicker
+                      color={pickerColor}
+                      onChange={handlePickerChange}
+                      disableAlpha
+                      styles={{
+                        default: {
+                          picker: {
+                            width: "100%",
+                          },
+                        },
+                      }}
+                    />
+                    <Flex gap={3} flexWrap="wrap" mt={4}>
+                      <Button
+                        colorScheme="teal"
+                        onClick={() => setShowColorPickerModal(false)}
+                      >
+                        Done
+                      </Button>
+                      <Button
+                        variant="outline"
+                        colorScheme="gray"
+                        onClick={() => {
+                          setShowColorPickerModal(false);
+                          handleClear();
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    </Flex>
+                  </Box>
+                </Box>
+              )}
 
               {/* Hex label under swatch */}
               <Box px={3} py={1} bg={hexBadgeBg} borderRadius="md">

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, Button, Flex, Heading, Select, useToast, 
   HStack, Stack, Text, VStack, Container, Divider, Tooltip,
@@ -46,6 +46,9 @@ const LANGUAGES = [
 const StudioFormatter = () => {
   const [code, setCode] = useState('// Paste your code here...');
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
+  const [isManualLang, setIsManualLang] = useState(false);
+  const editorRef = useRef<any>(null);
+  const detectTimerRef = useRef<number | null>(null);
   const toast = useToast();
 
   // Color mode values
@@ -64,6 +67,137 @@ const StudioFormatter = () => {
   const iconColor = useColorModeValue("white", "white");
   const sparkleColor = useColorModeValue("#3182ce", "#90cdf4");
   const tableBg = useColorModeValue("gray.50", "gray.800");
+
+  const getLanguageOptionByLabel = (label: string) => LANGUAGES.find(l => l.label === label) || LANGUAGES[0];
+
+  const detectLanguageFromCode = (source: string) => {
+    const text = source.trim();
+    if (text.length < 10) return null;
+
+    const hasTag = /<\/?[A-Za-z][^>]*>/.test(text);
+    const hasTypeAnnotation = /:\s*(string|number|boolean|any|unknown|void|Promise<|React\.FC|JSX\.)/.test(text);
+    const hasInterface = /\binterface\s+\w+/.test(text);
+    const hasTypeKeyword = /\btype\s+\w+\s*=/.test(text);
+    const hasTemplate = /<template[\s>]/i.test(text);
+    const hasScript = /<script[\s>]/i.test(text);
+    const hasStyle = /<style[\s>]/i.test(text);
+    const hasComponent = /@Component\s*\(|ng-\w+/.test(text);
+    const hasVueSingleFile = hasTemplate && hasScript;
+    const hasMdx = /(^#|^\*\s|\n\s*\* |^>\s|```)/m.test(text) && /<\w+/.test(text);
+    const hasGraphql = /^\s*(query|mutation|subscription|fragment)\b/.test(text) || /\b(type|schema|interface)\s+\w+\s*\{/.test(text);
+    const hasHandlebars = /{{[^}]+}}/.test(text);
+
+    // Fixed: capture the tag name first, then check for a matching closing tag
+    // using that captured value — a backreference can't span two separate
+    // regex literals, only within the same one.
+    const xmlOpenTagMatch = text.match(/^\s*<([A-Za-z_:][\w:.-]*)\b[^>]*>/);
+    const hasXml =
+      /^\s*<\?xml\b/.test(text) ||
+      (xmlOpenTagMatch ? new RegExp(`</${xmlOpenTagMatch[1]}>`).test(text) : false);
+
+    const hasJsonObject = /^{[\s\S]*}$|^\[[\s\S]*\]$/.test(text);
+    const hasYamlFrontMatter = /^---\s*\n/.test(text);
+    const hasMarkdownHeader = /^#{1,6}\s+/m.test(text);
+    const hasCssLike = /[\w-]+\s*:\s*[^;]+;/.test(text) && /\{[\s\S]*\}/.test(text);
+    const hasScss = /\$[\w-]+\s*:/m.test(text) || /@mixin\b|@include\b|&\s*\{/.test(text);
+    const hasLess = /@[\w-]+\s*:/m.test(text) && !hasScss;
+    const hasFlow = /\/\/\s*@flow|\/\*\s*@flow|\btype\s+\w+\s*=\s*\{/.test(text);
+
+    if (hasJsonObject) {
+      try {
+        JSON.parse(text);
+        return { label: 'JSON', confidence: 0.98 };
+      } catch (_err) {
+        if (/\/\/|\/\*|,\s*\n/.test(text)) {
+          return { label: 'JSON5', confidence: 0.84 };
+        }
+      }
+    }
+
+    if (hasVueSingleFile) return { label: 'Vue', confidence: 0.96 };
+    if (hasMdx) return { label: 'MDX', confidence: 0.92 };
+    if (hasGraphql) return { label: 'GraphQL', confidence: 0.92 };
+    if (hasComponent) return { label: 'Angular', confidence: 0.91 };
+    if (hasHandlebars) return { label: 'Handlebars', confidence: 0.9 };
+
+    const hasJsx = /<\s*[A-Z][A-Za-z0-9_]*(\s|\/|>)/.test(text);
+    if (hasJsx && (hasTypeAnnotation || hasInterface || hasTypeKeyword)) return { label: 'TSX / React', confidence: 0.95 };
+    if (hasJsx) return { label: 'JSX / React', confidence: 0.9 };
+
+    if (/^\s*<!DOCTYPE html/i.test(text) || /<html[\s>]/i.test(text) || /<head[\s>]/i.test(text) || /<body[\s>]/i.test(text)) {
+      return { label: 'HTML', confidence: 0.95 };
+    }
+
+    if (hasXml && !hasTag) return { label: 'XML', confidence: 0.85 };
+    if (hasYamlFrontMatter || /^\s*-\s+/.test(text) && /:\s+/.test(text)) return { label: 'YAML', confidence: 0.88 };
+    if (hasMarkdownHeader) return { label: 'Markdown', confidence: 0.9 };
+
+    if (hasCssLike) {
+      if (hasScss) return { label: 'SCSS', confidence: 0.9 };
+      if (hasLess) return { label: 'Less', confidence: 0.9 };
+      return { label: 'CSS', confidence: 0.88 };
+    }
+
+    if (hasTypeAnnotation || hasInterface || hasTypeKeyword) return { label: 'TypeScript', confidence: 0.9 };
+    if (hasFlow) return { label: 'Flow', confidence: 0.88 };
+    if (/\b(class|const|let|function|=>|import|export)\b/.test(text)) return { label: 'JavaScript', confidence: 0.85 };
+
+    if (hasTag) return { label: 'HTML', confidence: 0.75 };
+    return null;
+  };
+
+  const applyAutoDetectedLanguage = (source: string, force = false) => {
+    const detection = detectLanguageFromCode(source);
+    if (!detection) return;
+    const { label, confidence } = detection;
+    const existing = getLanguageOptionByLabel(label);
+    if (!existing) return;
+    if (selectedLang.label === existing.label) return;
+    if (!force && isManualLang) return;
+    if (!force && confidence < 0.75) return;
+    setSelectedLang(existing);
+    if (force) {
+      setIsManualLang(false);
+    }
+  };
+
+  const scheduleAutoDetect = (newCode: string, force = false) => {
+    if (detectTimerRef.current) {
+      window.clearTimeout(detectTimerRef.current);
+      detectTimerRef.current = null;
+    }
+    if (force) {
+      applyAutoDetectedLanguage(newCode, true);
+      return;
+    }
+    if (newCode.trim().length < 10) return;
+    detectTimerRef.current = window.setTimeout(() => {
+      applyAutoDetectedLanguage(newCode, false);
+      detectTimerRef.current = null;
+    }, 550);
+  };
+
+  const handleCodeChange = (value: string | undefined) => {
+    const normalized = value || '';
+    setCode(normalized);
+    if (!isManualLang) {
+      scheduleAutoDetect(normalized);
+    }
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const manualLang = getLanguageOptionByLabel(e.target.value);
+    setSelectedLang(manualLang);
+    setIsManualLang(true);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (detectTimerRef.current) {
+        window.clearTimeout(detectTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleFormat = async () => {
     try {
@@ -133,7 +267,7 @@ const StudioFormatter = () => {
               borderRadius="xl"
               w={{ base: '100%', md: '220px' }}
               value={selectedLang.label}
-              onChange={(e) => setSelectedLang(LANGUAGES.find(l => l.label === e.target.value) || LANGUAGES[0])}
+              onChange={handleLanguageChange}
               bg={selectBg}
               _hover={{ bg: selectHoverBg }}
             >
@@ -157,7 +291,8 @@ const StudioFormatter = () => {
               theme={useColorModeValue("light", "vs-dark")}
               language={selectedLang.value}
               value={code}
-              onChange={(v) => setCode(v || '')}
+              onMount={(editor) => { editorRef.current = editor; }}
+              onChange={(v) => handleCodeChange(v)}
               options={{
                 fontSize: 15,
                 minimap: { enabled: false },
