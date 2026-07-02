@@ -91,6 +91,7 @@ const BUILT_ROUTES = new Set([
   "/converter/encrypt-file",
   "/converter/Exceltocsv",
   "/converter/qr-code-generator",
+  "/converter/qr-file-sharing",
   "/converter/qr-code-reader",
   "/converter/bar-code-generator",
   "/generator/password",

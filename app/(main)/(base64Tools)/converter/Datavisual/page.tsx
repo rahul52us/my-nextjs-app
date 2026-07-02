@@ -334,7 +334,9 @@ const DataVizStudio = () => {
                           <XAxis
                             dataKey="label"
                             fontSize={11}
-                            tick={{ fill: secondaryText, angle: barChartXAxisAngle, textAnchor: barChartXAxisAngle === 0 ? 'middle' : 'end' }}
+                            tick={{ fill: secondaryText }}
+                            angle={barChartXAxisAngle}
+                            textAnchor={barChartXAxisAngle === 0 ? 'middle' : 'end'}
                             axisLine={false}
                             tickLine={false}
                             dy={10}

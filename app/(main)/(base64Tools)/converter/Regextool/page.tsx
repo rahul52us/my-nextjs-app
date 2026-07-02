@@ -40,12 +40,12 @@ import {
   Copy,
   Trash2,
   AlertCircle,
+  CheckCircle2,
   Code2,
   Globe,
   UserCheck,
-  Hash,
-  ShieldCheck,
-  Database
+  Database,
+  Info,
 } from "lucide-react";
 
 type TabType = "tester" | "generator" | "cheatsheet";
@@ -60,15 +60,15 @@ const regexLibrary = {
   Web: [
     { name: "URL", pattern: "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z]{2,6}\\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)", desc: "Supports http/https and deep paths." },
     { name: "IPv4 Address", pattern: "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", desc: "Standard IP address format." },
-    { name: "HTML Tags", pattern: "<\\/? [^> ]+>", desc: "Matches basic opening and closing HTML tags." },
+    { name: "HTML Tags", pattern: "<\\/?[^>]+>", desc: "Matches basic opening and closing HTML tags." },
     { name: "YouTube URL", pattern: "(?:https?:\\/\\/)?(?:www\\.)?(?:youtube\\.com|youtu\\.be)\\/(?:watch\\?v=)?(.+)", desc: "Extracts YouTube video IDs." },
   ],
   Data: [
     { name: "Dates (YYYY-MM-DD)", pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$", desc: "Matches ISO date format." },
-    { name: "Hex Colors", pattern: "^#?([a-fA-G0-9]{3}|[a-fA-G0-9]{6})$", desc: "Matches 3 or 6 digit CSS hex colors." },
+    { name: "Hex Colors", pattern: "^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$", desc: "Matches 3 or 6 digit CSS hex colors." },
     { name: "Credit Card", pattern: "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14})$", desc: "Visa/Mastercard validation." },
     { name: "Price Tag", pattern: "\\$\\d+(?:\\.\\d{2})?", desc: "Matches currency like $10.99 or $50." },
-  ]
+  ],
 };
 
 const cheatSheet = [
@@ -89,6 +89,15 @@ const cheatSheet = [
   { symbol: "|", meaning: "OR operator" },
 ];
 
+const FLAG_INFO: Record<string, string> = {
+  g: "Global — find all matches",
+  i: "Case-insensitive",
+  m: "Multiline — ^ $ match line breaks",
+  s: "Dot matches newline",
+  u: "Unicode",
+  y: "Sticky",
+};
+
 const MotionBox = motion(Box);
 
 export default function RegexTool() {
@@ -98,25 +107,36 @@ export default function RegexTool() {
   const [testString, setTestString] = useState("");
   const toast = useToast();
 
-  // Color mode values
+  // Theme-aware palette — adapts to both light and dark mode via Chakra's
+  // color mode context, so the page follows whichever theme the app is in.
   const bgColor = useColorModeValue("gray.50", "gray.900");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const secondaryTextColor = useColorModeValue("gray.500", "gray.400");
   const headerBg = useColorModeValue("white", "gray.900");
-  const headerText = useColorModeValue("gray.800", "gray.100");
   const inputBg = useColorModeValue("gray.50", "gray.700");
   const codeBg = useColorModeValue("gray.50", "gray.700");
-  const outputBg = useColorModeValue("gray.100", "gray.800");
+  const outputBg = useColorModeValue("gray.50", "gray.900");
   const outputTextColor = useColorModeValue("gray.900", "gray.100");
   const tableBg = useColorModeValue("gray.50", "gray.700");
-  const hoverBg = useColorModeValue("brand.50", "brand.700");
-  const highlightBg = useColorModeValue("brand.200", "brand.500");
-  const highlightText = useColorModeValue("brand.900", "white");
+  const hoverBg = useColorModeValue("brand.50", "whiteAlpha.100");
+  // The match-highlight <mark> stays yellow with dark text in both modes —
+  // like a physical highlighter pen, it reads clearly against any card
+  // background, so it's the one exception left constant.
+  const highlightBg = "yellow.200";
+  const highlightText = "gray.900";
+  const exprBarBg = useColorModeValue("gray.100", "gray.900");
+  const exprBarBorder = useColorModeValue("gray.300", "transparent");
+  const exprSlashColor = useColorModeValue("gray.400", "whiteAlpha.500");
+  const exprPatternColor = useColorModeValue("green.700", "green.300");
+  const exprFlagsColor = useColorModeValue("orange.600", "orange.300");
+  const successColor = useColorModeValue("green.600", "green.300");
+  const errorColor = useColorModeValue("red.500", "red.300");
 
   const { highlighted, matches, error } = useMemo(() => {
-    if (!pattern || !testString) return { highlighted: testString, matches: [] as RegExpMatchArray[], error: "" };
+    if (!pattern || !testString)
+      return { highlighted: testString, matches: [] as RegExpMatchArray[], error: "" };
 
     try {
       const safeFlags = flags.replace(/[^gimsuy]/g, "");
@@ -131,7 +151,15 @@ export default function RegexTool() {
         const end = start + match[0].length;
         parts.push(testString.slice(lastIndex, start));
         parts.push(
-          <Box as="mark" key={i} bg={highlightBg} color={highlightText} px="1" borderRadius="sm" fontWeight="bold">
+          <Box
+            as="mark"
+            key={i}
+            bg={highlightBg}
+            color={highlightText}
+            px="1"
+            borderRadius="sm"
+            fontWeight="bold"
+          >
             {match[0]}
           </Box>
         );
@@ -140,10 +168,10 @@ export default function RegexTool() {
 
       parts.push(testString.slice(lastIndex));
       return { highlighted: parts, matches: foundMatches, error: "" };
-    } catch (e) {
-      return { highlighted: testString, matches: [], error: "Invalid Regex Pattern" };
+    } catch (e: any) {
+      return { highlighted: testString, matches: [], error: e?.message || "Invalid regular expression" };
     }
-  }, [pattern, flags, testString]);
+  }, [pattern, flags, testString, highlightBg, highlightText]);
 
   const copyToClipboard = (text: string, label: string = "Copied!") => {
     if (!text) return;
@@ -151,11 +179,14 @@ export default function RegexTool() {
     toast({ title: label, status: "success", duration: 2000, isClosable: true, position: "bottom-right" });
   };
 
+  const activeFlagList = flags.split("").filter((f) => FLAG_INFO[f]);
+
   return (
     <Box minH="100vh" bg={bgColor} color={textColor} pb={20}>
+      {/* ---------- Header ---------- */}
       <Box bg={headerBg} borderBottom="1px" borderColor={borderColor} px={8} py={4} position="sticky" top={0} zIndex={10} shadow="sm">
         <Container maxW="container.xl">
-          <Flex justify="space-between" align="center">
+          <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
             <HStack spacing={3}>
               <Box bg="brand.600" p={2} borderRadius="lg">
                 <Icon as={Zap} color="white" boxSize={5} />
@@ -166,7 +197,7 @@ export default function RegexTool() {
               </VStack>
             </HStack>
 
-            <Stack direction={{ base: "column", md: "row" }} spacing={2} bg={inputBg} p={2} borderRadius="2xl" w="full">
+            <HStack spacing={2} bg={inputBg} p={2} borderRadius="2xl">
               {[
                 { id: "tester", label: "Tester", icon: Search },
                 { id: "generator", label: "Library", icon: FileCode },
@@ -181,12 +212,11 @@ export default function RegexTool() {
                   onClick={() => setActiveTab(tab.id as TabType)}
                   px={6}
                   borderRadius="lg"
-                  w={{ base: "100%", md: "auto" }}
                 >
                   {tab.label}
                 </Button>
               ))}
-            </Stack>
+            </HStack>
           </Flex>
         </Container>
       </Box>
@@ -200,88 +230,198 @@ export default function RegexTool() {
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
+            {/* ================= TESTER TAB ================= */}
             {activeTab === "tester" && (
-              <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-                <VStack align="stretch" spacing={6} gridColumn={{ lg: "span 2" }}>
-                  <Box bg={cardBg} p={8} borderRadius="3xl" shadow="xl" border="1px" borderColor={borderColor}>
-                    <VStack spacing={6}>
-                      <Stack direction={{ base: "column", md: "row" }} w="100%" spacing={4}>
-                        <Box flex={1}>
-                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Regular Expression</Text>
-                          <Input
-                            placeholder="/ ^[a-z]+$ /"
-                            value={pattern}
-                            onChange={(e) => setPattern(e.target.value)}
-                            fontFamily="mono"
-                            size="lg"
-                            bg={inputBg}
-                            focusBorderColor="brand.500"
-                            borderRadius="xl"
-                          />
-                        </Box>
-                        <Box w={{ base: "100%", md: "160px" }}>
-                          <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Flags</Text>
-                          <Input
-                            placeholder="gim"
-                            value={flags}
-                            onChange={(e) => setFlags(e.target.value)}
-                            size="lg"
-                            textAlign="center"
-                            bg={inputBg}
-                            borderRadius="xl"
-                          />
-                        </Box>
-                      </Stack>
+              <VStack align="stretch" spacing={6}>
+                {/* Step 1 — Expression bar: pattern + flags fused together, like a real regex literal */}
+                <Box bg={cardBg} borderRadius="2xl" shadow="md" border="1px" borderColor={borderColor} overflow="hidden">
+                  <HStack px={5} pt={4} spacing={2}>
+                    <Box bg="brand.500" color="white" borderRadius="full" w={5} h={5} display="flex" alignItems="center" justifyContent="center" fontSize="xs" fontWeight="bold" flexShrink={0}>1</Box>
+                    <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} textTransform="uppercase" letterSpacing="wide">
+                      Write your expression
+                    </Text>
+                  </HStack>
 
-                      <Box w="100%">
-                        <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} mb={2} textTransform="uppercase">Test String</Text>
-                        <Textarea
-                          placeholder="Type or paste text here to test matches..."
-                          value={testString}
-                          onChange={(e) => setTestString(e.target.value)}
-                          minH="250px"
-                          size="lg"
-                          bg={inputBg}
-                          focusBorderColor="brand.500"
-                          borderRadius="xl"
-                        />
-                      </Box>
-                    </VStack>
-                  </Box>
+                  <HStack
+                    bg={exprBarBg}
+                    border="1px"
+                    borderColor={exprBarBorder}
+                    mx={5}
+                    my={4}
+                    borderRadius="xl"
+                    px={4}
+                    py={3}
+                    spacing={0}
+                    fontFamily="mono"
+                    fontSize="lg"
+                    overflowX="auto"
+                  >
+                    <Text color={exprSlashColor} userSelect="none">/</Text>
+                    <Input
+                      variant="unstyled"
+                      placeholder="^[a-z]+$"
+                      value={pattern}
+                      onChange={(e) => setPattern(e.target.value)}
+                      color={exprPatternColor}
+                      fontFamily="mono"
+                      px={1}
+                      minW="200px"
+                    />
+                    <Text color={exprSlashColor} userSelect="none">/</Text>
+                    <Input
+                      variant="unstyled"
+                      placeholder="g"
+                      value={flags}
+                      onChange={(e) => setFlags(e.target.value)}
+                      color={exprFlagsColor}
+                      fontFamily="mono"
+                      w="70px"
+                      px={1}
+                    />
+                  </HStack>
 
-                  <Box>
-                    <HStack justify="space-between" mb={4}>
-                      <Heading size="sm" color="gray.600" display="flex" alignItems="center">
-                        <Icon as={Code2} mr={2} /> Highlighted Output
-                      </Heading>
-                      <Badge colorScheme="brand" px={3} py={1} borderRadius="lg" variant="subtle">
-                        {matches.length} matches
-                      </Badge>
-                    </HStack>
-                    <Box bg={outputBg} color={outputTextColor} p={8} borderRadius="3xl" minH="150px" whiteSpace="pre-wrap" fontFamily="mono" fontSize="lg" boxShadow="2xl">
-                      {highlighted || <Text color={secondaryTextColor} fontStyle="italic">No matches to display</Text>}
+                  {/* Live status + active flags, directly under the expression that produced them */}
+                  <Flex px={5} pb={5} justify="space-between" align="center" wrap="wrap" gap={3} maxW="100%">
+                    <Box minW="0" flex="1 1 auto">
+                      {error ? (
+                        <HStack color={errorColor} fontSize="sm" fontWeight="medium">
+                          <Icon as={AlertCircle} boxSize={4} flexShrink={0} />
+                          <Text noOfLines={1}>{error}</Text>
+                        </HStack>
+                      ) : pattern ? (
+                        <HStack color={successColor} fontSize="sm" fontWeight="medium">
+                          <Icon as={CheckCircle2} boxSize={4} flexShrink={0} />
+                          <Text noOfLines={1}>Valid pattern · {matches.length} {matches.length === 1 ? "match" : "matches"}</Text>
+                        </HStack>
+                      ) : (
+                        <HStack color={secondaryTextColor} fontSize="sm">
+                          <Icon as={Info} boxSize={4} flexShrink={0} />
+                          <Text noOfLines={1}>Enter a pattern to begin testing</Text>
+                        </HStack>
+                      )}
                     </Box>
-                  </Box>
-                </VStack>
 
-                <VStack align="stretch" spacing={6}>
-                  <Box bg={useColorModeValue("brand.600", "brand.700")} color="white" p={6} borderRadius="3xl" shadow="lg">
-                    <Heading size="sm" mb={4}>Quick Help</Heading>
-                    <VStack align="start" spacing={3} fontSize="sm">
-                      <HStack><Badge colorScheme="whiteAlpha">g</Badge><Text>Global search</Text></HStack>
-                      <HStack><Badge colorScheme="whiteAlpha">i</Badge><Text>Case-insensitive</Text></HStack>
-                      <HStack><Badge colorScheme="whiteAlpha">m</Badge><Text>Multiline</Text></HStack>
-                      <Divider borderColor="whiteAlpha.400" />
-                      <Text opacity={0.9} fontSize="xs">Use groups `()` to capture specific parts of the match.</Text>
-                    </VStack>
+                    <Flex wrap="wrap" gap={2} flex="0 0 auto" maxW="100%">
+                      {activeFlagList.length > 0 ? (
+                        activeFlagList.map((f) => (
+                          <Tooltip label={FLAG_INFO[f]} key={f}>
+                            <Badge colorScheme="brand" borderRadius="md" px={2} flexShrink={0}>{f}</Badge>
+                          </Tooltip>
+                        ))
+                      ) : (
+                        <Text fontSize="xs" color={secondaryTextColor}>No flags set</Text>
+                      )}
+                    </Flex>
+                  </Flex>
+                </Box>
+
+                {/* Step 2 — Test string in, highlighted result right beside it: cause and effect, side by side */}
+                <Box pt={2}>
+                  <HStack px={1} mb={3} spacing={2}>
+                    <Box bg="brand.500" color="white" borderRadius="full" w={5} h={5} display="flex" alignItems="center" justifyContent="center" fontSize="xs" fontWeight="bold" flexShrink={0}>2</Box>
+                    <Text fontSize="xs" fontWeight="black" color={secondaryTextColor} textTransform="uppercase" letterSpacing="wide">
+                      Test it against your text
+                    </Text>
+                  </HStack>
+
+                  <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+                    <Box bg={cardBg} p={5} borderRadius="2xl" shadow="md" border="1px" borderColor={borderColor}>
+                      <Text fontSize="xs" fontWeight="bold" color={secondaryTextColor} mb={2} textTransform="uppercase">
+                        Your text
+                      </Text>
+                      <Textarea
+                        placeholder="Type or paste text here to test matches…"
+                        value={testString}
+                        onChange={(e) => setTestString(e.target.value)}
+                        minH="260px"
+                        bg={inputBg}
+                        focusBorderColor="brand.500"
+                        borderRadius="xl"
+                        fontFamily="mono"
+                        fontSize="sm"
+                      />
+                    </Box>
+
+                    <Box bg={cardBg} p={5} borderRadius="2xl" shadow="md" border="1px" borderColor={borderColor}>
+                      <HStack justify="space-between" mb={2}>
+                        <Text fontSize="xs" fontWeight="bold" color={secondaryTextColor} textTransform="uppercase">
+                          Result — highlighted
+                        </Text>
+                        <Badge colorScheme={matches.length ? "green" : "gray"} borderRadius="md">
+                          {matches.length} {matches.length === 1 ? "match" : "matches"}
+                        </Badge>
+                      </HStack>
+                      <Box
+                        bg={outputBg}
+                        color={outputTextColor}
+                        p={4}
+                        borderRadius="xl"
+                        minH="260px"
+                        whiteSpace="pre-wrap"
+                        fontFamily="mono"
+                        fontSize="sm"
+                        border="1px"
+                        borderColor={borderColor}
+                        overflowY="auto"
+                      >
+                        {testString ? (
+                          highlighted
+                        ) : (
+                          <Text color={secondaryTextColor} fontStyle="italic">
+                            Matches will light up here as you type
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  </SimpleGrid>
+                </Box>
+
+                {/* Step 3 — Match details + housekeeping actions, low-priority info kept out of the way */}
+                <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={4}>
+                  <Box gridColumn={{ lg: "span 2" }} bg={cardBg} p={5} borderRadius="2xl" shadow="sm" border="1px" borderColor={borderColor}>
+                    <Text fontSize="xs" fontWeight="bold" color={secondaryTextColor} mb={3} textTransform="uppercase">
+                      Match breakdown
+                    </Text>
+                    {matches.length > 0 ? (
+                      <VStack align="stretch" spacing={2} maxH="180px" overflowY="auto">
+                        {matches.map((m, i) => (
+                          <HStack key={i} justify="space-between" bg={inputBg} px={3} py={2} borderRadius="lg" fontFamily="mono" fontSize="sm">
+                            <HStack spacing={3}>
+                              <Badge colorScheme="brand" borderRadius="md">#{i + 1}</Badge>
+                              <Text>{m[0]}</Text>
+                            </HStack>
+                            <Text color={secondaryTextColor} fontSize="xs">at index {m.index}</Text>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    ) : (
+                      <Text color={secondaryTextColor} fontSize="sm">No matches yet — try a pattern and some text above.</Text>
+                    )}
                   </Box>
-                  <Button h="70px" fontSize="lg" colorScheme="red" variant="subtle" leftIcon={<Icon as={Trash2} />} onClick={() => { setPattern(""); setTestString(""); }} borderRadius="2xl">
-                    Clear Canvas
-                  </Button>
-                </VStack>
-              </SimpleGrid>
+
+                  <VStack align="stretch" spacing={3}>
+                    <Box bg="brand.600" color="white" p={4} borderRadius="2xl" shadow="sm">
+                      <Text fontSize="xs" fontWeight="bold" mb={2} textTransform="uppercase" opacity={0.9}>Flag reference</Text>
+                      <VStack align="start" spacing={1} fontSize="xs">
+                        <Text><b>g</b> — global · <b>i</b> — ignore case</Text>
+                        <Text><b>m</b> — multiline · <b>s</b> — dot-all</Text>
+                      </VStack>
+                    </Box>
+                    <Button
+                      variant="outline"
+                      colorScheme="red"
+                      leftIcon={<Icon as={Trash2} />}
+                      onClick={() => { setPattern(""); setTestString(""); setFlags("g"); }}
+                      borderRadius="xl"
+                    >
+                      Clear everything
+                    </Button>
+                  </VStack>
+                </SimpleGrid>
+              </VStack>
             )}
 
+            {/* ================= LIBRARY TAB ================= */}
             {activeTab === "generator" && (
               <VStack align="stretch" spacing={8}>
                 <Box textAlign="center" mb={4}>
@@ -325,6 +465,7 @@ export default function RegexTool() {
               </VStack>
             )}
 
+            {/* ================= CHEAT SHEET TAB ================= */}
             {activeTab === "cheatsheet" && (
               <VStack align="stretch" spacing={6}>
                 <Box textAlign="center" mb={4}>

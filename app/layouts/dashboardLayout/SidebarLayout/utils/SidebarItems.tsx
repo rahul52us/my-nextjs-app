@@ -246,6 +246,7 @@ const sidebarData: SidebarItem[] = [
           { id: 501, name: "QR Code Generator", icon: <FaQrcode />, iconColor: "#2c3e50", url: "/converter/qr-code-generator" },
           { id: 502, name: "QR Code Reader", icon: <FaQrcode />, iconColor: "#34495e", url: "/converter/qr-code-reader" },
           { id: 503, name: "Barcode Generator", icon: <FaBarcode />, iconColor: "#1a252f", url: "/converter/bar-code-generator" },
+          { id: 505, name: "QR File Sharing", icon: <FaQrcode />, iconColor: "#2c3e50", url: "/converter/qr-file-sharing" },
         ],
       },
       {
