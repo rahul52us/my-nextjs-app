@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -138,7 +138,7 @@ const FolderTreeItem = React.memo<FolderTreeItemProps>(
                   <Button
                     size="sm"
                     variant="solid"
-                    colorScheme="blue"
+                    colorScheme="brand"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleViewFile({ name: node.name, content: node.content! });
@@ -449,31 +449,31 @@ const ZipDecompression: React.FC = () => {
         p={8}
         mb={6}
         border="2px dashed"
-        borderColor={zipFile ? "blue.400" : borderColor}
+        borderColor={zipFile ? "brand.400" : borderColor}
         borderRadius="xl"
-        bg={zipFile ? useColorModeValue("blue.50", "blue.900") : cardBg}
+        bg={zipFile ? useColorModeValue("brand.50", "brand.900") : cardBg}
         cursor="pointer"
         transition="all 0.2s"
         _hover={{
-          borderColor: "blue.400",
-          bg: useColorModeValue("blue.50", "blue.900"),
+          borderColor: "brand.400",
+          bg: useColorModeValue("brand.50", "brand.900"),
         }}
       >
         <Icon
           as={FaUpload}
           boxSize={8}
-          color={zipFile ? "blue.500" : "gray.400"}
+          color={zipFile ? "brand.500" : "gray.400"}
         />
         <Text
           fontWeight={zipFile ? "semibold" : "normal"}
-          color={zipFile ? "blue.600" : "gray.500"}
+          color={zipFile ? "brand.600" : "gray.500"}
           fontSize="sm"
           textAlign="center"
         >
           {zipFile ? `✓ ${zipFile.name}` : "Click to choose ZIP file or drag & drop"}
         </Text>
         {zipFile && (
-          <Text fontSize="xs" color="blue.400">
+          <Text fontSize="xs" color="brand.400">
             {(zipFile.size / 1024).toFixed(1)} KB
           </Text>
         )}
@@ -524,7 +524,7 @@ const ZipDecompression: React.FC = () => {
 
         <WrapItem flex={{ base: "1 1 100%", md: "0 1 auto" }}>
           <Button
-            colorScheme="blue"
+            colorScheme="brand"
             onClick={handleDownloadAll}
             leftIcon={<FaDownload />}
             isDisabled={treeData.length === 0}
@@ -592,7 +592,7 @@ const ZipDecompression: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" onClick={onClose} mr={3}>
+            <Button colorScheme="brand" onClick={onClose} mr={3}>
               Close
             </Button>
             {fileToView?.content && (

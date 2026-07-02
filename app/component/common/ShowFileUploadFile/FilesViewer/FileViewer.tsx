@@ -1,4 +1,4 @@
-import { Box, Spinner } from "@chakra-ui/react";
+﻿import { Box, Spinner } from "@chakra-ui/react";
 import { useState } from "react";
 
 const FileViewer = ({url} : any) => {
@@ -22,7 +22,7 @@ const FileViewer = ({url} : any) => {
           alignItems="center"
           bgColor="rgba(255, 255, 255, 0.8)"
         >
-          <Spinner size="xl" color="blue.500" />
+          <Spinner size="xl" color="brand.500" />
         </Box>
       )}
       <embed

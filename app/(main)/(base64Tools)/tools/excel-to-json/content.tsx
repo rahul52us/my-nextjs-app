@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import {
   useState,
   useCallback,
@@ -1005,7 +1005,7 @@ export default function ExcelToJsonContent() {
         <Heading
           as="h1"
           size="xl"
-          color={useColorModeValue(accentColor, "blue.300")}
+          color={useColorModeValue(accentColor, "brand.300")}
           textAlign="center"
           fontWeight="extrabold"
           mb={6}
@@ -1141,7 +1141,7 @@ export default function ExcelToJsonContent() {
                   transform="rotate(180deg)"
                 />
                 <Text
-                  color={fileName ? useColorModeValue(accentColor, "blue.300") : "gray.500"}
+                  color={fileName ? useColorModeValue(accentColor, "brand.300") : "gray.500"}
                   fontWeight={fileName ? "semibold" : "normal"}
                   fontSize="sm"
                   textAlign="center"
@@ -1668,7 +1668,7 @@ export default function ExcelToJsonContent() {
                             }
                             size="sm"
                             borderColor={accentColor}
-                            color={useColorModeValue(accentColor, "blue.300")}
+                            color={useColorModeValue(accentColor, "brand.300")}
                             _hover={{
                               bg: useColorModeValue(accentBgLight, "whiteAlpha.100"),
                               borderColor: accentColorHover,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { js as beautifyJs } from "js-beautify";
@@ -159,7 +159,7 @@ const CodeFormatter = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    colorScheme="blue"
+                    colorScheme="brand"
                     onClick={() => setCode("")}
                   >
                     Reset
@@ -221,7 +221,7 @@ const CodeFormatter = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    colorScheme="blue"
+                    colorScheme="brand"
                     onClick={() => setFormattedCode("")}
                   >
                     Reset
@@ -265,7 +265,7 @@ const CodeFormatter = () => {
       <Container maxW="container.xl" mt={8}>
         <Flex justifyContent="center" gap={4}>
           <Button
-            colorScheme="blue"
+            colorScheme="brand"
             size="lg"
             onClick={handleFormat}
             _hover={{ bg: buttonHoverColor }}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useCallback, useEffect } from "react";
 import {
   Button,
@@ -57,7 +57,7 @@ const MultiDropdown = ({
   const popoverBg = useColorModeValue("white", "gray.900");
   const borderColor = useColorModeValue("gray.300", "gray.600");
   const buttonTextColor = useColorModeValue("teal.400", "teal.200");
-  const focusBorderColor = useColorModeValue("blue.500", "blue.300");
+  const focusBorderColor = useColorModeValue("brand.500", "brand.300");
 
   useEffect(() => {
     const debouncedHandler = debounce((value: string) => {

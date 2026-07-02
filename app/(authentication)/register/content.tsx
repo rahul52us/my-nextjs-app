@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -93,6 +93,7 @@ const RegisterContent = observer(() => {
 
   const formPanel = (
     <Flex
+      w="full"
       flex={{ base: 1, md: 0.5 }}
       direction="column"
       justify="center"
@@ -105,7 +106,7 @@ const RegisterContent = observer(() => {
     >
       <Box
         w="full"
-        maxW={{ base: "95vw", md: "620px" }}
+        maxW={{ base: "95vw", md: "600px" }}
         mx="auto"
         mt={{ base: "24px", md: "0" }}
         bg={{ base: "rgba(255,255,255,0.92)", md: "transparent" }}
@@ -149,7 +150,7 @@ const RegisterContent = observer(() => {
         >
           {({ isSubmitting, errors, touched }) => (
             <Form style={{ width: '100%' }}>
-              <VStack spacing={4}>
+              <VStack spacing={4} w="full">
                 <FormControl id="name" isInvalid={!!(touched.name && errors.name)}>
                   <Field
                     as={Input}
@@ -262,7 +263,7 @@ const RegisterContent = observer(() => {
                       <Checkbox
                         {...field}
                         isChecked={field.value}
-                        colorScheme="blue"
+                        colorScheme="brand"
                         size="sm"
                         borderColor={inputBorder}
                         // _checked={{

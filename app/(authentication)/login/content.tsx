@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -87,7 +87,7 @@ const LoginContent = observer(
     const loginForm = (
       <Box
         w="full"
-        maxW={{ base: "95vw", md: "520px" }}
+        maxW={{ base: "95vw", md: "600px" }}
         bg={{ base: "rgba(255,255,255,0.92)", md: "transparent" }}
         borderRadius={{ base: "28px", md: "0" }}
         p={isModal ? 0 : { base: 6, md: 6 }}
@@ -149,7 +149,7 @@ const LoginContent = observer(
         )}
 
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <VStack spacing={4}>
+          <VStack spacing={4} w="full">
             <FormControl id="username" isRequired>
               <Input
                 type="text"
@@ -192,7 +192,7 @@ const LoginContent = observer(
                 name="rememberMe"
                 isChecked={formData.rememberMe}
                 onChange={handleInputChange}
-                colorScheme="blue"
+                colorScheme="brand"
                 size="sm"
                 borderColor={inputBorder}
                 // _checked={{
@@ -260,6 +260,7 @@ const LoginContent = observer(
 
     const formPanel = (
       <Flex
+        w="full"
         flex={{ base: 1, md: 0.5 }}
         direction="column"
         justify="center"

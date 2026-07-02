@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -180,7 +180,7 @@ const UnixTimestampContent: React.FC = () => {
           <Button colorScheme="teal" size="lg" leftIcon={<Icon as={FaClock} />} onClick={convertFromTimestamp}>
             Convert Timestamp
           </Button>
-          <Button colorScheme="blue" size="lg" leftIcon={<Icon as={FaCalendarAlt} />} onClick={convertFromDateTime}>
+          <Button colorScheme="brand" size="lg" leftIcon={<Icon as={FaCalendarAlt} />} onClick={convertFromDateTime}>
             Convert Date/Time
           </Button>
           <Button colorScheme="red" size="lg" leftIcon={<Icon as={FaTrashAlt} />} onClick={handleClear}>
@@ -217,7 +217,7 @@ const UnixTimestampContent: React.FC = () => {
 
           <HStack spacing={4} justify="flex-start">
             <Button
-              colorScheme="blue"
+              colorScheme="brand"
               size="md"
               leftIcon={<Icon as={FaCopy} />}
               onClick={() => handleCopy(`ISO Date: ${timestampResult}\nLocal Date: ${dateResult}\nUnix Seconds: ${unixSeconds}\nUnix Milliseconds: ${unixMilliseconds}`, "Conversion result")}

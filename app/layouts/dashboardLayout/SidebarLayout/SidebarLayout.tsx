@@ -1,4 +1,4 @@
-"use client"; // Add this directive since this is a client component
+﻿"use client"; // Add this directive since this is a client component
 
 import React, { useState, useEffect } from "react";
 import {
@@ -178,7 +178,7 @@ const SidebarPopover = observer(({
             py={depth === 0 ? 3 : 1}
             bg={
               itemIsActive
-                ? useColorModeValue("blue.50", "blue.900")
+                ? useColorModeValue("brand.50", "brand.900")
                 : "transparent"
             }
             color={
@@ -191,7 +191,7 @@ const SidebarPopover = observer(({
             }
             fontWeight={itemIsActive ? "600" : "inherit"}
             _hover={{
-              bg: useColorModeValue("blue.50", "blue.700"),
+              bg: useColorModeValue("brand.50", "brand.700"),
               color: useColorModeValue(
                 themeConfig.colors.custom.light.primary,
                 themeConfig.colors.custom.dark.primary
@@ -224,7 +224,7 @@ const SidebarPopover = observer(({
             bg={useColorModeValue("white", "gray.800")}
           >
             <PopoverArrow />
-            <PopoverHeader bg={useColorModeValue("blue.50", "blue.900")}>
+            <PopoverHeader bg={useColorModeValue("brand.50", "brand.900")}>
               <Flex
                 align="center"
                 justify="space-between"
@@ -303,9 +303,9 @@ const SidebarAccordion = observer(({
 
   const activeBg = useColorModeValue(
     themeConfig.colors.custom.light.primary,
-    "blue.900"
+    "brand.900"
   );
-  const hoverBg = useColorModeValue("blue.50", "blue.700");
+  const hoverBg = useColorModeValue("brand.50", "brand.700");
   const hoverColor = useColorModeValue("teal.700", "teal.300");
   const primaryColor = useColorModeValue(
     themeConfig.colors.custom.light.primary,
@@ -491,7 +491,7 @@ const SidebarLayout: React.FC<SidebarProps> = observer(({
             variant="ghost"
             fontSize="xl"
             color="white"
-            _hover={{ color: "blue.500", bg: "gray.700" }}
+            _hover={{ color: "brand.500", bg: "gray.700" }}
             _active={{ bg: "gray.800" }}
             mt={2}
             _focus={{ boxShadow: "none" }}

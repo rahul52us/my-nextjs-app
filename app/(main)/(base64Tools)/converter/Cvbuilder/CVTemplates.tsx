@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React from 'react';
 import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid, Divider,
@@ -99,7 +99,7 @@ export const ExecutiveTemplate: React.FC<{ data: any; sectionOrder: string[] }> 
               <Text fontSize="xs" fontWeight="bold">{s.name}</Text>
               <Text fontSize="xs" color="gray.500">{s.level}%</Text>
             </Flex>
-            <Progress value={s.level} size="xs" colorScheme="blue" borderRadius="full" />
+            <Progress value={s.level} size="xs" colorScheme="brand" borderRadius="full" />
           </Box>
         ))}
       </Box>
@@ -295,18 +295,18 @@ export const TechSidebarTemplate: React.FC<{ data: any; sectionOrder: string[] }
   const mainSections: Record<string, React.ReactNode> = {
     summary: (
       <Box key="summary">
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Profile</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Profile</Heading>
         <Text fontSize="sm" color="gray.600" lineHeight="1.8">{data.summary}</Text>
       </Box>
     ),
     experience: (
       <Box key="experience">
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Experience</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Experience</Heading>
         {data.experiences.map((exp: any, i: number) => (
           <Box key={i} mb={8}>
             <Flex justify="space-between" mb={1}>
               <Text fontWeight="bold" color="gray.800">{exp.role}</Text>
-              <Text fontSize="xs" fontWeight="bold" color="blue.600">
+              <Text fontSize="xs" fontWeight="bold" color="brand.600">
                 {exp.start} - {exp.isPresent ? 'Present' : exp.end}
               </Text>
             </Flex>
@@ -318,13 +318,13 @@ export const TechSidebarTemplate: React.FC<{ data: any; sectionOrder: string[] }
     ),
     education: (
       <Box key="education">
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Education</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Education</Heading>
         <SimpleGrid columns={2} spacing={6}>
           {data.educations.map((edu: any, i: number) => (
             <Box key={i} p={4} bg="gray.50" borderRadius="md">
               <Text fontSize="sm" fontWeight="bold">{edu.degree}</Text>
               <Text fontSize="xs" color="gray.500">{edu.school}</Text>
-              <Text fontSize="xs" color="blue.600" fontWeight="bold">{edu.year}</Text>
+              <Text fontSize="xs" color="brand.600" fontWeight="bold">{edu.year}</Text>
             </Box>
           ))}
         </SimpleGrid>
@@ -332,7 +332,7 @@ export const TechSidebarTemplate: React.FC<{ data: any; sectionOrder: string[] }
     ),
     achievements: (
       <Box key="achievements">
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Achievements</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Achievements</Heading>
         {data.achievements.map((a: any, i: number) => (
           <Box key={i} mb={3} p={3} bg="gray.50" borderRadius="md">
             <Text fontWeight="bold" fontSize="sm">{a.title}</Text>
@@ -349,15 +349,15 @@ export const TechSidebarTemplate: React.FC<{ data: any; sectionOrder: string[] }
         <VStack align="center" spacing={8}>
           {data.profileImg && (
             <Image src={data.profileImg} boxSize="160px" borderRadius="full"
-              border="4px solid" borderColor="blue.500" p={1} />
+              border="4px solid" borderColor="brand.500" p={1} />
           )}
           <VStack spacing={2} textAlign="center">
             <Heading size="md" letterSpacing="1px">{data.fullName}</Heading>
-            <Badge colorScheme="blue" variant="solid" fontSize="10px" px={3}>{data.role}</Badge>
+            <Badge colorScheme="brand" variant="solid" fontSize="10px" px={3}>{data.role}</Badge>
           </VStack>
           <VStack align="stretch" w="full" spacing={6} pt={6}>
             <Box>
-              <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={3} letterSpacing="2px">CONTACT</Text>
+              <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={3} letterSpacing="2px">CONTACT</Text>
               <VStack align="stretch" spacing={3} fontSize="xs">
                 <HStack><Mail size={12} /><Text overflow="hidden" noOfLines={1}>{data.email}</Text></HStack>
                 <HStack><Phone size={12} /><Text>{data.phone}</Text></HStack>
@@ -366,25 +366,25 @@ export const TechSidebarTemplate: React.FC<{ data: any; sectionOrder: string[] }
             </Box>
             {sectionOrder.includes('skills') && (
               <Box>
-                <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={4} letterSpacing="2px">TECH STACK</Text>
+                <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={4} letterSpacing="2px">TECH STACK</Text>
                 {data.skills.map((s: any, i: number) => (
                   <Box key={i} mb={4}>
                     <Flex justify="space-between" mb={1} fontSize="10px">
                       <Text>{s.name}</Text>
                       <Text opacity={0.6}>{s.level}%</Text>
                     </Flex>
-                    <Progress value={s.level} size="xs" colorScheme="blue" bg="gray.700" borderRadius="full" />
+                    <Progress value={s.level} size="xs" colorScheme="brand" bg="gray.700" borderRadius="full" />
                   </Box>
                 ))}
               </Box>
             )}
             {sectionOrder.includes('languages') && (
               <Box>
-                <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={3} letterSpacing="2px">LANGUAGES</Text>
+                <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={3} letterSpacing="2px">LANGUAGES</Text>
                 {data.languages.map((l: any, i: number) => (
                   <HStack key={i} justify="space-between" mb={2} fontSize="xs">
                     <Text>{l.name}</Text>
-                    <Badge colorScheme="blue" variant="outline" fontSize="9px">{l.level}</Badge>
+                    <Badge colorScheme="brand" variant="outline" fontSize="9px">{l.level}</Badge>
                   </HStack>
                 ))}
               </Box>
@@ -863,16 +863,16 @@ export const StartupTemplate: React.FC<{ data: any; sectionOrder: string[] }> = 
                 <Text>{s.name}</Text>
                 <Text>{s.level}%</Text>
               </Flex>
-              <Progress value={s.level} colorScheme="blue" borderRadius="full" size="sm" />
+              <Progress value={s.level} colorScheme="brand" borderRadius="full" size="sm" />
             </Box>
           ))}
         </VStack>
       </Box>
     ),
     summary: (
-      <Box key="summary" bg="blue.50" p={6} borderRadius="2xl">
-        <Heading size="sm" mb={4} color="blue.700">MISSION</Heading>
-        <Text fontSize="xs" fontWeight="bold" color="blue.600">{data.summary}</Text>
+      <Box key="summary" bg="brand.50" p={6} borderRadius="2xl">
+        <Heading size="sm" mb={4} color="brand.700">MISSION</Heading>
+        <Text fontSize="xs" fontWeight="bold" color="brand.600">{data.summary}</Text>
       </Box>
     ),
     languages: (
@@ -881,7 +881,7 @@ export const StartupTemplate: React.FC<{ data: any; sectionOrder: string[] }> = 
         {data.languages.map((l: any, i: number) => (
           <HStack key={i} justify="space-between" mb={2} fontSize="xs">
             <Text fontWeight="bold">{l.name}</Text>
-            <Badge colorScheme="blue" variant="subtle">{l.level}</Badge>
+            <Badge colorScheme="brand" variant="subtle">{l.level}</Badge>
           </HStack>
         ))}
       </Box>
@@ -1127,7 +1127,7 @@ export const MinimalCardTemplate: React.FC<{ data: any; sectionOrder: string[] }
         <Heading size="xs" mb={4}>SKILLS</Heading>
         <Flex wrap="wrap" gap={2}>
           {data.skills.map((s: any, i: number) => (
-            <Badge key={i} variant="subtle" colorScheme="blue">{s.name}</Badge>
+            <Badge key={i} variant="subtle" colorScheme="brand">{s.name}</Badge>
           ))}
         </Flex>
       </Box>

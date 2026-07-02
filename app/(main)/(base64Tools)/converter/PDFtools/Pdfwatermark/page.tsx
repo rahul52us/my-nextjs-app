@@ -10,8 +10,46 @@ import {
   Move,
 } from "lucide-react";
 import { useColorModeValue } from "@chakra-ui/react";
+import { Document, Page, pdfjs } from "react-pdf";
+import { observer } from "mobx-react-lite";
+import stores from "../../../../../store/stores";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 
-const PDFWatermarker: React.FC = () => {
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const parsePageRange = (rangeStr: string, maxPages: number): number[] => {
+  const pages = new Set<number>();
+  const parts = rangeStr.split(",");
+  for (let part of parts) {
+    part = part.trim();
+    if (part.includes("-")) {
+      const [startStr, endStr] = part.split("-");
+      const start = parseInt(startStr, 10);
+      const end = parseInt(endStr, 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        const s = Math.min(start, end);
+        const e = Math.max(start, end);
+        for (let i = s; i <= e; i++) {
+          if (i >= 1 && i <= maxPages) {
+            pages.add(i);
+          }
+        }
+      }
+    } else {
+      const p = parseInt(part, 10);
+      if (!isNaN(p) && p >= 1 && p <= maxPages) {
+        pages.add(p);
+      }
+    }
+  }
+  return Array.from(pages).sort((a, b) => a - b);
+};
+
+const PDFWatermarker: React.FC = observer(() => {
+  const { themeStore } = stores;
+  const brandColor = themeStore.themeConfig?.colors?.brand?.[500] || "#007ACC";
+
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [watermarkText, setWatermarkText] = useState<string>("PROPRIETARY");
@@ -20,6 +58,12 @@ const PDFWatermarker: React.FC = () => {
   const [opacity, setOpacity] = useState<number>(0.3);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [containerWidth, setContainerWidth] = useState(600);
+
+  // Page selection states
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pageSelectionType, setPageSelectionType] = useState<"all" | "current" | "range">("all");
+  const [customRange, setCustomRange] = useState<string>("");
 
   const pageBg = "bg-transparent";
   const cardBg = useColorModeValue("bg-white", "bg-slate-800");
@@ -42,7 +86,7 @@ const PDFWatermarker: React.FC = () => {
   );
   const dropzoneBg = useColorModeValue("bg-white", "bg-slate-800");
   const dropzoneHoverBg = useColorModeValue(
-    "hover:bg-blue-50",
+    "hover:bg-slate-50",
     "hover:bg-slate-700",
   );
   const dropzoneBorder = useColorModeValue(
@@ -58,7 +102,7 @@ const PDFWatermarker: React.FC = () => {
     "bg-slate-700 text-slate-500 cursor-not-allowed",
   );
   const activeButton =
-    "bg-[#007ACC] text-white hover:bg-[#006bb3] shadow-xl shadow-sky-500/30";
+    "text-white shadow-xl shadow-sky-500/10";
   const canvasBadgeBg = useColorModeValue("bg-white", "bg-slate-700");
   const emptyStateText = useColorModeValue("text-slate-300", "text-slate-500");
   const noteText = useColorModeValue("text-slate-400", "text-slate-500");
@@ -82,6 +126,7 @@ const PDFWatermarker: React.FC = () => {
       setPdfFile(file);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       setPdfUrl(URL.createObjectURL(file));
+      setPageNumber(1);
     }
   };
 
@@ -89,6 +134,8 @@ const PDFWatermarker: React.FC = () => {
     setPdfFile(null);
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
+    setNumPages(0);
+    setPageNumber(1);
     const input = document.getElementById("pdf-upload") as HTMLInputElement;
     if (input) input.value = "";
   };
@@ -115,6 +162,11 @@ const PDFWatermarker: React.FC = () => {
     });
   };
 
+  const onDocumentLoadSuccess = ({ numPages: total }: { numPages: number }) => {
+    setNumPages(total);
+    setPageNumber((prev) => Math.min(prev, total));
+  };
+
   const addWatermark = async (): Promise<void> => {
     if (!pdfFile) return;
     setIsProcessing(true);
@@ -124,8 +176,29 @@ const PDFWatermarker: React.FC = () => {
       const pdfDoc = await PDFDocument.load(fileArrayBuffer);
       const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const pages = pdfDoc.getPages();
+      const totalPagesCount = pages.length;
 
-      pages.forEach((page) => {
+      // Determine which pages to apply the watermark to
+      let pagesToWatermark: number[] = [];
+      if (pageSelectionType === "all") {
+        for (let i = 1; i <= totalPagesCount; i++) {
+          pagesToWatermark.push(i);
+        }
+      } else if (pageSelectionType === "current") {
+        pagesToWatermark.push(pageNumber);
+      } else if (pageSelectionType === "range") {
+        pagesToWatermark = parsePageRange(customRange, totalPagesCount);
+        if (pagesToWatermark.length === 0) {
+          alert("Please enter a valid page range (e.g. 2-5)");
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      pagesToWatermark.forEach((pageIdx) => {
+        const page = pages[pageIdx - 1];
+        if (!page) return;
+
         const { width, height } = page.getSize();
 
         // 1. Precise PDF measurements
@@ -140,8 +213,10 @@ const PDFWatermarker: React.FC = () => {
         const pdfCenterY = height - (position.y / 100) * height;
 
         // 3. Rotation Pivot Correction
-        // We calculate the vector from center to bottom-left to adjust the origin
-        const rad = (rotation * Math.PI) / 180;
+        // Invert rotation angle because PDF coordinate system rotation is CCW,
+        // whereas CSS rotate() is CW.
+        const pdfRotation = -rotation;
+        const rad = (pdfRotation * Math.PI) / 180;
         const centerXOffset = textWidth / 2;
         const centerYOffset = textHeight / 2;
 
@@ -157,7 +232,7 @@ const PDFWatermarker: React.FC = () => {
           y: originY,
           size: fontSize,
           font: helveticaFont,
-          rotate: degrees(rotation),
+          rotate: degrees(pdfRotation),
           opacity: opacity,
           color: rgb(0.392, 0.455, 0.545),
         });
@@ -195,7 +270,7 @@ const PDFWatermarker: React.FC = () => {
             <div className="flex items-center gap-3 mb-8">
               <div
                 style={{
-                  backgroundColor: "#007ACC",
+                  backgroundColor: brandColor,
                   padding: "8px",
                   borderRadius: "12px",
                   color: "white",
@@ -328,12 +403,76 @@ const PDFWatermarker: React.FC = () => {
                     onChange={(e) => setOpacity(parseFloat(e.target.value))}
                   />
                 </div>
+
+                {pdfFile && (
+                  <div className="space-y-3 pt-2 border-t border-dashed border-slate-200 dark:border-slate-700">
+                    <label
+                      className={`text-[11px] font-bold uppercase tracking-wider ${textMuted}`}
+                    >
+                      3. Page Range Settings
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPageSelectionType("all")}
+                        className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-[11px] border transition-all ${
+                          pageSelectionType === "all"
+                            ? "text-white"
+                            : `bg-transparent ${inputText} ${inputBorder} hover:bg-slate-100 dark:hover:bg-slate-700`
+                        }`}
+                        style={pageSelectionType === "all" ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
+                      >
+                        All Pages
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPageSelectionType("current")}
+                        className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-[11px] border transition-all ${
+                          pageSelectionType === "current"
+                            ? "text-white"
+                            : `bg-transparent ${inputText} ${inputBorder} hover:bg-slate-100 dark:hover:bg-slate-700`
+                        }`}
+                        style={pageSelectionType === "current" ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
+                      >
+                        Current Page
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPageSelectionType("range")}
+                        className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-[11px] border transition-all ${
+                          pageSelectionType === "range"
+                            ? "text-white"
+                            : `bg-transparent ${inputText} ${inputBorder} hover:bg-slate-100 dark:hover:bg-slate-700`
+                        }`}
+                        style={pageSelectionType === "range" ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
+                      >
+                        Custom
+                      </button>
+                    </div>
+
+                    {pageSelectionType === "range" && (
+                      <div className="space-y-1">
+                        <input
+                          type="text"
+                          className={`w-full p-2.5 ${inputBg} ${inputBorder} ${inputText} ${inputPlaceholder} border rounded-xl font-bold text-xs`}
+                          value={customRange}
+                          onChange={(e) => setCustomRange(e.target.value)}
+                          placeholder="e.g., 2-5 or 1,3,5"
+                        />
+                        <p className={`text-[10px] ${textMuted} leading-tight`}>
+                          Use commas for separate pages, hyphens for ranges (e.g. 1, 3, 5-7).
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
                 onClick={addWatermark}
                 disabled={!pdfFile || isProcessing}
                 className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-lg transition-all transform active:scale-95 ${!pdfFile || isProcessing ? disabledButton : activeButton}`}
+                style={!pdfFile || isProcessing ? {} : { backgroundColor: brandColor }}
               >
                 {isProcessing ? (
                   <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
@@ -372,17 +511,24 @@ const PDFWatermarker: React.FC = () => {
 
             <div
               ref={previewRef}
-              className={`relative w-full max-w-2xl aspect-[1/1.414] ${previewBg} shadow-2xl rounded-lg overflow-hidden border ${previewBorder} cursor-crosshair group select-none touch-none`}
+              className={`relative w-full max-w-2xl ${!pdfFile ? "aspect-[1/1.414]" : ""} ${previewBg} shadow-2xl rounded-lg overflow-hidden border ${previewBorder} cursor-crosshair group select-none touch-none`}
               onMouseMove={(e) => e.buttons === 1 && handleDrag(e)}
               onMouseDown={handleDrag}
               onTouchMove={handleDrag}
             >
-              {pdfUrl ? (
-                <iframe
-                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  title="PDF Preview"
-                />
+              {pdfFile ? (
+                <Document
+                  file={pdfFile}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={<div className="p-8 text-center font-bold">Loading PDF...</div>}
+                >
+                  <Page
+                    pageNumber={pageNumber}
+                    width={containerWidth}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                  />
+                </Document>
               ) : (
                 <div
                   className={`absolute inset-0 flex flex-col items-center justify-center ${emptyStateText}`}
@@ -392,41 +538,75 @@ const PDFWatermarker: React.FC = () => {
                 </div>
               )}
 
-              <div
-                className="absolute z-50 pointer-events-none flex items-center justify-center"
-                style={{
-                  left: `${position.x}%`,
-                  top: `${position.y}%`,
-                  transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                  opacity: opacity,
-                }}
-              >
-                <div className="relative flex flex-col items-center">
-                  <div className="absolute -top-12 bg-blue-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Move size={16} />
+              {pdfFile && (
+                <div
+                  className="absolute z-50 pointer-events-none flex items-center justify-center"
+                  style={{
+                    left: `${position.x}%`,
+                    top: `${position.y}%`,
+                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                    opacity: opacity,
+                  }}
+                >
+                  <div className="relative flex flex-col items-center">
+                    <div className="absolute -top-12 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: brandColor }}>
+                      <Move size={16} />
+                    </div>
+                    <span
+                      className="font-black whitespace-nowrap leading-none transition-colors"
+                      style={{
+                        // Formula to keep font size visual-accurate regardless of screen width
+                        fontSize: `${(fontSize * containerWidth) / 595}px`,
+                        color: watermarkColor,
+                      }}
+                    >
+                      {watermarkText || "PREVIEW"}
+                    </span>
                   </div>
-                  <span
-                    className="font-black whitespace-nowrap leading-none transition-colors"
-                    style={{
-                      // Formula to keep font size visual-accurate regardless of screen width
-                      fontSize: `${(fontSize * containerWidth) / 595}px`,
-                      color: watermarkColor,
-                    }}
-                  >
-                    {watermarkText || "PREVIEW"}
-                  </span>
                 </div>
-              </div>
+              )}
             </div>
+
+            {numPages > 1 && (
+              <div className="flex items-center gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+                  disabled={pageNumber === 1}
+                  className={`px-4 py-2 rounded-xl font-bold text-xs border transition-all ${
+                    pageNumber === 1
+                      ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
+                      : `bg-transparent ${inputText} ${inputBorder} hover:bg-slate-100 dark:hover:bg-slate-700`
+                  }`}
+                >
+                  Previous
+                </button>
+                <span className={`text-xs font-bold ${textSecondary}`}>
+                  Page {pageNumber} of {numPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
+                  disabled={pageNumber === numPages}
+                  className={`px-4 py-2 rounded-xl font-bold text-xs border transition-all ${
+                    pageNumber === numPages
+                      ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
+                      : `bg-transparent ${inputText} ${inputBorder} hover:bg-slate-100 dark:hover:bg-slate-700`
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+
             <p className={`mt-6 text-sm font-medium italic ${noteText}`}>
-              * Note: Watermark will be applied to all pages at this exact
-              position.
+              * Note: Watermark will be applied to the selected pages at this exact position.
             </p>
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
 
 export default PDFWatermarker;

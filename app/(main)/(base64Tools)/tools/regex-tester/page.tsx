@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -163,7 +163,7 @@ const RegexTester = () => {
 
         {/* Test Regex Button */}
         <Button
-          colorScheme="blue"
+          colorScheme="brand"
           onClick={handleTestRegex}
           isDisabled={!regex || !testString || loading}
         >
@@ -187,7 +187,7 @@ const RegexTester = () => {
         <Flex gap={4}>
           {/* Copy Button */}
           <Button
-            colorScheme="blue"
+            colorScheme="brand"
             leftIcon={<FaClipboard />}
             onClick={handleCopyMatches}
             isDisabled={matches.length === 0}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
     Box,
@@ -86,8 +86,8 @@ export default function TimeConverterContent() {
     const historyLabelColor = useColorModeValue("teal.700", "teal.300");
 
     // Overview box
-    const overviewBg = useColorModeValue("blue.50", "blue.900");
-    const overviewHeadingColor = useColorModeValue("blue.700", "blue.200");
+    const overviewBg = useColorModeValue("brand.50", "brand.900");
+    const overviewHeadingColor = useColorModeValue("brand.700", "brand.200");
     const overviewTextColor = useColorModeValue("gray.700", "gray.200");
 
     // Swap button

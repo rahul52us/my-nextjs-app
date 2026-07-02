@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import {
   Box,
   Flex,
@@ -134,7 +134,7 @@ const Header = () => {
               <HStack justify="space-between" align="center">
                 <HStack spacing={2}>
                   {isDark ? (
-                    <MoonIcon color="blue.300" boxSize={4} />
+                    <MoonIcon color="brand.300" boxSize={4} />
                   ) : (
                     <SunIcon color="orange.400" boxSize={4} />
                   )}

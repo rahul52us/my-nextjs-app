@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, ChangeEvent } from "react";
 import {
@@ -291,7 +291,7 @@ const ImageToBase64Content = () => {
 
                 <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
                     <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         leftIcon={<FaClipboard />}
                         onClick={handleCopyToClipboard}
                         isDisabled={!base64}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, ChangeEvent } from "react";
 import {
@@ -274,7 +274,7 @@ const PdfToBase64Content = () => {
 
                 <HStack spacing={4}>
                     <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         leftIcon={<FaClipboard />}
                         onClick={handleCopyToClipboard}
                         isDisabled={!base64}

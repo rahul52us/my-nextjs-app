@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useToast, ToastPosition, Box, Text } from "@chakra-ui/react";
 import { FiCheckCircle, FiAlertCircle, FiInfo } from "react-icons/fi";
@@ -83,7 +83,7 @@ const Notification = observer(() => {
       case "error":
         return "red.500";
       case "info":
-        return "blue.500";
+        return "brand.500";
       default:
         return "gray.500";
     }

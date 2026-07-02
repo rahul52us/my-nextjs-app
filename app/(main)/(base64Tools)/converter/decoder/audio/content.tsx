@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -159,7 +159,7 @@ const Base64ToAudioContent = () => {
                 </FormControl>
 
                 <Button
-                    colorScheme="blue"
+                    colorScheme="brand"
                     onClick={handleBase64Input}
                     isDisabled={!base64Input}
                 >

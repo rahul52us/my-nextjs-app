@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React from "react";
 import {
   Table,
@@ -177,7 +177,7 @@ const GenerateRows: React.FC<{
           whiteSpace="normal"
           cursor="pointer"
           fontSize="sm"
-          color="blue.400"
+          color="brand.400"
           textDecoration="underline"
           {...column?.props?.row}
           {...cellProps}
@@ -295,10 +295,10 @@ const CustomTable: React.FC<CustomTableProps> = ({
 
   const bodyBg = useColorModeValue("white", "gray.700");
 
-  const hoverBg = useColorModeValue("blue.100", "blue.700");
-  const menuItemHover = useColorModeValue("blue.100", "blue.700");
+  const hoverBg = useColorModeValue("brand.100", "brand.700");
+  const menuItemHover = useColorModeValue("brand.100", "brand.700");
   const menuListBg = useColorModeValue("white", "gray.700");
-  const titleColor = useColorModeValue("blue.500", "white");
+  const titleColor = useColorModeValue("brand.500", "white");
 
   const boxBorder = useColorModeValue("gray.200", "gray.700");
   const mainBox = useColorModeValue("white", "gray.900");
@@ -331,7 +331,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
               borderRadius="5rem"
               // bg="white"
               borderColor="gray.300"
-              _focus={{ borderColor: "blue.500", boxShadow: "outline" }}
+              _focus={{ borderColor: "brand.500", boxShadow: "outline" }}
               maxW="25rem"
             />
           )}

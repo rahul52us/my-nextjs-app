@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {
   Avatar,
   Box,
@@ -83,7 +83,7 @@ const Header: React.FC = observer(() => {
             >
               {/* Profile Item */}
               <MenuItem
-                 bgColor="blue.400"
+                 bgColor="brand.400"
                 _hover={{
                   bg: 'blue.100',
                   color: 'blue.600',

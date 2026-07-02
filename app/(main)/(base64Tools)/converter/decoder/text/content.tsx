@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -161,7 +161,7 @@ const Base64ToTextContent: React.FC = () => {
                         {textOutput && (
                             <HStack spacing={4} align="stretch">
                                 <Text
-                                    color="blue.500"
+                                    color="brand.500"
                                     onClick={handleCopyToClipboard}
                                     cursor="pointer"
                                     fontWeight="semibold"

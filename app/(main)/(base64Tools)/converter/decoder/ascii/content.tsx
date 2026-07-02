@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -310,7 +310,7 @@ const Base64ToAsciiContent: React.FC = () => {
                         {asciiOutput && (
                             <HStack spacing={4} align="stretch">
                                 <Button
-                                    colorScheme="blue"
+                                    colorScheme="brand"
                                     size="sm"
                                     leftIcon={<Icon as={FaCopy} />}
                                     onClick={handleCopyToClipboard}

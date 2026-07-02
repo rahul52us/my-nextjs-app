@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import {
   useState,
   useCallback,
@@ -596,7 +596,7 @@ const JsonToExcel = () => {
         <Heading
           as="h1"
           size={{ base: "lg", md: "xl" }}
-          color={useColorModeValue(accentColor, "blue.300")}
+          color={useColorModeValue(accentColor, "brand.300")}
           textAlign="center"
           fontWeight="extrabold"
           mb={6}
@@ -769,7 +769,7 @@ const JsonToExcel = () => {
                 </Box>
 
                 <Text
-                  color={jsonInput && previewContent ? useColorModeValue(accentColor, "blue.300") : "gray.500"}
+                  color={jsonInput && previewContent ? useColorModeValue(accentColor, "brand.300") : "gray.500"}
                   fontWeight={
                     jsonInput && previewContent ? "semibold" : "normal"
                   }

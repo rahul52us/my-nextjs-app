@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -109,8 +109,8 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
   const modalBg    = useColorModeValue("white", "gray.900");
   const inputBg    = useColorModeValue("gray.50", "gray.800");
   const borderClr  = useColorModeValue("gray.200", "gray.700");
-  const itemHover  = useColorModeValue("blue.50", "gray.700");
-  const activeItem = useColorModeValue("blue.100", "blue.800");
+  const itemHover  = useColorModeValue("brand.50", "gray.700");
+  const activeItem = useColorModeValue("brand.100", "brand.800");
   const textPri    = useColorModeValue("gray.800", "white");
   const textSec    = useColorModeValue("gray.500", "gray.400");
 
@@ -323,7 +323,7 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
                       w={8}
                       h={8}
                       borderRadius="lg"
-                      bg={idx === active ? "blue.500" : useColorModeValue("gray.100", "gray.700")}
+                      bg={idx === active ? "brand.500" : useColorModeValue("gray.100", "gray.700")}
                       align="center"
                       justify="center"
                       flexShrink={0}
@@ -349,7 +349,7 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
                     {item.url && item.url !== "#" && (
                       <Badge
                         fontSize="10px"
-                        colorScheme={idx === active ? "blue" : "gray"}
+                        colorScheme={idx === active ? "brand" : "gray"}
                         variant="subtle"
                         borderRadius="md"
                         px={2}
@@ -362,7 +362,7 @@ const GlobalSearch: React.FC<{ variant?: SearchTriggerVariant }> = ({ variant = 
                     <Icon
                       as={SearchIcon}
                       boxSize={3}
-                      color={idx === active ? "blue.400" : textSec}
+                      color={idx === active ? "brand.400" : textSec}
                       opacity={idx === active ? 1 : 0}
                       transition="0.15s"
                     />

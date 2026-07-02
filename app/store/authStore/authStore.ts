@@ -11,7 +11,7 @@ interface Notification {
   type?: any;
   placement?: string;
   action?: any;
-  duration?:number
+  duration?: number;
 }
 
 class AuthStore {
@@ -20,7 +20,7 @@ class AuthStore {
   isLoading: boolean = false;
   error: string | null = null;
   notification: Notification | null = null;
-  company: any = "65f65a70fbe7ae65d05dac64"
+  company: any = "65f65a70fbe7ae65d05dac64";
   private tokenKey = AUTH_TOKEN || "auth_token";
 
   private setAuthCookie = (token: string) => {
@@ -36,7 +36,8 @@ class AuthStore {
   constructor() {
     makeAutoObservable(this);
     axios.defaults.baseURL = BACKEND_URL || "";
-    axios.defaults.timeout = 0;
+    // 15s timeout — prevents requests from hanging forever (was 0 = infinite)
+    axios.defaults.timeout = 15000;
     axios.defaults.headers["Content-Type"] = "application/json";
 
     // Attach token automatically for all requests
@@ -68,13 +69,20 @@ class AuthStore {
     }
   }
 
-  // Initialize User Session
+  // Initialize User Session — uses session cache to avoid network call on every page load
   initializeUser = async () => {
-    if (typeof window !== "undefined") {  // ✅ Prevent SSR errors
+    if (typeof window !== "undefined") {
       const savedToken = localStorage.getItem(this.tokenKey);
       if (savedToken) {
         this.token = savedToken;
-        await this.fetchUser();
+        // Try session storage cache first — instant, no network
+        const cachedUser = this.getUserFromSessionStorage();
+        if (cachedUser) {
+          this.user = cachedUser;
+        } else {
+          // Fallback to network only if no cache
+          await this.fetchUser();
+        }
       }
     }
   };
@@ -85,7 +93,7 @@ class AuthStore {
     type?: string;
     placement?: string;
     action?: any;
-    duration?:number
+    duration?: number;
   }) => {
     this.notification = {
       title: data.title,
@@ -112,7 +120,15 @@ class AuthStore {
         this.setAuthCookie(this.token!);
       }
 
-      await this.fetchUser();
+      // Use user data from register response directly if available
+      const userData = response?.data?.data?.user;
+      if (userData) {
+        this.user = userData;
+        this.saveUserToSessionStorage(userData);
+      } else {
+        await this.fetchUser();
+      }
+
       return response?.data;
     } catch (err: any) {
       this.error = err?.response?.data?.message || "Registration failed.";
@@ -126,11 +142,9 @@ class AuthStore {
     try {
       const authorization_token = AUTH_TOKEN;
       if (authorization_token) {
-        const storedData = sessionStorage.getItem(
-          USER_SESSION_DATA!
-        );
+        const storedData = sessionStorage.getItem(USER_SESSION_DATA!);
         if (storedData) {
-          return this.getUserFromSessionStorage()
+          return this.getUserFromSessionStorage();
         } else {
           this.doLogout();
           return false;
@@ -139,7 +153,7 @@ class AuthStore {
         this.doLogout();
         return false;
       }
-    } catch ({} : any) {
+    } catch ({}: any) {
       this.user = null;
       this.doLogout();
     }
@@ -151,13 +165,12 @@ class AuthStore {
   };
 
   clearLocalStorage = () => {
-    localStorage.removeItem(
-      this.tokenKey
-    );
+    localStorage.removeItem(this.tokenKey);
     this.clearAuthCookie();
     sessionStorage.removeItem(USER_SESSION_DATA!);
   };
-  // Login user
+
+  // Login user — optimized: uses user data from login response, no extra /auth/me call
   login = async (payload: any) => {
     this.isLoading = true;
     try {
@@ -169,8 +182,16 @@ class AuthStore {
         this.setAuthCookie(this.token);
       }
 
-      await this.fetchUser();
-      return response?.data
+      // Use user data from login response directly — no extra /auth/me round-trip needed
+      const userData = response?.data?.data?.user;
+      if (userData) {
+        this.user = userData;
+        this.saveUserToSessionStorage(userData);
+      } else {
+        await this.fetchUser();
+      }
+
+      return response?.data;
     } catch (err: any) {
       this.error = err?.response?.data?.message || "Login failed.";
       throw err;
@@ -179,10 +200,9 @@ class AuthStore {
     }
   };
 
-
   uploadFile = async (sendData: any) => {
     try {
-      const { data } = await axios.post("/file/upload", {...sendData,company : stores.auth.company});
+      const { data } = await axios.post("/file/upload", { ...sendData, company: stores.auth.company });
       return data;
     } catch (err: any) {
       return Promise.reject(err?.response?.data || err);
@@ -199,7 +219,7 @@ class AuthStore {
     }
   }
 
-  // Fetch User Info
+  // Fetch User Info (used as fallback when session cache is empty)
   fetchUser = async () => {
     if (!this.token) return;
 
@@ -216,9 +236,6 @@ class AuthStore {
 
       this.user = response.data?.data;
       this.saveUserToSessionStorage(this.user);
-
-      // If there's a company field
-      // this.company = this.user?.company;
     } catch (err: any) {
       this.error = err?.response?.data?.message || "Failed to fetch user info.";
     }
@@ -234,7 +251,7 @@ class AuthStore {
       const decryptedBytes = CryptoJS.AES.decrypt(storedData, ENCRYPT_SECRET_KEY!);
       const decryptedData = decryptedBytes.toString(CryptoJS.enc.Utf8);
       return decryptedData ? JSON.parse(decryptedData) : false;
-    } catch ({} : any) {
+    } catch ({}: any) {
       return false;
     }
   }
@@ -248,6 +265,7 @@ class AuthStore {
     if (typeof window !== "undefined") {
       localStorage.removeItem(this.tokenKey);
       this.clearAuthCookie();
+      sessionStorage.removeItem(USER_SESSION_DATA!);
     }
   };
 }

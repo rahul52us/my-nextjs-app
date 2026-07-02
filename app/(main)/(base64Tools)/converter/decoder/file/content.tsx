@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, ChangeEvent, useMemo, useEffect } from "react";
 import { saveAs } from "file-saver";
@@ -694,10 +694,10 @@ const Base64ToFileContent = () => {
                 </Button>
 
                 <HStack spacing={4}>
-                    <Button colorScheme="blue" onClick={handleShare} width="full">
+                    <Button colorScheme="brand" onClick={handleShare} width="full">
                         Share File
                     </Button>
-                    <Button colorScheme="blue" onClick={handleTogglePreview} width="full">
+                    <Button colorScheme="brand" onClick={handleTogglePreview} width="full">
                         {showPreview ? "Hide Preview" : "Show Preview"}
                     </Button>
                 </HStack>

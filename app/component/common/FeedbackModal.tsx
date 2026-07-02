@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -153,7 +153,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 bg={inputBg}
                 borderRadius="12px"
                 size="lg"
-                focusBorderColor="blue.400"
+                focusBorderColor="brand.400"
               />
             </FormControl>
 

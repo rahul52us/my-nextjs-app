@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -205,10 +205,10 @@ const FileUploaderAndEditor = () => {
         {/* Copy and Download Buttons */}
         {output && (
           <Flex gap={4}>
-            <Button colorScheme="blue" onClick={copyToClipboard} size="lg">
+            <Button colorScheme="brand" onClick={copyToClipboard} size="lg">
               Copy Output
             </Button>
-            <Button colorScheme="blue" onClick={downloadMinifiedCode} size="lg">
+            <Button colorScheme="brand" onClick={downloadMinifiedCode} size="lg">
               Download Minified Code
             </Button>
           </Flex>

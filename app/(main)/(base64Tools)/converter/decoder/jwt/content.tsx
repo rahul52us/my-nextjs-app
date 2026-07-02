@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -348,7 +348,7 @@ const JwtDecoderContent: React.FC = () => {
         {(headerOutput || payloadOutput || signatureOutput) && (
           <HStack spacing={4} pt={4} flexWrap="wrap">
             <Button
-              colorScheme="blue"
+              colorScheme="brand"
               size="md"
               leftIcon={<Icon as={FaCopy} />}
               onClick={() => handleCopy(`${headerOutput}\n\n${payloadOutput}\n\n${signatureOutput}`, "JWT data")}

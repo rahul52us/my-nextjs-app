@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -32,8 +32,8 @@ const QRCodeReaderComponent: React.FC = () => {
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const dropzoneBg = useColorModeValue("gray.50", "gray.800");
   const dropzoneBorderColor = useColorModeValue("gray.300", "gray.500");
-  const dropzoneHoverBg = useColorModeValue("blue.50", "gray.700");
-  const dropzoneActiveBorderColor = useColorModeValue("blue.400", "blue.300");
+  const dropzoneHoverBg = useColorModeValue("brand.50", "gray.700");
+  const dropzoneActiveBorderColor = useColorModeValue("brand.400", "brand.300");
   const iconColor = useColorModeValue("gray.400", "gray.500");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const subtitleColor = useColorModeValue("gray.500", "gray.400");
@@ -208,7 +208,7 @@ const QRCodeReaderComponent: React.FC = () => {
             <Icon
               as={BiQr}
               boxSize={{ base: 10, md: 12 }}
-              color={isDragging ? "blue.400" : iconColor}
+              color={isDragging ? "brand.400" : iconColor}
               transition="color 0.2s"
             />
             <Box textAlign="center">
@@ -229,7 +229,7 @@ const QRCodeReaderComponent: React.FC = () => {
             <Button
               size="sm"
               variant="outline"
-              colorScheme="blue"
+              colorScheme="brand"
               leftIcon={<BiUpload />}
               pointerEvents="none"
               mt={1}

@@ -162,13 +162,14 @@ const ThemeChangeContainer: React.FC = observer(() => {
   const [selectedColor, setSelectedColor] = useState<string>("Blue");
 
   useEffect(() => {
-  const defaultColor = colors.find(c => c.name === "Blue");
-  if (defaultColor) {
-    theme.colors.brand = defaultColor.palette;
-    setThemeConfig("colors.brand", defaultColor.palette);
-  }
-}, []);
-
+    const currentBrand500 = stores.themeStore.themeConfig?.colors?.brand?.[500];
+    if (currentBrand500) {
+      const matched = colors.find(c => c.code.toLowerCase() === currentBrand500.toLowerCase());
+      if (matched) {
+        setSelectedColor(matched.name);
+      }
+    }
+  }, [stores.themeStore.themeConfig?.colors?.brand?.[500]]);
 
   const handleColorSelect = (color: ColorOption) => {
     theme.colors.brand = color.palette;

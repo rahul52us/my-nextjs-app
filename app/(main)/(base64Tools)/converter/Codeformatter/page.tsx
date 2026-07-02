@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, Button, Flex, Heading, Select, useToast, 
@@ -63,7 +63,7 @@ const StudioFormatter = () => {
   const selectBg = useColorModeValue("gray.50", "gray.700");
   const selectHoverBg = useColorModeValue("gray.100", "gray.600");
   const actionShadow = useColorModeValue("0 10px 15px -3px rgba(37, 99, 235, 0.4)", "0 10px 25px -5px rgba(37, 99, 235, 0.35)");
-  const iconBg = useColorModeValue("blue.600", "blue.500");
+  const iconBg = useColorModeValue("brand.600", "brand.500");
   const iconColor = useColorModeValue("white", "white");
   const sparkleColor = useColorModeValue("#3182ce", "#90cdf4");
   const tableBg = useColorModeValue("gray.50", "gray.800");
@@ -311,12 +311,12 @@ const StudioFormatter = () => {
           <Button leftIcon={<Download size={18} />} onClick={downloadFile} variant="outline" colorScheme="gray" bg={buttonBg} px={8} borderRadius="full" w={{ base: '100%', md: 'auto' }}>
             Download
           </Button>
-          <Button leftIcon={<Copy size={18} />} onClick={copyCode} variant="outline" colorScheme="blue" bg={buttonBg} px={8} borderRadius="full" w={{ base: '100%', md: 'auto' }}>
+          <Button leftIcon={<Copy size={18} />} onClick={copyCode} variant="outline" colorScheme="brand" bg={buttonBg} px={8} borderRadius="full" w={{ base: '100%', md: 'auto' }}>
             Copy
           </Button>
           <Button 
             leftIcon={<Wand2 size={20} />} 
-            colorScheme="blue" 
+            colorScheme="brand" 
             onClick={handleFormat} 
             px={12} 
             size="lg"

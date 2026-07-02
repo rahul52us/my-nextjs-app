@@ -1,4 +1,4 @@
-import { extendTheme, StyleFunctionProps } from "@chakra-ui/react";
+﻿import { extendTheme, StyleFunctionProps } from "@chakra-ui/react";
 import stores from "../store/stores";
 
 const breakpoints = {
@@ -52,10 +52,10 @@ const components = {
       item: {
         bg: "transparent",
         _hover: {
-          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "blue.50",
+          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "brand.50",
         },
         _focus: {
-          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "blue.50",
+          bg: props.colorMode === "dark" ? "whiteAlpha.100" : "brand.50",
         },
       },
     }),

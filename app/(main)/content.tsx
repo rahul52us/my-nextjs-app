@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import NextLink from "next/link";
@@ -145,10 +145,10 @@ export default function HomeContent() {
   const mutedText = useColorModeValue("gray.600", "gray.400");
   const headingColor = useColorModeValue("gray.800", "white");
   const subheadColor = useColorModeValue("gray.700", "gray.100");
-  const imageToolsBg = useColorModeValue("blue.50", "gray.700");
+  const imageToolsBg = useColorModeValue("brand.50", "gray.700");
   const proTipBg = useColorModeValue("gray.50", "gray.900");
-  const proTipBorder = useColorModeValue("blue.300", "blue.500");
-  const proTipHeading = useColorModeValue("blue.600", "blue.300");
+  const proTipBorder = useColorModeValue("brand.300", "brand.500");
+  const proTipHeading = useColorModeValue("brand.600", "brand.300");
   // Footer tokens
   const footerBg = useColorModeValue("gray.100", "gray.900");
   const footerBorder = useColorModeValue("gray.200", "gray.700");
@@ -156,13 +156,13 @@ export default function HomeContent() {
   const footerMuted = useColorModeValue("gray.500", "gray.500");
   const footerHeading = useColorModeValue("gray.900", "white");
   const footerLinkColor = useColorModeValue("gray.600", "gray.400");
-  const footerLinkHover = useColorModeValue("blue.600", "blue.400");
+  const footerLinkHover = useColorModeValue("brand.600", "brand.400");
   const footerDivider = useColorModeValue("gray.300", "gray.700");
   const footerBrandSub = useColorModeValue("gray.800", "white");
   const footerIconColor = useColorModeValue("gray.600", "gray.400");
   const statCardBg = useColorModeValue("white", "gray.750");
-  const featureBadgeBg = useColorModeValue("blue.50", "blue.900");
-  const featureBadgeBorder = useColorModeValue("blue.100", "blue.700");
+  const featureBadgeBg = useColorModeValue("brand.50", "brand.900");
+  const featureBadgeBorder = useColorModeValue("brand.100", "brand.700");
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -192,7 +192,7 @@ export default function HomeContent() {
             left="10%"
             w="300px"
             h="300px"
-            bg="blue.400"
+            bg="brand.400"
             filter="blur(150px)"
             opacity={0.1}
             zIndex={0}
@@ -237,11 +237,11 @@ export default function HomeContent() {
                       position="absolute"
                       w="8px"
                       h="8px"
-                      bg="blue.500"
+                      bg="brand.500"
                       borderRadius="full"
                       animation="pulse 2s infinite"
                     />
-                    <Box w="8px" h="8px" bg="blue.500" borderRadius="full" />
+                    <Box w="8px" h="8px" bg="brand.500" borderRadius="full" />
                   </Box>
                   <Text
                     fontSize="xs"
@@ -257,12 +257,12 @@ export default function HomeContent() {
                     orientation="vertical"
                     h="12px"
                     borderColor={useColorModeValue(
-                      "blue.200",
+                      "brand.200",
                       "whiteAlpha.400",
                     )}
                   />
                   <Badge
-                    colorScheme="blue"
+                    colorScheme="brand"
                     variant="subtle"
                     fontSize="2xs"
                     borderRadius="full"
@@ -311,7 +311,7 @@ export default function HomeContent() {
               >
                 <Button
                   size="lg"
-                  colorScheme="blue"
+                  colorScheme="brand"
                   rightIcon={<FaArrowRight />}
                   onClick={() =>
                     document
@@ -361,7 +361,7 @@ export default function HomeContent() {
                   </Text>
                 </HStack>
                 <HStack spacing={2}>
-                  <Icon as={FaTerminal} color="blue.400" />
+                  <Icon as={FaTerminal} color="brand.400" />
                   <Text fontSize="xs" fontWeight="bold" color={mutedText}>
                     RFC 4648
                   </Text>
@@ -412,7 +412,7 @@ export default function HomeContent() {
                   <HStack spacing={3}>
                     <Box
                       boxSize="40px"
-                      bg="blue.500"
+                      bg="brand.500"
                       borderRadius="lg"
                       display="flex"
                       alignItems="center"
@@ -461,7 +461,7 @@ export default function HomeContent() {
                 ══════════════════════════════════════════════════════════ */}
         {/* <SimpleGrid columns={{ base: 2, md: 4 }} gap={6} mb={20}>
                     {[
-                        { label: "Tools Available", value: "50+",  icon: FaTools,    color: "blue.500"   },
+                        { label: "Tools Available", value: "50+",  icon: FaTools,    color: "brand.500"   },
                         { label: "Happy Users",      value: "10K+", icon: FaUsers,    color: "purple.500" },
                         { label: "Files Processed",  value: "1M+",  icon: FaFileAlt,  color: "green.500"  },
                         { label: "Countries",        value: "120+", icon: FaGlobe,    color: "orange.500" },
@@ -486,7 +486,7 @@ export default function HomeContent() {
           {/* Section Header */}
           <VStack spacing={3} mb={10} textAlign="center">
             <Badge
-              colorScheme="blue"
+              colorScheme="brand"
               px={4}
               py={1}
               borderRadius="full"
@@ -863,7 +863,7 @@ export default function HomeContent() {
                     role="group"
                     transition="all 0.25s ease"
                     _hover={{
-                      borderColor: "blue.300",
+                      borderColor: "brand.300",
                       shadow: "lg",
                     }}
                     h="full"
@@ -890,7 +890,7 @@ export default function HomeContent() {
                         color={mutedText}
                         transition="transform 0.25s, color 0.25s"
                         _groupHover={{
-                          color: "blue.500",
+                          color: "brand.500",
                           transform: "translateX(3px)",
                         }}
                       />
@@ -903,7 +903,7 @@ export default function HomeContent() {
                         fontSize="sm"
                         color={headingColor}
                         mb={1}
-                        _groupHover={{ color: "blue.500" }}
+                        _groupHover={{ color: "brand.500" }}
                         transition="color 0.2s"
                       >
                         {tool.label}
@@ -926,7 +926,7 @@ export default function HomeContent() {
         <Box mb={20}>
           <VStack spacing={4} mb={12} textAlign="center">
             <Badge
-              colorScheme="blue"
+              colorScheme="brand"
               px={4}
               py={1}
               borderRadius="full"
@@ -949,8 +949,8 @@ export default function HomeContent() {
             {[
               {
                 icon: FaCode,
-                color: "blue.500",
-                bg: useColorModeValue("blue.50", "blue.900"),
+                color: "brand.500",
+                bg: useColorModeValue("brand.50", "brand.900"),
                 title: "Encoding & Decoding",
                 desc: "Base64 encode/decode, Binary conversions, JWT decoding, ASCII transformations — all the encoding tools you need in one place.",
               },
@@ -1105,12 +1105,12 @@ export default function HomeContent() {
                         borderColor={borderColor}
                         role="group"
                         bg={cardBg}
-                        _hover={{ bg: imageToolsBg, borderColor: "blue.300" }}
+                        _hover={{ bg: imageToolsBg, borderColor: "brand.300" }}
                       >
                         <Icon
                           as={item.icon}
-                          color="blue.500"
-                          _groupHover={{ color: "blue.400" }}
+                          color="brand.500"
+                          _groupHover={{ color: "brand.400" }}
                         />
                         <Text
                           fontWeight="bold"
@@ -1139,7 +1139,7 @@ export default function HomeContent() {
             left="-5%"
             w="400px"
             h="400px"
-            bg="blue.400"
+            bg="brand.400"
             filter="blur(120px)"
             opacity={0.15}
             zIndex={-1}
@@ -1155,9 +1155,9 @@ export default function HomeContent() {
             <Flex align="flex-end" justify="space-between" mb={12}>
               <VStack align="start" spacing={2}>
                 <HStack spacing={3}>
-                  <Box boxSize="8px" bg="blue.500" borderRadius="full" />
+                  <Box boxSize="8px" bg="brand.500" borderRadius="full" />
                   <Text
-                    color="blue.500"
+                    color="brand.500"
                     fontWeight="bold"
                     fontSize="xs"
                     textTransform="uppercase"
@@ -1174,7 +1174,7 @@ export default function HomeContent() {
                   letterSpacing="tight"
                 >
                   Developer{" "}
-                  <Text as="span" color="blue.500" position="relative">
+                  <Text as="span" color="brand.500" position="relative">
                     Ecosystem
                     <Box
                       as="span"
@@ -1183,7 +1183,7 @@ export default function HomeContent() {
                       left="0"
                       w="full"
                       h="12px"
-                      bg={useColorModeValue("blue.100", "blue.900")}
+                      bg={useColorModeValue("brand.100", "brand.900")}
                       zIndex={-1}
                       opacity={0.6}
                     />
@@ -1206,7 +1206,7 @@ export default function HomeContent() {
                   aria-label="right"
                   icon={<FaArrowRight />}
                   variant="solid"
-                  colorScheme="blue"
+                  colorScheme="brand"
                   borderRadius="full"
                   onClick={() => scroll("right")}
                   _hover={{ transform: "translateX(4px)", shadow: "lg" }}
@@ -1287,7 +1287,7 @@ export default function HomeContent() {
                       rightIcon={<FaArrowRight />}
                       variant="solid"
                       bg="white"
-                      color="blue.600"
+                      color="brand.600"
                       _hover={{ bg: "gray.100", transform: "scale(1.05)" }}
                       size="lg"
                       borderRadius="2xl"
@@ -1347,7 +1347,7 @@ export default function HomeContent() {
                         shadow="sm"
                         _hover={{
                           shadow: "3xl",
-                          borderColor: "blue.400",
+                          borderColor: "brand.400",
                           bg: cardBg,
                         }}
                         role="group"
@@ -1355,12 +1355,12 @@ export default function HomeContent() {
                         <Flex justify="space-between" align="center" mb={8}>
                           <Box
                             p={4}
-                            bg={useColorModeValue("blue.50", "gray.700")}
-                            color="blue.500"
+                            bg={useColorModeValue("brand.50", "gray.700")}
+                            color="brand.500"
                             borderRadius="2xl"
                             transition="all 0.3s"
                             _groupHover={{
-                              bg: "blue.500",
+                              bg: "brand.500",
                               color: "white",
                               transform: "rotate(-5deg)",
                             }}
@@ -1368,7 +1368,7 @@ export default function HomeContent() {
                             <Box fontSize="2xl">{cat.icon}</Box>
                           </Box>
                           <Badge
-                            colorScheme="blue"
+                            colorScheme="brand"
                             variant="subtle"
                             px={3}
                             py={1}
@@ -1382,7 +1382,7 @@ export default function HomeContent() {
                           size="md"
                           mb={3}
                           color={headingColor}
-                          _groupHover={{ color: "blue.500" }}
+                          _groupHover={{ color: "brand.500" }}
                         >
                           {cat.name}
                         </Heading>
@@ -1399,8 +1399,8 @@ export default function HomeContent() {
                                 <Icon
                                   as={FaArrowRight}
                                   boxSize={3}
-                                  color="blue.200"
-                                  _groupHover={{ color: "blue.500" }}
+                                  color="brand.200"
+                                  _groupHover={{ color: "brand.500" }}
                                 />
                                 <Text
                                   fontSize="sm"
@@ -1417,7 +1417,7 @@ export default function HomeContent() {
                         <Divider my={4} borderColor={borderColor} />
                         <HStack
                           justify="space-between"
-                          color="blue.500"
+                          color="brand.500"
                           fontWeight="bold"
                           fontSize="xs"
                           letterSpacing="widest"
@@ -1451,7 +1451,7 @@ export default function HomeContent() {
           {[
             {
               icon: FaShieldAlt,
-              color: "blue.500",
+              color: "brand.500",
               title: "100% Private",
               desc: "Your data never leaves your device. All processing is performed locally using your browser's V8 engine, ensuring sensitive data remains secure.",
             },
@@ -1710,7 +1710,7 @@ export default function HomeContent() {
             {/* Brand */}
             <VStack align="start" spacing={4}>
               <Heading size="md" color={footerHeading}>
-                <Text as="span" color="blue.500">
+                <Text as="span" color="brand.500">
                   Tools
                 </Text>
                 <Text as="span" color={footerBrandSub}>
@@ -1731,7 +1731,7 @@ export default function HomeContent() {
                   as={FaTwitter}
                   boxSize={5}
                   cursor="pointer"
-                  _hover={{ color: "blue.400" }}
+                  _hover={{ color: "brand.400" }}
                 />
                 <Icon
                   as={FaGithub}
@@ -1743,7 +1743,7 @@ export default function HomeContent() {
                   as={FaLinkedin}
                   boxSize={5}
                   cursor="pointer"
-                  _hover={{ color: "blue.500" }}
+                  _hover={{ color: "brand.500" }}
                 />
               </HStack>
             </VStack>

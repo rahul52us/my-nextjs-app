@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -181,7 +181,7 @@ const TextCaseConverterContent: React.FC = () => {
 
         <HStack spacing={4} flexWrap="wrap">
           <Button
-            colorScheme="blue"
+            colorScheme="brand"
             leftIcon={<Icon as={FaCopy} />}
             onClick={() => handleCopy(outputText || inputText, "Text")}
             isDisabled={!outputText && !inputText}

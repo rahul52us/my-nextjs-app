@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useRef } from 'react';
 import {
   Box, Container, Flex, Heading, HStack, Icon, Stack, Text, useToast,
@@ -158,7 +158,7 @@ const FileComparer = () => {
             </VStack>
           </HStack>
           <HStack spacing={4}>
-            <Badge variant="subtle" colorScheme="blue" borderRadius="md" px={2}>Pro Edition</Badge>
+            <Badge variant="subtle" colorScheme="brand" borderRadius="md" px={2}>Pro Edition</Badge>
             <IconButton
               size="sm"
               variant="ghost"
@@ -252,7 +252,7 @@ const FileComparer = () => {
                       </FormLabel>
                       <Switch
                         id="overlay-mode"
-                        colorScheme="blue"
+                        colorScheme="brand"
                         isChecked={showOverlay}
                         onChange={(e) => setShowOverlay(e.target.checked)}
                       />

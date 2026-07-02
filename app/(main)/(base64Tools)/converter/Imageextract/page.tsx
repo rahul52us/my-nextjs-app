@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useCallback } from 'react';
 import {
   Box, VStack, Heading, Text, SimpleGrid, Image, useToast,
@@ -39,14 +39,14 @@ const SkyBlueExtractor: React.FC = () => {
   const toast = useToast();
 
   // Sky Blue Theme Palette
-  const bgColor = useColorModeValue("blue.50", "gray.900");
+  const bgColor = useColorModeValue("brand.50", "gray.900");
   const cardColor = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("blue.100", "gray.700");
-  const textColor = useColorModeValue("blue.800", "blue.200");
-  const accentColor = useColorModeValue("blue.500", "blue.300");
-  const secondaryTextColor = useColorModeValue("blue.600", "blue.400");
-  const lightBgColor = useColorModeValue("blue.50", "gray.800");
-  const hoverBorderColor = useColorModeValue("blue.400", "blue.500");
+  const borderColor = useColorModeValue("brand.100", "gray.700");
+  const textColor = useColorModeValue("brand.800", "brand.200");
+  const accentColor = useColorModeValue("brand.500", "brand.300");
+  const secondaryTextColor = useColorModeValue("brand.600", "brand.400");
+  const lightBgColor = useColorModeValue("brand.50", "gray.800");
+  const hoverBorderColor = useColorModeValue("brand.400", "brand.500");
   const badgeBgColor = useColorModeValue("gray.50", "gray.700");
 
   const processWord = async (file: File) => {
@@ -212,7 +212,7 @@ const SkyBlueExtractor: React.FC = () => {
           {/* Hero Section */}
           <Flex direction="column" align="center" textAlign="center">
             <ChakraHStack spacing={2} mb={4}>
-              <Badge colorScheme="blue" variant="solid" px={3} py={1} borderRadius="full">PDF</Badge>
+              <Badge colorScheme="brand" variant="solid" px={3} py={1} borderRadius="full">PDF</Badge>
               <Badge colorScheme="cyan" variant="solid" px={3} py={1} borderRadius="full">DOCX</Badge>
             </ChakraHStack>
             <Heading size="2xl" color={textColor} fontWeight="900" mb={3} letterSpacing="tight">
@@ -230,16 +230,16 @@ const SkyBlueExtractor: React.FC = () => {
             p={16}
             borderRadius="3xl"
             border="2px dashed"
-            borderColor={isDragActive ? "blue.400" : "blue.200"}
+            borderColor={isDragActive ? "brand.400" : "brand.200"}
             boxShadow="2xl"
             cursor="pointer"
             transition="0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-            _hover={{ transform: "translateY(-4px)", boxShadow: "3xl", borderColor: "blue.400" }}
+            _hover={{ transform: "translateY(-4px)", boxShadow: "3xl", borderColor: "brand.400" }}
           >
             <input {...getInputProps()} />
             <VStack spacing={6}>
-              <Box p={5} bg={lightBgColor} borderRadius="full" border="1px solid" borderColor="blue.100">
-                <Icon as={FileUp} w={10} h={10} color="blue.500" />
+              <Box p={5} bg={lightBgColor} borderRadius="full" border="1px solid" borderColor="brand.100">
+                <Icon as={FileUp} w={10} h={10} color="brand.500" />
               </Box>
               <VStack spacing={1}>
                 <Text fontSize="xl" fontWeight="bold" color={textColor}>
@@ -259,7 +259,7 @@ const SkyBlueExtractor: React.FC = () => {
 
           {isProcessing && (
             <Center py={10} flexDirection="column">
-              <Spinner size="xl" thickness="4px" speed="0.8s" color="blue.500" mb={4} />
+              <Spinner size="xl" thickness="4px" speed="0.8s" color="brand.500" mb={4} />
               <Text fontWeight="bold" color={textColor}>Analyzing Document Layers...</Text>
               <Text fontSize="sm" color={secondaryTextColor}>Isolating bitmap assets</Text>
             </Center>
@@ -271,18 +271,18 @@ const SkyBlueExtractor: React.FC = () => {
               <VStack align="stretch" spacing={6}>
                 <Flex justify="space-between" align="center" bg="white" p={5} borderRadius="2xl" shadow="lg">
                   <ChakraHStack spacing={3}>
-                    <Icon as={Layers} color="blue.500" />
-                    <Text fontWeight="800" color="blue.800" fontSize="lg">
+                    <Icon as={Layers} color="brand.500" />
+                    <Text fontWeight="800" color="brand.800" fontSize="lg">
                       {images.length} Assets Recovered
                     </Text>
                   </ChakraHStack>
                   <Button
                     leftIcon={<Download size={18}/>}
-                    colorScheme="blue"
+                    colorScheme="brand"
                     borderRadius="full"
                     px={8}
                     onClick={downloadAll}
-                    shadow="blue.200"
+                    shadow="brand.200"
                   >
                     Download ZIP
                   </Button>
@@ -302,13 +302,13 @@ const SkyBlueExtractor: React.FC = () => {
                     >
                       <Box h="200px" bg="gray.50" p={3} position="relative">
                         <Image src={img.url} alt="asset" h="100%" w="100%" objectFit="contain" />
-                        <Badge position="absolute" top={3} right={3} colorScheme={img.format === 'PDF' ? 'blue' : 'cyan'} variant="solid">
+                        <Badge position="absolute" top={3} right={3} colorScheme={img.format === 'PDF' ? 'brand' : 'cyan'} variant="solid">
                           {img.format}
                         </Badge>
                       </Box>
                       <Box p={4}>
-                        <Text fontSize="sm" fontWeight="bold" noOfLines={1} color="blue.900" mb={1}>{img.name}</Text>
-                        <Text fontSize="xs" fontWeight="medium" color="blue.300">{img.dimensions}</Text>
+                        <Text fontSize="sm" fontWeight="bold" noOfLines={1} color="brand.900" mb={1}>{img.name}</Text>
+                        <Text fontSize="xs" fontWeight="medium" color="brand.300">{img.dimensions}</Text>
                       </Box>
                     </Box>
                   ))}
@@ -323,11 +323,11 @@ const SkyBlueExtractor: React.FC = () => {
 };
 
 const FeatureItem = ({ icon, title, desc }: any) => (
-  <Flex align="center" gap={4} p={5} bg="white" borderRadius="2xl" border="1px solid" borderColor="blue.50" shadow="sm">
-    <Icon as={icon} w={6} h={6} color="blue.500" />
+  <Flex align="center" gap={4} p={5} bg="white" borderRadius="2xl" border="1px solid" borderColor="brand.50" shadow="sm">
+    <Icon as={icon} w={6} h={6} color="brand.500" />
     <Box>
-      <Text fontWeight="bold" fontSize="sm" color="blue.900">{title}</Text>
-      <Text fontSize="xs" color="blue.400">{desc}</Text>
+      <Text fontWeight="bold" fontSize="sm" color="brand.900">{title}</Text>
+      <Text fontSize="xs" color="brand.400">{desc}</Text>
     </Box>
   </Flex>
 );

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -205,7 +205,7 @@ const UrlToBase64Content = () => {
                 </FormControl>
 
                 <Button
-                    colorScheme="blue"
+                    colorScheme="brand"
                     onClick={handleUrlToBase64}
                     isDisabled={!url || loading} // Disable button during loading
                 >
@@ -231,7 +231,7 @@ const UrlToBase64Content = () => {
 
                 <HStack spacing={4}>
                     <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         leftIcon={<FaClipboard />}
                         onClick={handleCopyToClipboard}
                         isDisabled={!base64}

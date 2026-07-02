@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -120,13 +120,13 @@ const DashPageHeader = observer(
                     Select View
                   </PopoverHeader>
                   <PopoverBody>
-                    <Flex alignItems="center" cursor="pointer" onClick={() => btnAction("table")} p={3} borderRadius="md" bg={isSelected("table") ? "blue.100" : "transparent"} _hover={{ bg: "blue.50" }}>
-                      <Icon as={AiOutlineTable} color="blue.400" mr={2} />
+                    <Flex alignItems="center" cursor="pointer" onClick={() => btnAction("table")} p={3} borderRadius="md" bg={isSelected("table") ? "brand.100" : "transparent"} _hover={{ bg: "brand.50" }}>
+                      <Icon as={AiOutlineTable} color="brand.400" mr={2} />
                       <Text fontSize="sm">Table Mode</Text>
                     </Flex>
                     <Divider my={2} />
-                    <Flex alignItems="center" cursor="pointer" onClick={() => btnAction("grid")} p={3} borderRadius="md" bg={isSelected("grid") ? "blue.100" : "transparent"} _hover={{ bg: "blue.50" }}>
-                      <Icon as={AiOutlineAppstore} color="blue.400" mr={2} />
+                    <Flex alignItems="center" cursor="pointer" onClick={() => btnAction("grid")} p={3} borderRadius="md" bg={isSelected("grid") ? "brand.100" : "transparent"} _hover={{ bg: "brand.50" }}>
+                      <Icon as={AiOutlineAppstore} color="brand.400" mr={2} />
                       <Text fontSize="sm">Grid Mode</Text>
                     </Flex>
                   </PopoverBody>

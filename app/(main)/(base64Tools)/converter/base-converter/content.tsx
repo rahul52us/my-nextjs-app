@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import {
   Select,
@@ -43,7 +43,7 @@ export default function BaseConverterContent() {
   const inputBg = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const borderColor = useColorModeValue("gray.300", "gray.600");
-  const resultBg = useColorModeValue("blue.50", "blue.900");
+  const resultBg = useColorModeValue("brand.50", "brand.900");
 
   const handleConversion = () => {
     if (value.trim() === "") {

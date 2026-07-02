@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   return (
     <Flex
       direction="column"
-      bg="blue.900"
+      bg="brand.900"
       color="white"
       h="100vh"
       boxShadow="0 4px 12px rgba(0, 0, 0, 0.2)"

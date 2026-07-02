@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -82,7 +82,7 @@ const HeaderLogo = observer(() => {
   const menuTextColor = useColorModeValue("gray.800", "white");
   const hoverBg = "whiteAlpha.200";
   const menuBg = useColorModeValue("white", "#0f0f0f");
-  const mobileLinkHover = useColorModeValue("blue.50", "whiteAlpha.100");
+  const mobileLinkHover = useColorModeValue("brand.50", "whiteAlpha.100");
   const borderColor = useColorModeValue("gray.100", "whiteAlpha.50");
   const menuBorderColor = useColorModeValue("#e2e8f0", "transparent");
   const shadowColor = useColorModeValue(

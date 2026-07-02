@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -84,12 +84,12 @@ const CurrencyConverterContent: React.FC = () => {
   const labelColor    = useColorModeValue("gray.500",  "gray.400");
   const headingColor  = useColorModeValue("gray.900",  "gray.50");
   const subTextColor  = useColorModeValue("gray.500",  "gray.400");
-  const resultBg      = useColorModeValue("blue.50",   "blue.900");
-  const resultBorder  = useColorModeValue("blue.100",  "blue.700");
-  const resultText    = useColorModeValue("blue.700",  "blue.200");
+  const resultBg      = useColorModeValue("brand.50",   "brand.900");
+  const resultBorder  = useColorModeValue("brand.100",  "brand.700");
+  const resultText    = useColorModeValue("brand.700",  "brand.200");
   const rateCardBg    = useColorModeValue("gray.50",   "gray.800");
   const rateCardBorder = useColorModeValue("gray.100", "gray.700");
-  const swapBg        = useColorModeValue("blue.500",  "blue.600");
+  const swapBg        = useColorModeValue("brand.500",  "brand.600");
   const stepBg        = useColorModeValue("gray.50",   "gray.800");
   const stepBorder    = useColorModeValue("gray.100",  "gray.700");
 
@@ -166,7 +166,7 @@ const CurrencyConverterContent: React.FC = () => {
           {/* ── Header ── */}
           <VStack spacing={2} textAlign="center">
             <Badge
-              colorScheme="blue" variant="subtle"
+              colorScheme="brand" variant="subtle"
               px={3} py={1} borderRadius="full"
               textTransform="uppercase" letterSpacing="widest" fontSize="10px"
             >
@@ -178,7 +178,7 @@ const CurrencyConverterContent: React.FC = () => {
               color={headingColor}
             >
               Currency{" "}
-              <Text as="span" color="blue.500">Converter</Text>
+              <Text as="span" color="brand.500">Converter</Text>
             </Heading>
             <Text color={subTextColor} fontSize="sm">
               Real-time rates • {lastUpdated
@@ -200,7 +200,7 @@ const CurrencyConverterContent: React.FC = () => {
               justify="space-between" align="center"
             >
               <HStack spacing={2}>
-                <Icon as={FiDollarSign} color="blue.500" />
+                <Icon as={FiDollarSign} color="brand.500" />
                 <Text fontWeight="800" fontSize="xs" textTransform="uppercase"
                   letterSpacing="widest" color={labelColor}>
                   Converter
@@ -244,7 +244,7 @@ const CurrencyConverterContent: React.FC = () => {
                       onChange={e => setFromCurrency(e.target.value)}
                       bg={inputBg} border="1px solid" borderColor={borderColor}
                       borderRadius="xl" size="lg" fontWeight="600"
-                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
+                      _focus={{ borderColor: "brand.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
                     >
                       {CURRENCIES.map(c => (
                         <option key={c.code} value={c.code}>
@@ -262,7 +262,7 @@ const CurrencyConverterContent: React.FC = () => {
                       bg={inputBg} border="1px solid" borderColor={borderColor}
                       borderRadius="xl" size="lg"
                       fontSize="2xl" fontWeight="700"
-                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
+                      _focus={{ borderColor: "brand.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
                     />
                     <Text fontSize="xs" color={labelColor} pl={1}>
                       {fromInfo?.flag} {fromInfo?.name}
@@ -278,7 +278,7 @@ const CurrencyConverterContent: React.FC = () => {
                     onClick={handleSwap}
                     bg={swapBg} color="white"
                     borderRadius="full" size="lg"
-                    _hover={{ transform: "rotate(180deg)", bg: "blue.600" }}
+                    _hover={{ transform: "rotate(180deg)", bg: "brand.600" }}
                     transition="all 0.3s ease"
                     shadow="lg"
                   />
@@ -296,7 +296,7 @@ const CurrencyConverterContent: React.FC = () => {
                       onChange={e => setToCurrency(e.target.value)}
                       bg={inputBg} border="1px solid" borderColor={borderColor}
                       borderRadius="xl" size="lg" fontWeight="600"
-                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
+                      _focus={{ borderColor: "brand.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
                     >
                       {CURRENCIES.map(c => (
                         <option key={c.code} value={c.code}>
@@ -311,7 +311,7 @@ const CurrencyConverterContent: React.FC = () => {
                       display="flex" alignItems="center"
                     >
                       {loading ? (
-                        <Spinner size="sm" color="blue.500" />
+                        <Spinner size="sm" color="brand.500" />
                       ) : (
                         <Text fontSize="2xl" fontWeight="800" color={resultText}>
                           {formatNumber(convertedAmount, 4)}
@@ -365,13 +365,13 @@ const CurrencyConverterContent: React.FC = () => {
                       key={qa}
                       as="button"
                       px={4} py={2}
-                      bg={amount === String(qa) ? "blue.500" : inputBg}
+                      bg={amount === String(qa) ? "brand.500" : inputBg}
                       color={amount === String(qa) ? "white" : subTextColor}
                       border="1px solid"
-                      borderColor={amount === String(qa) ? "blue.500" : borderColor}
+                      borderColor={amount === String(qa) ? "brand.500" : borderColor}
                       borderRadius="full" fontSize="sm" fontWeight="700"
                       cursor="pointer" transition="all 0.15s"
-                      _hover={{ borderColor: "blue.400", color: "blue.400" }}
+                      _hover={{ borderColor: "brand.400", color: "brand.400" }}
                       onClick={() => setAmount(String(qa))}
                     >
                       {qa.toLocaleString()}
@@ -391,7 +391,7 @@ const CurrencyConverterContent: React.FC = () => {
               transition="background 0.2s"
             >
               <Box px={6} py={4} borderBottom="1px solid" borderColor={borderColor}>
-                <Text fontWeight="800" fontSize="xs" color="blue.500"
+                <Text fontWeight="800" fontSize="xs" color="brand.500"
                   textTransform="uppercase" letterSpacing="widest">
                   Calculation Steps
                 </Text>
@@ -423,7 +423,7 @@ const CurrencyConverterContent: React.FC = () => {
                       <HStack spacing={4}>
                         <Box
                           w="32px" h="32px" borderRadius="full"
-                          bg={item.highlight ? "blue.500" : inputBg}
+                          bg={item.highlight ? "brand.500" : inputBg}
                           display="flex" alignItems="center" justifyContent="center"
                           fontWeight="900" fontSize="sm"
                           color={item.highlight ? "white" : labelColor}
@@ -438,7 +438,7 @@ const CurrencyConverterContent: React.FC = () => {
                       <Text
                         fontWeight={item.highlight ? "800" : "600"}
                         fontSize={item.highlight ? "lg" : "sm"}
-                        color={item.highlight ? "blue.500" : headingColor}
+                        color={item.highlight ? "brand.500" : headingColor}
                       >
                         {item.value}
                       </Text>
@@ -459,7 +459,7 @@ const CurrencyConverterContent: React.FC = () => {
               transition="background 0.2s"
             >
               <Box px={6} py={4} borderBottom="1px solid" borderColor={borderColor}>
-                <Text fontWeight="800" fontSize="xs" color="blue.500"
+                <Text fontWeight="800" fontSize="xs" color="brand.500"
                   textTransform="uppercase" letterSpacing="widest">
                   Popular Pairs
                 </Text>
@@ -529,7 +529,7 @@ const CurrencyConverterContent: React.FC = () => {
             >
               <Box px={6} py={4} borderBottom="1px solid" borderColor={borderColor}>
                 <Flex justify="space-between" align="center">
-                  <Text fontWeight="800" fontSize="xs" color="blue.500"
+                  <Text fontWeight="800" fontSize="xs" color="brand.500"
                     textTransform="uppercase" letterSpacing="widest">
                     All Rates vs {fromCurrency}
                   </Text>

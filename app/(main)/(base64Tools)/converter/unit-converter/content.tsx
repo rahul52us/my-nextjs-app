@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import {
     Select,
@@ -36,17 +36,17 @@ export default function UnitConverterContent() {
     const selectBg = useColorModeValue("white", "gray.700");
     const selectColor = useColorModeValue("gray.800", "gray.100");
     const selectBorderColor = useColorModeValue("gray.300", "gray.500");
-    const selectHoverBorderColor = useColorModeValue("blue.400", "blue.300");
-    const selectFocusBorderColor = useColorModeValue("blue.500", "blue.300");
+    const selectHoverBorderColor = useColorModeValue("brand.400", "brand.300");
+    const selectFocusBorderColor = useColorModeValue("brand.500", "brand.300");
 
     const inputBg = useColorModeValue("white", "gray.700");
     const inputColor = useColorModeValue("gray.800", "gray.100");
     const inputBorderColor = useColorModeValue("gray.300", "gray.500");
     const placeholderColor = useColorModeValue("gray.400", "gray.400");
 
-    const resultBg = useColorModeValue("blue.50", "blue.900");
-    const resultBorderColor = useColorModeValue("blue.200", "blue.600");
-    const resultTextColor = useColorModeValue("blue.800", "blue.100");
+    const resultBg = useColorModeValue("brand.50", "brand.900");
+    const resultBorderColor = useColorModeValue("brand.200", "brand.600");
+    const resultTextColor = useColorModeValue("brand.800", "brand.100");
 
     const labelColor = useColorModeValue("gray.700", "gray.200");
 
@@ -91,7 +91,7 @@ export default function UnitConverterContent() {
             >
                 Unit Converter
             </Heading>
-            <Divider borderColor={useColorModeValue("blue.300", "blue.500")} mb={6} />
+            <Divider borderColor={useColorModeValue("brand.300", "brand.500")} mb={6} />
 
             {/* Dropdowns Grid */}
             <Grid templateColumns={responsiveGridColumns} gap={4} mb={4}>

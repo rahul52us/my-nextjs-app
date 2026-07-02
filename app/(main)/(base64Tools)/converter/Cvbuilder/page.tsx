@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
 import {
   Box, Button, Flex, FormControl, FormLabel, Heading, Input, Stack, Textarea, VStack,
@@ -86,7 +86,7 @@ interface SectionConfig {
 
 const SECTION_CONFIG: Record<SectionId, SectionConfig> = {
   summary:      { label: 'Summary',       colorScheme: 'purple', icon: User          },
-  experience:   { label: 'Experience',    colorScheme: 'blue',   icon: Briefcase     },
+  experience:   { label: 'Experience',    colorScheme: 'brand',   icon: Briefcase     },
   skills:       { label: 'Skills',        colorScheme: 'teal',   icon: Zap           },
   languages:    { label: 'Languages',     colorScheme: 'cyan',   icon: Languages     },
   education:    { label: 'Education',     colorScheme: 'green',  icon: GraduationCap },
@@ -247,7 +247,7 @@ const ExecutiveTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }> =
               <Text fontSize="xs" fontWeight="bold">{s.name}</Text>
               <Text fontSize="xs" color="gray.500">{s.level}%</Text>
             </Flex>
-            <Progress value={s.level} size="xs" colorScheme="blue" borderRadius="full" />
+            <Progress value={s.level} size="xs" colorScheme="brand" borderRadius="full" />
           </Box>
         ))}
       </Box>
@@ -425,18 +425,18 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
   const mainSections: Partial<Record<SectionId, React.ReactNode>> = {
     summary: (
       <Box>
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Profile</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Profile</Heading>
         <Text fontSize="sm" color="gray.600" lineHeight="1.8">{data.summary}</Text>
       </Box>
     ),
     experience: (
       <Box>
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Experience</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Experience</Heading>
         {data.experiences.map((exp, i) => (
           <Box key={i} mb={8}>
             <Flex justify="space-between" mb={1}>
               <Text fontWeight="bold" color="gray.800">{exp.role}</Text>
-              <Text fontSize="xs" fontWeight="bold" color="blue.600">
+              <Text fontSize="xs" fontWeight="bold" color="brand.600">
                 {exp.start} - {exp.isPresent ? 'Present' : exp.end}
               </Text>
             </Flex>
@@ -448,13 +448,13 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
     ),
     education: (
       <Box>
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Education</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Education</Heading>
         <SimpleGrid columns={2} spacing={6}>
           {data.educations.map((edu, i) => (
             <Box key={i} p={4} bg="gray.50" borderRadius="md">
               <Text fontSize="sm" fontWeight="bold">{edu.degree}</Text>
               <Text fontSize="xs" color="gray.500">{edu.school}</Text>
-              <Text fontSize="xs" color="blue.600" fontWeight="bold">{edu.year}</Text>
+              <Text fontSize="xs" color="brand.600" fontWeight="bold">{edu.year}</Text>
             </Box>
           ))}
         </SimpleGrid>
@@ -462,7 +462,7 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
     ),
     achievements: (
       <Box>
-        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="blue.500" pl={4}>Achievements</Heading>
+        <Heading size="md" mb={6} color="gray.800" borderLeft="4px solid" borderColor="brand.500" pl={4}>Achievements</Heading>
         {data.achievements.map((a, i) => (
           <Box key={i} mb={3} p={3} bg="gray.50" borderRadius="md">
             <Text fontWeight="bold" fontSize="sm">{a.title}</Text>
@@ -478,16 +478,16 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
       <Box w="32%" bg="gray.900" color="white" p="12mm" pt="20mm">
         <VStack align="center" spacing={8}>
           {data.profileImg && (
-            <Image src={data.profileImg} boxSize="160px" borderRadius="full" border="4px solid" borderColor="blue.500" p={1} />
+            <Image src={data.profileImg} boxSize="160px" borderRadius="full" border="4px solid" borderColor="brand.500" p={1} />
           )}
           <VStack spacing={2} textAlign="center">
             <Heading size="md" letterSpacing="1px">{data.fullName}</Heading>
-            <Badge colorScheme="blue" variant="solid" fontSize="10px" px={3}>{data.role}</Badge>
+            <Badge colorScheme="brand" variant="solid" fontSize="10px" px={3}>{data.role}</Badge>
           </VStack>
 
           <VStack align="stretch" w="full" spacing={6} pt={6}>
             <Box>
-              <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={3} letterSpacing="2px">CONTACT</Text>
+              <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={3} letterSpacing="2px">CONTACT</Text>
               <VStack align="stretch" spacing={3} fontSize="xs">
                 <HStack><Mail size={12} /><Text overflow="hidden" noOfLines={1}>{data.email}</Text></HStack>
                 <HStack><Phone size={12} /><Text>{data.phone}</Text></HStack>
@@ -497,14 +497,14 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
 
             {sectionOrder.includes('skills') && (
               <Box>
-                <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={4} letterSpacing="2px">TECH STACK</Text>
+                <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={4} letterSpacing="2px">TECH STACK</Text>
                 {data.skills.map((s, i) => (
                   <Box key={i} mb={4}>
                     <Flex justify="space-between" mb={1} fontSize="10px">
                       <Text>{s.name}</Text>
                       <Text opacity={0.6}>{s.level}%</Text>
                     </Flex>
-                    <Progress value={s.level} size="xs" colorScheme="blue" bg="gray.700" borderRadius="full" />
+                    <Progress value={s.level} size="xs" colorScheme="brand" bg="gray.700" borderRadius="full" />
                   </Box>
                 ))}
               </Box>
@@ -512,11 +512,11 @@ const TechSidebarTemplate: React.FC<{ data: CVData; sectionOrder: SectionId[] }>
 
             {sectionOrder.includes('languages') && (
               <Box>
-                <Text fontSize="10px" color="blue.400" fontWeight="bold" mb={3} letterSpacing="2px">LANGUAGES</Text>
+                <Text fontSize="10px" color="brand.400" fontWeight="bold" mb={3} letterSpacing="2px">LANGUAGES</Text>
                 {data.languages.map((l, i) => (
                   <HStack key={i} justify="space-between" mb={2} fontSize="xs">
                     <Text>{l.name}</Text>
-                    <Badge colorScheme="blue" variant="outline" fontSize="9px">{l.level}</Badge>
+                    <Badge colorScheme="brand" variant="outline" fontSize="9px">{l.level}</Badge>
                   </HStack>
                 ))}
               </Box>
@@ -703,7 +703,7 @@ const CVBuilder: React.FC = () => {
         <VStack align="stretch" spacing={6}>
 
           {/* Header */}
-          <Box borderLeft="4px solid" borderColor="blue.500" pl={4}>
+          <Box borderLeft="4px solid" borderColor="brand.500" pl={4}>
             <Heading size="md" color={TEXT_PRIMARY} letterSpacing="tight">CV ENGINE PRO</Heading>
             <Text fontSize="xs" color={TEXT_MUTED} fontWeight="bold">v3.0 — WITH DRAG &amp; DROP SECTIONS</Text>
           </Box>
@@ -821,9 +821,9 @@ const CVBuilder: React.FC = () => {
             <AccordionItem border="none" mb={4}>
               <AccordionButton bg="#EBF8FF" _hover={{ bg: '#BEE3F8' }} borderRadius="md">
                 <HStack flex="1">
-                  <Icon as={Layout} color="blue.500" />
+                  <Icon as={Layout} color="brand.500" />
                   <Text fontWeight="bold" fontSize="sm" color="#2C5282">Section Order</Text>
-                  <Badge colorScheme="blue" fontSize="9px">DRAG TO REORDER</Badge>
+                  <Badge colorScheme="brand" fontSize="9px">DRAG TO REORDER</Badge>
                 </HStack>
                 <AccordionIcon color="#2C5282" />
               </AccordionButton>
@@ -854,7 +854,7 @@ const CVBuilder: React.FC = () => {
                   <Text fontWeight="bold" fontSize="sm" color={TEXT_PRIMARY}>Experience</Text>
                 </HStack>
                 <IconButton
-                  aria-label="Add experience" icon={<Plus size={14} />} size="xs" colorScheme="blue"
+                  aria-label="Add experience" icon={<Plus size={14} />} size="xs" colorScheme="brand"
                   onClick={(e) => {
                     e.stopPropagation();
                     addItem('experiences', { company: '', role: '', start: '', end: '', desc: '', isPresent: false });

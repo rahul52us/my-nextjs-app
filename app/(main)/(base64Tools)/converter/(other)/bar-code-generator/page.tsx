@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -149,7 +149,7 @@ const BarcodeGenerator: React.FC = () => {
       <HStack spacing={4} mt={5} justify="center">
         <Button
           leftIcon={<FaDownload />}
-          colorScheme="blue"
+          colorScheme="brand"
           onClick={handleDownload}
           isDisabled={!input || isLoading}
           isLoading={isLoading}

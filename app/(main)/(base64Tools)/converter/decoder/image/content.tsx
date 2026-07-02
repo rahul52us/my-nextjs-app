@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, ChangeEvent } from "react";
 import { saveAs } from "file-saver";
@@ -256,20 +256,20 @@ const Base64ImageContent = () => {
                         Convert & Download
                     </Button>
                     <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         width="full"
                         isDisabled={base64?.trim() ? false : true}
                         onClick={handleShare}
-                        _hover={{ bg: "blue.600" }}
+                        _hover={{ bg: "brand.600" }}
                         fontFamily="'Courier New', monospace"
                     >
                         Share File
                     </Button>
                     <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         width="full"
                         onClick={handleTogglePreview}
-                        _hover={{ bg: "blue.600" }}
+                        _hover={{ bg: "brand.600" }}
                         fontFamily="'Courier New', monospace"
                     >
                         {showPreview ? "Hide Preview" : "Show Preview"}
@@ -299,7 +299,7 @@ const Base64ImageContent = () => {
                         )}
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" onClick={handleReset}>
+                        <Button colorScheme="brand" onClick={handleReset}>
                             Reset
                         </Button>
                         <Button variant="ghost" onClick={onClose}>

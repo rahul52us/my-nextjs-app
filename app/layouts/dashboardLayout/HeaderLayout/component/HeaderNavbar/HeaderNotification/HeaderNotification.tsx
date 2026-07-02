@@ -1,4 +1,4 @@
-"use client"; // Add this for client-side component in Next.js
+﻿"use client"; // Add this for client-side component in Next.js
 
 import { useState } from "react";
 import {
@@ -222,7 +222,7 @@ const NotificationComponent = () => {
           variant="ghost"
           fontSize="2xl"
           color="white"
-          _hover={{ color: "blue.500", bg: "gray.700" }}
+          _hover={{ color: "brand.500", bg: "gray.700" }}
           _active={{ bg: "gray.800" }}
           aria-label="chat-message-icons"
           _focus={{ boxShadow: "outline" }}

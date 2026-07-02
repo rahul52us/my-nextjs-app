@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
@@ -66,14 +66,14 @@ const SidebarContent = ({
 
       {selectedElement ? (
         <VStack align="stretch" spacing={4}>
-          <Badge alignSelf="start" colorScheme="blue" px={2}>
+          <Badge alignSelf="start" colorScheme="brand" px={2}>
             {selectedElement.type.toUpperCase()}
           </Badge>
 
           {selectedElement.type === "text" && (
             <Button
               size="sm"
-              colorScheme="blue"
+              colorScheme="brand"
               leftIcon={<Pencil size={14} />}
               onClick={() => onEditText(selectedElement)}
             >
@@ -193,7 +193,7 @@ const SidebarContent = ({
         </Button>
         <Button
           w="full"
-          colorScheme="blue"
+          colorScheme="brand"
           h="56px"
           onClick={exportPDF}
           isLoading={isExporting}

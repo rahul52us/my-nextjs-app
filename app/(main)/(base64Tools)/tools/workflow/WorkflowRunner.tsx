@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { type ChangeEvent, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -263,12 +263,12 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const cardBorder = useColorModeValue("gray.200", "gray.700");
   const mutedText = useColorModeValue("gray.500", "gray.450");
   const uploadBg = useColorModeValue("gray.50", "gray.800");
-  const uploadHoverBg = useColorModeValue("blue.50", "gray.750");
+  const uploadHoverBg = useColorModeValue("brand.50", "gray.750");
   const uploadBorder = useColorModeValue("gray.300", "gray.600");
   const stepBg = useColorModeValue("gray.50", "gray.750");
 
   const statusColor = (s: string) =>
-    s === "completed" ? "green" : s === "running" ? "blue" : s === "failed" ? "red" : "gray";
+    s === "completed" ? "green" : s === "running" ? "brand" : s === "failed" ? "red" : "gray";
 
   // Calculate compression/processing savings
   const sizeStats = useMemo(() => {
@@ -293,7 +293,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
           leftIcon={<FaArrowLeft />}
           size="sm"
           variant="ghost"
-          colorScheme="blue"
+          colorScheme="brand"
           onClick={() => router.push("/tools/workflow")}
         >
           Back to Workflows
@@ -305,7 +305,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
 
       {loadingSaved ? (
         <Flex justify="center" align="center" py={12}>
-          <Spinner size="lg" color="blue.500" thickness="3px" />
+          <Spinner size="lg" color="brand.500" thickness="3px" />
           <Text ml={3}>Loading workflow details...</Text>
         </Flex>
       ) : !workflow ? (
@@ -337,7 +337,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                 </Text>
               </VStack>
               <HStack spacing={2}>
-                <Badge colorScheme="blue" variant="subtle" px={2.5} py={1} rounded="md">
+                <Badge colorScheme="brand" variant="subtle" px={2.5} py={1} rounded="md">
                   {workflow.steps.length} Step{workflow.steps.length !== 1 ? "s" : ""}
                 </Badge>
                 {workflow.isActive === false && (
@@ -368,7 +368,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
               <Heading size="sm" mb={4}>
                 Executing Pipeline Steps...
               </Heading>
-              <Progress value={progressValue} size="xs" colorScheme="blue" rounded="full" mb={6} hasStripe isAnimated />
+              <Progress value={progressValue} size="xs" colorScheme="brand" rounded="full" mb={6} hasStripe isAnimated />
 
               <VStack align="stretch" spacing={3}>
                 {workflow.steps.map((step, index) => {
@@ -384,15 +384,15 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                       key={`${step.id}-${index}`}
                       p={4}
                       rounded="xl"
-                      bg={isCurrent ? useColorModeValue("blue.50", "gray.750") : stepBg}
+                      bg={isCurrent ? useColorModeValue("brand.50", "gray.750") : stepBg}
                       borderWidth="1px"
-                      borderColor={isCurrent ? "blue.300" : cardBorder}
+                      borderColor={isCurrent ? "brand.300" : cardBorder}
                       transition="all 0.2s"
                     >
                       <Flex align="center" justify="space-between">
                         <HStack spacing={3}>
                           {status === "running" ? (
-                            <Spinner size="xs" color="blue.500" />
+                            <Spinner size="xs" color="brand.500" />
                           ) : status === "completed" ? (
                             <Icon as={FaCheckCircle} color="green.500" boxSize={4} />
                           ) : status === "failed" ? (
@@ -413,9 +413,9 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                             </Flex>
                           )}
 
-                          <Icon as={stepIcon} color={isCurrent ? "blue.500" : "gray.400"} boxSize={4} />
+                          <Icon as={stepIcon} color={isCurrent ? "brand.500" : "gray.400"} boxSize={4} />
                           <VStack align="flex-start" spacing={0}>
-                            <Text fontWeight={isCurrent ? "bold" : "semibold"} fontSize="sm" color={isCurrent ? "blue.600" : "inherit"}>
+                            <Text fontWeight={isCurrent ? "bold" : "semibold"} fontSize="sm" color={isCurrent ? "brand.600" : "inherit"}>
                               {step.name}
                             </Text>
                             {step.settings && Object.keys(step.settings).length > 0 && (
@@ -542,7 +542,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                       <Button
                         size="xs"
                         variant={inputType === "text" ? "solid" : "ghost"}
-                        colorScheme={inputType === "text" ? "blue" : "gray"}
+                        colorScheme={inputType === "text" ? "brand" : "gray"}
                         onClick={() => setInputType("text")}
                         rounded="lg"
                       >
@@ -551,7 +551,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                       <Button
                         size="xs"
                         variant={inputType === "file" ? "solid" : "ghost"}
-                        colorScheme={inputType === "file" ? "blue" : "gray"}
+                        colorScheme={inputType === "file" ? "brand" : "gray"}
                         onClick={() => setInputType("file")}
                         rounded="lg"
                       >
@@ -573,7 +573,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                       size="md"
                       bg={uploadBg}
                       borderColor={uploadBorder}
-                      _focus={{ borderColor: "blue.400" }}
+                      _focus={{ borderColor: "brand.400" }}
                       rows={6}
                       rounded="xl"
                       fontFamily="monospace"
@@ -585,7 +585,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                   <Box
                     borderWidth="2px"
                     borderStyle="dashed"
-                    borderColor={isDragging ? "blue.400" : uploadBorder}
+                    borderColor={isDragging ? "brand.400" : uploadBorder}
                     bg={isDragging ? uploadHoverBg : uploadBg}
                     rounded="2xl"
                     p={8}
@@ -607,7 +607,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                       <VStack spacing={3}>
                         <Icon
                           as={FaCloudUploadAlt}
-                          color={isDragging ? "blue.500" : "gray.400"}
+                          color={isDragging ? "brand.500" : "gray.400"}
                           boxSize={12}
                           transition="transform 0.15s"
                           _hover={{ transform: "scale(1.05)" }}
@@ -636,7 +636,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                 <HStack spacing={3}>
                   <Button
                     size="md"
-                    colorScheme="blue"
+                    colorScheme="brand"
                     px={8}
                     rounded="xl"
                     isDisabled={

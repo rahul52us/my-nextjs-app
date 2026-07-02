@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 import {
   Box,
@@ -733,7 +733,7 @@ const ResumeBuilder: React.FC = () => {
             </Box>
             {/* Action Buttons */}
             <HStack wrap="wrap" spacing={2}>
-              <Button size="sm" colorScheme="blue" onClick={onOpen}>Load</Button>
+              <Button size="sm" colorScheme="brand" onClick={onOpen}>Load</Button>
               <Button size="sm" colorScheme="green" onClick={() => saveResume()}>Save</Button>
               <Button size="sm" colorScheme="gray" onClick={resetForm}>New</Button>
               <Button size="sm" colorScheme="purple" onClick={exportJson}>JSON</Button>
@@ -1239,7 +1239,7 @@ const ResumeBuilder: React.FC = () => {
                           borderRadius="md"
                         >
                           <option value="teal.500">Teal</option>
-                          <option value="blue.500">Blue</option>
+                          <option value="brand.500">Blue</option>
                           <option value="purple.500">Purple</option>
                         </Select>
                       </FormControl>
@@ -1385,7 +1385,7 @@ const ResumeBuilder: React.FC = () => {
                     <HStack>
                       <Button
                         size="sm"
-                        colorScheme="blue"
+                        colorScheme="brand"
                         leftIcon={<ViewIcon />}
                         onClick={() => loadResume(resume.id)}
                       >
@@ -1406,7 +1406,7 @@ const ResumeBuilder: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" onClick={onClose}>Close</Button>
+            <Button colorScheme="brand" onClick={onClose}>Close</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

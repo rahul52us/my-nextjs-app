@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useCallback, useState } from "react";
 import {
@@ -248,7 +248,7 @@ const handleTagRemove = (tagToRemove: string) => {
             <Wrap mt={2}>
               {value?.map((tag: string, index: number) => (
                 <WrapItem key={index}>
-                  <Tag size="md" borderRadius="full" colorScheme="blue">
+                  <Tag size="md" borderRadius="full" colorScheme="brand">
                     <TagLabel>{tag}</TagLabel>
                     <TagCloseButton onClick={() => handleTagRemove(tag)} />
                   </Tag>
@@ -280,7 +280,7 @@ const handleTagRemove = (tagToRemove: string) => {
               accept={accept}
             />
             <Button
-              colorScheme="blue"
+              colorScheme="brand"
               onClick={() =>
                 (
                   document.getElementById(
@@ -379,7 +379,7 @@ const handleTagRemove = (tagToRemove: string) => {
               }),
               multiValueLabel: (styles) => ({
                 ...styles,
-                color: colorMode === "light" ? "blue.400" : "blue.200",
+                color: colorMode === "light" ? "brand.400" : "brand.200",
               }),
               singleValue: (styles) => ({
                 ...styles,

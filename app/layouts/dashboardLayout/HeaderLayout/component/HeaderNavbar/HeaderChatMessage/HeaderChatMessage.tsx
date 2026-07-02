@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { Flex, IconButton, Tooltip } from "@chakra-ui/react";
 import { observer } from "mobx-react-lite";
 import { FaRegEnvelope } from "react-icons/fa";
@@ -18,7 +18,7 @@ const HeaderChatMessage = observer(() => {
           variant="ghost"
           fontSize="2xl"
           color="white"
-          _hover={{ color: "blue.500", bg: "gray.700" }}
+          _hover={{ color: "brand.500", bg: "gray.700" }}
           _active={{ bg: "gray.800" }}
           aria-label="chat-message-icons"
           onClick={handleClick}

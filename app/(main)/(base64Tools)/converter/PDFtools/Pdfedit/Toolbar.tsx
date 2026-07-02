@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { HStack, IconButton, Tooltip, Divider, useColorModeValue } from "@chakra-ui/react";
@@ -34,7 +34,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="select"
           icon={<MousePointer2 size={18} />}
           variant={activeTool === "select" ? "solid" : "ghost"}
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={() => setActiveTool("select")}
         />
@@ -45,7 +45,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="text"
           icon={<Type size={18} />}
           variant={activeTool === "text" ? "solid" : "ghost"}
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={() => setActiveTool("text")}
         />
@@ -58,7 +58,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="rect"
           icon={<Square size={18} />}
           variant={activeTool === "rect" ? "solid" : "ghost"}
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={() => setActiveTool("rect")}
         />
@@ -69,7 +69,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="circle"
           icon={<Circle size={18} />}
           variant={activeTool === "circle" ? "solid" : "ghost"}
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={() => setActiveTool("circle")}
         />
@@ -80,7 +80,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="eraser"
           icon={<Eraser size={18} />}
           variant={activeTool === "eraser" ? "solid" : "ghost"}
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={() => setActiveTool("eraser")}
         />
@@ -93,7 +93,7 @@ const Toolbar = ({ activeTool, setActiveTool, onImageUpload }: ToolbarProps) => 
           aria-label="image"
           icon={<ImageIcon size={18} />}
           variant="ghost"
-          colorScheme="blue"
+          colorScheme="brand"
           size={{ base: "sm", md: "md" }}
           onClick={onImageUpload}
         />

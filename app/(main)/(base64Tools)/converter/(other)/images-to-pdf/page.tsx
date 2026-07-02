@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, ChangeEvent, useRef } from "react";
 import jsPDF from "jspdf";
@@ -339,7 +339,7 @@ const ImagesToPdf: React.FC = () => {
               onClick={handleGeneratePDF}
               leftIcon={loading ? <Spinner size="sm" /> : <FaFilePdf />}
               isDisabled={files.length === 0 || loading}
-              colorScheme="blue"
+              colorScheme="brand"
               size="lg"
               variant="solid"
               boxShadow="lg"

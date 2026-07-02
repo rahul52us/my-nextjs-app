@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
@@ -108,10 +108,10 @@ const ConversionPreviewModal: React.FC<ConversionPreviewModalProps> = ({
                   Conversion Preview
                 </Text>
                 <HStack spacing={2} mt={0.5}>
-                  <Icon as={FiFileText} color="blue.300" boxSize={3} />
+                  <Icon as={FiFileText} color="brand.300" boxSize={3} />
                   <Text
                     fontSize="xs"
-                    color="blue.200"
+                    color="brand.200"
                     noOfLines={1}
                     fontFamily="mono"
                   >
@@ -177,7 +177,7 @@ const ConversionPreviewModal: React.FC<ConversionPreviewModalProps> = ({
               gap={4}
               minH="60vh"
             >
-              <Spinner size="xl" color="blue.400" thickness="4px" speed="0.65s" />
+              <Spinner size="xl" color="brand.400" thickness="4px" speed="0.65s" />
               <Text color={textColor} fontWeight="600" fontSize="md">
                 Generating preview…
               </Text>
@@ -202,7 +202,7 @@ const ConversionPreviewModal: React.FC<ConversionPreviewModalProps> = ({
                 inset={0}
                 borderRadius="xl"
                 border="1px solid"
-                borderColor="blue.500"
+                borderColor="brand.500"
                 opacity={0.3}
                 pointerEvents="none"
                 zIndex={1}

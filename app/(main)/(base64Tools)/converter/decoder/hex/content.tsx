@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -182,7 +182,7 @@ const Base64ToHexContent: React.FC = () => {
                     {hexOutput ? (
                         <HStack spacing={4} align="stretch">
                             <Text
-                                color="blue.500"
+                                color="brand.500"
                                 onClick={() => handleCopyToClipboard(hexOutput)}
                                 cursor="pointer"
                                 fontWeight="semibold"

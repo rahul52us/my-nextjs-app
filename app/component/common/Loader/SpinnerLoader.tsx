@@ -1,4 +1,4 @@
-import { Spinner } from "@chakra-ui/react";
+﻿import { Spinner } from "@chakra-ui/react";
 import { observer } from "mobx-react-lite";
 
 interface SpinnerLoaderI {
@@ -11,7 +11,7 @@ const SpinnerLoader = observer(({ size = "xl" }: SpinnerLoaderI) => {
       thickness="4px"
       speed="0.65s"
       emptyColor="gray.200"
-      color="blue.500"
+      color="brand.500"
       size={size ? size : "2xl"}
     />
   );

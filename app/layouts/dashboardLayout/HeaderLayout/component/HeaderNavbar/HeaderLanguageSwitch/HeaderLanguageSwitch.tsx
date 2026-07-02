@@ -1,4 +1,4 @@
-"use client"; // Add this for client-side component in Next.js
+﻿"use client"; // Add this for client-side component in Next.js
 
 import {
   IconButton,
@@ -56,7 +56,7 @@ const HeaderLanguageSwitch = () => {
         aria-label="Switch Language"
         fontSize="2xl"
         color="white"
-        _hover={{ color: "blue.500", bg: "gray.700" }}
+        _hover={{ color: "brand.500", bg: "gray.700" }}
         _active={{ bg: "gray.800" }}
         p={2}
         m={1}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -31,7 +31,7 @@ export default function QRFileSharingPage() {
   const imageBoxSize = useBreakpointValue({ base: "100%", md: "240px" });
   const sectionBg = useColorModeValue("white", "gray.800");
   const cardBg = useColorModeValue("gray.50", "gray.700");
-  const highlightBg = useColorModeValue("blue.50", "blue.900");
+  const highlightBg = useColorModeValue("brand.50", "brand.900");
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const textColor = useColorModeValue("gray.700", "gray.100");
   const secondaryTextColor = useColorModeValue("gray.500", "gray.300");
@@ -126,7 +126,7 @@ export default function QRFileSharingPage() {
             fontSize={{ base: "2xl", md: "3xl" }}
             fontWeight="bold"
             mb={2}
-            color="blue.400"
+            color="brand.400"
           >
             QR File Sharing
           </Text>
@@ -139,7 +139,7 @@ export default function QRFileSharingPage() {
         <Box
           borderWidth={2}
           borderStyle="dashed"
-          borderColor={file ? "blue.400" : borderColor}
+          borderColor={file ? "brand.400" : borderColor}
           rounded="2xl"
           p={8}
           textAlign="center"
@@ -158,7 +158,7 @@ export default function QRFileSharingPage() {
           <HStack justify="center" spacing={3} wrap="wrap">
             <Button
               leftIcon={<Icon as={FaUpload} />}
-              colorScheme="blue"
+              colorScheme="brand"
               onClick={() => fileInputRef.current?.click()}
             >
               Choose file
@@ -199,7 +199,7 @@ export default function QRFileSharingPage() {
                     <Text color={secondaryTextColor} mt={1}>
                       {Math.round(file.size / 1024)} KB • {file.type || "Unknown type"}
                     </Text>
-                    <Badge mt={3} colorScheme="blue">
+                    <Badge mt={3} colorScheme="brand">
                       {file.type ? file.type.toUpperCase() : "UNKNOWN"}
                     </Badge>
                   </>
@@ -212,7 +212,7 @@ export default function QRFileSharingPage() {
             </Box>
             <Flex justify="center">
               <Button
-                colorScheme="blue"
+                colorScheme="brand"
                 size="lg"
                 isLoading={uploading}
                 onClick={upload}
@@ -251,7 +251,7 @@ export default function QRFileSharingPage() {
                     href={shareUrl}
                     target="_blank"
                     rel="noreferrer"
-                    colorScheme="blue"
+                    colorScheme="brand"
                     leftIcon={<Icon as={FaLink} />}
                   >
                     Open link
@@ -299,7 +299,7 @@ export default function QRFileSharingPage() {
               </Box>
               <Box w={{ base: "100%", md: "240px" }}>
                 <Button
-                  colorScheme="blue"
+                  colorScheme="brand"
                   leftIcon={<Icon as={FaDownload} />}
                   onClick={downloadQrCode}
                   isDisabled={!qrBase64}

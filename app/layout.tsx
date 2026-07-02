@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { WEBSITE_TITLE, WEBSITE_DESCRIPTION, KEYWORDS, SITE_URL } from './config/utils/variables';
 import ClientRootLayout from './ClientRootLayout';
 import { lato } from './theme/fonts';
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: {

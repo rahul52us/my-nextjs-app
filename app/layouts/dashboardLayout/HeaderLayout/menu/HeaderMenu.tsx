@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   Text,
@@ -21,7 +21,7 @@ interface HeaderProps {
 
 const Header = ({ title, Menus, link }: HeaderProps) => {
   const router = useRouter();
-  const hoverColor = useColorModeValue("blue.50", "whiteAlpha.200");
+  const hoverColor = useColorModeValue("brand.50", "whiteAlpha.200");
 
   return (
     <Popover trigger="hover" placement="bottom">
@@ -32,7 +32,7 @@ const Header = ({ title, Menus, link }: HeaderProps) => {
           rounded={"full"}
           _hover={{
             bg: hoverColor,
-            color: "blue.500",
+            color: "brand.500",
             animation: "slideFromLeft 0.3s ease forwards",
           }}
           fontSize="16px"

@@ -21,16 +21,16 @@ class ThemeStore {
     },
     colors: {
       brand: {
-        50: "#f7fafc",
-        100: "#edf2f7",
-        200: "#e2e8f0",
-        300: "#cbd5e0",
-        400: "#a0aec0",
-        500: "#718096",
-        600: "#4a5568",
-        700: "#2d3748",
-        800: "#1a202c",
-        900: "#171923",
+        50: "#e6f3ff",
+        100: "#cce7ff",
+        200: "#99cfff",
+        300: "#66b7ff",
+        400: "#33a0ff",
+        500: "#007acc",
+        600: "#0066b3",
+        700: "#005299",
+        800: "#003d80",
+        900: "#002966",
       },
       light: {
         primary: {
@@ -106,7 +106,9 @@ class ThemeStore {
   }
 
   setThemeConfig = (key: string, value: any) => {
-    _.set(this.themeConfig, key, value);
+    const newConfig = { ...this.themeConfig };
+    _.set(newConfig, key, value);
+    this.themeConfig = newConfig;
     if (typeof window !== "undefined") {
       localStorage.setItem(
         process.env.NEXT_PUBLIC_THEME_TOKEN_STORE || "theme_config",

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@chakra-ui/react';
@@ -25,7 +25,7 @@ export default function NotFoundPage() {
         <Button
           onClick={handleGoHome}
           size="lg"
-          colorScheme="blue"
+          colorScheme="brand"
           variant="solid"
           _hover={{ backgroundColor: 'blue.600' }}
           _active={{ backgroundColor: 'blue.700' }}

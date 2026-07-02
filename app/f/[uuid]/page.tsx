@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect } from "react";
 import { Box, Text, VStack, Spinner, Link } from "@chakra-ui/react";
@@ -39,7 +39,7 @@ export default function DownloadPage({ params }: { params: { uuid: string } }) {
       <VStack spacing={4}>
         <Text fontSize="2xl" fontWeight="bold">Preparing your download...</Text>
         <Text>If the download does not start automatically, click below:</Text>
-        <Link href={downloadAllUrl} color="blue.500" fontWeight="bold">Download file</Link>
+        <Link href={downloadAllUrl} color="brand.500" fontWeight="bold">Download file</Link>
         <Spinner size="xl" />
       </VStack>
     </Box>

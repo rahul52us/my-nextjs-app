@@ -1,4 +1,4 @@
-// 'use client';
+﻿// 'use client';
 
 // import { useEffect, useRef, useState } from 'react';
 // import { observer } from 'mobx-react-lite';
@@ -90,7 +90,7 @@
 //           size="xl"
 //           thickness="4px"
 //           speed="0.65s"
-//           color="blue.500"
+//           color="brand.500"
 //           mb={4}
 //         />
 //         <Text
@@ -244,7 +244,7 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
         width="100vw"
         bg={useColorModeValue('white', 'gray.900')}
       >
-        <Spinner size="xl" thickness="4px" speed="0.65s" color="blue.500" mb={4} />
+        <Spinner size="xl" thickness="4px" speed="0.65s" color="brand.500" mb={4} />
         <Text fontSize="lg" color="gray.500" fontWeight="medium">
           Initializing Workspace...
         </Text>

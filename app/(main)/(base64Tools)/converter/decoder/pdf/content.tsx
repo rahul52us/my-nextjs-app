@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, ChangeEvent } from "react";
 import { saveAs } from "file-saver";
@@ -164,11 +164,11 @@ const Base64PdfContent = () => {
                     Convert & Download
                 </Button>
                 <Button
-                    colorScheme="blue"
+                    colorScheme="brand"
                     width="full"
                     onClick={handleTogglePreview}
                     mt={2}
-                    _hover={{ bg: "blue.600" }}
+                    _hover={{ bg: "brand.600" }}
                     fontFamily="'Courier New', monospace"
                 >
                     {showPreview ? "Hide Preview" : "Show Preview"}
@@ -224,7 +224,7 @@ const Base64PdfContent = () => {
                         )}
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" onClick={handleReset}>
+                        <Button colorScheme="brand" onClick={handleReset}>
                             Reset
                         </Button>
                         <Button variant="ghost" onClick={onClose}>

@@ -60,6 +60,7 @@ const ForgotPasswordContent = observer(() => {
 
   const formPanel = (
     <Flex
+      w="full"
       flex={{ base: 1, md: 0.5 }}
       direction="column"
       justify="center"
@@ -72,7 +73,7 @@ const ForgotPasswordContent = observer(() => {
     >
       <Box
         w="full"
-        maxW={{ base: "95vw", md: "520px" }}
+        maxW={{ base: "95vw", md: "600px" }}
         mx="auto"
         bg={{ base: "rgba(255,255,255,0.92)", md: "transparent" }}
         borderRadius={{ base: "28px", md: "0" }}
@@ -109,7 +110,7 @@ const ForgotPasswordContent = observer(() => {
         </Text>
 
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <VStack spacing={4}>
+          <VStack spacing={4} w="full">
             <FormControl id="email" isRequired>
               <Input
                 type="email"

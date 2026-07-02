@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React from "react";
 import NextLink from "next/link";
 import { Box, VStack, Link as ChakraLink, Icon, Text , Flex } from "@chakra-ui/react";
@@ -39,7 +39,7 @@ const Sidebar: React.FC = () => {
               borderRadius="md"
               transition="background-color 0.3s ease"
               _hover={{
-                bg: "blue.600",
+                bg: "brand.600",
                 color: "white",
                 textDecoration: "none",
               }}
@@ -62,7 +62,7 @@ const Sidebar: React.FC = () => {
               px="4"
               borderRadius="md"
               transition="background-color 0.3s ease"
-              _hover={{ bg: "blue.600", color: "white", textDecoration: "none" }}
+              _hover={{ bg: "brand.600", color: "white", textDecoration: "none" }}
               _focus={{ boxShadow: "none" }}
             >
               <Icon as={SettingsIcon} boxSize="6" mr="3" />

@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useColorMode } from '@chakra-ui/react'; // ← header ke saath sync
+import { useColorMode } from '@chakra-ui/react';
+import { observer } from 'mobx-react-lite';
+import stores from '../../../../../store/stores';
 import {
   Sun, Droplets, Trash2, FlipHorizontal,
   FlipVertical, RotateCw, Wand2, Sparkles,
@@ -83,12 +85,13 @@ const Slider = ({
   <div className="space-y-2">
     <div className="flex justify-between items-center text-[10px] font-black uppercase">
       <div className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{icon}{label}</div>
-      <span className="text-[#007ACC] font-mono">{value}</span>
+      <span className="font-mono" style={{ color: 'var(--brand-500)' }}>{value}</span>
     </div>
     <input
       type="range" min="0" max={max} value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[#007ACC] ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}
+      style={{ accentColor: 'var(--brand-500)' }}
+      className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}
     />
   </div>
 );
@@ -100,14 +103,24 @@ const ToolIconButton = ({
   <button onClick={onClick}
     className={`aspect-square rounded-2xl flex items-center justify-center transition-all active:scale-90
       ${isDark
-        ? 'bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-[#007ACC] hover:text-[#8fd3ff]'
-        : 'bg-slate-50 border border-slate-100 hover:bg-white hover:border-[#007ACC] hover:text-[#007ACC] hover:shadow-xl'}`}>
+        ? 'bg-slate-700 border border-slate-600 hover:bg-slate-600'
+        : 'bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl'}`}>
     {icon}
   </button>
 );
 
 // --- Main Component ---
-const AIasist: React.FC = () => {
+const AIasist: React.FC = observer(() => {
+  const { themeStore } = stores;
+  const brandColor = themeStore.themeConfig?.colors?.brand?.[500] || '#007acc';
+  const brandLight = themeStore.themeConfig?.colors?.brand?.[100] || '#cce7ff';
+
+  // Inject CSS custom property so all Tailwind-based elements react to theme
+  useEffect(() => {
+    document.documentElement.style.setProperty('--brand-500', brandColor);
+    document.documentElement.style.setProperty('--brand-100', brandLight);
+  }, [brandColor, brandLight]);
+
   // ── Chakra UI se colorMode lo — header ke saath automatically sync rahega ──
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
@@ -127,7 +140,12 @@ const AIasist: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const API_KEY = "7LoxttzHTN9cqk3ZkAY9vupz";
+
+  // ⚠️ SECURITY: Never ship a real API key inside client-side/frontend code —
+  // anyone can open devtools and steal it. Move the remove.bg call to a
+  // backend route (e.g. /api/remove-bg) and read the key from
+  // process.env.REMOVE_BG_API_KEY on the server instead.
+  const REMOVE_BG_ENDPOINT = "/api/remove-bg"; // <- proxy this through your own backend
 
   const loadImage = (url: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
@@ -203,14 +221,15 @@ const AIasist: React.FC = () => {
       const formData = new FormData();
       formData.append("size", "auto");
       formData.append("image_file", blob);
-      const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+      // Call your own backend proxy — it should attach the real API key
+      // server-side and forward the request to remove.bg.
+      const response = await fetch(REMOVE_BG_ENDPOINT, {
         method: "POST",
-        headers: { "X-Api-Key": API_KEY },
         body: formData,
       });
       if (!response.ok) {
-        const errJson = await response.json();
-        throw new Error(errJson.errors[0].title || "API Error");
+        const errJson = await response.json().catch(() => null);
+        throw new Error(errJson?.errors?.[0]?.title || "API Error");
       }
       const resultImg = await loadImage(URL.createObjectURL(await response.blob()));
       if (mode === 'portrait') {
@@ -248,6 +267,7 @@ const AIasist: React.FC = () => {
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!acceptedFiles.length) return;
     const img = await loadImage(URL.createObjectURL(acceptedFiles[0]));
     setImage(img);
     setForegroundImage(null);
@@ -385,18 +405,19 @@ const AIasist: React.FC = () => {
   );
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 ${bg}`}>
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${bg}`} style={{ ['--brand-500' as any]: brandColor }}>
 
       {/* ── Navbar — NO theme toggle button ── */}
       <nav className={`h-14 md:h-16 border-b px-4 md:px-8 flex justify-between items-center sticky top-0 z-50 shadow-sm ${navBg}`}>
         {/* Logo */}
         <div className="flex items-center gap-2 md:gap-3">
           {image && (
-            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-[#007ACC] transition-colors">
+            <button onClick={() => setSidebarOpen(true)}
+              className={`md:hidden p-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-[#8fd3ff]' : 'text-slate-400 hover:text-[#007ACC]'}`}>
               <Menu size={20} />
             </button>
           )}
-          <div className={`w-8 h-8 md:w-10 md:h-10 bg-[#007ACC] rounded-xl flex items-center justify-center rotate-3 shadow-lg ${isDark ? 'shadow-sky-950/40' : 'shadow-sky-200'} flex-shrink-0`}>
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center rotate-3 shadow-lg flex-shrink-0" style={{ background: 'var(--brand-500)' }}>
             <Zap size={16} className="text-white fill-current md:w-5 md:h-5" />
           </div>
           <span className="font-bold text-base md:text-xl tracking-tighter">
@@ -419,6 +440,7 @@ const AIasist: React.FC = () => {
                 <Undo2 size={18} />
               </button>
               <button onMouseDown={() => setIsComparing(true)} onMouseUp={() => setIsComparing(false)}
+                onTouchStart={() => setIsComparing(true)} onTouchEnd={() => setIsComparing(false)}
                 className={`p-2 transition hidden sm:block ${isDark ? 'text-slate-400 hover:text-[#8fd3ff]' : 'text-slate-400 hover:text-[#007ACC]'}`}>
                 <Eye size={18} />
               </button>
@@ -432,9 +454,10 @@ const AIasist: React.FC = () => {
                 <Trash2 size={16} />
               </button>
               <button onClick={() => {
+                if (!canvasRef.current) return;
                 const a = document.createElement('a');
                 a.download = 'vision-pro.png';
-                a.href = canvasRef.current!.toDataURL('image/png');
+                a.href = canvasRef.current.toDataURL('image/png');
                 a.click();
               }} className="px-3 md:px-6 py-2 md:py-2.5 bg-[#007ACC] text-white rounded-full text-xs font-bold hover:bg-[#006bb3] transition-all active:scale-95 whitespace-nowrap">
                 Export
@@ -503,7 +526,7 @@ const AIasist: React.FC = () => {
               <div className="relative rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_30px_60px_-10px_rgba(0,0,0,0.4)] bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] max-w-full">
                 {isCropping ? (
                   <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} className="max-h-[60vh] md:max-h-[75vh]">
-                    <img ref={imgRef} src={image.src} onLoad={onImageLoad}
+                    <img ref={imgRef} src={image.src} onLoad={onImageLoad} crossOrigin="anonymous"
                       className="max-w-full max-h-[60vh] md:max-h-[75vh] block" alt="Crop" />
                   </ReactCrop>
                 ) : (
@@ -551,6 +574,6 @@ const AIasist: React.FC = () => {
       )}
     </div>
   );
-};
+});
 
 export default AIasist;

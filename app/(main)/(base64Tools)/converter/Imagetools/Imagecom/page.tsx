@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import {
@@ -55,7 +55,7 @@ const AICompressor: React.FC = () => {
   const dropBg       = useColorModeValue("white", "gray.800");
   const dropInnerBg  = useColorModeValue("gray.50", "gray.700");
   const dropBorder   = useColorModeValue("gray.200", "gray.600");
-  const hoverBg      = useColorModeValue("blue.50", "blue.900");
+  const hoverBg      = useColorModeValue("brand.50", "brand.900");
 
   useEffect(() => {
     return () => {
@@ -210,7 +210,7 @@ const AICompressor: React.FC = () => {
         {/* Header */}
         <Flex justify="space-between" align="center" mb={10}>
           <HStack spacing={3}>
-            <Box bg="blue.600" p={2} borderRadius="xl" color="white" shadow="lg">
+            <Box bg="brand.600" p={2} borderRadius="xl" color="white" shadow="lg">
               <AiFillThunderbolt size="24px" />
             </Box>
             <VStack align="start" spacing={0}>
@@ -241,7 +241,7 @@ const AICompressor: React.FC = () => {
                   <Button
                     flex={1} size="sm" borderRadius="xl"
                     variant={mode === "auto" ? "solid" : "ghost"}
-                    colorScheme={mode === "auto" ? "blue" : "gray"}
+                    colorScheme={mode === "auto" ? "brand" : "gray"}
                     onClick={() => setMode("auto")}
                   >
                     Auto
@@ -249,7 +249,7 @@ const AICompressor: React.FC = () => {
                   <Button
                     flex={1} size="sm" borderRadius="xl"
                     variant={mode === "manual" ? "solid" : "ghost"}
-                    colorScheme={mode === "manual" ? "blue" : "gray"}
+                    colorScheme={mode === "manual" ? "brand" : "gray"}
                     onClick={() => setMode("manual")}
                   >
                     Target
@@ -267,7 +267,7 @@ const AICompressor: React.FC = () => {
                           {quality >= 0.8 ? "High quality" : quality >= 0.5 ? "Balanced" : "Max compression"}
                         </Text>
                       </VStack>
-                      <Text fontSize="2xl" fontWeight="900" color="blue.600">
+                      <Text fontSize="2xl" fontWeight="900" color="brand.600">
                         {Math.round(quality * 100)}%
                       </Text>
                     </Flex>
@@ -277,10 +277,10 @@ const AICompressor: React.FC = () => {
                       value={quality}
                       onChange={(v) => setQuality(v)}
                     >
-                      <SliderTrack bg="blue.50">
-                        <SliderFilledTrack bg="blue.500" />
+                      <SliderTrack bg="brand.50">
+                        <SliderFilledTrack bg="brand.500" />
                       </SliderTrack>
-                      <SliderThumb boxSize={6} border="2px solid" borderColor="blue.500" />
+                      <SliderThumb boxSize={6} border="2px solid" borderColor="brand.500" />
                     </Slider>
                     <HStack justify="space-between">
                       <Text fontSize="10px" color={textMuted}>Max compress</Text>
@@ -309,7 +309,7 @@ const AICompressor: React.FC = () => {
                 )}
 
                 <Button
-                  mt={6} w="full" colorScheme="blue" h="60px" borderRadius="2xl"
+                  mt={6} w="full" colorScheme="brand" h="60px" borderRadius="2xl"
                   leftIcon={<MdSettings />}
                   isLoading={loading}
                   // Pass current values explicitly — avoids stale state issue
@@ -327,7 +327,7 @@ const AICompressor: React.FC = () => {
                 <MotionBox
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  bg="blue.600" p={6} borderRadius="3xl" color="white"
+                  bg="brand.600" p={6} borderRadius="3xl" color="white"
                 >
                   <HStack justify="space-between">
                     <VStack align="start" spacing={0}>
@@ -352,11 +352,11 @@ const AICompressor: React.FC = () => {
                 {...getRootProps()}
                 h="500px" bg={dropBg}
                 border="2px dashed"
-                borderColor={isDragActive ? "blue.400" : dropBorder}
+                borderColor={isDragActive ? "brand.400" : dropBorder}
                 borderRadius="3rem"
                 transition="all 0.2s"
                 cursor="pointer"
-                _hover={{ borderColor: "blue.300", bg: hoverBg }}
+                _hover={{ borderColor: "brand.300", bg: hoverBg }}
               >
                 <input {...getInputProps()} />
                 <VStack h="full" justify="center" spacing={4}>
@@ -388,11 +388,11 @@ const AICompressor: React.FC = () => {
                   {/* Compressed */}
                   <Box
                     bg={cardBg} p={4} borderRadius="3xl" border="1px"
-                    borderColor={useColorModeValue("blue.100", "blue.600")} shadow="sm"
+                    borderColor={useColorModeValue("brand.100", "brand.600")} shadow="sm"
                   >
                     <HStack justify="space-between" mb={3} px={2}>
-                      <Badge colorScheme="blue">Optimized</Badge>
-                      <Text fontSize="xs" fontWeight="bold" color={useColorModeValue("blue.400", "blue.200")}>
+                      <Badge colorScheme="brand">Optimized</Badge>
+                      <Text fontSize="xs" fontWeight="bold" color={useColorModeValue("brand.400", "brand.200")}>
                         {compressedFile ? (compressedFile.size / 1024).toFixed(1) : "—"} KB
                       </Text>
                     </HStack>
@@ -402,7 +402,7 @@ const AICompressor: React.FC = () => {
                     >
                       {loading ? (
                         <VStack spacing={3}>
-                          <Spinner color="blue.500" size="xl" />
+                          <Spinner color="brand.500" size="xl" />
                           <Text fontSize="xs" color={textMuted}>Compressing…</Text>
                         </VStack>
                       ) : (
@@ -424,7 +424,7 @@ const AICompressor: React.FC = () => {
                       <Button
                         w="full" h="70px" colorScheme="gray"
                         bg={useColorModeValue("gray.900", "gray.700")}
-                        _hover={{ bg: "blue.600" }}
+                        _hover={{ bg: "brand.600" }}
                         color="white" borderRadius="2xl"
                         leftIcon={<MdFileDownload size="20px" />}
                         onClick={handleDownload}

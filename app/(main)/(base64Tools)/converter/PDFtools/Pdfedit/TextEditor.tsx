@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useRef, useEffect, useState } from "react";
 import {
@@ -182,17 +182,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
           <Tooltip label="Bold (Ctrl+B)">
             <IconButton size="xs" aria-label="bold" icon={<Bold size={13} />}
-              variant={isBold ? "solid" : "ghost"} colorScheme="blue"
+              variant={isBold ? "solid" : "ghost"} colorScheme="brand"
               onClick={handleBold} />
           </Tooltip>
           <Tooltip label="Italic (Ctrl+I)">
             <IconButton size="xs" aria-label="italic" icon={<Italic size={13} />}
-              variant={isItalic ? "solid" : "ghost"} colorScheme="blue"
+              variant={isItalic ? "solid" : "ghost"} colorScheme="brand"
               onClick={handleItalic} />
           </Tooltip>
           <Tooltip label="Underline (Ctrl+U)">
             <IconButton size="xs" aria-label="underline" icon={<Underline size={13} />}
-              variant={isUnderline ? "solid" : "ghost"} colorScheme="blue"
+              variant={isUnderline ? "solid" : "ghost"} colorScheme="brand"
               onClick={handleUnderline} />
           </Tooltip>
 
@@ -200,17 +200,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
           <Tooltip label="Align Left">
             <IconButton size="xs" aria-label="left" icon={<AlignLeft size={13} />}
-              variant={align === "left" ? "solid" : "ghost"} colorScheme="blue"
+              variant={align === "left" ? "solid" : "ghost"} colorScheme="brand"
               onClick={() => handleAlign("left")} />
           </Tooltip>
           <Tooltip label="Align Center">
             <IconButton size="xs" aria-label="center" icon={<AlignCenter size={13} />}
-              variant={align === "center" ? "solid" : "ghost"} colorScheme="blue"
+              variant={align === "center" ? "solid" : "ghost"} colorScheme="brand"
               onClick={() => handleAlign("center")} />
           </Tooltip>
           <Tooltip label="Align Right">
             <IconButton size="xs" aria-label="right" icon={<AlignRight size={13} />}
-              variant={align === "right" ? "solid" : "ghost"} colorScheme="blue"
+              variant={align === "right" ? "solid" : "ghost"} colorScheme="brand"
               onClick={() => handleAlign("right")} />
           </Tooltip>
 

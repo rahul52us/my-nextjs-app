@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -272,7 +272,7 @@ const AdvancedPDFEditorContent: React.FC = () => {
           border={`1px solid ${cardBorder}`}
         >
           <Button
-            as="label" colorScheme="blue" leftIcon={<FiUpload />}
+            as="label" colorScheme="brand" leftIcon={<FiUpload />}
             cursor="pointer" size={{ base: "sm", md: "md" }}
           >
             Upload PDF

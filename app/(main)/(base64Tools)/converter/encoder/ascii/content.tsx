@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import {
@@ -228,17 +228,17 @@ const AsciiToBase64Content: React.FC = () => {
             gap={2}
             p={6}
             border="2px dashed"
-            borderColor={useColorModeValue("blue.300", "blue.500")}
+            borderColor={useColorModeValue("brand.300", "brand.500")}
             borderRadius="xl"
-            bg={useColorModeValue("blue.50", "gray.700")}
+            bg={useColorModeValue("brand.50", "gray.700")}
             cursor="pointer"
             transition="all 0.2s"
             _hover={{
-              borderColor: "blue.500",
-              bg: useColorModeValue("blue.100", "gray.600"),
+              borderColor: "brand.500",
+              bg: useColorModeValue("brand.100", "gray.600"),
             }}
           >
-            <Icon as={FaFileAlt} boxSize={8} color="blue.400" />
+            <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
             <Text
               fontWeight="semibold"
               color={useColorModeValue("gray.700", "gray.200")}
@@ -307,7 +307,7 @@ const AsciiToBase64Content: React.FC = () => {
           {base64Output && (
             <HStack spacing={4} align="stretch">
               <Button
-                colorScheme="blue"
+                colorScheme="brand"
                 size="sm"
                 leftIcon={<Icon as={FaCopy} />}
                 onClick={() => handleCopyToClipboard(base64Output)}

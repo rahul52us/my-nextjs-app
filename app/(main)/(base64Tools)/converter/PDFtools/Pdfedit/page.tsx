@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -55,7 +55,7 @@ const PDFProEditor = () => {
   const uploadIconColor = useColorModeValue("#3182CE", "#63B3ED");
   const pageTextColor = useColorModeValue("gray.600", "gray.300");
   const elementOutlineColor = useColorModeValue("#3182CE", "#63B3ED");
-  const resizeHandleBg = useColorModeValue("blue.500", "blue.300");
+  const resizeHandleBg = useColorModeValue("brand.500", "brand.300");
 
   const pdfScale = useBreakpointValue({ base: 0.8, sm: 1.0, md: 1.2, lg: 1.5 }) || 1.5;
 
@@ -301,7 +301,7 @@ const PDFProEditor = () => {
                 size="sm"
                 leftIcon={<Settings size={14} />}
                 onClick={onSidebarOpen}
-                colorScheme="blue"
+                colorScheme="brand"
                 variant="outline"
               >
                 Properties
@@ -315,7 +315,7 @@ const PDFProEditor = () => {
                 size="sm" icon={<ChevronLeft />} aria-label="prev"
                 isDisabled={pageNumber <= 1} onClick={() => setPageNumber(p => p - 1)} variant="ghost"
               />
-              <Badge variant="subtle" colorScheme="blue" color={pageTextColor}>
+              <Badge variant="subtle" colorScheme="brand" color={pageTextColor}>
                 Page {pageNumber} / {numPages}
               </Badge>
               <IconButton

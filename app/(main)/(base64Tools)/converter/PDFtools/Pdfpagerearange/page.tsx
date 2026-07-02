@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Flex, Text, Heading, Spinner, IconButton,
@@ -106,7 +106,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
   if (!isReady) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <Spinner color="blue.500" />
+        <Spinner color="brand.500" />
       </Flex>
     );
   }
@@ -128,7 +128,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
             borderColor={borderClr}
           >
             <Box>
-              <Heading size="lg" color="blue.600">PDF Architect</Heading>
+              <Heading size="lg" color="brand.600">PDF Architect</Heading>
               <Text color={textGray} fontSize="sm">Rearrange or remove pages with ease</Text>
             </Box>
             {file && (
@@ -138,7 +138,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
                 </Button>
                 <Button
                   leftIcon={<DownloadIcon />}
-                  colorScheme="blue"
+                  colorScheme="brand"
                   shadow="md"
                   isLoading={isProcessing}
                   onClick={downloadRearrangedPDF}
@@ -155,8 +155,8 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
               {...getRootProps()}
               h="400px"
               border="2px dashed"
-              borderColor={isDragActive ? "blue.400" : "gray.300"}
-              bg={isDragActive ? "blue.50" : boxBg}
+              borderColor={isDragActive ? "brand.400" : "gray.300"}
+              bg={isDragActive ? "brand.50" : boxBg}
               borderRadius="2xl"
               display="flex"
               flexDirection="column"
@@ -164,10 +164,10 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
               justifyContent="center"
               cursor="pointer"
               transition="all 0.3s"
-              _hover={{ borderColor: "blue.500", bg: hoverBg }}
+              _hover={{ borderColor: "brand.500", bg: hoverBg }}
             >
               <input {...getInputProps()} />
-              <Icon as={AddIcon} w={10} h={10} mb={4} color="blue.500" />
+              <Icon as={AddIcon} w={10} h={10} mb={4} color="brand.500" />
               <Heading size="md" mb={2} fontWeight="600">Click or drag PDF to upload</Heading>
               <Text color="gray.400">Support for files up to 50MB</Text>
             </Box>
@@ -177,7 +177,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
               <Document
                 file={file}
                 onLoadSuccess={onDocumentLoadSuccess}
-                loading={<Spinner color="blue.500" m={10} />}
+                loading={<Spinner color="brand.500" m={10} />}
               >
                 <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="pdf-grid" direction="horizontal">
@@ -207,7 +207,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
                                   left="50%"
                                   transform="translateX(-50%)"
                                   zIndex={10}
-                                  colorScheme="blue"
+                                  colorScheme="brand"
                                   variant="solid"
                                   rounded="full"
                                   px={3}
@@ -241,7 +241,7 @@ const hoverBg = useColorModeValue("gray.100", "gray.700");
                                   borderRadius="lg"
                                   overflow="hidden"
                                   border="2px solid"
-                                  borderColor={snapshot.isDragging ? "blue.500" : "gray.200"}
+                                  borderColor={snapshot.isDragging ? "brand.500" : "gray.200"}
                                   shadow={snapshot.isDragging ? "2xl" : "sm"}
                                   transition="0.2s"
                                   transform={snapshot.isDragging ? "scale(1.05)" : "none"}

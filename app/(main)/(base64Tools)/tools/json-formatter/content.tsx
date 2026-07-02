@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback } from "react";
@@ -60,7 +60,7 @@ const JsonFormatterContent = () => {
     const inputBgColor = useColorModeValue("white", "gray.700");
     const inputBorderColor = useColorModeValue("gray.200", "gray.600");
     const fileInputBgColor = useColorModeValue("gray.50", "gray.700");
-    const fileInputHoverBgColor = useColorModeValue("blue.50", "gray.600");
+    const fileInputHoverBgColor = useColorModeValue("brand.50", "gray.600");
     const editorTheme = useColorModeValue("vs-light", "vs-dark");
     const jsonTheme = useColorModeValue("rjv-default", "monokai");
     const primaryColor = "#007ACC";

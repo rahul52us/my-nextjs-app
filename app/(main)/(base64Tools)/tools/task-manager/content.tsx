@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
@@ -1455,7 +1455,7 @@ export default function TaskManagerContent() {
                               ? "red"
                               : task.priority === "medium"
                               ? "orange"
-                              : "blue";
+                              : "brand";
 
                           const isDueDatePassed =
                             task.dueDate &&
@@ -1493,7 +1493,7 @@ export default function TaskManagerContent() {
                                   <IconButton
                                     size="xs"
                                     variant="ghost"
-                                    color="blue.400"
+                                    color="brand.400"
                                     aria-label="View task"
                                     icon={<FaEye />}
                                     onClick={() => openViewDrawer(task)}
@@ -1661,7 +1661,7 @@ export default function TaskManagerContent() {
                 justifyContent="center"
                 boxSize="42px"
                 borderRadius="lg"
-                bg="blue.500"
+                bg="brand.500"
                 color="white"
                 boxShadow="0 10px 24px rgba(49, 130, 206, 0.35)"
                 flexShrink={0}
@@ -1703,7 +1703,7 @@ export default function TaskManagerContent() {
                           ? "red"
                           : viewingTask.priority === "medium"
                           ? "orange"
-                          : "blue"
+                          : "brand"
                       }
                       borderRadius="md"
                       px={2}
