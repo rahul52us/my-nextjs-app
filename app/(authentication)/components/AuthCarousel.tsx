@@ -32,7 +32,11 @@ const carouselSlides = [
   },
 ];
 
-const AuthCarousel = () => {
+type AuthCarouselProps = {
+  fullSize?: boolean;
+};
+
+const AuthCarousel = ({ fullSize = false }: AuthCarouselProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const cardBg = useColorModeValue(
@@ -51,16 +55,16 @@ const AuthCarousel = () => {
   return (
     <Box
       position="relative"
-      w="90%"
-      maxW="720px"
-      h={{ base: "260px", md: "90%" }}
-      mx="auto"
-      my={{ base: 4, md: 8 }}
+      w={fullSize ? "100%" : "90%"}
+      maxW={fullSize ? "100%" : "720px"}
+      h={fullSize ? "100%" : { base: "260px", md: "90%" }}
+      mx={fullSize ? 0 : "auto"}
+      my={fullSize ? 0 : { base: 4, md: 8 }}
       overflow="hidden"
-      borderRadius={{ base: "0", md: "28px" }}
-      boxShadow="0 20px 40px rgba(2,15,30,0.35)"
-      border="1px solid rgba(255,255,255,0.06)"
-      bg={cardBg}
+      borderRadius={fullSize ? 0 : { base: "0", md: "28px" }}
+      boxShadow={fullSize ? "none" : "0 20px 40px rgba(2,15,30,0.35)"}
+      border={fullSize ? "none" : "1px solid rgba(255,255,255,0.06)"}
+      bg={fullSize ? "transparent" : cardBg}
     >
       {carouselSlides.map((slide, idx) => (
         <Box
@@ -90,7 +94,8 @@ const AuthCarousel = () => {
         h="100%"
         direction="column"
         align="center"
-        justify="center"
+        justify={fullSize ? "flex-start" : "center"}
+        pt={fullSize ? { base: 16, md: 0 } : 0}
         color="white"
         px={6}
         textAlign="center"
@@ -135,6 +140,7 @@ const AuthCarousel = () => {
         transform="translateX(-50%)"
         zIndex={3}
         spacing={2}
+        display={fullSize ? "none" : "flex"}
       >
         {carouselSlides.map((_, idx) => (
           <Box
@@ -169,27 +175,60 @@ export const AuthSplitLayout = ({
       w="100%"
       minH="100dvh"
       direction={{ base: "column", md: "row" }}
+      position="relative"
+      overflow="hidden"
       bgGradient={pageBg}
     >
       <Box
-        flex={{ base: 0, md: 0.5 }}
-        h={{ base: "300px", md: "100dvh" }}
         display={{ base: "none", md: "block" }}
+        flex={{ base: 0, md: 0.5 }}
+        h="100dvh"
         position="relative"
       >
         <AuthCarousel />
       </Box>
 
       <Box
-        h="280px"
         display={{ base: "block", md: "none" }}
-        position="relative"
-        w="full"
+        position="absolute"
+        inset={0}
+        zIndex={0}
       >
-        <AuthCarousel />
+        <AuthCarousel fullSize />
+        <Box
+          position="absolute"
+          inset={0}
+          bg="linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.6) 100%)"
+        />
       </Box>
 
-      {children}
+      <Flex
+        display={{ base: "flex", md: "none" }}
+        position="relative"
+        zIndex={2}
+        w="100%"
+        h="100vh"
+        align="center"
+        justify="flex-start"
+        px={4}
+        pt={20}
+        pb={6}
+      >
+        {children}
+      </Flex>
+
+      <Flex
+        display={{ base: "none", md: "flex" }}
+        flex={{ base: 1, md: 0.5 }}
+        direction="column"
+        justify="center"
+        align="center"
+        px={{ base: 6, md: 8, lg: 10 }}
+        py={{ base: 8, md: 12 }}
+        bg={pageBg}
+      >
+        {children}
+      </Flex>
     </Flex>
   );
 };

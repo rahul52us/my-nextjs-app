@@ -59,6 +59,8 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [inputType, setInputType] = useState<"file" | "text">("file");
   const [textInput, setTextInput] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const MAX_WORKFLOW_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
   const { state, runWorkflow, reset } = useWorkflowExecution(workflow);
 
@@ -78,8 +80,8 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
            name.includes("cv") ||
            name.includes("formatter") ||
            name.includes("color") ||
-           name.includes("timestamp") ||
-           path.includes("encoder") ||
+           name.includes("timestamp") ||           name.includes("url") || 
+           path.includes("url") ||            path.includes("encoder") ||
            path.includes("decoder") ||
            path.includes("binary") ||
            path.includes("tools/text") ||
@@ -134,7 +136,15 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   }, [state.resultBlob]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setUploadedFile(event.target.files?.[0] ?? null);
+    const file = event.target.files?.[0] ?? null;
+    if (file && file.size > MAX_WORKFLOW_FILE_SIZE) {
+      setValidationError(`Selected file is too large for workflow processing. Maximum allowed size is ${formatBytes(MAX_WORKFLOW_FILE_SIZE)}.`);
+      setUploadedFile(null);
+      return;
+    }
+
+    setValidationError(null);
+    setUploadedFile(file);
   };
 
   // Drag and Drop triggers
@@ -156,12 +166,20 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
 
     const file = e.dataTransfer.files?.[0];
     if (file) {
+      if (file.size > MAX_WORKFLOW_FILE_SIZE) {
+        setValidationError(`Selected file is too large for workflow processing. Maximum allowed size is ${formatBytes(MAX_WORKFLOW_FILE_SIZE)}.`);
+        setUploadedFile(null);
+        return;
+      }
+      setValidationError(null);
       setUploadedFile(file);
     }
   };
 
   const handleStart = async () => {
     if (!workflow || !workflow.isActive) return;
+    setValidationError(null);
+
     if (inputType === "text") {
       if (!textInput.trim()) return;
       const firstStepName = workflow.steps[0]?.name.toLowerCase() || "";
@@ -171,6 +189,10 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
       await runWorkflow(file);
     } else {
       if (!uploadedFile) return;
+      if (uploadedFile.size > MAX_WORKFLOW_FILE_SIZE) {
+        setValidationError(`Selected file is too large for workflow processing. Maximum allowed size is ${formatBytes(MAX_WORKFLOW_FILE_SIZE)}.`);
+        return;
+      }
       await runWorkflow(uploadedFile);
     }
   };
@@ -178,6 +200,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   const handleReset = () => {
     setUploadedFile(null);
     setTextInput("");
+    setValidationError(null);
     reset();
   };
 
@@ -632,12 +655,12 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
                   )}
                 </HStack>
 
-                {errorMessage && (
+                {(validationError || errorMessage) && (
                   <Alert status="error" rounded="xl" variant="subtle" fontSize="sm">
                     <AlertIcon />
                     <Box>
                       <AlertTitle>Pipeline execution failed</AlertTitle>
-                      <AlertDescription>{errorMessage}</AlertDescription>
+                      <AlertDescription>{validationError || errorMessage}</AlertDescription>
                     </Box>
                   </Alert>
                 )}

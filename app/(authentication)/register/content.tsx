@@ -97,19 +97,24 @@ const RegisterContent = observer(() => {
       direction="column"
       justify="center"
       align="center"
-      px={{ base: 6, md: 8, lg: 10 }}
-      py={{ base: 8, md: 12 }}
-      minH={{ base: 'auto', md: '100dvh' }}
-      bg={bgGradient}
+      px={{ base: 4, md: 8, lg: 10 }}
+      py={{ base: 4, md: 12 }}
+      h={{ base: '100vh', md: 'auto' }}
+      minH={{ base: '100vh', md: '100dvh' }}
+      bg={{ base: 'transparent', md: bgGradient }}
     >
       <Box
         w="full"
-        maxW="520px"
-        bg="transparent"
-        borderRadius="0"
-        p={{ base: 4, md: 6 }}
-        border="none"
-        boxShadow="none"
+        maxW={{ base: "95vw", md: "620px" }}
+        mx="auto"
+        mt={{ base: "24px", md: "0" }}
+        bg={{ base: "rgba(255,255,255,0.92)", md: "transparent" }}
+        borderRadius={{ base: "28px", md: "0" }}
+        p={{ base: 6, md: 6 }}
+        border={{ base: "1px solid rgba(255,255,255,0.6)", md: "none" }}
+        boxShadow={{ base: "0 24px 80px rgba(0,0,0,0.18)", md: "none" }}
+        backdropFilter={{ base: "blur(20px)", md: "none" }}
+        sx={{ WebkitBackdropFilter: { base: "blur(20px)", md: "none" } }}
         animation="slideIn 0.5s ease-out"
       >
         <Text

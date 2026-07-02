@@ -54,21 +54,21 @@ export const useAuthFormStyles = () => {
 
   const primaryButtonStyles = {
     h: "48px",
-    bg: "#025b97",
+    bg: "linear-gradient(135deg, #1f6feb 0%, #0b3aba 100%)",
     color: "white",
-    borderRadius: "12px",
+    borderRadius: "14px",
     fontSize: "sm",
-    fontWeight: "600",
-    letterSpacing: "0.5px",
+    fontWeight: "700",
+    letterSpacing: "0.6px",
     width: "100%",
     transition: "all 0.3s ease",
     _hover: {
-      bg: "#0375c4",
-      transform: "translateY(-2px)",
-      boxShadow: "0 8px 16px rgba(2, 91, 151, 0.3)",
+      bg: "linear-gradient(135deg, #2566f3, #1255d1)",
+      transform: "translateY(-1px)",
+      boxShadow: "0 12px 24px rgba(31, 111, 235, 0.25)",
     },
     _active: {
-      bg: "#01447a",
+      bg: "linear-gradient(135deg, #1647c6, #0a2f8d)",
       transform: "translateY(0px)",
     },
   };

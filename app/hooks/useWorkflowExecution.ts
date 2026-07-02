@@ -125,6 +125,14 @@ function getFileNameForUpload(inputFile: File | Blob, slug: string) {
   return `${slug}${extension}`;
 }
 
+async function getTextFromBlob(inputFile: File | Blob): Promise<string> {
+  if (inputFile instanceof File) {
+    return inputFile.text();
+  }
+
+  return await new Response(inputFile).text();
+}
+
 async function convertPdfToJpgClient(inputFile: File | Blob, settings?: Record<string, any>): Promise<Blob> {
   const arrayBuffer = await inputFile.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
@@ -199,9 +207,72 @@ async function convertPdfToJpgClient(inputFile: File | Blob, settings?: Record<s
   return zip.generateAsync({ type: 'blob' });
 }
 
-async function executeToolStep(slug: string, inputFile: File | Blob, settings?: Record<string, any>): Promise<Blob> {
+async function executeToolStep(
+  slug: string,
+  inputFile: File | Blob,
+  settings?: Record<string, any>,
+  nextStepSlug?: string,
+): Promise<Blob> {
   if (slug === 'pdf-to-jpg') {
     return convertPdfToJpgClient(inputFile, settings);
+  }
+
+  if (slug === 'base64-to-image' && inputFile instanceof Blob && inputFile.type.startsWith('image/')) {
+    return inputFile;
+  }
+
+  if (slug === 'url-to-base64') {
+    const url = (await getTextFromBlob(inputFile)).trim();
+    if (!url) {
+      throw new Error('URL to Base64 requires a URL string or a text file containing a URL.');
+    }
+
+    const response = await fetch(`/api/tools/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+      const message = typeof payload === 'string' ? payload : payload?.error || payload?.message || response.statusText;
+      throw new Error(message || `Tool ${slug} failed with ${response.status}`);
+    }
+
+    const json = await response.json();
+    if (nextStepSlug?.startsWith('base64-to-image') && json.mimeType && !json.mimeType.startsWith('image/')) {
+      throw new Error('URL content is not an image. Provide a direct image URL when using URL to Base64 followed by Base64 to Image.');
+    }
+
+    const rawBase64 = json.dataUrl || json.base64;
+    if (!rawBase64) {
+      throw new Error('URL to Base64 did not return valid base64 data.');
+    }
+
+    return new Blob([rawBase64], { type: 'text/plain' });
+  }
+
+  if (slug === 'base64-to-image') {
+    const base64Text = (await getTextFromBlob(inputFile)).trim();
+    if (!base64Text) {
+      throw new Error('Base64 to Image requires a base64 string or Data URL input.');
+    }
+
+    const response = await fetch(`/api/tools/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64: base64Text }),
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+      const message = typeof payload === 'string' ? payload : payload?.error || payload?.message || response.statusText;
+      throw new Error(message || `Tool ${slug} failed with ${response.status}`);
+    }
+
+    return response.blob();
   }
 
   const isJsonInputTool = ['json-to-csv', 'qr-code-generator', 'html-to-pdf'].includes(slug);
@@ -279,6 +350,12 @@ async function executeToolStep(slug: string, inputFile: File | Blob, settings?: 
       else if (json.qrCode) type = json.format || 'image/png';
 
       return new Blob([byteNumbers], { type });
+    }
+
+    // Handle tools that return raw base64/dataUrl text
+    const rawBase64 = json.dataUrl || json.base64;
+    if (rawBase64) {
+      return new Blob([rawBase64], { type: 'text/plain' });
     }
 
     // Handle tools that return text, CSV, or structured JSON
@@ -368,7 +445,8 @@ export function useWorkflowExecution(workflow: SavedWorkflow | null) {
       }));
 
       try {
-        const outputBlob = await executeToolStep(slug, currentInput, step.settings);
+        const nextStepSlug = workflow.steps[index + 1] ? getToolSlug(workflow.steps[index + 1].path, workflow.steps[index + 1].name) : undefined;
+        const outputBlob = await executeToolStep(slug, currentInput, step.settings, nextStepSlug);
         setState((prev) => ({
           ...prev,
           steps: prev.steps.map((item, idx) => idx === index ? { ...item, status: "completed", message: "Completed" } : item),
