@@ -228,6 +228,7 @@ export default function ExcelToJsonContent() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startRow, setStartRow] = useState<string>("1");
   const [endRow, setEndRow] = useState<string>("");
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const toast = useToast();
   const gridApiRef = useRef<any | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -263,28 +264,6 @@ export default function ExcelToJsonContent() {
       localStorage.setItem("selectedColumns", JSON.stringify(selectedColumns));
     }
   }, [selectedColumns]);
-
-  // Handle search input with debouncing
-  /* const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-       const value = e.target.value;
-       setSearchQuery(value);
-       if (searchTimeoutRef.current) {
-         clearTimeout(searchTimeoutRef.current);
-       }
-       searchTimeoutRef.current = setTimeout(() => {
-         if (gridApiRef.current) {
-           gridApiRef.current.setQuickFilter(value);
-         }
-       }, 300);
-     };
-  
-     // Clear search input
-     const clearSearch = () => {
-       setSearchQuery("");
-       if (gridApiRef.current) {
-         gridApiRef.current.setQuickFilter("");
-       }
-     }; */ // Unused search functions for now, can be re-enabled if UI is added
 
   const decodeBase64ToBlob = (
     input: string,
@@ -470,12 +449,8 @@ export default function ExcelToJsonContent() {
     setBase64(value);
   };
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setError("No file selected.");
-      return;
-    }
+  // Shared logic to process a File object, used by both click-upload and drag-drop
+  const processUploadedFile = (file: File) => {
     setFileName(file.name);
     setIsLoading(true);
     setError(null);
@@ -540,6 +515,66 @@ export default function ExcelToJsonContent() {
       setIsLoading(false);
       setLoadingProgress(0);
     }
+  };
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setError("No file selected.");
+      return;
+    }
+    processUploadedFile(file);
+    // reset input value so uploading the same file again re-triggers onChange
+    e.target.value = "";
+  };
+
+  // --- Drag & Drop handlers ---
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only unset if we're leaving the drop zone itself, not a child element
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    if (
+      !file.name.toLowerCase().endsWith(".txt") &&
+      !file.name.toLowerCase().endsWith(".xlsx") &&
+      !file.name.toLowerCase().endsWith(".xls")
+    ) {
+      setError("Please upload a .txt, .xlsx, or .xls file.");
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a .txt, .xlsx, or .xls file.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      return;
+    }
+
+    processUploadedFile(file);
   };
 
   useEffect(() => {
@@ -1121,10 +1156,20 @@ export default function ExcelToJsonContent() {
                 gap={2}
                 p={6}
                 border="2px dashed"
-                borderColor={fileName ? accentColor : borderColor}
+                borderColor={
+                  isDragging
+                    ? accentColor
+                    : fileName
+                      ? accentColor
+                      : borderColor
+                }
                 borderRadius="md"
                 bg={
-                  fileName ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)") : cardBg
+                  isDragging
+                    ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.25)")
+                    : fileName
+                      ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)")
+                      : cardBg
                 }
                 cursor="pointer"
                 transition="all 0.2s"
@@ -1133,6 +1178,10 @@ export default function ExcelToJsonContent() {
                   bg: useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)"),
                 }}
                 width="100%"
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
                 <Icon
                   as={DownloadIcon}
@@ -1146,9 +1195,13 @@ export default function ExcelToJsonContent() {
                   fontSize="sm"
                   textAlign="center"
                 >
-                  {fileName ? fileName : "Click to choose file or drag & drop"}
+                  {isDragging
+                    ? "Drop your file here"
+                    : fileName
+                      ? fileName
+                      : "Click to choose file or drag & drop"}
                 </Text>
-                {fileName && (
+                {fileName && !isDragging && (
                   <Text fontSize="xs" color="green.400">
                     ✓ File selected
                   </Text>

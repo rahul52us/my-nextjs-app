@@ -16,6 +16,8 @@ import {
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+const ACCEPTED_EXTENSIONS = ['pdf', 'docx', 'txt', 'json', 'md', 'png', 'jpg', 'jpeg', 'webp'];
+
 const FileComparer = () => {
   const [files, setFiles] = useState({ left: '', right: '' });
   const [previews, setPreviews] = useState({ left: '', right: '' });
@@ -64,6 +66,10 @@ const FileComparer = () => {
   // Right panel bg in side-by-side
   const rightPanelBg = useColorModeValue('gray.50',   'gray.800');
 
+  // Upload box drag-active colors — theme-consistent, shared by both boxes
+  const dragActiveBorder = useColorModeValue('blue.400', 'blue.300');
+  const dragActiveBg     = useColorModeValue('blue.50',  'blue.900');
+
   const extractText = async (file: File): Promise<string> => {
     const extension = file.name.split('.').pop()?.toLowerCase();
     const arrayBuffer = await file.arrayBuffer();
@@ -87,21 +93,29 @@ const FileComparer = () => {
   };
 
   const clearAll = () => {
-  setFiles({ left: '', right: '' });
-  setPreviews({ left: '', right: '' });
-  setFileNames({ left: '', right: '' });
-  if (leftInputRef.current)  leftInputRef.current.value  = '';
-  if (rightInputRef.current) rightInputRef.current.value = '';
-};
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, side: 'left' | 'right') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    setFiles({ left: '', right: '' });
+    setPreviews({ left: '', right: '' });
+    setFileNames({ left: '', right: '' });
+    if (leftInputRef.current)  leftInputRef.current.value  = '';
+    if (rightInputRef.current) rightInputRef.current.value = '';
+  };
+
+  // Core loader — used by both the <input> picker and drag-and-drop
+  const processFile = async (file: File, side: 'left' | 'right') => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || !ACCEPTED_EXTENSIONS.includes(extension)) {
+      toast({
+        title: "Unsupported file type",
+        description: "PDF, DOCX, TXT, MD, PNG, JPG and WEBP are supported.",
+        status: "warning",
+        position: "top-right",
+      });
+      return;
+    }
 
     setLoading(true);
-    const extension = file.name.split('.').pop()?.toLowerCase();
-
     try {
-      if (['png', 'jpg', 'jpeg', 'webp'].includes(extension || '')) {
+      if (['png', 'jpg', 'jpeg', 'webp'].includes(extension)) {
         const reader = new FileReader();
         reader.onload = (event) => {
           setPreviews(prev => ({ ...prev, [side]: event.target?.result as string }));
@@ -125,6 +139,17 @@ const FileComparer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, side: 'left' | 'right') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file, side);
+    e.target.value = '';
+  };
+
+  const handleFileDrop = async (file: File, side: 'left' | 'right') => {
+    await processFile(file, side);
   };
 
   const swapSides = () => {
@@ -180,9 +205,12 @@ const FileComparer = () => {
               fileName={fileNames.left}
               inputRef={leftInputRef}
               onUpload={(e: any) => handleFileChange(e, 'left')}
+              onFileDrop={(file: File) => handleFileDrop(file, 'left')}
               isDark={isDark}
               cardBg={cardBg}
               borderColor={borderColor}
+              dragActiveBorder={dragActiveBorder}
+              dragActiveBg={dragActiveBg}
             />
             <IconButton
   aria-label="Swap"
@@ -209,9 +237,12 @@ const FileComparer = () => {
               fileName={fileNames.right}
               inputRef={rightInputRef}
               onUpload={(e: any) => handleFileChange(e, 'right')}
+              onFileDrop={(file: File) => handleFileDrop(file, 'right')}
               isDark={isDark}
               cardBg={cardBg}
               borderColor={borderColor}
+              dragActiveBorder={dragActiveBorder}
+              dragActiveBg={dragActiveBg}
             />
           </Flex>
 
@@ -337,8 +368,11 @@ const EmptyState = ({ icon, label }: any) => (
   </Center>
 );
 
-// ── Upload Box — theme-aware ──
-const UploadBox = ({ title, fileName, inputRef, onUpload, isDark, cardBg, borderColor }: any) => {
+// ── Upload Box — theme-aware, click OR drag-and-drop ──
+const UploadBox = ({
+  title, fileName, inputRef, onUpload, onFileDrop, isDark, cardBg, borderColor,
+  dragActiveBorder, dragActiveBg,
+}: any) => {
   const hoverBorder  = isDark ? 'blue.400' : 'blue.400';
   const hoverBg      = isDark ? 'gray.800' : 'gray.50';
   const iconBg       = fileName ? 'blue.600' : (isDark ? 'gray.700' : 'gray.100');
@@ -346,20 +380,68 @@ const UploadBox = ({ title, fileName, inputRef, onUpload, isDark, cardBg, border
   const titleColor   = isDark ? 'blue.300' : 'blue.600';
   const nameColor    = isDark ? 'gray.200' : 'gray.700';
 
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounter = useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounter.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      onFileDrop?.(file);
+      e.dataTransfer.clearData();
+    }
+  };
+
   return (
     <Box
       flex={1}
-      bg={cardBg}
+      bg={isDragActive ? dragActiveBg : cardBg}
       p={6}
       borderRadius="2xl"
       border="2px dashed"
-      borderColor={fileName ? 'blue.400' : borderColor}
+      borderColor={isDragActive ? dragActiveBorder : (fileName ? 'blue.400' : borderColor)}
+      transform={isDragActive ? "scale(1.01)" : "scale(1)"}
       transition="all 0.2s"
       _hover={{ borderColor: hoverBorder, bg: hoverBg }}
       cursor="pointer"
       onClick={() => inputRef.current?.click()}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
-      <input type="file" hidden ref={inputRef} accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" onChange={onUpload} />
+      <input type="file" hidden ref={inputRef} accept=".pdf,.docx,.txt,.md,.json,.png,.jpg,.jpeg,.webp" onChange={onUpload} />
       <HStack spacing={5}>
         <Center bg={iconBg} p={4} borderRadius="xl">
           <Icon as={fileName ? FileCheck : UploadCloud} color={iconColor} boxSize={6} />
@@ -369,7 +451,7 @@ const UploadBox = ({ title, fileName, inputRef, onUpload, isDark, cardBg, border
             {title}
           </Text>
           <Text fontWeight="bold" fontSize="md" color={nameColor} noOfLines={1}>
-            {fileName || "Select Document"}
+            {isDragActive ? "Drop it here" : (fileName || "Select or drop Document")}
           </Text>
         </VStack>
       </HStack>

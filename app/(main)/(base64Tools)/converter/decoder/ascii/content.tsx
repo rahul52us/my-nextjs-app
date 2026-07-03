@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     Box,
     VStack,
@@ -35,12 +35,23 @@ const Base64ToAsciiContent: React.FC = () => {
     const [base64Input, setBase64Input] = useState<string>("");
     const [asciiOutput, setAsciiOutput] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const dragCounter = useRef(0);
     const toast = useToast();
         const {
   themeStore: { themeConfig },
 } = stores;
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
+
+    // Dropzone theme tokens — same colorMode source as the rest of the box,
+    // so the drag-active state stays correct in both light and dark mode.
+    const dropzoneBorder = useColorModeValue("teal.300", "teal.500");
+    const dropzoneBg = useColorModeValue("teal.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("teal.100", "gray.600");
+    const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
+    const dragActiveBg = useColorModeValue("teal.100", "gray.600");
+    const dragActiveBorder = "teal.500";
 
     const isValidBase64 = (str: string): boolean => {
         try {
@@ -77,9 +88,18 @@ const Base64ToAsciiContent: React.FC = () => {
         setLoading(false);
     };
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    // Core reader — shared by both the <input> picker and drag-and-drop
+    const readBase64File = (file: File) => {
+        if (!file.name.toLowerCase().endsWith(".txt")) {
+            toast({
+                title: "Unsupported file type",
+                description: "Only .txt files are supported.",
+                status: "warning",
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
 
         if (file.size > MAX_FILE_SIZE) {
             toast({
@@ -118,6 +138,54 @@ const Base64ToAsciiContent: React.FC = () => {
         };
 
         reader.readAsText(file);
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        readBase64File(file);
+        event.target.value = "";
+    };
+
+    // --- Drag and drop handlers ---
+    const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            dragCounter.current += 1;
+            setIsDragActive(true);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            readBase64File(file);
+            e.dataTransfer.clearData();
+        }
     };
 
     const handleShare = async () => {
@@ -252,19 +320,24 @@ const Base64ToAsciiContent: React.FC = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("teal.300", "teal.500")}
+    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
     borderRadius="xl"
-    bg={useColorModeValue("teal.50", "gray.700")}
+    bg={isDragActive ? dragActiveBg : dropzoneBg}
+    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
       borderColor: "teal.500",
-      bg: useColorModeValue("teal.100", "gray.600"),
+      bg: dropzoneHoverBg,
     }}
+    onDragEnter={handleDragEnter}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
   >
-    <Icon as={FaExchangeAlt} boxSize={8} color="teal.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      Click to upload Base64 file
+    <Icon as={FaExchangeAlt} boxSize={8} color={isDragActive ? "teal.500" : "teal.400"} />
+    <Text fontWeight="semibold" color={dropzoneTextColor}>
+      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
     </Text>
     <Text fontSize="sm" color="gray.400">
       .txt files only • Max 2MB

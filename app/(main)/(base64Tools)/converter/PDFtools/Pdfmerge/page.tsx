@@ -25,6 +25,8 @@ interface FileWithId {
   type: FileDocType;
 }
 
+const ACCEPTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
 const PdfMerger = () => {
   const [files, setFiles] = useState<FileWithId[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,6 +36,10 @@ const PdfMerger = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
+  // Drag & drop state
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounter = useRef(0);
+
   /* ✅ COLOR MODE FIX */
   const pageBg = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
@@ -42,17 +48,90 @@ const PdfMerger = () => {
   const textSecondary = useColorModeValue("gray.505", "gray.400");
   const hoverBg = useColorModeValue("brand.50", "gray.700");
 
+  // Drag-active dropzone colors — same colorMode pattern as the rest of the UI
+  const dragActiveBg = useColorModeValue("brand.50", "gray.700");
+  const dragActiveBorder = useColorModeValue("brand.500", "brand.300");
+  const dropzoneIconThumbBg = useColorModeValue("gray.50", "gray.700");
+
+  // Shared logic for both <input> selection and drag-drop
+  const addFiles = (fileList: FileList | File[]) => {
+    const incoming = Array.from(fileList);
+    const valid: File[] = [];
+    let rejected = 0;
+
+    incoming.forEach((file) => {
+      if (ACCEPTED_TYPES.includes(file.type)) {
+        valid.push(file);
+      } else {
+        rejected++;
+      }
+    });
+
+    if (rejected > 0) {
+      toast({
+        title: rejected === incoming.length ? "Unsupported file type" : "Some files were skipped",
+        description: "Only PDF, PNG, JPG, and WEBP files are supported.",
+        status: "warning",
+        duration: 3000,
+      });
+    }
+
+    if (valid.length === 0) return;
+
+    const newFiles: FileWithId[] = valid.map((file) => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      preview: URL.createObjectURL(file),
+      type: (file.type.includes('pdf') ? 'application/pdf' : 'image') as FileDocType,
+    }));
+    setFiles((prev) => [...prev, ...newFiles]);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles: FileWithId[] = Array.from(e.target.files).map((file) => ({
-        id: Math.random().toString(36).substring(7),
-        file,
-        preview: URL.createObjectURL(file),
-        type: (file.type.includes('pdf') ? 'application/pdf' : 'image') as FileDocType,
-      }));
-      setFiles((prev) => [...prev, ...newFiles]);
+    if (e.target.files && e.target.files.length > 0) {
+      addFiles(e.target.files);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // --- Drag and drop handlers ---
+  const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounter.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      addFiles(e.dataTransfer.files);
+      e.dataTransfer.clearData();
+    }
   };
 
   const removeFile = (id: string, preview: string) => {
@@ -151,15 +230,22 @@ const PdfMerger = () => {
             p={10}
             cursor="pointer"
             border="2px dashed"
-            borderColor="brand.300"
+            borderColor={isDragActive ? dragActiveBorder : "brand.300"}
             borderRadius="2xl"
-            bg={cardBg}
+            bg={isDragActive ? dragActiveBg : cardBg}
+            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
             _hover={{ bg: hoverBg, borderColor: 'brand.500' }}
             transition="all 0.2s"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
             <VStack>
-              <Icon as={FiFilePlus} boxSize={10} color="brand.500" />
-              <Text fontWeight="bold" color={textPrimary}>Click to upload PDFs or Images</Text>
+              <Icon as={FiFilePlus} boxSize={10} color={isDragActive ? dragActiveBorder : "brand.500"} />
+              <Text fontWeight="bold" color={textPrimary}>
+                {isDragActive ? "Drop your files here" : "Click to upload PDFs or Images"}
+              </Text>
               <Text fontSize="xs" color={textSecondary}>Supports PDF, PNG, JPG</Text>
             </VStack>
             <input id="file-upload" type="file" multiple accept="application/pdf,image/*" hidden onChange={handleFileChange} ref={fileInputRef} />
@@ -181,7 +267,7 @@ const PdfMerger = () => {
                       >
                         <HStack spacing={4} flex={1}>
                           <Text fontWeight="bold" color={textSecondary} w="20px">{index + 1}</Text>
-                          <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg={useColorModeValue("gray.50", "gray.700")}>
+                          <AspectRatio ratio={1} w="50px" borderRadius="md" overflow="hidden" bg={dropzoneIconThumbBg}>
                             {item.type === 'image' ? (
                               <Image src={item.preview} alt="preview" objectFit="cover" />
                             ) : (

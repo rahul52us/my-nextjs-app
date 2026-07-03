@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, ChangeEvent, useRef } from "react";
+import { useState, ChangeEvent, DragEvent, useRef } from "react";
 import jsPDF from "jspdf";
 import {
   Box,
@@ -27,6 +27,9 @@ const ImagesToPdf: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [base64Strings, setBase64Strings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  // NEW: track drag-over state so the dropzone can be styled/labeled while dragging
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounterRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const toast = useToast();
   const bgColor = useColorModeValue("gray.100", "gray.800");
@@ -41,8 +44,81 @@ const ImagesToPdf: React.FC = () => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setFiles((prev) => [...prev, ...newFiles]);
+      addFiles(newFiles);
+      // allow re-selecting the same file(s) again later
+      e.target.value = "";
     }
+  };
+
+  // NEW: shared logic to validate + add files, used by both the file input
+  // and drag-and-drop so both paths behave identically.
+  const addFiles = (incoming: File[]) => {
+    const imageFiles = incoming.filter((file) => file.type.startsWith("image/"));
+    const rejectedCount = incoming.length - imageFiles.length;
+
+    if (imageFiles.length > 0) {
+      setFiles((prev) => [...prev, ...imageFiles]);
+    }
+
+    if (rejectedCount > 0) {
+      toast({
+        title: "Some files skipped",
+        description: `${rejectedCount} file${rejectedCount > 1 ? "s were" : " was"} not an image and ${rejectedCount > 1 ? "were" : "was"} skipped.`,
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+
+    if (imageFiles.length === 0 && incoming.length === 0) {
+      toast({
+        title: "No files detected",
+        description: "Please drop or select image files.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // NEW: Drag & drop handlers
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    // Required: without preventDefault() the browser blocks the drop event
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!isDragActive) setIsDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragActive(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files || []);
+    addFiles(droppedFiles);
+    e.dataTransfer.clearData();
   };
 
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -226,7 +302,7 @@ const ImagesToPdf: React.FC = () => {
 
       <VStack spacing={6} align="stretch">
 
-        {/* ✅ FIX 1: Custom styled upload box */}
+        {/* ✅ FIX 1: Custom styled upload box — now a working dropzone */}
         <Input
           ref={fileInputRef}
           type="file"
@@ -246,30 +322,46 @@ const ImagesToPdf: React.FC = () => {
           gap={3}
           p={8}
           border="2px dashed"
-          borderColor={files.length > 0 ? "teal.400" : borderColor}
+          borderColor={
+            isDragActive ? "teal.400" : files.length > 0 ? "teal.400" : borderColor
+          }
           borderRadius="xl"
-          bg={files.length > 0 ? useColorModeValue("teal.50", "teal.900") : cardBg}
+          bg={
+            isDragActive
+              ? useColorModeValue("teal.100", "teal.800")
+              : files.length > 0
+                ? useColorModeValue("teal.50", "teal.900")
+                : cardBg
+          }
           cursor="pointer"
           transition="all 0.2s"
           _hover={{
             borderColor: "teal.400",
             bg: useColorModeValue("teal.50", "teal.900"),
           }}
+          // NEW: drag-and-drop wiring. onDragOver MUST call preventDefault()
+          // or the browser will reject the drop (and just open the file instead).
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           <Icon
             as={FaUpload}
             boxSize={8}
-            color={files.length > 0 ? "teal.500" : "gray.400"}
+            color={isDragActive || files.length > 0 ? "teal.500" : "gray.400"}
           />
           <Text
-            fontWeight={files.length > 0 ? "semibold" : "normal"}
-            color={files.length > 0 ? "teal.600" : "gray.500"}
+            fontWeight={isDragActive || files.length > 0 ? "semibold" : "normal"}
+            color={isDragActive || files.length > 0 ? "teal.600" : "gray.500"}
             fontSize="sm"
             textAlign="center"
           >
-            {files.length > 0
-              ? `✓ ${files.length} image${files.length > 1 ? "s" : ""} selected`
-              : "Click to choose images or drag & drop"}
+            {isDragActive
+              ? "Drop images here"
+              : files.length > 0
+                ? `✓ ${files.length} image${files.length > 1 ? "s" : ""} selected`
+                : "Click to choose images or drag & drop"}
           </Text>
           <Text fontSize="xs" color="gray.400">
             Supports: JPG, PNG, WEBP, GIF

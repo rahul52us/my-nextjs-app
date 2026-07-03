@@ -56,8 +56,10 @@ const JwtDecoderContent: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [isDragActive, setIsDragActive] = useState<boolean>(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const dragCounter = React.useRef(0);
   const toast = useToast();
 
   const {
@@ -71,6 +73,11 @@ const JwtDecoderContent: React.FC = () => {
   const fileNameColor = useColorModeValue("gray.700", "gray.200");
   const mutedColor    = useColorModeValue("gray.500", "gray.400");
   const uploadHoverBg = useColorModeValue("teal.50", "gray.600");
+
+  // Drag-active tokens — same colorMode source as the rest of the box,
+  // so the drag state stays correct in both light and dark mode.
+  const dragActiveBg = useColorModeValue("teal.50", "gray.600");
+  const dragActiveBorder = "teal.400";
 
   const resetOutput = () => {
     setHeaderOutput("");
@@ -108,9 +115,12 @@ const JwtDecoderContent: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Core reader — shared by both the <input> picker and drag-and-drop
+  const readJwtFile = (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".txt")) {
+      toast({ title: "Unsupported file type", description: "Only .txt files are supported.", status: "warning", duration: 3000, isClosable: true });
+      return;
+    }
     if (file.size > MAX_FILE_SIZE) {
       toast({ title: "File too large", description: "Please upload a file smaller than 2MB.", status: "error", duration: 3000, isClosable: true });
       return;
@@ -128,7 +138,54 @@ const JwtDecoderContent: React.FC = () => {
       toast({ title: "Upload failed", description: "Could not read the file.", status: "error", duration: 3000, isClosable: true });
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    readJwtFile(file);
     event.target.value = ""; // reset so same file can be re-picked
+  };
+
+  // --- Drag and drop handlers ---
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounter.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      readJwtFile(file);
+      e.dataTransfer.clearData();
+    }
   };
 
   const handleRemoveFile = () => {
@@ -246,27 +303,36 @@ const JwtDecoderContent: React.FC = () => {
               </HStack>
             </Flex>
           ) : (
-            /* No file — dashed drop zone */
+            /* No file — dashed drop zone, click OR drag-and-drop */
             <Flex
               align="center"
               justify="space-between"
               px={4}
               py={4}
-              bg={fileBg}
+              bg={isDragActive ? dragActiveBg : fileBg}
               border="1.5px dashed"
-              borderColor={fileBorder}
+              borderColor={isDragActive ? dragActiveBorder : fileBorder}
               borderRadius="lg"
               cursor="pointer"
+              transform={isDragActive ? "scale(1.01)" : "scale(1)"}
               onClick={openFilePicker}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               _hover={{ borderColor: "teal.400", bg: uploadHoverBg }}
               transition="all 0.2s"
               gap={3}
               flexWrap="wrap"
             >
               <HStack spacing={3}>
-                <Icon as={FaUpload} color={mutedColor} boxSize={4} />
-                <Text fontSize="sm" color={mutedColor}>
-                  Click to upload a <strong>.txt</strong> file containing your JWT
+                <Icon as={FaUpload} color={isDragActive ? "teal.400" : mutedColor} boxSize={4} />
+                <Text fontSize="sm" color={isDragActive ? "teal.500" : mutedColor}>
+                  {isDragActive ? (
+                    "Drop it here"
+                  ) : (
+                    <>Click or drag & drop a <strong>.txt</strong> file containing your JWT</>
+                  )}
                 </Text>
               </HStack>
               <Button

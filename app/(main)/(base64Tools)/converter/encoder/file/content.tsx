@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, DragEvent } from "react";
 import {
     Box,
     Button,
@@ -26,42 +26,71 @@ const FileToBase64Content = () => {
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileType, setFileType] = useState<string>(""); // Store the MIME type of the file
     const [format, setFormat] = useState<string>("dataUri");
+    const [isDragging, setIsDragging] = useState(false);
     const toast = useToast();
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
         const {
   themeStore: { themeConfig },
 } = stores;
+
+    const processFile = (file: File) => {
+        const reader = new FileReader();
+        setFileName(file.name);
+        setFileType(file.type); // Store the MIME type of the file
+
+        reader.onload = () => {
+            const result = reader.result as string;
+            setBase64(result);
+            toast({
+                title: "Conversion Successful",
+                description: "File has been converted to Base64.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        };
+
+        reader.onerror = () => {
+            toast({
+                title: "Error",
+                description: "Failed to read the file. Please try again.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        };
+
+        reader.readAsDataURL(file);
+    };
+
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            setFileName(file.name);
-            setFileType(file.type); // Store the MIME type of the file
+            processFile(file);
+        }
+    };
 
-            reader.onload = () => {
-                const result = reader.result as string;
-                setBase64(result);
-                toast({
-                    title: "Conversion Successful",
-                    description: "File has been converted to Base64.",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            };
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
 
-            reader.onerror = () => {
-                toast({
-                    title: "Error",
-                    description: "Failed to read the file. Please try again.",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            };
+    const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
 
-            reader.readAsDataURL(file);
+    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            processFile(file);
         }
     };
 
@@ -236,11 +265,15 @@ const FileToBase64Content = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("brand.300", "brand.500")}
+    borderColor={isDragging ? "brand.500" : useColorModeValue("brand.300", "brand.500")}
     borderRadius="xl"
-    bg={useColorModeValue("brand.50", "gray.700")}
+    bg={isDragging ? useColorModeValue("brand.100", "gray.600") : useColorModeValue("brand.50", "gray.700")}
     cursor="pointer"
     transition="all 0.2s"
+    onDragOver={handleDragOver}
+    onDragEnter={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
     _hover={{
       borderColor: "brand.500",
       bg: useColorModeValue("brand.100", "gray.600"),

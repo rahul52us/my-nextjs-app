@@ -20,6 +20,9 @@ import stores from "../../../../../store/stores";
 
 const ZipCompression: React.FC = () => {
   const [files, setFiles] = useState<FileList | null>(null);
+  // NEW: track drag-over state so the dropzone can be styled/labeled while dragging
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounterRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
@@ -33,9 +36,59 @@ const ZipCompression: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
-    if (selectedFiles) {
+    if (selectedFiles && selectedFiles.length > 0) {
       setFiles(selectedFiles);
     }
+  };
+
+  // NEW: Drag & drop handlers
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Required: without preventDefault() the browser blocks the drop event
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!isDragActive) setIsDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragActive(false);
+
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      setFiles(droppedFiles);
+    } else {
+      toast({
+        title: "No Files Detected",
+        description: "Please drop one or more files.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    e.dataTransfer.clearData();
   };
 
   const handleCompressFiles = async () => {
@@ -119,7 +172,7 @@ const ZipCompression: React.FC = () => {
             display="none"
           />
 
-          {/* ✅ Custom styled upload box */}
+          {/* ✅ Custom styled upload box — now a working dropzone */}
           <Box
             as="label"
             htmlFor="file"
@@ -130,12 +183,20 @@ const ZipCompression: React.FC = () => {
             gap={3}
             p={8}
             border="2px dashed"
-            borderColor={files && files.length > 0 ? "teal.400" : borderColor}
+            borderColor={
+              isDragActive
+                ? "teal.400"
+                : files && files.length > 0
+                  ? "teal.400"
+                  : borderColor
+            }
             borderRadius="xl"
             bg={
-              files && files.length > 0
-                ? useColorModeValue("teal.50", "teal.900")
-                : cardBg
+              isDragActive
+                ? useColorModeValue("teal.100", "teal.800")
+                : files && files.length > 0
+                  ? useColorModeValue("teal.50", "teal.900")
+                  : cardBg
             }
             cursor="pointer"
             transition="all 0.2s"
@@ -143,21 +204,41 @@ const ZipCompression: React.FC = () => {
               borderColor: "teal.400",
               bg: useColorModeValue("teal.50", "teal.900"),
             }}
+            // NEW: drag-and-drop wiring. onDragOver MUST call preventDefault()
+            // or the browser will reject the drop (and just open the file instead).
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
             <Icon
               as={FaUpload}
               boxSize={8}
-              color={files && files.length > 0 ? "teal.500" : "gray.400"}
+              color={
+                isDragActive || (files && files.length > 0)
+                  ? "teal.500"
+                  : "gray.400"
+              }
             />
             <Text
-              fontWeight={files && files.length > 0 ? "semibold" : "normal"}
-              color={files && files.length > 0 ? "teal.600" : "gray.500"}
+              fontWeight={
+                isDragActive || (files && files.length > 0)
+                  ? "semibold"
+                  : "normal"
+              }
+              color={
+                isDragActive || (files && files.length > 0)
+                  ? "teal.600"
+                  : "gray.500"
+              }
               fontSize="sm"
               textAlign="center"
             >
-              {files && files.length > 0
-                ? `✓ ${files.length} file${files.length > 1 ? "s" : ""} selected`
-                : "Click to choose files or drag & drop"}
+              {isDragActive
+                ? "Drop files here"
+                : files && files.length > 0
+                  ? `✓ ${files.length} file${files.length > 1 ? "s" : ""} selected`
+                  : "Click to choose files or drag & drop"}
             </Text>
             <Text fontSize="xs" color="gray.400">
               All file types supported

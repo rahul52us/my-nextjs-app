@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useCallback, ChangeEvent, useMemo, useEffect } from "react";
+import { useState, useCallback, ChangeEvent, DragEvent, useMemo, useEffect, useRef } from "react";
 import { saveAs } from "file-saver";
 import { FaFileAlt } from "react-icons/fa";
 import {
@@ -186,11 +186,22 @@ const Base64ToFileContent = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [showPreview, setShowPreview] = useState<boolean>(false);
     const [currentPages, setCurrentPages] = useState<Record<string, number>>({});
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const dragCounter = useRef(0);
 
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
     const itemsPerPage = 10;
     const maxRows = 1000;
+
+    // Dropzone theme tokens — same colorMode source as the rest of the box,
+    // so the drag-active state stays correct in both light and dark mode.
+    const dropzoneBorder = useColorModeValue("green.300", "green.500");
+    const dropzoneBg = useColorModeValue("green.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("green.100", "gray.600");
+    const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
+    const dragActiveBg = useColorModeValue("green.100", "gray.600");
+    const dragActiveBorder = "green.500";
 
     const decodeBase64ToBlob = (
         input: string
@@ -412,10 +423,9 @@ const Base64ToFileContent = () => {
         }
     }, [base64, previewBase64]);
 
-    const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (!file.name.endsWith(".txt")) {
+    // Core reader — shared by both the <input> picker and drag-and-drop
+    const readBase64TxtFile = (file: File) => {
+        if (!file.name.toLowerCase().endsWith(".txt")) {
             setError("Please upload a .txt file containing a Base64 string.");
             return;
         }
@@ -427,12 +437,61 @@ const Base64ToFileContent = () => {
                 return;
             }
             console.log("File uploaded, setting base64");
+            setError(null);
             setBase64(content);
         };
         reader.onerror = () => {
             setError("Error reading the file.");
         };
         reader.readAsText(file);
+    };
+
+    const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        readBase64TxtFile(file);
+        e.target.value = "";
+    };
+
+    // --- Drag and drop handlers ---
+    const handleDragEnter = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            dragCounter.current += 1;
+            setIsDragActive(true);
+        }
+    };
+
+    const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            readBase64TxtFile(file);
+            e.dataTransfer.clearData();
+        }
     };
 
     const handleDownload = () => {
@@ -662,19 +721,24 @@ const Base64ToFileContent = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("green.300", "green.500")}
+    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
     borderRadius="xl"
-    bg={useColorModeValue("green.50", "gray.700")}
+    bg={isDragActive ? dragActiveBg : dropzoneBg}
+    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
       borderColor: "green.500",
-      bg: useColorModeValue("green.100", "gray.600"),
+      bg: dropzoneHoverBg,
     }}
+    onDragEnter={handleDragEnter}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
   >
-    <Icon as={FaFileAlt} boxSize={8} color="green.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      Click to upload Base64 file
+    <Icon as={FaFileAlt} boxSize={8} color={isDragActive ? "green.500" : "green.400"} />
+    <Text fontWeight="semibold" color={dropzoneTextColor}>
+      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
     </Text>
     <Text fontSize="sm" color="gray.400">
       .txt files only
@@ -785,7 +849,7 @@ const Base64ToFileContent = () => {
                                     </Flex>
                                     {previewContent.find(
                                         (sheet) => sheet.sheetName === selectedSheet
-                                    )?.rowData.length! > 0 || columnDefs.length > 0 ? (
+                                    )?.rowData?.length > 0 || columnDefs.length > 0 ? (
                                         <Box
                                             className="excel-grid-container"
                                             w="100%"

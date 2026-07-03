@@ -23,6 +23,9 @@ import stores from "../../../../../store/stores";
 const FileEncryption = () => {
   const [file, setFile] = useState<File | null>(null);
   const [secretKey, setSecretKey] = useState<string>("");
+  // NEW: track drag-over state so the dropzone can be styled/labeled while dragging
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounterRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
@@ -35,13 +38,59 @@ const FileEncryption = () => {
   } = stores;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
     }
+    // allow re-selecting the same file again later
+    e.target.value = "";
   };
 
   const handleSecretKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSecretKey(e.target.value);
+  };
+
+  // NEW: Drag & drop handlers
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Required: without preventDefault() the browser blocks the drop event
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!isDragActive) setIsDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragActive(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+    } else {
+      alert("No file detected in the drop. Please try again.");
+    }
+    e.dataTransfer.clearData();
   };
 
   const encryptFile = () => {
@@ -94,7 +143,7 @@ const FileEncryption = () => {
 
       <VStack spacing={6} align="stretch">
 
-        {/* ✅ Custom Upload Box */}
+        {/* ✅ Custom Upload Box — now a working dropzone */}
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="bold">
             Choose a File to Encrypt
@@ -120,37 +169,51 @@ const FileEncryption = () => {
             gap={3}
             p={8}
             border="2px dashed"
-            borderColor={file ? "#007AAC" : borderColor}
+            borderColor={isDragActive ? "#007AAC" : file ? "#007AAC" : borderColor}
             borderRadius="xl"
-            bg={file ? useColorModeValue("#e6f4fa", "#003d56") : cardBg}
+            bg={
+              isDragActive
+                ? useColorModeValue("#cfeaf7", "#00527a")
+                : file
+                  ? useColorModeValue("#e6f4fa", "#003d56")
+                  : cardBg
+            }
             cursor="pointer"
             transition="all 0.2s"
             _hover={{
               borderColor: "#007AAC",
               bg: useColorModeValue("#e6f4fa", "#003d56"),
             }}
+            // NEW: drag-and-drop wiring. onDragOver MUST call preventDefault()
+            // or the browser will reject the drop (and just open the file instead).
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
             <Icon
               as={FaUpload}
               boxSize={8}
-              color={file ? "#007AAC" : "gray.400"}
+              color={isDragActive || file ? "#007AAC" : "gray.400"}
             />
             <Text
-              fontWeight={file ? "semibold" : "normal"}
-              color={file ? "#007AAC" : "gray.500"}
+              fontWeight={isDragActive || file ? "semibold" : "normal"}
+              color={isDragActive || file ? "#007AAC" : "gray.500"}
               fontSize="sm"
               textAlign="center"
             >
-              {file
-                ? `✓ ${file.name}`
-                : "Click to choose a file or drag & drop"}
+              {isDragActive
+                ? "Drop the file here"
+                : file
+                  ? `✓ ${file.name}`
+                  : "Click to choose a file or drag & drop"}
             </Text>
-            {file && (
+            {file && !isDragActive && (
               <Text fontSize="xs" color="#007AAC">
                 {(file.size / 1024).toFixed(1)} KB
               </Text>
             )}
-            {!file && (
+            {!file && !isDragActive && (
               <Text fontSize="xs" color="gray.400">
                 All file types supported
               </Text>

@@ -3,6 +3,7 @@ import {
   useState,
   useCallback,
   ChangeEvent,
+  DragEvent,
   useMemo,
   useEffect,
   useRef,
@@ -106,6 +107,9 @@ const JsonToExcel = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startRow, setStartRow] = useState<string>("1");
   const [endRow, setEndRow] = useState<string>("");
+  // NEW: track drag-over state so we can style the dropzone
+  const [isDragActive, setIsDragActive] = useState<boolean>(false);
+  const dragCounterRef = useRef<number>(0);
   const toast = useToast();
   const gridApiRef = useRef<GridApi | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -179,6 +183,8 @@ const JsonToExcel = () => {
     setSearchQuery("");
     setStartRow("1");
     setEndRow("");
+    setIsDragActive(false);
+    dragCounterRef.current = 0;
     localStorage.removeItem("selectedColumns");
     if (gridApiRef.current) {
       gridApiRef.current.setGridOption("quickFilterText", "");
@@ -305,8 +311,9 @@ const JsonToExcel = () => {
     setError(null); // Clear error on input change
   };
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // NEW: shared file-processing logic used by both <input type="file">
+  // and drag-and-drop, so both paths behave identically.
+  const processJsonFile = useCallback((file: File | undefined | null) => {
     if (!file) {
       setError("No file selected. Please choose a .json file.");
       return;
@@ -351,6 +358,58 @@ const JsonToExcel = () => {
       }
     };
     reader.readAsText(file);
+  }, [parseJsonData]);
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    processJsonFile(file);
+    // allow re-uploading the same file again later
+    e.target.value = "";
+  };
+
+  // NEW: Drag & drop handlers
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // ignore drags that don't carry files (e.g. text selection drags)
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    // Required: without preventDefault() the browser blocks drop events
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!isDragActive) setIsDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) {
+      setError("No file detected in the drop. Please try again.");
+      return;
+    }
+    processJsonFile(file);
+    e.dataTransfer.clearData();
   };
 
   useEffect(() => {
@@ -708,7 +767,7 @@ const JsonToExcel = () => {
             <FormLabel fontWeight="semibold" color={textColor} fontSize="md">
               Upload JSON File
               <Tooltip
-                label="Upload a .json file (max 100MB) containing an array or object."
+                label="Upload a .json file (max 100MB) containing an array or object. You can also drag & drop the file here."
                 hasArrow
                 placement="top"
               >
@@ -730,7 +789,7 @@ const JsonToExcel = () => {
               id="json-file-upload"
             />
 
-            {/* Custom styled upload box */}
+            {/* Custom styled upload box - now a working dropzone */}
             <Skeleton isLoaded={!isLoading}>
               <Box
                 as="label"
@@ -743,13 +802,19 @@ const JsonToExcel = () => {
                 p={5}
                 border="2px dashed"
                 borderColor={
-                  jsonInput && previewContent ? accentColor : borderColor
+                  isDragActive
+                    ? accentColor
+                    : jsonInput && previewContent
+                      ? accentColor
+                      : borderColor
                 }
                 borderRadius="md"
                 bg={
-                  jsonInput && previewContent
-                    ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)")
-                    : cardBg
+                  isDragActive
+                    ? useColorModeValue(accentBgLightHover, "rgba(0, 122, 204, 0.25)")
+                    : jsonInput && previewContent
+                      ? useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)")
+                      : cardBg
                 }
                 cursor="pointer"
                 transition="all 0.2s"
@@ -758,27 +823,45 @@ const JsonToExcel = () => {
                   bg: useColorModeValue(accentBgLight, "rgba(0, 122, 204, 0.15)"),
                 }}
                 width="100%"
+                // NEW: drag-and-drop wiring. onDragOver MUST call
+                // preventDefault() or the browser rejects the drop.
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
                 {/* Upload Icon */}
                 <Box
                   as="span"
                   fontSize="2xl"
-                  color={jsonInput && previewContent ? accentColor : "gray.400"}
+                  color={
+                    isDragActive || (jsonInput && previewContent)
+                      ? accentColor
+                      : "gray.400"
+                  }
                 >
                   ↑
                 </Box>
 
                 <Text
-                  color={jsonInput && previewContent ? useColorModeValue(accentColor, "brand.300") : "gray.500"}
+                  color={
+                    isDragActive || (jsonInput && previewContent)
+                      ? useColorModeValue(accentColor, "brand.300")
+                      : "gray.500"
+                  }
                   fontWeight={
-                    jsonInput && previewContent ? "semibold" : "normal"
+                    isDragActive || (jsonInput && previewContent)
+                      ? "semibold"
+                      : "normal"
                   }
                   fontSize="sm"
                   textAlign="center"
                 >
-                  {jsonInput && previewContent
-                    ? "✓ File loaded successfully"
-                    : "Click to choose .json file"}
+                  {isDragActive
+                    ? "Drop the .json file here"
+                    : jsonInput && previewContent
+                      ? "✓ File loaded successfully"
+                      : "Click to choose .json file"}
                 </Text>
 
                 <Text fontSize="xs" color="gray.400">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, DragEvent } from 'react';
 import {
     Box,
     Button,
@@ -57,6 +57,7 @@ const ExcelToPdfContent = () => {
     const [data, setData] = useState<ExcelRow[]>([]);
     const [fileName, setFileName] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
@@ -72,6 +73,35 @@ const ExcelToPdfContent = () => {
         "radial(circle at 10% 10%, brand.50 0%, transparent 30%), radial(circle at 90% 90%, purple.50 0%, transparent 30%)",
         "radial(circle at 10% 10%, brand.900/20 0%, transparent 30%), radial(circle at 90% 90%, purple.900/20 0%, transparent 30%)"
     );
+
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(true);
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+    };
+
+    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
+
+        const fakeEvent = {
+            target: {
+                files: [file],
+            },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+        handleFileChange(fakeEvent);
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -219,12 +249,16 @@ const ExcelToPdfContent = () => {
                                     p={20}
                                     cursor="pointer"
                                     border="2px dashed"
-                                    borderColor={useColorModeValue("gray.300", "gray.600")}
+                                    borderColor={isDragActive ? 'brand.500' : useColorModeValue("gray.300", "gray.600")}
                                     borderRadius="3xl"
-                                    bg={cardBg}
+                                    bg={isDragActive ? useColorModeValue('brand.50', 'whiteAlpha.50') : cardBg}
                                     transition="all 0.3s"
                                     _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: useColorModeValue('brand.50', 'whiteAlpha.50') }}
                                     flexDirection="column"
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
                                 >
                                     <VStack spacing={4}>
                                         <Box bg="brand.500" color="white" p={5} borderRadius="2xl" shadow="lg">

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useRef, DragEvent } from "react";
 import {
     Box,
     Button,
@@ -26,43 +26,112 @@ const AudioToBase64Content = () => {
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileType, setFileType] = useState<string>("");
     const [format, setFormat] = useState<string>("dataUri");
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const dragCounter = useRef(0);
     const toast = useToast();
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
+    // Dropzone theme tokens — same colorMode source as the rest of the box,
+    // so the drag-active state stays correct in both light and dark mode.
+    const dropzoneBorder = useColorModeValue("brand.300", "brand.500");
+    const dropzoneBg = useColorModeValue("brand.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("brand.100", "gray.600");
+    const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
+    const dragActiveBg = useColorModeValue("brand.100", "gray.600");
+    const dragActiveBorder = "brand.500";
+
+    // Core file reader — shared by both the <input> picker and drag-and-drop
+    const readAudioFile = (file: File) => {
+        if (!file.type.startsWith("audio/")) {
+            toast({
+                title: "Unsupported file type",
+                description: "Please upload an audio file (MP3, WAV, OGG, AAC).",
+                status: "warning",
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
+
+        const reader = new FileReader();
+        setFileName(file.name);
+        setFileType(file.type);
+
+        reader.onload = () => {
+            const result = reader.result as string;
+            setBase64(result);
+            toast({
+                title: "Conversion Successful",
+                description: "File has been converted to Base64.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        };
+
+        reader.onerror = () => {
+            toast({
+                title: "Error",
+                description: "Failed to read the file. Please try again.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            setFileName(file.name);
-            setFileType(file.type);
+            readAudioFile(file);
+        }
+        e.target.value = "";
+    };
 
-            reader.onload = () => {
-                const result = reader.result as string;
-                setBase64(result);
-                toast({
-                    title: "Conversion Successful",
-                    description: "File has been converted to Base64.",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            };
-
-            reader.onerror = () => {
-                toast({
-                    title: "Error",
-                    description: "Failed to read the file. Please try again.",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            };
-            reader.readAsDataURL(file);
+    // --- Drag and drop handlers ---
+    const handleDragEnter = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            dragCounter.current += 1;
+            setIsDragActive(true);
         }
     };
-    
-        const {
+
+    const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            readAudioFile(file);
+            e.dataTransfer.clearData();
+        }
+    };
+
+    const {
   themeStore: { themeConfig },
 } = stores;
 
@@ -183,19 +252,24 @@ const AudioToBase64Content = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("brand.300", "brand.500")}
+    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
     borderRadius="xl"
-    bg={useColorModeValue("brand.50", "gray.700")}
+    bg={isDragActive ? dragActiveBg : dropzoneBg}
+    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
       borderColor: "brand.500",
-      bg: useColorModeValue("brand.100", "gray.600"),
+      bg: dropzoneHoverBg,
     }}
+    onDragEnter={handleDragEnter}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
   >
-    <Icon as={FaMusic} boxSize={8} color="brand.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      {fileName ? fileName : "Click to upload audio file"}
+    <Icon as={FaMusic} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
+    <Text fontWeight="semibold" color={dropzoneTextColor}>
+      {isDragActive ? "Drop it here" : fileName ? fileName : "Click to upload or drag & drop audio file"}
     </Text>
     <Text fontSize="sm" color="gray.400">
       MP3, WAV, OGG, AAC supported

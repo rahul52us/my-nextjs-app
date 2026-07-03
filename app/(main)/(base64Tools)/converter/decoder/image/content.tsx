@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, DragEvent, useRef } from "react";
 import { saveAs } from "file-saver";
 import { FaImage  } from "react-icons/fa";
 import {
@@ -34,8 +34,19 @@ const Base64ImageContent = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [showPreview, setShowPreview] = useState<boolean>(false);
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const dragCounter = useRef(0);
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
+
+    // Dropzone theme tokens — same colorMode source as the rest of the box,
+    // so the drag-active state stays correct in both light and dark mode.
+    const dropzoneBorder = useColorModeValue("purple.300", "purple.500");
+    const dropzoneBg = useColorModeValue("purple.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("purple.100", "gray.600");
+    const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
+    const dragActiveBg = useColorModeValue("purple.100", "gray.600");
+    const dragActiveBorder = "purple.500";
 
     const extractMimeAndData = (input: string) => {
         const regex = /^data:(.*?);base64,(.*)$/;
@@ -138,16 +149,73 @@ const Base64ImageContent = () => {
         }
     };
 
+    // Core reader — shared by both the <input> picker and drag-and-drop.
+    // NOTE: images must be read as a Data URL (base64), not as plain text —
+    // the original code used reader.readAsText() with accept=".txt", which
+    // would never produce a valid base64 string for an actual image file.
+    const readImageFile = (file: File) => {
+        if (!file.type.startsWith("image/")) {
+            setWarningMessage("Please upload a valid image file (PNG, JPG, GIF, WEBP).");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            setBase64(content);
+            previewBase64(content);
+        };
+        reader.onerror = () => {
+            setWarningMessage("Failed to read the image file. Please try again.");
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target?.result as string;
-                setBase64(content);
-                previewBase64(content);
-            };
-            reader.readAsText(file);
+            readImageFile(file);
+        }
+        event.target.value = "";
+    };
+
+    // --- Drag and drop handlers ---
+    const handleDragEnter = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            dragCounter.current += 1;
+            setIsDragActive(true);
+        }
+    };
+
+    const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            readImageFile(file);
+            e.dataTransfer.clearData();
         }
     };
 
@@ -219,19 +287,24 @@ const Base64ImageContent = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("purple.300", "purple.500")}
+    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
     borderRadius="xl"
-    bg={useColorModeValue("purple.50", "gray.700")}
+    bg={isDragActive ? dragActiveBg : dropzoneBg}
+    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
       borderColor: "purple.500",
-      bg: useColorModeValue("purple.100", "gray.600"),
+      bg: dropzoneHoverBg,
     }}
+    onDragEnter={handleDragEnter}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
   >
-    <Icon as={FaImage} boxSize={8} color="purple.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      Click to upload Image
+    <Icon as={FaImage} boxSize={8} color={isDragActive ? "purple.500" : "purple.400"} />
+    <Text fontWeight="semibold" color={dropzoneTextColor}>
+      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Image"}
     </Text>
     <Text fontSize="sm" color="gray.400">
       PNG, JPG, GIF, WEBP supported
@@ -239,7 +312,7 @@ const Base64ImageContent = () => {
     <Input
       id="image-upload"
       type="file"
-      accept=".txt"
+      accept="image/*"
       onChange={handleFileUpload}
       display="none"
     />

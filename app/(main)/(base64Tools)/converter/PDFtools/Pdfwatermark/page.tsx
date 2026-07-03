@@ -65,6 +65,10 @@ const PDFWatermarker: React.FC = observer(() => {
   const [pageSelectionType, setPageSelectionType] = useState<"all" | "current" | "range">("all");
   const [customRange, setCustomRange] = useState<string>("");
 
+  // Drag & drop state
+  const [isDragActive, setIsDragActive] = useState<boolean>(false);
+  const dragCounter = useRef(0);
+
   const pageBg = "bg-transparent";
   const cardBg = useColorModeValue("bg-white", "bg-slate-800");
   const previewBg = useColorModeValue("bg-white", "bg-slate-800");
@@ -120,14 +124,27 @@ const PDFWatermarker: React.FC = observer(() => {
     return () => observer.disconnect();
   }, []);
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      setPdfFile(file);
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(URL.createObjectURL(file));
-      setPageNumber(1);
+  // Central place that actually loads a File into state,
+  // used by both the <input> picker and drag-and-drop.
+  const loadFile = (file: File | undefined | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      alert("Please upload a valid PDF file.");
+      return;
     }
+    setPdfFile(file);
+    setPdfUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setPageNumber(1);
+    setNumPages(0);
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    loadFile(e.target.files?.[0]);
+    // allow re-selecting the same file later
+    e.target.value = "";
   };
 
   const clearFile = () => {
@@ -138,6 +155,46 @@ const PDFWatermarker: React.FC = observer(() => {
     setPageNumber(1);
     const input = document.getElementById("pdf-upload") as HTMLInputElement;
     if (input) input.value = "";
+  };
+
+  // --- Drag and drop handlers ---
+  const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only react to file drags
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounter.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    loadFile(file);
+    e.dataTransfer.clearData();
   };
 
   const handleDrag = (e: React.MouseEvent | React.TouchEvent) => {
@@ -294,19 +351,35 @@ const PDFWatermarker: React.FC = observer(() => {
                 </label>
                 {!pdfFile ? (
                   <label
-                    className={`group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed ${dropzoneBorder} ${dropzoneBg} rounded-2xl cursor-pointer hover:border-blue-400 ${dropzoneHoverBg} transition-all`}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                      isDragActive
+                        ? "border-blue-500 bg-blue-50 dark:bg-slate-700 scale-[1.02]"
+                        : `${dropzoneBorder} ${dropzoneBg} hover:border-blue-400 ${dropzoneHoverBg}`
+                    }`}
                   >
                     <Upload
-                      className={`w-6 h-6 ${textMuted} group-hover:text-blue-500 mb-2`}
+                      className={`w-6 h-6 mb-2 ${
+                        isDragActive
+                          ? "text-blue-500"
+                          : `${textMuted} group-hover:text-blue-500`
+                      }`}
                     />
-                    <span className={`text-sm font-semibold ${dropzoneText}`}>
-                      Drop PDF here
+                    <span
+                      className={`text-sm font-semibold ${
+                        isDragActive ? "text-blue-600" : dropzoneText
+                      }`}
+                    >
+                      {isDragActive ? "Drop it here" : "Drop PDF here, or click to browse"}
                     </span>
                     <input
                       id="pdf-upload"
                       type="file"
                       className="hidden"
-                      accept=".pdf"
+                      accept=".pdf,application/pdf"
                       onChange={handleFileChange}
                     />
                   </label>

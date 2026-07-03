@@ -179,6 +179,9 @@ const ZipDecompression: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [fileToView, setFileToView] = useState<any | null>(null);
   const [loadedZipData, setLoadedZipData] = useState<JSZip | null>(null);
+  // NEW: track drag-over state so the dropzone can be styled/labeled while dragging
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragCounterRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -298,9 +301,77 @@ const ZipDecompression: React.FC = () => {
     onOpen();
   };
 
+  // NEW: shared logic to validate + set a chosen zip file, used by both
+  // the file input and drag-and-drop so both paths behave identically.
+  const setSelectedZip = (file: File | undefined | null) => {
+    if (!file) {
+      toast({
+        title: "No File Detected",
+        description: "Please drop or select a .zip file.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select or drop a .zip file.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    setZipFile(file);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
-    if (selectedFile) setZipFile(selectedFile);
+    setSelectedZip(selectedFile);
+    // allow re-selecting the same file again later
+    e.target.value = "";
+  };
+
+  // NEW: Drag & drop handlers
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current += 1;
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Required: without preventDefault() the browser blocks the drop event
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!isDragActive) setIsDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragActive(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    setSelectedZip(droppedFile);
+    e.dataTransfer.clearData();
   };
 
   const handleDecompressZip = async () => {
@@ -437,7 +508,7 @@ const ZipDecompression: React.FC = () => {
         id="zip-upload-input"
       />
 
-      {/* ✅ Custom styled upload box */}
+      {/* ✅ Custom styled upload box — now a working dropzone */}
       <Box
         as="label"
         htmlFor="zip-upload-input"
@@ -449,35 +520,53 @@ const ZipDecompression: React.FC = () => {
         p={8}
         mb={6}
         border="2px dashed"
-        borderColor={zipFile ? "brand.400" : borderColor}
+        borderColor={
+          isDragActive ? "brand.400" : zipFile ? "brand.400" : borderColor
+        }
         borderRadius="xl"
-        bg={zipFile ? useColorModeValue("brand.50", "brand.900") : cardBg}
+        bg={
+          isDragActive
+            ? useColorModeValue("brand.100", "brand.800")
+            : zipFile
+              ? useColorModeValue("brand.50", "brand.900")
+              : cardBg
+        }
         cursor="pointer"
         transition="all 0.2s"
         _hover={{
           borderColor: "brand.400",
           bg: useColorModeValue("brand.50", "brand.900"),
         }}
+        // NEW: drag-and-drop wiring. onDragOver MUST call preventDefault()
+        // or the browser will reject the drop (and just open the file instead).
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         <Icon
           as={FaUpload}
           boxSize={8}
-          color={zipFile ? "brand.500" : "gray.400"}
+          color={isDragActive || zipFile ? "brand.500" : "gray.400"}
         />
         <Text
-          fontWeight={zipFile ? "semibold" : "normal"}
-          color={zipFile ? "brand.600" : "gray.500"}
+          fontWeight={isDragActive || zipFile ? "semibold" : "normal"}
+          color={isDragActive || zipFile ? "brand.600" : "gray.500"}
           fontSize="sm"
           textAlign="center"
         >
-          {zipFile ? `✓ ${zipFile.name}` : "Click to choose ZIP file or drag & drop"}
+          {isDragActive
+            ? "Drop the .zip file here"
+            : zipFile
+              ? `✓ ${zipFile.name}`
+              : "Click to choose ZIP file or drag & drop"}
         </Text>
-        {zipFile && (
+        {zipFile && !isDragActive && (
           <Text fontSize="xs" color="brand.400">
             {(zipFile.size / 1024).toFixed(1)} KB
           </Text>
         )}
-        {!zipFile && (
+        {!zipFile && !isDragActive && (
           <Text fontSize="xs" color="gray.400">
             Supported format: .zip
           </Text>

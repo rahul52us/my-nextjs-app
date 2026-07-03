@@ -33,6 +33,7 @@ const BinaryToBase64Content: React.FC = () => {
   const [binaryInput, setBinaryInput] = useState<string>("");
   const [base64Output, setBase64Output] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const toast = useToast();
 
   const bgColor = useColorModeValue("gray.100", "gray.800");
@@ -100,11 +101,18 @@ const BinaryToBase64Content: React.FC = () => {
     saveAs(blob, "output.txt");
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Shared read logic used by both click-upload and drag-drop
+  const readTextFile = (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".txt")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a .txt file only.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -132,6 +140,47 @@ const BinaryToBase64Content: React.FC = () => {
     };
 
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    readTextFile(file);
+    // reset input value so uploading the same file again re-triggers onChange
+    event.target.value = "";
+  };
+
+  // --- Drag & Drop handlers ---
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only unset if we're leaving the drop zone itself, not a child element
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    readTextFile(file);
   };
 
   const handleShare = async () => {
@@ -234,22 +283,34 @@ const BinaryToBase64Content: React.FC = () => {
             gap={2}
             p={6}
             border="2px dashed"
-            borderColor={useColorModeValue("brand.300", "brand.500")}
+            borderColor={
+              isDragging
+                ? "teal.500"
+                : useColorModeValue("brand.300", "brand.500")
+            }
             borderRadius="xl"
-            bg={useColorModeValue("brand.50", "gray.700")}
+            bg={
+              isDragging
+                ? useColorModeValue("teal.50", "teal.900")
+                : useColorModeValue("brand.50", "gray.700")
+            }
             cursor="pointer"
             transition="all 0.2s"
             _hover={{
               borderColor: "brand.500",
               bg: useColorModeValue("brand.100", "gray.600"),
             }}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
             <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
             <Text
               fontWeight="semibold"
               color={useColorModeValue("gray.700", "gray.200")}
             >
-              Click to upload or drag & drop
+              {isDragging ? "Drop your file here" : "Click to upload or drag & drop"}
             </Text>
             <Text fontSize="sm" color="gray.400">
               .txt files only

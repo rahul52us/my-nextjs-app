@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, DragEvent } from 'react';
 import {
     Box,
     Button,
@@ -44,6 +44,7 @@ const PdfToJpgContent = () => {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [fileName, setFileName] = useState('');
+    const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
@@ -61,6 +62,35 @@ const PdfToJpgContent = () => {
         setFileName('');
         setProgress(0);
         if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(true);
+    };
+
+    const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+    };
+
+    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
+
+        const fakeEvent = {
+            target: {
+                files: [file],
+            },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+        void convertPdfToJpg(fakeEvent);
     };
 
     const convertPdfToJpg = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,12 +210,17 @@ const PdfToJpgContent = () => {
                         htmlFor="pdf-upload"
                         cursor="pointer"
                         border="3px dashed"
-                        borderColor={useColorModeValue('gray.200', 'gray.600')}
+                        borderColor={isDragActive ? 'brand.400' : useColorModeValue('gray.200', 'gray.600')}
+                        bg={isDragActive ? dropzoneHoverBg : 'transparent'}
                         borderRadius="2xl"
                         h="300px"
                         transition="all 0.2s"
                         _hover={{ borderColor: 'brand.400', bg: dropzoneHoverBg }}
                         flexDirection="column"
+                        onDragOver={handleDragOver}
+                        onDragEnter={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
                     >
                         <VStack spacing={4}>
                             <Box bg={iconContainerBg} color="brand.600" p={4} borderRadius="full">

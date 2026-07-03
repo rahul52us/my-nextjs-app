@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     Box,
     VStack,
@@ -27,10 +27,21 @@ const HexToBase64Content: React.FC = () => {
     const [hexInput, setHexInput] = useState<string>("");
     const [base64Output, setBase64Output] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+    const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const dragCounter = useRef(0);
     const toast = useToast();
 
     const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
+
+    // Dropzone theme tokens — same colorMode source as the rest of the box,
+    // so the drag-active state stays correct in both light and dark mode.
+    const dropzoneBorder = useColorModeValue("brand.300", "brand.500");
+    const dropzoneBg = useColorModeValue("brand.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("brand.100", "gray.600");
+    const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
+    const dragActiveBg = useColorModeValue("brand.100", "gray.600");
+    const dragActiveBorder = "brand.500";
 
     // Convert Hex to Base64
     const convertHexToBase64 = (hex: string): string => {
@@ -63,10 +74,18 @@ const HexToBase64Content: React.FC = () => {
         setLoading(false);
     };
 
-    // Handle file upload to load Hex from a file
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    // Core reader — shared by both the <input> picker and drag-and-drop
+    const readHexFile = (file: File) => {
+        if (!file.name.toLowerCase().endsWith(".txt")) {
+            toast({
+                title: "Unsupported file type",
+                description: "Only .txt files are supported.",
+                status: "warning",
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = () => {
@@ -94,6 +113,55 @@ const HexToBase64Content: React.FC = () => {
         };
 
         reader.readAsText(file);
+    };
+
+    // Handle file upload to load Hex from a file
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        readHexFile(file);
+        event.target.value = "";
+    };
+
+    // --- Drag and drop handlers ---
+    const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            dragCounter.current += 1;
+            setIsDragActive(true);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            readHexFile(file);
+            e.dataTransfer.clearData();
+        }
     };
 
     // Copy the output to clipboard
@@ -233,19 +301,24 @@ const HexToBase64Content: React.FC = () => {
     gap={2}
     p={6}
     border="2px dashed"
-    borderColor={useColorModeValue("brand.300", "brand.500")}
+    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
     borderRadius="xl"
-    bg={useColorModeValue("brand.50", "gray.700")}
+    bg={isDragActive ? dragActiveBg : dropzoneBg}
+    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
       borderColor: "brand.500",
-      bg: useColorModeValue("brand.100", "gray.600"),
+      bg: dropzoneHoverBg,
     }}
+    onDragEnter={handleDragEnter}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
   >
-    <Icon as={FaCode} boxSize={8} color="brand.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      Click to upload Hex file
+    <Icon as={FaCode} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
+    <Text fontWeight="semibold" color={dropzoneTextColor}>
+      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Hex file"}
     </Text>
     <Text fontSize="sm" color="gray.400">
       .txt files only
