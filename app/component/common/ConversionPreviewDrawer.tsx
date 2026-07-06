@@ -88,11 +88,12 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      size={"full"}
       placement="right"
     >
       <DrawerOverlay bg="blackAlpha.700" backdropFilter="blur(6px)" />
       <DrawerContent
+        width={{ base: "100%", md: "85%" }}
+        maxW={{ base: "100%", md: "85%" }}
         height="100vh"
         maxH="100vh"
         borderTopRadius={{ base: "2xl", md: "3xl" }}

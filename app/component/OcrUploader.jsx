@@ -83,6 +83,7 @@ import {
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import stores from "../store/stores";
+import axios from "axios";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -954,158 +955,263 @@ function RawTextPanel({ rawText, textColor, sectionBg, borderColor }) {
   );
 }
 
-function AiPromptPanel({
-  prompt,
-  setPrompt,
-  apiResponse,
-  onSendPrompt,
-  loading,
-  error,
+const AiPromptPanel = ({
+  aiPrompt,
+  setAiPrompt,
+  aiResponse,
+  aiLoading,
+  aiError,
+  handleSendAiPrompt,
+  aiMessages = [],
+  file,
   labelColor,
   textColor,
   sectionBg,
   borderColor,
-}) {
+}) => {
+  const historyEndRef = useRef(null);
+  const chatBg = useColorModeValue("gray.50", "gray.950");
+  const answerBg = useColorModeValue("white", "gray.900");
+  const questionBg = useColorModeValue("brand.500", "brand.400");
+  const questionColor = useColorModeValue("white", "gray.950");
+  const composerBg = useColorModeValue("white", "gray.900");
+  const hintBg = useColorModeValue("white", "whiteAlpha.100");
+  const chipBg = useColorModeValue("brand.50", "whiteAlpha.100");
+
+  useEffect(() => {
+    historyEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [aiMessages, aiLoading]);
+
+  const copyAnswer = async (answer) => {
+    if (!answer) return;
+    await navigator.clipboard.writeText(answer);
+  };
+
+  const handleComposerKeyDown = (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      handleSendAiPrompt();
+    }
+  };
+
   const presets = [
     {
-      label: "Summarize document",
+      label: "Summarize",
       text: "Provide a concise summary of this document, listing the main points.",
     },
     {
-      label: "List line items",
+      label: "Line items",
       text: "Extract all table line items and list them in a structured table or bullet list.",
     },
     {
-      label: "Extract metadata",
+      label: "Metadata",
       text: "Find the key dates, invoice numbers, total amounts, and participant names.",
     },
     {
-      label: "Convert to JSON",
+      label: "JSON",
       text: "Convert the main structured data in this document to a clean JSON object.",
     },
   ];
 
   return (
-    <VStack align="stretch" spacing={4}>
-      <Box>
-        <Text
-          fontSize="10px"
-          color={labelColor}
-          fontWeight="bold"
-          mb={2}
-          letterSpacing="wide"
-        >
-          SUGGESTED TASKS
-        </Text>
-        <HStack flexWrap="wrap" gap={2}>
-          {presets.map((p, i) => (
-            <Badge
-              key={i}
-              px={3}
-              py={1.5}
-              borderRadius="full"
-              variant="subtle"
-              colorScheme="brand"
-              fontSize="xs"
-              cursor="pointer"
-              transition="all 0.15s"
-              _hover={{
-                transform: "translateY(-1px)",
-                boxShadow: "sm",
-                opacity: 0.8,
-              }}
-              onClick={() => setPrompt(p.text)}
+    <Flex direction="column" h="100%" minH="0" bg={chatBg}>
+      {/* <Box px={5} py={3} borderBottomWidth="1px" borderColor={borderColor}>
+        <HStack justify="space-between" align="start" spacing={3}>
+          <VStack align="start" spacing={0.5} minW={0}>
+            <HStack spacing={2} minW={0}>
+              <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
+                <Sparkles size={14} />
+              </Box>
+              <Text fontSize="sm" fontWeight="bold" color={textColor}>
+                Ask this document
+              </Text>
+            </HStack>
+            <Text fontSize="xs" color={labelColor} noOfLines={1} maxW="300px">
+              {file?.name || "Current document"}
+            </Text>
+          </VStack>
+          <Badge borderRadius="full" px={3} py={1} colorScheme="gray">
+            PDF Q&A
+          </Badge>
+        </HStack>
+      </Box> */}
+
+      <VStack
+        flex={1}
+        minH={0}
+        align="stretch"
+        spacing={4}
+        overflowY="auto"
+        px={5}
+        py={5}
+      >
+        {aiMessages.length === 0 && !aiResponse ? (
+          <VStack align="stretch" spacing={3} mt={2}>
+            <Box
+              alignSelf="flex-start"
+              maxW="88%"
+              bg={hintBg}
+              border="1px solid"
+              borderColor={borderColor}
+              borderRadius="2xl"
+              borderBottomLeftRadius="md"
+              p={4}
+              shadow="sm"
             >
-              {p.label}
-            </Badge>
+              <HStack align="start" spacing={3}>
+                <Box p={2} borderRadius="full" bg="brand.500" color="white">
+                  <Sparkles size={14} />
+                </Box>
+                <Box>
+                  <Text fontSize="sm" fontWeight="semibold" color={textColor}>
+                    Ready for questions
+                  </Text>
+                  <Text fontSize="sm" color={labelColor} mt={1}>
+                    Ask about invoice numbers, totals, dates, line items, or anything visible in the extracted text.
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
+          </VStack>
+        ) : (
+          aiMessages.map((item) => (
+            <VStack key={item.id} spacing={3} align="stretch">
+              <Box alignSelf="flex-end" maxW="82%">
+                <Box
+                  bg={questionBg}
+                  color={questionColor}
+                  borderRadius="2xl"
+                  borderBottomRightRadius="md"
+                  px={4}
+                  py={3}
+                  shadow="sm"
+                >
+                  <Text fontSize="sm" whiteSpace="pre-wrap">
+                    {item.question}
+                  </Text>
+                </Box>
+                <Text mt={1} fontSize="10px" color={labelColor} textAlign="right">
+                  You
+                </Text>
+              </Box>
+
+              <Box alignSelf="flex-start" maxW="88%">
+                <HStack align="end" spacing={2}>
+                  <Box
+                    bg={answerBg}
+                    border="1px solid"
+                    borderColor={borderColor}
+                    borderRadius="2xl"
+                    borderBottomLeftRadius="md"
+                    px={4}
+                    py={3}
+                    shadow="sm"
+                  >
+                    {item.status === "loading" ? (
+                      <HStack spacing={3}>
+                        <Spinner size="sm" color="brand.500" />
+                        <Text fontSize="sm" color={labelColor}>
+                          Thinking...
+                        </Text>
+                      </HStack>
+                    ) : (
+                      <Text fontSize="sm" color={textColor} whiteSpace="pre-wrap">
+                        {item.answer}
+                      </Text>
+                    )}
+                  </Box>
+                  {item.answer && (
+                    <Tooltip label="Copy answer" fontSize="xs">
+                      <IconButton
+                        size="xs"
+                        variant="ghost"
+                        aria-label="Copy answer"
+                        icon={<Copy size={12} />}
+                        onClick={() => copyAnswer(item.answer)}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+                <Text mt={1} fontSize="10px" color={labelColor}>
+                  Ask this document
+                </Text>
+                
+              </Box>
+            </VStack>
+          ))
+        )}
+        <div ref={historyEndRef} />
+      </VStack>
+
+      <Box
+        px={5}
+        py={4}
+        bg={composerBg}
+        borderTopWidth="1px"
+        borderColor={borderColor}
+      >
+        <HStack spacing={2} overflowX="auto" pb={2} mb={2}>
+          {presets.map((preset) => (
+            <Button
+              key={preset.label}
+              size="xs"
+              variant="ghost"
+              flexShrink={0}
+              borderRadius="full"
+              bg={chipBg}
+              color="brand.600"
+              onClick={() => setAiPrompt(preset.text)}
+            >
+              {preset.label}
+            </Button>
           ))}
         </HStack>
-      </Box>
 
-      <FormControl isRequired>
-        <FormLabel color={labelColor} fontSize="xs" fontWeight="bold">
-          INSTRUCTION
-        </FormLabel>
-        <Textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g. Summarize this invoice, extract total amount, list all line items..."
-          minH="120px"
-          resize="vertical"
-          borderRadius="xl"
-          bg={sectionBg}
-          borderColor={borderColor}
-          color={textColor}
-          _placeholder={{ color: "gray.400" }}
-          _focus={{ borderColor: "brand.400", boxShadow: "none" }}
-        />
-      </FormControl>
+        {aiError && (
+          <Alert status="error" mb={3} borderRadius="xl" fontSize="sm" py={2}>
+            <AlertIcon />
+            {aiError}
+          </Alert>
+        )}
 
-      {error && (
-        <Alert status="error" borderRadius="xl">
-          <AlertIcon />
-          {error}
-        </Alert>
-      )}
-
-      <Button
-        leftIcon={<Send size={14} />}
-        colorScheme="brand"
-        onClick={onSendPrompt}
-        isLoading={loading}
-        loadingText="Sending..."
-        isDisabled={!prompt.trim()}
-        borderRadius="xl"
-        alignSelf="flex-start"
-        px={6}
-      >
-        Submit Instruction
-      </Button>
-
-      {apiResponse && (
-        <FormControl mt={2}>
-          <FormLabel color={labelColor} fontSize="xs" fontWeight="bold">
-            AI RESPONSE
-          </FormLabel>
-          <Box
-            p={4}
-            rounded="2xl"
+        <HStack align="end" spacing={2}>
+          <Textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={handleComposerKeyDown}
+            placeholder="Ask a question about this document..."
+            minH="48px"
+            maxH="120px"
+            resize="none"
+            borderRadius="2xl"
             bg={sectionBg}
-            borderWidth="1px"
             borderColor={borderColor}
-            position="relative"
-          >
+            color={textColor}
+            fontSize="sm"
+            _placeholder={{ color: "gray.400" }}
+            _focus={{ borderColor: "brand.400", boxShadow: "none" }}
+          />
+          <Tooltip label="Send question" fontSize="xs">
             <IconButton
-              size="xs"
-              position="absolute"
-              top={3}
-              right={3}
-              variant="ghost"
-              aria-label="Copy AI response"
-              icon={<Copy size={12} />}
-              onClick={() => navigator.clipboard.writeText(apiResponse)}
+              aria-label="Send question"
+              icon={<Send size={17} />}
+              colorScheme="brand"
+              borderRadius="full"
+              flexShrink={0}
+              h="44px"
+              w="44px"
+              onClick={handleSendAiPrompt}
+              isLoading={aiLoading}
+              isDisabled={!aiPrompt.trim()}
             />
-            <Code
-              display="block"
-              whiteSpace="pre-wrap"
-              fontSize="xs"
-              bg="transparent"
-              color={textColor}
-              maxH="300px"
-              overflowY="auto"
-              fontFamily="system-ui, sans-serif"
-            >
-              {apiResponse}
-            </Code>
-          </Box>
-        </FormControl>
-      )}
-    </VStack>
+          </Tooltip>
+        </HStack>
+      </Box>
+    </Flex>
   );
-}
+};
 
-// ─── main component ───────────────────────────────────────────────────────────
-
+// main component
 export default function OcrUploader() {
   const [file, setFile] = useState(null);
   const [pdfPages, setPdfPages] = useState([]); // Holds rendered pages: [{ url, width, height, pageNum }]
@@ -1123,6 +1229,7 @@ export default function OcrUploader() {
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [aiMessages, setAiMessages] = useState([]);
 
   // Chrome PDF viewer page states
   const [currentPage, setCurrentPage] = useState(1);
@@ -1231,6 +1338,7 @@ export default function OcrUploader() {
     setAiPrompt("");
     setAiResponse("");
     setAiError(null);
+    setAiMessages([]);
 
     // Preview States
     setHoveredBounds(null);
@@ -1536,6 +1644,10 @@ export default function OcrUploader() {
     setPages("");
     setError(null);
     setIsDragging(false);
+    setAiPrompt("");
+    setAiResponse("");
+    setAiError(null);
+    setAiMessages([]);
     setHoveredBounds(null);
     setZoom(1.0);
     setRotation(0);
@@ -1591,25 +1703,93 @@ export default function OcrUploader() {
   };
 
   const handleSendAiPrompt = async () => {
-    if (!aiPrompt.trim()) {
-      setAiError("Please enter a prompt.");
+    const question = aiPrompt.trim();
+    const documentText = parsed?.rawText?.trim();
+
+    setAiError("");
+
+    if (!question) {
+      setAiError("Please enter a question first.");
       return;
     }
 
+    if (!documentText) {
+      setAiError("No document text found to search in.");
+      return;
+    }
+
+    const messageId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     setAiLoading(true);
-    setAiError(null);
+    setAiMessages((prev) => [
+      ...prev,
+      {
+        id: messageId,
+        question,
+        answer: "",
+        documentName: file?.name || "Current document",
+        status: "loading",
+      },
+    ]);
 
     try {
-      setAiResponse(
-        `AI Analysis Complete.\n\nInstruction: "${aiPrompt.trim()}"\n\nResult:\nThis is a custom response from the AI helper drawer. Connect to your live API backend endpoints to execute instructions on paragraphs, table layouts, and metadata attributes.`,
+      const response = await axios.post(
+        `${BACKEND_URL}/api/qna`,
+        {
+          text: documentText,
+          question,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 90000,
+          maxBodyLength: Infinity,
+        },
       );
-    } catch (err) {
-      setAiError(err.message);
+
+      const data = response.data;
+      const answer =
+        typeof data === "string"
+          ? data
+          : data?.answer ||
+            data?.data?.answer ||
+            data?.response ||
+            data?.result ||
+            data?.message ||
+            JSON.stringify(data, null, 2);
+      const cleanAnswer =
+        String(answer || "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim() || "No answer was returned.";
+
+      setAiResponse(cleanAnswer);
+      setAiMessages((prev) =>
+        prev.map((item) =>
+          item.id === messageId
+            ? {
+                ...item,
+                answer: cleanAnswer,
+                status: "done",
+              }
+            : item,
+        ),
+      );
+      setAiPrompt("");
+    } catch (error) {
+      const message =
+        error?.code === "ECONNABORTED"
+          ? "The Q&A server is taking longer than expected. This may take up to 30-60 seconds if the server was asleep. Please try again."
+          : error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            "Unable to get an answer right now. The server may be waking up and this can take up to 30-60 seconds. Please try again.";
+
+      setAiError(message);
+      setAiMessages((prev) => prev.filter((item) => item.id !== messageId));
     } finally {
       setAiLoading(false);
     }
   };
-
   const showParagraphsTab = extractParagraphs && parsed?.paragraphs?.length > 0;
   const showTablesTab = extractTables && parsed?.tables?.length > 0;
   const showFieldsTab =
@@ -1638,7 +1818,7 @@ export default function OcrUploader() {
                 borderBottomWidth="1px"
                 borderColor={borderColor}
               >
-                <HStack spacing={3} mb={2} maxW="7xl" mx="auto" w="full">
+                <HStack spacing={3} mb={2} w="full">
                   <Box
                     p={2.5}
                     borderRadius="2xl"
@@ -1669,8 +1849,6 @@ export default function OcrUploader() {
                   <SimpleGrid
                     columns={{ base: 1, md: 2 }}
                     spacing={12}
-                    maxW="7xl"
-                    mx="auto"
                     w="full"
                   >
                     {/* Left: Drag & Drop Zone */}
@@ -2728,23 +2906,30 @@ export default function OcrUploader() {
                   borderColor={borderColor}
                   py={4}
                 >
-                  <HStack spacing={2.5}>
-                    <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
-                      <Sparkles size={16} />
-                    </Box>
-                    <Text fontSize="md" fontWeight="bold">
-                      AI Document
-                    </Text>
-                  </HStack>
+                  <HStack spacing={2.5} align="center">
+  <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
+    <Sparkles size={16} />
+  </Box>
+  <VStack spacing={0} align="start">
+    <Text fontSize="md" fontWeight="bold">
+      Ask this document
+    </Text>
+    <Text fontSize="xs" color={labelColor} noOfLines={1} maxW="300px">
+      {file?.name || "Current document"}
+    </Text>
+  </VStack>
+</HStack>
                 </DrawerHeader>
-                <DrawerBody py={6} overflowY="auto">
+                <DrawerBody p={0} overflow="hidden" display="flex" flexDirection="column">
                   <AiPromptPanel
-                    prompt={aiPrompt}
-                    setPrompt={setAiPrompt}
-                    apiResponse={aiResponse}
-                    onSendPrompt={handleSendAiPrompt}
-                    loading={aiLoading}
-                    error={aiError}
+                    aiPrompt={aiPrompt}
+                    setAiPrompt={setAiPrompt}
+                    aiResponse={aiResponse}
+                    aiLoading={aiLoading}
+                    aiError={aiError}
+                    handleSendAiPrompt={handleSendAiPrompt}
+                    aiMessages={aiMessages}
+                    file={file}
                     labelColor={labelColor}
                     textColor={textColor}
                     sectionBg={sectionBg}

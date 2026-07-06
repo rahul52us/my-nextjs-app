@@ -217,8 +217,10 @@ import {
 } from '../../component/config/utils/variable';
 import ThemeChangeContainer from '../../component/common/ThemeChangeContainer/ThemeChangeContainer';
 import React from 'react';
+import { usePathname } from 'next/navigation';
 
 const DashboardLayout = observer(({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
   const {
     themeStore: { themeConfig },
   } = stores;
@@ -263,7 +265,7 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
 
       {/* Main Content Area */}
       <ContentContainer>
-        <Box maxW="1400px" mx="auto">
+        <Box maxW={pathname.includes('/converter/ocr') || pathname.includes('/tools/task-manager') ? '92%' : '1400px'} mx="auto">
            {children}
         </Box>
       </ContentContainer>
