@@ -9,7 +9,7 @@ import {
 import { FiUploadCloud, FiShield, FiCheckCircle, FiTrash2, FiEye } from 'react-icons/fi';
 import stores from "../../../../../store/stores";
 import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
-import ConversionPreviewModal from "../../../../../component/common/ConversionPreviewModal";
+import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
 
 const PDFToWordContent = () => {
     const [isConverting, setIsConverting] = useState(false);
@@ -175,17 +175,56 @@ const PDFToWordContent = () => {
                                     borderRadius="2xl"
                                     bg={fileName ? dropzoneActiveBg : dropzoneBg}
                                     transition="all 0.3s"
+                                    opacity={isConverting ? 0.5 : 1}
                                 >
                                     <input
                                         type="file"
                                         accept="application/pdf"
                                         onChange={handleFileChange}
+                                        disabled={isConverting}
                                         style={{
                                             position: 'absolute', top: 0, left: 0,
                                             width: '100%', height: '100%',
-                                            opacity: 0, cursor: 'pointer', zIndex: 1
+                                            opacity: 0, cursor: isConverting ? 'not-allowed' : 'pointer', zIndex: 1
                                         }}
                                     />
+                                    {isConverting && (
+                                        <Box
+                                            position="absolute"
+                                            top={0}
+                                            left={0}
+                                            w="100%"
+                                            h="100%"
+                                            zIndex={2}
+                                            cursor="not-allowed"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                        />
+                                    )}
                                     <VStack spacing={4}>
                                         <Center
                                             boxSize="60px"
@@ -292,8 +331,8 @@ const PDFToWordContent = () => {
                 </VStack>
             </Container>
 
-            {/* Preview Modal */}
-            <ConversionPreviewModal
+            {/* Preview Drawer */}
+            <ConversionPreviewDrawer
                 isOpen={previewOpen}
                 onClose={handlePreviewClose}
                 previewUrl={previewUrl}

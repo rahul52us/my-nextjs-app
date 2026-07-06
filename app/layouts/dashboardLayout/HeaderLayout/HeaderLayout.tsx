@@ -31,7 +31,7 @@ const HeaderLayout = observer(() => {
       boxShadow="none"
       position="sticky"
       top={0}
-      zIndex={1000}
+      zIndex={100}
       transition="all 0.3s ease"
     >
       {/* LEFT: Logo + nav (takes all remaining space) */}

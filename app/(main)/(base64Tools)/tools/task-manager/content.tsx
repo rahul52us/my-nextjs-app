@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
@@ -40,6 +40,13 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
 } from "@chakra-ui/react";
 import AttachmentUpload from "../../../../component/attachments/AttachmentUpload";
 import AttachmentsList from "../../../../component/attachments/AttachmentsList";
@@ -64,6 +71,8 @@ import {
   FaListUl,
   FaListOl,
   FaFolder,
+  FaChevronUp,
+  FaChevronDown,
 } from "react-icons/fa";
 import axios from "axios";
 import { AUTH_TOKEN, BACKEND_URL } from "../../../../config/utils/variables";
@@ -352,6 +361,13 @@ export default function TaskManagerContent() {
   const [dateTo, setDateTo] = useState(() => getOffsetDateInput(30));
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
+  // Table View & sorting/pagination states
+  const [viewMode, setViewMode] = useState<"board" | "table">("board");
+  const [tableFilter, setTableFilter] = useState("all");
+  const [sortField, setSortField] = useState<string>("dueDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Drag and Drop States
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -494,7 +510,7 @@ export default function TaskManagerContent() {
         dateFrom,
         dateTo,
       });
-      if (activeBucketId) {
+      if (viewMode === "board" && activeBucketId) {
         params.append("bucketId", activeBucketId);
       }
       const url = getApiUrl(`/tasks?${params.toString()}`);
@@ -521,20 +537,24 @@ export default function TaskManagerContent() {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, activeBucketId, toast]);
+  }, [dateFrom, dateTo, activeBucketId, viewMode, toast]);
 
   useEffect(() => {
     fetchBuckets();
   }, [fetchBuckets]);
 
   useEffect(() => {
-    if (activeBucketId) {
-      fetchTasks();
+    if (viewMode === "board") {
+      if (activeBucketId) {
+        fetchTasks();
+      } else {
+        setTasks([]);
+        setLoading(false);
+      }
     } else {
-      setTasks([]);
-      setLoading(false);
+      fetchTasks();
     }
-  }, [activeBucketId, fetchTasks]);
+  }, [activeBucketId, viewMode, fetchTasks]);
 
   // Create Task
   const handleCreateTask = async () => {
@@ -1021,6 +1041,88 @@ export default function TaskManagerContent() {
     });
   }, [tasks, searchQuery, priorityFilter]);
 
+  // Filter and sort tasks for Table View
+  const filteredAndSortedTableTasks = useMemo(() => {
+    let result = tasks.filter((task) => {
+      const descriptionText = getPlainTextFromHtml(task.description);
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        descriptionText.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+      return matchesSearch && matchesPriority;
+    });
+
+    if (tableFilter !== "all") {
+      if (tableFilter.startsWith("status:")) {
+        const statusValue = tableFilter.substring(7);
+        result = result.filter((task) => task.status === statusValue);
+      } else if (tableFilter.startsWith("bucket:")) {
+        const bucketIdValue = tableFilter.substring(7);
+        result = result.filter((task) => task.bucketId === bucketIdValue);
+      }
+    }
+
+    result.sort((a, b) => {
+      let valA: any = "";
+      let valB: any = "";
+
+      if (sortField === "title") {
+        valA = a.title.toLowerCase();
+        valB = b.title.toLowerCase();
+      } else if (sortField === "priority") {
+        const priorityWeight = { high: 3, medium: 2, low: 1 };
+        valA = priorityWeight[a.priority] || 0;
+        valB = priorityWeight[b.priority] || 0;
+      } else if (sortField === "status") {
+        const statusWeight = { future: 1, todo: 2, in_progress: 3, completed: 4 };
+        valA = statusWeight[a.status] || 0;
+        valB = statusWeight[b.status] || 0;
+      } else if (sortField === "bucketId") {
+        const bucketA = buckets.find((bk) => bk.id === a.bucketId)?.name || "";
+        const bucketB = buckets.find((bk) => bk.id === b.bucketId)?.name || "";
+        valA = bucketA.toLowerCase();
+        valB = bucketB.toLowerCase();
+      } else if (sortField === "dueDate") {
+        valA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        valB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      } else if (sortField === "createdAt") {
+        valA = new Date(a.createdAt).getTime();
+        valB = new Date(b.createdAt).getTime();
+      }
+
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [tasks, searchQuery, priorityFilter, tableFilter, sortField, sortOrder, buckets]);
+
+  // Pagination for Table View
+  const tasksPerPage = 10;
+  const totalTasks = filteredAndSortedTableTasks.length;
+  const totalPages = Math.ceil(totalTasks / tasksPerPage) || 1;
+  const paginatedTasks = useMemo(() => {
+    const startIndex = (currentPage - 1) * tasksPerPage;
+    return filteredAndSortedTableTasks.slice(startIndex, startIndex + tasksPerPage);
+  }, [filteredAndSortedTableTasks, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
   // Grouped Tasks for columns
   const todoTasks = useMemo(() => filteredTasks.filter((t) => t.status === "todo"), [filteredTasks]);
   const futureTasks = useMemo(() => filteredTasks.filter((t) => t.status === "future"), [filteredTasks]);
@@ -1136,7 +1238,7 @@ export default function TaskManagerContent() {
         mb={8}
       >
         <Box>
-          <HStack spacing={3} mb={1}>
+          <HStack spacing={4} mb={1} align="center" flexWrap="wrap">
             <Heading
               as="h1"
               size="xl"
@@ -1146,9 +1248,39 @@ export default function TaskManagerContent() {
             >
               Task Board
             </Heading>
-            {/* <Badge colorScheme="brand" borderRadius="full" px={2} py={0.5} fontSize="xs">
-              Trello Mode
-            </Badge> */}
+            <HStack
+              bg={useColorModeValue("gray.100", "gray.800")}
+              p={1}
+              borderRadius="full"
+              spacing={0}
+              border="1px solid"
+              borderColor={borderColor}
+            >
+              <Button
+                size="xs"
+                borderRadius="full"
+                variant={viewMode === "board" ? "solid" : "ghost"}
+                colorScheme={viewMode === "board" ? "brand" : "gray"}
+                onClick={() => {
+                  setViewMode("board");
+                  setCurrentPage(1);
+                }}
+              >
+                Board View
+              </Button>
+              <Button
+                size="xs"
+                borderRadius="full"
+                variant={viewMode === "table" ? "solid" : "ghost"}
+                colorScheme={viewMode === "table" ? "brand" : "gray"}
+                onClick={() => {
+                  setViewMode("table");
+                  setCurrentPage(1);
+                }}
+              >
+                Table View
+              </Button>
+            </HStack>
           </HStack>
           <Text color={textMuted} fontSize="sm">
             Drag and drop tasks, prioritize them, and keep your workspace clean.
@@ -1166,7 +1298,10 @@ export default function TaskManagerContent() {
             <Input
               placeholder="Search tasks..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
               border="1px solid"
               borderColor={borderColor}
@@ -1195,7 +1330,10 @@ export default function TaskManagerContent() {
             </Box>
             <Select
               value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
+              onChange={(e) => {
+                setPriorityFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
               borderColor={borderColor}
               borderRadius="full"
@@ -1208,6 +1346,41 @@ export default function TaskManagerContent() {
             </Select>
           </HStack>
 
+          {/* Status/Bucket filter (Table View only) */}
+          {viewMode === "table" && (
+            <HStack spacing={2} minW="180px">
+              <Box color="gray.400">
+                <FaFilter />
+              </Box>
+              <Select
+                value={tableFilter}
+                onChange={(e) => {
+                  setTableFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
+                borderColor={borderColor}
+                borderRadius="full"
+                fontSize="sm"
+              >
+                <option value="all">All Statuses & Buckets</option>
+                <optgroup label="Statuses">
+                  <option value="status:future">Future Tasks</option>
+                  <option value="status:todo">To Do</option>
+                  <option value="status:in_progress">Running</option>
+                  <option value="status:completed">Finished</option>
+                </optgroup>
+                <optgroup label="Buckets">
+                  {buckets.map((b) => (
+                    <option key={b.id} value={`bucket:${b.id}`}>
+                      {b.name}
+                    </option>
+                  ))}
+                </optgroup>
+              </Select>
+            </HStack>
+          )}
+
           {/* Date filter */}
           <HStack spacing={2}>
             <Box color="gray.400">
@@ -1216,7 +1389,10 @@ export default function TaskManagerContent() {
             <Input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setCurrentPage(1);
+              }}
               bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
               borderColor={borderColor}
               borderRadius="full"
@@ -1226,7 +1402,10 @@ export default function TaskManagerContent() {
             <Input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(1);
+              }}
               bg={useColorModeValue("white", "rgba(255, 255, 255, 0.05)")}
               borderColor={borderColor}
               borderRadius="full"
@@ -1263,118 +1442,385 @@ export default function TaskManagerContent() {
       </Flex>
 
       {/* Task board layout */}
-      <Flex direction={{ base: "column", lg: "row" }} gap={6} align="stretch">
-        {/* Buckets Sidebar */}
+      {viewMode === "board" ? (
+        <Flex direction={{ base: "column", lg: "row" }} gap={6} align="stretch">
+          {/* Buckets Sidebar */}
+          <Box
+            w={{ base: "full", lg: "260px" }}
+            flexShrink={0}
+            bg={boardBg}
+            borderRadius="2xl"
+            p={4}
+            border="1px solid"
+            borderColor={borderColor}
+            backdropFilter="blur(10px)"
+            alignSelf="flex-start"
+          >
+            <Flex justify="space-between" align="center" mb={4}>
+              <Heading size="xs" textTransform="uppercase" letterSpacing="wider" color={textMuted}>
+                Buckets
+              </Heading>
+              <IconButton
+                size="xs"
+                colorScheme="brand"
+                bg="brand.500"
+                color="white"
+                icon={<FaPlus />}
+                aria-label="Add Bucket"
+                _hover={{ bg: "brand.600" }}
+                onClick={openCreateBucketModal}
+              />
+            </Flex>
+
+            <VStack spacing={2} align="stretch">
+              {loadingBuckets ? (
+                <Flex justify="center" py={4}>
+                  <Spinner size="sm" color="brand.400" />
+                </Flex>
+              ) : buckets.length === 0 ? (
+                <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
+                  No buckets found.
+                </Text>
+              ) : (
+                buckets.map((bucket) => {
+                  const isActive = bucket.id === activeBucketId;
+                  return (
+                    <Flex
+                      key={bucket.id}
+                      align="center"
+                      justify="space-between"
+                      p={3}
+                      borderRadius="xl"
+                      bg={isActive ? "brand.500" : "transparent"}
+                      color={isActive ? "white" : taskTitleColor}
+                      cursor="pointer"
+                      onClick={() => setActiveBucketId(bucket.id)}
+                      transition="all 0.2s"
+                      _hover={{
+                        bg: isActive ? "brand.600" : cardHoverBg,
+                      }}
+                      role="group"
+                    >
+                      <HStack spacing={2.5} flex={1} minW={0}>
+                        {bucket.isDefault ? <FaLock size="12px" /> : <FaFolder size="14px" />}
+                        <Text fontSize="sm" fontWeight={isActive ? "bold" : "medium"} isTruncated flex={1}>
+                          {bucket.name}
+                        </Text>
+                        <Badge
+                          colorScheme={isActive ? "blackAlpha" : "brand"}
+                          variant={isActive ? "solid" : "subtle"}
+                          borderRadius="full"
+                          px={2}
+                          py={0.5}
+                          fontSize="2xs"
+                        >
+                          {bucket.taskCount || 0}
+                        </Badge>
+                      </HStack>
+
+                      {!bucket.isDefault && (
+                        <HStack spacing={1} display="none" _groupHover={{ display: "flex" }} ml={2}>
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            color={isActive ? "white" : "brand.400"}
+                            icon={<FaEdit size="10px" />}
+                            aria-label="Rename bucket"
+                            _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openRenameBucketModal(bucket);
+                            }}
+                          />
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            color={isActive ? "white" : "red.400"}
+                            icon={<FaTrash size="10px" />}
+                            aria-label="Delete bucket"
+                            _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteBucketAlert(bucket);
+                            }}
+                          />
+                        </HStack>
+                      )}
+                    </Flex>
+                  );
+                })
+              )}
+            </VStack>
+          </Box>
+
+          {/* Task Board Area */}
+          <Box flex={1} minW={0}>
+            {loading ? (
+              <Flex minH="400px" justify="center" align="center">
+                <VStack spacing={4}>
+                  <Spinner size="xl" color="brand.400" thickness="4px" />
+                  <Text color={textMuted} fontSize="sm">
+                    Loading tasks...
+                  </Text>
+                </VStack>
+              </Flex>
+            ) : (
+              <Grid
+                templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
+                gap={6}
+                alignItems="start"
+              >
+                {columns.map((col) => {
+                  const isHovered = hoveredColumn === col.id;
+                  return (
+                    <Box
+                      key={col.id}
+                      onDragOver={(e) => handleDragOver(e, col.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, col.id)}
+                      p={4}
+                      bg={boardBg}
+                      borderRadius="2xl"
+                      border="2px dashed"
+                      borderColor={isHovered ? `${col.colorScheme}.400` : "transparent"}
+                      boxShadow={isHovered ? `0 0 20px ${col.glowColor}` : "none"}
+                      transition="all 0.25s ease"
+                      minH="600px"
+                      backdropFilter="blur(10px)"
+                    >
+                      {/* Column Header */}
+                      <Flex
+                        p={3}
+                        borderRadius="xl"
+                        bgGradient={col.headerBg}
+                        color="white"
+                        align="center"
+                        justify="space-between"
+                        boxShadow={`0 4px 14px ${col.glowColor}`}
+                        mb={5}
+                      >
+                        <HStack spacing={2}>
+                          <Box as={col.icon} />
+                          <Text fontWeight="bold" fontSize="md">
+                            {col.title}
+                          </Text>
+                        </HStack>
+                        <Badge colorScheme="blackAlpha" variant="solid" borderRadius="full" px={2.5}>
+                          {col.tasksList.length}
+                        </Badge>
+                      </Flex>
+
+                      {/* Task Cards Stack */}
+                      <VStack spacing={4} align="stretch" w="full">
+                        {col.tasksList.length === 0 ? (
+                          <Flex
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            py={10}
+                            px={4}
+                            borderRadius="xl"
+                            bg="whiteAlpha.50"
+                            border="1px dashed"
+                            borderColor={borderColor}
+                          >
+                            <Text fontSize="xs" color="gray.500" textAlign="center">
+                              No tasks. Drag tasks here.
+                            </Text>
+                          </Flex>
+                        ) : (
+                          col.tasksList.map((task) => {
+                            const priorityColor =
+                              task.priority === "high"
+                                ? "red"
+                                : task.priority === "medium"
+                                ? "orange"
+                                : "brand";
+
+                            const isDueDatePassed =
+                              task.dueDate &&
+                              new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+                            const isDeletingTask = deletingTaskId === task.id;
+                            return (
+                              <Box
+                                key={task.id}
+                                draggable={!isDeletingTask}
+                                onDragStart={(e) => handleDragStart(e, task.id)}
+                                p={4}
+                                borderRadius="xl"
+                                bg={cardBg}
+                                border="1px solid"
+                                borderColor={borderColor}
+                                boxShadow="0 4px 10px rgba(0, 0, 0, 0.15)"
+                                cursor="grab"
+                                transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                                _hover={{
+                                  transform: "translateY(-4px)",
+                                  boxShadow: `0 8px 20px ${col.glowColor}`,
+                                  bg: cardHoverBg,
+                                  borderColor: `${col.colorScheme}.400`,
+                                }}
+                                _active={{
+                                  cursor: "grabbing",
+                                }}
+                                position="relative"
+                              >
+                                <Flex justify="space-between" align="start" mb={2}>
+                                  <Badge colorScheme={priorityColor} variant="subtle" borderRadius="md" px={2}>
+                                    {task.priority}
+                                  </Badge>
+                                  <HStack spacing={1}>
+                                    <IconButton
+                                      size="xs"
+                                      variant="ghost"
+                                      color="brand.400"
+                                      aria-label="View task"
+                                      icon={<FaEye />}
+                                      onClick={() => openViewDrawer(task)}
+                                      isDisabled={isDeletingTask || isTaskSubmitting}
+                                      _hover={{ bg: "whiteAlpha.200" }}
+                                    />
+                                    <IconButton
+                                      size="xs"
+                                      variant="ghost"
+                                      color="brand.400"
+                                      aria-label="Edit task"
+                                      icon={<FaEdit />}
+                                      onClick={() => openEditDrawer(task)}
+                                      isDisabled={isDeletingTask || isTaskSubmitting}
+                                      _hover={{ bg: "whiteAlpha.200" }}
+                                    />
+                                    <IconButton
+                                      size="xs"
+                                      variant="ghost"
+                                      color="red.400"
+                                      aria-label="Delete task"
+                                      icon={<FaTrash />}
+                                      onClick={() => openDeleteConfirm(task)}
+                                      isLoading={isDeletingTask}
+                                      isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
+                                      _hover={{ bg: "whiteAlpha.200" }}
+                                    />
+                                  </HStack>
+                                </Flex>
+
+                                <Heading size="sm" mb={2} color={taskTitleColor}>
+                                  {task.title}
+                                </Heading>
+
+                                <TaskDescriptionPreview
+                                  value={task.description}
+                                  textMuted={textMuted}
+                                  strongColor={taskTitleColor}
+                                />
+
+                                {task.dueDate && (
+                                  <HStack spacing={1.5} fontSize="2xs" color={isDueDatePassed ? "red.400" : "brand.300"}>
+                                    <FaCalendarAlt />
+                                    <Text fontWeight={isDueDatePassed ? "bold" : "normal"}>
+                                      {new Date(task.dueDate).toLocaleDateString(undefined, {
+                                        month: "short",
+                                        day: "numeric",
+                                      })}
+                                      {isDueDatePassed && " (Overdue)"}
+                                    </Text>
+                                  </HStack>
+                                )}
+
+                                <HStack spacing={1.5} fontSize="2xs" color={textMuted} mt={task.dueDate ? 1 : 0}>
+                                  <FaCalendarAlt />
+                                  <Text>Created {formatDisplayDate(task.createdAt)}</Text>
+                                </HStack>
+
+                                {/* Mobile Transition Actions: Fixes Drag & Drop limitations on mobile/responsive devices */}
+                                <Flex
+                                  display={{ base: "flex", md: "none" }}
+                                  mt={3}
+                                  pt={3}
+                                  borderTop="1px solid"
+                                  borderColor={borderColor}
+                                  justify="space-between"
+                                  gap={2}
+                                >
+                                  {task.status === "todo" && (
+                                    <Button
+                                      size="xs"
+                                      leftIcon={<FaPlay />}
+                                      colorScheme="orange"
+                                      variant="solid"
+                                      onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
+                                      w="full"
+                                      borderRadius="lg"
+                                    >
+                                      Start
+                                    </Button>
+                                  )}
+
+                                  {task.status === "in_progress" && (
+                                    <>
+                                      <Button
+                                        size="xs"
+                                        leftIcon={<FaArrowLeft />}
+                                        colorScheme="purple"
+                                        variant="outline"
+                                        onClick={() => handleUpdateTask(task.id, { status: "todo" })}
+                                        w="full"
+                                        borderRadius="lg"
+                                      >
+                                        Back
+                                      </Button>
+                                      <Button
+                                        size="xs"
+                                        leftIcon={<FaCheck />}
+                                        colorScheme="teal"
+                                        variant="solid"
+                                        onClick={() => handleUpdateTask(task.id, { status: "completed" })}
+                                        w="full"
+                                        borderRadius="lg"
+                                      >
+                                        Finish
+                                      </Button>
+                                    </>
+                                  )}
+
+                                  {task.status === "completed" && (
+                                    <Button
+                                      size="xs"
+                                      leftIcon={<FaUndo />}
+                                      colorScheme="orange"
+                                      variant="outline"
+                                      onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
+                                      w="full"
+                                      borderRadius="lg"
+                                    >
+                                      Reopen
+                                    </Button>
+                                  )}
+                                </Flex>
+                              </Box>
+                            );
+                          })
+                        )}
+                      </VStack>
+                    </Box>
+                  );
+                })}
+              </Grid>
+            )}
+          </Box>
+        </Flex>
+      ) : (
+        /* Table View Layout */
         <Box
-          w={{ base: "full", lg: "260px" }}
-          flexShrink={0}
+          w="full"
           bg={boardBg}
           borderRadius="2xl"
-          p={4}
+          p={{ base: 4, md: 6 }}
           border="1px solid"
           borderColor={borderColor}
           backdropFilter="blur(10px)"
-          alignSelf="flex-start"
+          boxShadow="xl"
         >
-          <Flex justify="space-between" align="center" mb={4}>
-            <Heading size="xs" textTransform="uppercase" letterSpacing="wider" color={textMuted}>
-              Buckets
-            </Heading>
-            <IconButton
-              size="xs"
-              colorScheme="brand"
-              bg="brand.500"
-              color="white"
-              icon={<FaPlus />}
-              aria-label="Add Bucket"
-              _hover={{ bg: "brand.600" }}
-              onClick={openCreateBucketModal}
-            />
-          </Flex>
-
-          <VStack spacing={2} align="stretch">
-            {loadingBuckets ? (
-              <Flex justify="center" py={4}>
-                <Spinner size="sm" color="brand.400" />
-              </Flex>
-            ) : buckets.length === 0 ? (
-              <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
-                No buckets found.
-              </Text>
-            ) : (
-              buckets.map((bucket) => {
-                const isActive = bucket.id === activeBucketId;
-                return (
-                  <Flex
-                    key={bucket.id}
-                    align="center"
-                    justify="space-between"
-                    p={3}
-                    borderRadius="xl"
-                    bg={isActive ? "brand.500" : "transparent"}
-                    color={isActive ? "white" : taskTitleColor}
-                    cursor="pointer"
-                    onClick={() => setActiveBucketId(bucket.id)}
-                    transition="all 0.2s"
-                    _hover={{
-                      bg: isActive ? "brand.600" : cardHoverBg,
-                    }}
-                    role="group"
-                  >
-                    <HStack spacing={2.5} flex={1} minW={0}>
-                      {bucket.isDefault ? <FaLock size="12px" /> : <FaFolder size="14px" />}
-                      <Text fontSize="sm" fontWeight={isActive ? "bold" : "medium"} isTruncated flex={1}>
-                        {bucket.name}
-                      </Text>
-                      <Badge
-                        colorScheme={isActive ? "blackAlpha" : "brand"}
-                        variant={isActive ? "solid" : "subtle"}
-                        borderRadius="full"
-                        px={2}
-                        py={0.5}
-                        fontSize="2xs"
-                      >
-                        {bucket.taskCount || 0}
-                      </Badge>
-                    </HStack>
-
-                    {!bucket.isDefault && (
-                      <HStack spacing={1} display="none" _groupHover={{ display: "flex" }} ml={2}>
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          color={isActive ? "white" : "brand.400"}
-                          icon={<FaEdit size="10px" />}
-                          aria-label="Rename bucket"
-                          _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRenameBucketModal(bucket);
-                          }}
-                        />
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          color={isActive ? "white" : "red.400"}
-                          icon={<FaTrash size="10px" />}
-                          aria-label="Delete bucket"
-                          _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteBucketAlert(bucket);
-                          }}
-                        />
-                      </HStack>
-                    )}
-                  </Flex>
-                );
-              })
-            )}
-          </VStack>
-        </Box>
-
-        {/* Task Board Area */}
-        <Box flex={1} minW={0}>
           {loading ? (
             <Flex minH="400px" justify="center" align="center">
               <VStack spacing={4}>
@@ -1384,251 +1830,306 @@ export default function TaskManagerContent() {
                 </Text>
               </VStack>
             </Flex>
-          ) : (
-            <Grid
-              templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
-              gap={6}
-              alignItems="start"
+          ) : paginatedTasks.length === 0 ? (
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              py={20}
+              px={4}
+              borderRadius="xl"
+              bg="whiteAlpha.50"
+              border="1px dashed"
+              borderColor={borderColor}
             >
-              {columns.map((col) => {
-                const isHovered = hoveredColumn === col.id;
-                return (
-                  <Box
-                    key={col.id}
-                    onDragOver={(e) => handleDragOver(e, col.id)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, col.id)}
-                    p={4}
-                    bg={boardBg}
-                    borderRadius="2xl"
-                    border="2px dashed"
-                    borderColor={isHovered ? `${col.colorScheme}.400` : "transparent"}
-                    boxShadow={isHovered ? `0 0 20px ${col.glowColor}` : "none"}
-                    transition="all 0.25s ease"
-                    minH="600px"
-                    backdropFilter="blur(10px)"
-                  >
-                    {/* Column Header */}
-                    <Flex
-                      p={3}
-                      borderRadius="xl"
-                      bgGradient={col.headerBg}
-                      color="white"
-                      align="center"
-                      justify="space-between"
-                      boxShadow={`0 4px 14px ${col.glowColor}`}
-                      mb={5}
-                    >
-                      <HStack spacing={2}>
-                        <Box as={col.icon} />
-                        <Text fontWeight="bold" fontSize="md">
-                          {col.title}
-                        </Text>
-                      </HStack>
-                      <Badge colorScheme="blackAlpha" variant="solid" borderRadius="full" px={2.5}>
-                        {col.tasksList.length}
-                      </Badge>
-                    </Flex>
+              <Text fontSize="md" color="gray.500" fontWeight="medium" textAlign="center">
+                No tasks found. Try adjusting your filters.
+              </Text>
+            </Flex>
+          ) : (
+            <>
+              <TableContainer overflowX="auto">
+                <Table variant="simple" size="md">
+                  <Thead>
+                    <Tr>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("title")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Task Name {sortField === "title" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                        w="30%"
+                      >
+                        Description
+                      </Th>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("priority")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Priority {sortField === "priority" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("status")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Status {sortField === "status" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("bucketId")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Bucket {sortField === "bucketId" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("dueDate")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Due Date {sortField === "dueDate" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        cursor="pointer"
+                        onClick={() => handleSort("createdAt")}
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                      >
+                        Created Date {sortField === "createdAt" && (sortOrder === "asc" ? <FaChevronUp style={{ display: "inline", marginLeft: "4px" }} /> : <FaChevronDown style={{ display: "inline", marginLeft: "4px" }} />)}
+                      </Th>
+                      <Th
+                        color={taskTitleColor}
+                        textTransform="none"
+                        fontSize="sm"
+                        fontWeight="bold"
+                        py={4}
+                        textAlign="right"
+                      >
+                        Actions
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {paginatedTasks.map((task) => {
+                      const priorityColor =
+                        task.priority === "high"
+                          ? "red"
+                          : task.priority === "medium"
+                          ? "orange"
+                          : "brand";
 
-                    {/* Task Cards Stack */}
-                    <VStack spacing={4} align="stretch" w="full">
-                      {col.tasksList.length === 0 ? (
-                        <Flex
-                          direction="column"
-                          align="center"
-                          justify="center"
-                          py={10}
-                          px={4}
-                          borderRadius="xl"
-                          bg="whiteAlpha.50"
-                          border="1px dashed"
-                          borderColor={borderColor}
+                      const statusConfig = {
+                        future: {
+                          title: "Future Tasks",
+                          bg: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                          glowColor: "rgba(59, 130, 246, 0.35)",
+                        },
+                        todo: {
+                          title: "To Do",
+                          bg: "linear-gradient(135deg, #7F00FF 0%, #E100FF 100%)",
+                          glowColor: "rgba(127, 0, 255, 0.4)",
+                        },
+                        in_progress: {
+                          title: "Running",
+                          bg: "linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)",
+                          glowColor: "rgba(255, 75, 43, 0.4)",
+                        },
+                        completed: {
+                          title: "Finished",
+                          bg: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
+                          glowColor: "rgba(56, 239, 125, 0.4)",
+                        },
+                      };
+
+                      const statusInfo = statusConfig[task.status] || {
+                        title: task.status,
+                        bg: "gray.500",
+                        glowColor: "transparent",
+                      };
+
+                      const isDueDatePassed =
+                        task.dueDate &&
+                        new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+
+                      const bucketName = buckets.find((b) => b.id === task.bucketId)?.name || "No bucket";
+                      const isDeletingTask = deletingTaskId === task.id;
+
+                      return (
+                        <Tr
+                          key={task.id}
+                          transition="all 0.2s"
+                          _hover={{ bg: cardHoverBg }}
                         >
-                          <Text fontSize="xs" color="gray.500" textAlign="center">
-                            No tasks. Drag tasks here.
-                          </Text>
-                        </Flex>
-                      ) : (
-                        col.tasksList.map((task) => {
-                          const priorityColor =
-                            task.priority === "high"
-                              ? "red"
-                              : task.priority === "medium"
-                              ? "orange"
-                              : "brand";
-
-                          const isDueDatePassed =
-                            task.dueDate &&
-                            new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
-                          const isDeletingTask = deletingTaskId === task.id;
-                          return (
-                            <Box
-                              key={task.id}
-                              draggable={!isDeletingTask}
-                              onDragStart={(e) => handleDragStart(e, task.id)}
-                              p={4}
-                              borderRadius="xl"
-                              bg={cardBg}
-                              border="1px solid"
-                              borderColor={borderColor}
-                              boxShadow="0 4px 10px rgba(0, 0, 0, 0.15)"
-                              cursor="grab"
-                              transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
-                              _hover={{
-                                transform: "translateY(-4px)",
-                                boxShadow: `0 8px 20px ${col.glowColor}`,
-                                bg: cardHoverBg,
-                                borderColor: `${col.colorScheme}.400`,
-                              }}
-                              _active={{
-                                cursor: "grabbing",
-                              }}
-                              position="relative"
+                          <Td py={4} fontWeight="semibold" color={taskTitleColor}>
+                            {task.title}
+                          </Td>
+                          <Td py={4} maxW="300px">
+                            <TaskDescriptionPreview
+                              value={task.description}
+                              textMuted={textMuted}
+                              strongColor={taskTitleColor}
+                            />
+                          </Td>
+                          <Td py={4}>
+                            <Badge colorScheme={priorityColor} variant="subtle" borderRadius="md" px={2} py={0.5}>
+                              {task.priority}
+                            </Badge>
+                          </Td>
+                          <Td py={4}>
+                            <Badge
+                              bgImage={statusInfo.bg}
+                              color="white"
+                              borderRadius="full"
+                              px={3}
+                              py={0.5}
+                              fontSize="xs"
+                              boxShadow={`0 2px 6px ${statusInfo.glowColor}`}
                             >
-                              <Flex justify="space-between" align="start" mb={2}>
-                                <Badge colorScheme={priorityColor} variant="subtle" borderRadius="md" px={2}>
-                                  {task.priority}
-                                </Badge>
-                                <HStack spacing={1}>
-                                  <IconButton
-                                    size="xs"
-                                    variant="ghost"
-                                    color="brand.400"
-                                    aria-label="View task"
-                                    icon={<FaEye />}
-                                    onClick={() => openViewDrawer(task)}
-                                    isDisabled={isDeletingTask || isTaskSubmitting}
-                                    _hover={{ bg: "whiteAlpha.200" }}
-                                  />
-                                  <IconButton
-                                    size="xs"
-                                    variant="ghost"
-                                    color="brand.400"
-                                    aria-label="Edit task"
-                                    icon={<FaEdit />}
-                                    onClick={() => openEditDrawer(task)}
-                                    isDisabled={isDeletingTask || isTaskSubmitting}
-                                    _hover={{ bg: "whiteAlpha.200" }}
-                                  />
-                                  <IconButton
-                                    size="xs"
-                                    variant="ghost"
-                                    color="red.400"
-                                    aria-label="Delete task"
-                                    icon={<FaTrash />}
-                                    onClick={() => openDeleteConfirm(task)}
-                                    isLoading={isDeletingTask}
-                                    isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
-                                    _hover={{ bg: "whiteAlpha.200" }}
-                                  />
-                                </HStack>
-                              </Flex>
-
-                              <Heading size="sm" mb={2} color={taskTitleColor}>
-                                {task.title}
-                              </Heading>
-
-                              <TaskDescriptionPreview
-                                value={task.description}
-                                textMuted={textMuted}
-                                strongColor={taskTitleColor}
-                              />
-
-                              {task.dueDate && (
-                                <HStack spacing={1.5} fontSize="2xs" color={isDueDatePassed ? "red.400" : "brand.300"}>
-                                  <FaCalendarAlt />
-                                  <Text fontWeight={isDueDatePassed ? "bold" : "normal"}>
-                                    {new Date(task.dueDate).toLocaleDateString(undefined, {
-                                      month: "short",
-                                      day: "numeric",
-                                    })}
-                                    {isDueDatePassed && " (Overdue)"}
-                                  </Text>
-                                </HStack>
-                              )}
-
-                              <HStack spacing={1.5} fontSize="2xs" color={textMuted} mt={task.dueDate ? 1 : 0}>
-                                <FaCalendarAlt />
-                                <Text>Created {formatDisplayDate(task.createdAt)}</Text>
-                              </HStack>
-
-                              {/* Mobile Transition Actions: Fixes Drag & Drop limitations on mobile/responsive devices */}
-                              <Flex
-                                display={{ base: "flex", md: "none" }}
-                                mt={3}
-                                pt={3}
-                                borderTop="1px solid"
-                                borderColor={borderColor}
-                                justify="space-between"
-                                gap={2}
+                              {statusInfo.title}
+                            </Badge>
+                          </Td>
+                          <Td py={4} color={taskTitleColor} fontSize="sm">
+                            <HStack spacing={1}>
+                              <FaFolder size="12px" color="gray.450" />
+                              <Text>{bucketName}</Text>
+                            </HStack>
+                          </Td>
+                          <Td py={4}>
+                            {task.dueDate ? (
+                              <Text
+                                fontSize="xs"
+                                fontWeight={isDueDatePassed ? "bold" : "normal"}
+                                color={isDueDatePassed ? "red.400" : "brand.300"}
                               >
-                                {task.status === "todo" && (
-                                  <Button
-                                    size="xs"
-                                    leftIcon={<FaPlay />}
-                                    colorScheme="orange"
-                                    variant="solid"
-                                    onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
-                                    w="full"
-                                    borderRadius="lg"
-                                  >
-                                    Start
-                                  </Button>
-                                )}
+                                {formatDisplayDate(task.dueDate)}
+                                {isDueDatePassed && " (Overdue)"}
+                              </Text>
+                            ) : (
+                              <Text fontSize="xs" color="gray.500">
+                                -
+                              </Text>
+                            )}
+                          </Td>
+                          <Td py={4} color={textMuted} fontSize="xs">
+                            {formatDisplayDate(task.createdAt)}
+                          </Td>
+                          <Td py={4} textAlign="right">
+                            <HStack spacing={1} justify="flex-end">
+                              <IconButton
+                                size="sm"
+                                variant="ghost"
+                                color="brand.400"
+                                aria-label="View task"
+                                icon={<FaEye />}
+                                onClick={() => openViewDrawer(task)}
+                                isDisabled={isDeletingTask || isTaskSubmitting}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                              />
+                              <IconButton
+                                size="sm"
+                                variant="ghost"
+                                color="brand.400"
+                                aria-label="Edit task"
+                                icon={<FaEdit />}
+                                onClick={() => openEditDrawer(task)}
+                                isDisabled={isDeletingTask || isTaskSubmitting}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                              />
+                              <IconButton
+                                size="sm"
+                                variant="ghost"
+                                color="red.400"
+                                aria-label="Delete task"
+                                icon={<FaTrash />}
+                                onClick={() => openDeleteConfirm(task)}
+                                isLoading={isDeletingTask}
+                                isDisabled={Boolean(deletingTaskId) || isTaskSubmitting}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                              />
+                            </HStack>
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              </TableContainer>
 
-                                {task.status === "in_progress" && (
-                                  <>
-                                    <Button
-                                      size="xs"
-                                      leftIcon={<FaArrowLeft />}
-                                      colorScheme="purple"
-                                      variant="outline"
-                                      onClick={() => handleUpdateTask(task.id, { status: "todo" })}
-                                      w="full"
-                                      borderRadius="lg"
-                                    >
-                                      Back
-                                    </Button>
-                                    <Button
-                                      size="xs"
-                                      leftIcon={<FaCheck />}
-                                      colorScheme="teal"
-                                      variant="solid"
-                                      onClick={() => handleUpdateTask(task.id, { status: "completed" })}
-                                      w="full"
-                                      borderRadius="lg"
-                                    >
-                                      Finish
-                                    </Button>
-                                  </>
-                                )}
-
-                                {task.status === "completed" && (
-                                  <Button
-                                    size="xs"
-                                    leftIcon={<FaUndo />}
-                                    colorScheme="orange"
-                                    variant="outline"
-                                    onClick={() => handleUpdateTask(task.id, { status: "in_progress" })}
-                                    w="full"
-                                    borderRadius="lg"
-                                  >
-                                    Reopen
-                                  </Button>
-                                )}
-                              </Flex>
-                            </Box>
-                          );
-                        })
-                      )}
-                    </VStack>
-                  </Box>
-                );
-              })}
-            </Grid>
+              {/* Pagination */}
+              <Flex
+                justify="space-between"
+                align="center"
+                mt={6}
+                flexDirection={{ base: "column", sm: "row" }}
+                gap={4}
+              >
+                <Text fontSize="sm" color={textMuted}>
+                  Showing {totalTasks === 0 ? 0 : (currentPage - 1) * tasksPerPage + 1} to{" "}
+                  {Math.min(currentPage * tasksPerPage, totalTasks)} of {totalTasks} tasks
+                </Text>
+                <HStack spacing={2} overflowX="auto" maxW="full" py={1}>
+                  <Button
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    isDisabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      size="sm"
+                      variant={currentPage === page ? "solid" : "outline"}
+                      colorScheme={currentPage === page ? "brand" : "gray"}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  <Button
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    isDisabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </HStack>
+              </Flex>
+            </>
           )}
         </Box>
-      </Flex>
+      )}
 
       {/* View Task Drawer */}
       <Drawer

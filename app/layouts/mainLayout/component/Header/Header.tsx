@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import {
   Box,
   Flex,
@@ -44,7 +44,7 @@ const Header = () => {
   const toggleLabelColor = useColorModeValue("gray.700", "gray.200");
 
   return (
-    <Box shadow="sm" position="sticky" top="0" zIndex="1000" bg={headerBg}>
+    <Box shadow="sm" position="sticky" top="0" zIndex="100" bg={headerBg}>
       {/* Top Bar */}
       <Box
         h={{ lg: "2rem", xl: "2.5rem" }} // Reduce height

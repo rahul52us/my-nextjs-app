@@ -7,7 +7,7 @@ import {
     Center, SimpleGrid, Card, CardBody, useColorModeValue
 } from '@chakra-ui/react';
 import { FiUploadCloud, FiShield, FiZap, FiCheckCircle, FiTrash2, FiEye } from 'react-icons/fi';
-import ConversionPreviewModal from "../../../../../component/common/ConversionPreviewModal";
+import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
 
 const WordToPdf = () => {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -117,13 +117,61 @@ const WordToPdf = () => {
                                     borderRadius="2xl"
                                     bg={fileName ? dropzoneActiveBg : dropzoneBg}
                                     transition="all 0.3s"
+                                    opacity={isGenerating ? 0.5 : 1}
                                 >
                                     <input
                                         type="file"
                                         accept=".docx"
                                         onChange={handleFileChange}
-                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 1 }}
+                                        disabled={isGenerating}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: isGenerating ? 'not-allowed' : 'pointer',
+                                            zIndex: 1
+                                        }}
                                     />
+                                    {isGenerating && (
+                                        <Box
+                                            position="absolute"
+                                            top={0}
+                                            left={0}
+                                            w="100%"
+                                            h="100%"
+                                            zIndex={2}
+                                            cursor="not-allowed"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                        />
+                                    )}
                                     <VStack spacing={4}>
                                         <Center boxSize="60px" bg={fileName ? "brand.500" : "brand.900"} color="white" borderRadius="xl">
                                             <Icon as={fileName ? FiCheckCircle : FiUploadCloud} boxSize={8} />
@@ -189,8 +237,8 @@ const WordToPdf = () => {
                 </VStack>
             </Container>
 
-            {/* Preview Modal */}
-            <ConversionPreviewModal
+            {/* Preview Drawer */}
+            <ConversionPreviewDrawer
                 isOpen={previewOpen}
                 onClose={handlePreviewClose}
                 previewUrl={previewUrl}

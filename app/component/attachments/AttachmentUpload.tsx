@@ -128,6 +128,7 @@ const AttachmentUpload = forwardRef<AttachmentUploadHandle, Props>(({ taskId }, 
         {
           file_name: fileState.file.name,
           cloudinary_public_id: data.public_id,
+          cloudinary_resource_type: data.resource_type, // "image", "video", or "raw"
           cloudinary_url: data.secure_url,
           file_type: data.resource_type + "/" + data.format,
           file_size: data.bytes,

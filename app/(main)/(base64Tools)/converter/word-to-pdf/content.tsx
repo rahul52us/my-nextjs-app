@@ -17,7 +17,7 @@ import {
     useColorModeValue,
 } from "@chakra-ui/react";
 import { FiUploadCloud, FiCheckCircle, FiTrash2, FiEye } from "react-icons/fi";
-import ConversionPreviewModal from "../../../../component/common/ConversionPreviewModal";
+import ConversionPreviewDrawer from "../../../../component/common/ConversionPreviewDrawer";
 
 const WordToPdfConverterContent = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -159,21 +159,59 @@ const WordToPdfConverterContent = () => {
                             borderRadius="2xl"
                             bg={file ? dropzoneActiveBg : dropzoneBg}
                             transition="all 0.3s"
-                            cursor="pointer"
+                            opacity={loading ? 0.5 : 1}
                         >
                             <Input
                                 type="file"
                                 accept=".docx"
                                 onChange={handleFileChange}
+                                disabled={loading}
                                 position="absolute"
                                 top={0}
                                 left={0}
                                 w="full"
                                 h="full"
                                 opacity={0}
-                                cursor="pointer"
+                                cursor={loading ? "not-allowed" : "pointer"}
                                 zIndex={1}
                             />
+                            {loading && (
+                                <Box
+                                    position="absolute"
+                                    top={0}
+                                    left={0}
+                                    w="100%"
+                                    h="100%"
+                                    zIndex={2}
+                                    cursor="not-allowed"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        toast({
+                                            title: "Operation in progress",
+                                            description: "Please wait until the current operation is complete.",
+                                            status: "warning",
+                                            duration: 3000,
+                                            isClosable: true,
+                                        });
+                                    }}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        toast({
+                                            title: "Operation in progress",
+                                            description: "Please wait until the current operation is complete.",
+                                            status: "warning",
+                                            duration: 3000,
+                                            isClosable: true,
+                                        });
+                                    }}
+                                />
+                            )}
                             <VStack spacing={4}>
                                 <Center
                                     boxSize="60px"
@@ -263,8 +301,8 @@ const WordToPdfConverterContent = () => {
                 </Box>
             </Flex>
 
-            {/* Preview Modal */}
-            <ConversionPreviewModal
+            {/* Preview Drawer */}
+            <ConversionPreviewDrawer
                 isOpen={previewOpen}
                 onClose={handlePreviewClose}
                 previewUrl={previewUrl}

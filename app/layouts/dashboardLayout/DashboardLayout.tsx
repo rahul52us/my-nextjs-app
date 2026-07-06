@@ -1,4 +1,4 @@
-﻿// 'use client';
+// 'use client';
 
 // import { useEffect, useRef, useState } from 'react';
 // import { observer } from 'mobx-react-lite';
@@ -277,7 +277,7 @@ export default DashboardLayout;
 
 // ✅ Optimized Styled Components for Full Width
 const HeaderContainer = styled.div<{ $backgroundColor: string }>`
-  z-index: 1000;
+  z-index: 100;
   height: ${headerHeight};
   position: fixed;
   top: 0;
