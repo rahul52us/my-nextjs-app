@@ -58,6 +58,7 @@ const PDFWatermarker: React.FC = observer(() => {
   const [opacity, setOpacity] = useState<number>(0.3);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [containerWidth, setContainerWidth] = useState(600);
+  const [pageWidth, setPageWidth] = useState<number>(595);
 
   // Page selection states
   const [numPages, setNumPages] = useState<number>(0);
@@ -263,7 +264,6 @@ const PDFWatermarker: React.FC = observer(() => {
           watermarkText,
           fontSize,
         );
-        const textHeight = helveticaFont.heightAtSize(fontSize);
 
         // 2. Map coordinates: PDF (0,0) is Bottom-Left, CSS (0,0) is Top-Left
         const pdfCenterX = (position.x / 100) * width;
@@ -274,8 +274,16 @@ const PDFWatermarker: React.FC = observer(() => {
         // whereas CSS rotate() is CW.
         const pdfRotation = -rotation;
         const rad = (pdfRotation * Math.PI) / 180;
+        
+        // Calculate the centerYOffset using the font's actual Ascender and Descender metrics
+        // (representing the vertical midpoint of the text bounding box relative to the baseline).
+        // Access internal font metrics via 'any' cast; embedder is private in PDFFont's type
+        // definitions but accessible at runtime. Fallbacks match HelveticaBold's actual values.
+        const fontAny = helveticaFont as any;
+        const ascender: number = fontAny?.embedder?.font?.Ascender ?? 718;
+        const descender: number = fontAny?.embedder?.font?.Descender ?? -207;
+        const centerYOffset = ((ascender + descender) / 2000) * fontSize;
         const centerXOffset = textWidth / 2;
-        const centerYOffset = textHeight / 2;
 
         const originX =
           pdfCenterX -
@@ -600,6 +608,9 @@ const PDFWatermarker: React.FC = observer(() => {
                     width={containerWidth}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
+                    onLoadSuccess={(page) => {
+                      setPageWidth(page.width);
+                    }}
                   />
                 </Document>
               ) : (
@@ -629,8 +640,9 @@ const PDFWatermarker: React.FC = observer(() => {
                       className="font-black whitespace-nowrap leading-none transition-colors"
                       style={{
                         // Formula to keep font size visual-accurate regardless of screen width
-                        fontSize: `${(fontSize * containerWidth) / 595}px`,
+                        fontSize: `${(fontSize * containerWidth) / pageWidth}px`,
                         color: watermarkColor,
+                        fontFamily: "Helvetica, Arial, sans-serif",
                       }}
                     >
                       {watermarkText || "PREVIEW"}

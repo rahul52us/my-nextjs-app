@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Box, Button, Container, Heading, Text, VStack, useToast,
     Icon, Progress, HStack, ScaleFade, Flex, Divider,
@@ -10,6 +10,8 @@ import { FiUploadCloud, FiShield, FiZap, FiCheckCircle, FiTrash2, FiEye } from '
 import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
 
 const WordToPdf = () => {
+    type ConversionProgress = { step: string; pct: number; elapsed?: number };
+
     const [isGenerating, setIsGenerating] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -17,6 +19,10 @@ const WordToPdf = () => {
     // Preview modal state
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [progress, setProgress] = useState<ConversionProgress | null>(null);
+    const progressTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startedAtRef = useRef<number>(0);
 
     const toast = useToast();
 
@@ -26,6 +32,43 @@ const WordToPdf = () => {
     const subTextColor = useColorModeValue("gray.500", "gray.400");
     const dropzoneBg = useColorModeValue("gray.50", "gray.600");
     const dropzoneActiveBg = useColorModeValue("brand.50", "brand.900");
+
+    const clearProgressTimers = () => {
+        progressTimersRef.current.forEach(clearTimeout);
+        progressTimersRef.current = [];
+        if (elapsedRef.current) clearInterval(elapsedRef.current);
+        elapsedRef.current = null;
+    };
+
+    const startSimulatedProgress = () => {
+        clearProgressTimers();
+        startedAtRef.current = Date.now();
+        setProgress({ step: "Uploading file...", pct: 10, elapsed: 0 });
+        elapsedRef.current = setInterval(() => {
+            setProgress((current) => current ? {
+                ...current,
+                elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
+            } : current);
+        }, 1000);
+
+        [
+            { delay: 500, step: "Processing document...", pct: 40 },
+            { delay: 1400, step: "Generating PDF...", pct: 75 },
+            { delay: 2400, step: "Finalising...", pct: 95 },
+        ].forEach((item) => {
+            progressTimersRef.current.push(setTimeout(() => {
+                setProgress((current) => ({
+                    step: item.step,
+                    pct: Math.max(current?.pct ?? 0, item.pct),
+                    elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
+                }));
+            }, item.delay));
+        });
+    };
+
+    useEffect(() => {
+        return () => clearProgressTimers();
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -47,8 +90,8 @@ const WordToPdf = () => {
         if (!selectedFile) return;
         setIsGenerating(true);
 
-        // Open modal immediately (shows loading spinner inside)
         setPreviewUrl(null);
+        startSimulatedProgress();
         setPreviewOpen(true);
 
         try {
@@ -68,6 +111,7 @@ const WordToPdf = () => {
             // The result is already a PDF — use it directly as preview
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
+            setProgress({ step: "Done!", pct: 100, elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000) });
             setPreviewUrl(url);
 
             toast({ title: "Conversion Successful", description: "Preview ready. Download when satisfied.", status: "success" });
@@ -75,21 +119,26 @@ const WordToPdf = () => {
             setPreviewOpen(false);
             toast({ title: "Export Error", description: String(error.message || error), status: "error" });
         } finally {
+            clearProgressTimers();
             setIsGenerating(false);
         }
     };
 
     const handlePreviewClose = () => {
+        clearProgressTimers();
         setPreviewOpen(false);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
+        setProgress(null);
     };
 
     const handleClear = () => {
+        clearProgressTimers();
         setFileName(null);
         setSelectedFile(null);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
+        setProgress(null);
     };
 
     const downloadName = `${fileName?.replace('.docx', '') || 'converted'}.pdf`;
@@ -245,6 +294,7 @@ const WordToPdf = () => {
                 downloadUrl={previewUrl}
                 downloadName={downloadName}
                 outputLabel="PDF"
+                progress={progress}
             />
         </Box>
     );

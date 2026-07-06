@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Box, Button, Container, Heading, Text, VStack, useToast,
     Icon, Progress, HStack, ScaleFade, Flex, Divider,
@@ -12,6 +12,8 @@ import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdva
 import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
 
 const PDFToWordContent = () => {
+    type ConversionProgress = { step: string; pct: number; elapsed?: number; timedOut?: boolean };
+
     const [isConverting, setIsConverting] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -20,6 +22,13 @@ const PDFToWordContent = () => {
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+    const [progress, setProgress] = useState<ConversionProgress | null>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startedAtRef = useRef<number>(0);
+    const timedOutRef = useRef(false);
+    const rejectConversionRef = useRef<((error: Error) => void) | null>(null);
 
     const toast = useToast();
 
@@ -32,6 +41,25 @@ const PDFToWordContent = () => {
 
     const { themeStore: { themeConfig } } = stores;
     const { advanceWorkflow } = useWorkflowAutoAdvance();
+
+    const clearConversionTimers = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (elapsedRef.current) clearInterval(elapsedRef.current);
+        timeoutRef.current = null;
+        elapsedRef.current = null;
+    };
+
+    const closeProgressStream = () => {
+        eventSourceRef.current?.close();
+        eventSourceRef.current = null;
+    };
+
+    useEffect(() => {
+        return () => {
+            closeProgressStream();
+            clearConversionTimers();
+        };
+    }, []);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -53,63 +81,133 @@ const PDFToWordContent = () => {
     const convertToWord = async () => {
         if (!selectedFile) return;
         setIsConverting(true);
+        timedOutRef.current = false;
+        closeProgressStream();
+        clearConversionTimers();
 
-        // Open modal immediately (shows loading spinner inside)
         setPreviewUrl(null);
         setDownloadUrl(null);
+        setProgress({ step: "Uploading file...", pct: 5, elapsed: 0 });
         setPreviewOpen(true);
+        startedAtRef.current = Date.now();
+        elapsedRef.current = setInterval(() => {
+            setProgress((current) => current ? {
+                ...current,
+                elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
+            } : current);
+        }, 1000);
 
         try {
             const formData = new FormData();
             formData.append("file", selectedFile);
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-            // Step 1: Get a PDF preview of the converted DOCX
-            const previewRes = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word/preview`,
+            const startRes = await fetch(
+                `${backendUrl}/convert/pdf-to-word/start`,
                 { method: "POST", body: formData }
             );
 
-            if (!previewRes.ok) {
-                const err = await previewRes.json().catch(() => ({}));
-                throw new Error(err.error || "Preview generation failed");
+            if (!startRes.ok) {
+                const err = await startRes.json().catch(() => ({}));
+                throw new Error(err.error || "Conversion failed to start");
             }
 
-            const previewBlob = await previewRes.blob();
-            const pUrl = URL.createObjectURL(previewBlob);
-            setPreviewUrl(pUrl);
+            const { jobId, previewUrl: previewPath, downloadUrl: downloadPath } = await startRes.json();
+            const absoluteUrl = (url: string) => url.startsWith("http") ? url : `${backendUrl}${url}`;
 
-            // Step 2: Also fetch the actual DOCX so it's ready to download
-            const formData2 = new FormData();
-            formData2.append("file", selectedFile);
+            timeoutRef.current = setTimeout(() => {
+                timedOutRef.current = true;
+                closeProgressStream();
+                setIsConverting(false);
+                setProgress((current) => ({
+                    step: "Taking too long? Retry",
+                    pct: current?.pct ?? 90,
+                    elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
+                    timedOut: true,
+                }));
+                rejectConversionRef.current?.(new Error("Conversion is taking too long. Please retry."));
+            }, 90000);
 
-            const docxRes = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/pdf-to-word`,
-                { method: "POST", body: formData2 }
-            );
+            await new Promise<void>((resolve, reject) => {
+                rejectConversionRef.current = reject;
+                const source = new EventSource(`${backendUrl}/convert/pdf-to-word/progress/${jobId}`);
+                eventSourceRef.current = source;
 
-            if (!docxRes.ok) {
-                const err = await docxRes.json().catch(() => ({}));
-                throw new Error(err.error || "Conversion failed");
-            }
+                source.onmessage = async (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
 
-            const docxBlob = await docxRes.blob();
-            const dUrl = URL.createObjectURL(docxBlob);
-            setDownloadUrl(dUrl);
+                        if (data.type === "progress") {
+                            setProgress({ step: data.step, pct: data.pct, elapsed });
+                            return;
+                        }
+
+                        if (data.type === "done") {
+                            setProgress({ step: data.step || "Done!", pct: 100, elapsed });
+                            closeProgressStream();
+                            clearConversionTimers();
+
+                            const [previewRes, docxRes] = await Promise.all([
+                                fetch(absoluteUrl(data.previewUrl || previewPath)),
+                                fetch(absoluteUrl(data.downloadUrl || downloadPath)),
+                            ]);
+
+                            if (!previewRes.ok || !docxRes.ok) {
+                                throw new Error("Converted files are not available");
+                            }
+
+                            const [previewBlob, docxBlob] = await Promise.all([
+                                previewRes.blob(),
+                                docxRes.blob(),
+                            ]);
+
+                            setPreviewUrl(URL.createObjectURL(previewBlob));
+                            setDownloadUrl(URL.createObjectURL(docxBlob));
+                            resolve();
+                        }
+
+                        if (data.type === "error") {
+                            closeProgressStream();
+                            clearConversionTimers();
+                            timedOutRef.current = Boolean(data.timedOut);
+                            setProgress({ step: data.step || "Conversion failed", pct: data.pct || 0, elapsed, timedOut: Boolean(data.timedOut) });
+                            reject(new Error(data.message || "Conversion failed"));
+                        }
+                    } catch (err: any) {
+                        closeProgressStream();
+                        reject(err);
+                    }
+                };
+
+                source.onerror = () => {
+                    closeProgressStream();
+                    reject(new Error("Lost connection to conversion progress"));
+                };
+            });
 
         } catch (error: any) {
-            setPreviewOpen(false);
             console.error("Conversion Error:", error);
-            toast({
-                title: "Conversion Failed",
-                description: error.message || "An error occurred while processing the PDF.",
-                status: "error",
-            });
+            if (!timedOutRef.current) setPreviewOpen(false);
+            if (!timedOutRef.current) {
+                toast({
+                    title: "Conversion Failed",
+                    description: error.message || "An error occurred while processing the PDF.",
+                    status: "error",
+                });
+            }
         } finally {
+            rejectConversionRef.current = null;
+            closeProgressStream();
+            clearConversionTimers();
             setIsConverting(false);
         }
     };
 
     const handlePreviewClose = () => {
+        closeProgressStream();
+        clearConversionTimers();
+        timedOutRef.current = false;
         setPreviewOpen(false);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         if (downloadUrl) {
@@ -118,15 +216,20 @@ const PDFToWordContent = () => {
         }
         setPreviewUrl(null);
         setDownloadUrl(null);
+        setProgress(null);
     };
 
     const handleClear = () => {
+        closeProgressStream();
+        clearConversionTimers();
+        timedOutRef.current = false;
         setFileName(null);
         setSelectedFile(null);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         if (downloadUrl) URL.revokeObjectURL(downloadUrl);
         setPreviewUrl(null);
         setDownloadUrl(null);
+        setProgress(null);
     };
 
     const downloadName = fileName?.replace('.pdf', '.docx') || 'converted.docx';
@@ -339,6 +442,8 @@ const PDFToWordContent = () => {
                 downloadUrl={downloadUrl}
                 downloadName={downloadName}
                 outputLabel=".docx"
+                progress={progress}
+                onRetry={convertToWord}
             />
         </Box>
     );

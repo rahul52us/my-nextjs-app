@@ -14,9 +14,21 @@ import {
   Icon,
   Box,
   Spinner,
+  Progress,
+  VStack,
+  Circle,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { FiDownload, FiEye, FiFileText } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiDownload, FiEye, FiFileText, FiRefreshCw } from "react-icons/fi";
+
+const CONVERSION_STEPS = [
+  { key: "uploading", label: "Uploading file", pct: 5 },
+  { key: "extracting", label: "Extracting PDF layout", pct: 20 },
+  { key: "converting", label: "Converting document", pct: 60 },
+  { key: "compressing", label: "Optimising images", pct: 75 },
+  { key: "preview", label: "Generating preview", pct: 90 },
+  { key: "done", label: "Ready", pct: 100 },
+];
 
 interface ConversionPreviewDrawerProps {
   isOpen: boolean;
@@ -29,6 +41,8 @@ interface ConversionPreviewDrawerProps {
   downloadName: string;
   /** Human-readable label shown in the header, e.g. ".docx" or "PDF" */
   outputLabel?: string;
+  progress?: { step: string; pct: number; elapsed?: number; timedOut?: boolean } | null;
+  onRetry?: () => void;
 }
 
 const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
@@ -38,6 +52,8 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
   downloadUrl,
   downloadName,
   outputLabel = "file",
+  progress,
+  onRetry,
 }) => {
   const headerBg = useColorModeValue(
     "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
@@ -46,6 +62,19 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
   const bodyBg = useColorModeValue("#f1f5f9", "#0f172a");
   const iframeBg = useColorModeValue("white", "#1e293b");
   const textColor = useColorModeValue("gray.700", "gray.200");
+  const mutedTextColor = useColorModeValue("gray.500", "gray.400");
+  const progressCardBg = useColorModeValue("white", "gray.800");
+  const progressTrackBg = useColorModeValue("gray.100", "gray.700");
+
+  const formatElapsed = (seconds = 0) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
+  const currentPct = Math.max(0, Math.min(100, progress?.pct ?? 12));
+  const currentStep = progress?.step || "Preparing conversion...";
+  const timedOut = Boolean(progress?.timedOut);
 
   const handleDownload = () => {
     if (!downloadUrl) return;
@@ -168,16 +197,93 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
               align="center"
               justify="center"
               direction="column"
-              gap={4}
+              gap={5}
               minH="50vh"
             >
-              <Spinner size="xl" color="brand.400" thickness="4px" speed="0.65s" />
-              <Text color={textColor} fontWeight="600" fontSize="md">
-                Generating preview…
-              </Text>
-              <Text color="gray.500" fontSize="sm">
-                This may take a few seconds
-              </Text>
+              <Box
+                w="full"
+                maxW="560px"
+                bg={progressCardBg}
+                borderRadius="lg"
+                border="1px solid"
+                borderColor={timedOut ? "red.200" : "blackAlpha.100"}
+                boxShadow="0 18px 45px rgba(15,23,42,0.12)"
+                p={{ base: 5, md: 7 }}
+              >
+                <VStack spacing={5} align="stretch">
+                  <HStack justify="space-between" align="start" spacing={4}>
+                    <HStack spacing={3} align="center">
+                      <Flex
+                        align="center"
+                        justify="center"
+                        boxSize="42px"
+                        borderRadius="lg"
+                        bg={timedOut ? "red.50" : "brand.50"}
+                        color={timedOut ? "red.500" : "brand.500"}
+                      >
+                        <Icon as={timedOut ? FiAlertCircle : FiFileText} boxSize={5} />
+                      </Flex>
+                      <Box>
+                        <Text color={textColor} fontWeight="800" fontSize="md">
+                          {timedOut ? "Conversion is taking too long" : currentStep}
+                        </Text>
+                        <Text color={mutedTextColor} fontSize="sm">
+                          Elapsed {formatElapsed(progress?.elapsed)}
+                        </Text>
+                      </Box>
+                    </HStack>
+                    <Text color={timedOut ? "red.500" : "brand.500"} fontWeight="800">
+                      {currentPct}%
+                    </Text>
+                  </HStack>
+
+                  <Progress
+                    value={currentPct}
+                    size="sm"
+                    colorScheme={timedOut ? "red" : "brand"}
+                    borderRadius="full"
+                    bg={progressTrackBg}
+                  />
+
+                  <VStack spacing={3} align="stretch">
+                    {CONVERSION_STEPS.map((step) => {
+                      const isDone = currentPct >= step.pct;
+                      const isCurrent = !timedOut && currentPct < 100 && currentPct >= step.pct - 15 && currentPct <= step.pct;
+                      return (
+                        <HStack key={step.key} spacing={3}>
+                          <Circle
+                            size="24px"
+                            bg={isDone ? "brand.500" : isCurrent ? "brand.100" : "gray.100"}
+                            color={isDone ? "white" : isCurrent ? "brand.600" : "gray.400"}
+                            flexShrink={0}
+                          >
+                            {isDone ? <Icon as={FiCheck} boxSize={3} /> : isCurrent ? <Spinner size="xs" /> : null}
+                          </Circle>
+                          <Text
+                            color={isDone || isCurrent ? textColor : mutedTextColor}
+                            fontWeight={isCurrent ? "700" : "500"}
+                            fontSize="sm"
+                          >
+                            {step.label}
+                          </Text>
+                        </HStack>
+                      );
+                    })}
+                  </VStack>
+
+                  {timedOut && onRetry && (
+                    <Button
+                      leftIcon={<FiRefreshCw />}
+                      colorScheme="red"
+                      variant="solid"
+                      alignSelf="start"
+                      onClick={onRetry}
+                    >
+                      Retry
+                    </Button>
+                  )}
+                </VStack>
+              </Box>
             </Flex>
           ) : (
             /* PDF iframe */
