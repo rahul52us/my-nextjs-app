@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -21,7 +21,6 @@ const Base64ToAudioContent = () => {
     const [base64Input, setBase64Input] = useState<string>(""); // For the Base64 input string
     const [audioUrl, setAudioUrl] = useState<string | null>(null); // For storing the decoded audio URL
     const toast = useToast();
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
         const {
   themeStore: { themeConfig },
@@ -130,7 +129,7 @@ const Base64ToAudioContent = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} minH='78vh'>
+        <Box p={4} bg="transparent" color={textColor} minH='78vh'>
             <Heading
                 as="h1"
                 size="xl"

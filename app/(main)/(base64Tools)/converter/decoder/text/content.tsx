@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -29,8 +29,6 @@ const Base64ToTextContent: React.FC = () => {
     const [textOutput, setTextOutput] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false); // Track loading state
     const toast = useToast();
-
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Function to convert Base64 to text using Buffer
@@ -91,7 +89,7 @@ const Base64ToTextContent: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} borderRadius="md" boxShadow="lg">
+        <Box p={4} bg="transparent" color={textColor} borderRadius="md" boxShadow="lg">
             <Heading
                 as="h1"
                 size="xl"

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, ChangeEvent, useRef, DragEvent } from "react";
 import {
@@ -29,7 +29,6 @@ const AudioToBase64Content = () => {
     const [isDragActive, setIsDragActive] = useState<boolean>(false);
     const dragCounter = useRef(0);
     const toast = useToast();
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Dropzone theme tokens — same colorMode source as the rest of the box,
@@ -223,7 +222,7 @@ const AudioToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} minH="78vh">
+        <Box p={4} bg="transparent" minH="78vh">
             <Heading
                 as="h1"
                 size="xl"

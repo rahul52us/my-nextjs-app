@@ -286,7 +286,7 @@ export default function WorkflowRunner({ workflowId }: WorkflowRunnerProps) {
   }, [uploadedFile, state.resultBlob, state.status]);
 
   return (
-    <Box py={{ base: 6, md: 10 }} px={{ base: 4, md: 8 }} maxW="4xl" mx="auto" minH="85vh">
+    <Box py={{ base: 6, md: 10 }} px={{ base: 4, md: 8 }} maxW="8xl" mx="auto" minH="85vh">
       {/* Top Navigation */}
       <HStack justify="space-between" mb={8} flexWrap="wrap" gap={3}>
         <Button

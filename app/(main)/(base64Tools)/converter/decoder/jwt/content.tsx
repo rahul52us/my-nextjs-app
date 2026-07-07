@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -65,8 +65,6 @@ const JwtDecoderContent: React.FC = () => {
   const {
     themeStore: { themeConfig },
   } = stores;
-
-  const bgColor       = useColorModeValue("gray.100", "gray.800");
   const textColor     = useColorModeValue("gray.800", "gray.100");
   const fileBg        = useColorModeValue("gray.50", "gray.700");
   const fileBorder    = useColorModeValue("gray.300", "gray.600");
@@ -220,7 +218,7 @@ const JwtDecoderContent: React.FC = () => {
   const openFilePicker = () => fileInputRef.current?.click();
 
   return (
-    <Box p={4} bg={bgColor} color={textColor}>
+    <Box p={4} bg="transparent" color={textColor}>
       <Heading
         as="h1"
         size="xl"

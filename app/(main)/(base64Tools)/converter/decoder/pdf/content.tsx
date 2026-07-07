@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, ChangeEvent } from "react";
 import { saveAs } from "file-saver";
@@ -30,8 +30,6 @@ const Base64PdfContent = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [showPreview, setShowPreview] = useState<boolean>(false);
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
-
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Extract MIME type and Base64 data
@@ -118,7 +116,7 @@ const Base64PdfContent = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor}>
+        <Box p={4} bg="transparent" color={textColor}>
             <Heading
                 as="h1"
                 size="xl"

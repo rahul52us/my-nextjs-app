@@ -357,7 +357,7 @@ const ColorConverterContent: React.FC = () => {
 
   return (
     <Box minH="100vh" bg={pageBg} p={{ base: 4, md: 6, lg: 8 }}>
-      <Box maxW="860px" mx="auto">
+      <Box maxW="1200px" mx="auto">
 
         {/* ── Page Header ── */}
         <Box mb={6}>

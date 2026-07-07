@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -41,17 +41,16 @@ const Base64ToAsciiContent: React.FC = () => {
         const {
   themeStore: { themeConfig },
 } = stores;
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Dropzone theme tokens — same colorMode source as the rest of the box,
     // so the drag-active state stays correct in both light and dark mode.
-    const dropzoneBorder = useColorModeValue("teal.300", "teal.500");
-    const dropzoneBg = useColorModeValue("teal.50", "gray.700");
-    const dropzoneHoverBg = useColorModeValue("teal.100", "gray.600");
+    const dropzoneBorder = useColorModeValue("blue.300", "blue.500");
+    const dropzoneBg = useColorModeValue("blue.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("blue.100", "gray.600");
     const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
-    const dragActiveBg = useColorModeValue("teal.100", "gray.600");
-    const dragActiveBorder = "teal.500";
+    const dragActiveBg = useColorModeValue("blue.100", "gray.600");
+    const dragActiveBorder = "blue.500";
 
     const isValidBase64 = (str: string): boolean => {
         try {
@@ -270,7 +269,7 @@ const Base64ToAsciiContent: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor}>
+        <Box p={4} bg="transparent" color={textColor}>
             <Heading
                 as="h1"
                 size="xl"
@@ -327,7 +326,7 @@ const Base64ToAsciiContent: React.FC = () => {
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
-      borderColor: "teal.500",
+      borderColor: "blue.500",
       bg: dropzoneHoverBg,
     }}
     onDragEnter={handleDragEnter}
@@ -335,7 +334,7 @@ const Base64ToAsciiContent: React.FC = () => {
     onDragLeave={handleDragLeave}
     onDrop={handleDrop}
   >
-    <Icon as={FaExchangeAlt} boxSize={8} color={isDragActive ? "teal.500" : "teal.400"} />
+    <Icon as={FaExchangeAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
     <Text fontWeight="semibold" color={dropzoneTextColor}>
       {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
     </Text>

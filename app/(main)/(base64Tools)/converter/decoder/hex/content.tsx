@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -27,8 +27,6 @@ const Base64ToHexContent: React.FC = () => {
     const [hexOutput, setHexOutput] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false); // Track loading state
     const toast = useToast();
-
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Function to convert Base64 to Hex
@@ -92,7 +90,7 @@ const Base64ToHexContent: React.FC = () => {
 } = stores;
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} borderRadius="md" boxShadow="lg">
+        <Box p={4} bg="transparent" color={textColor} borderRadius="md" boxShadow="lg">
             <Heading
                 as="h1"
                 size="xl"

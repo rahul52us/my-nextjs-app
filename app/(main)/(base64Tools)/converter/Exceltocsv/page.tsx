@@ -22,7 +22,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
-const accentHex = "#007AAC";
+const accentHex = "#007AAC"; // Accent color for buttons, highlights, etc.
 
 const FileConverter = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -388,7 +388,7 @@ const FileConverter = () => {
                   color="white"
                   boxShadow={`0 15px 30px -10px ${accentHex}88`}
                   _hover={{
-                    bg: "#006a96",
+                    bg: "#007AAC",
                     transform: "translateY(-2px)",
                     boxShadow: `0 20px 35px -10px ${accentHex}99`,
                   }}

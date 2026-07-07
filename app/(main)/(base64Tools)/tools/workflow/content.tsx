@@ -540,11 +540,16 @@ const WorkflowBuilderContent = () => {
 
       {/* ═══════════════ LIST VIEW ═══════════════ */}
       {view === "list" && (
-        <Box maxW="6xl" mx="auto">
+        <Box maxW="8xl" mx="auto">
           <Flex justify="space-between" align="center" mb={8} flexWrap="wrap" gap={4}>
             <VStack align="flex-start" spacing={1}>
-              <Heading size="xl" fontWeight="extrabold" letterSpacing="tight"
-                bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">
+              <Heading 
+                size="xl" 
+                fontWeight="extrabold" 
+                letterSpacing="tight"
+                bgGradient="linear(to-r, blue.400, blue.600)" 
+                bgClip="text"
+              >
                 Workflows
               </Heading>
               <Text color={subTextColor} fontSize="md">
@@ -552,9 +557,9 @@ const WorkflowBuilderContent = () => {
               </Text>
             </VStack>
             <Button
-              bgGradient="linear(to-r, blue.500, purple.600)"
+              bgGradient="linear(to-r, blue.500, blue.600)"
               color="white"
-              _hover={{ bgGradient: "linear(to-r, blue.600, purple.700)", transform: "translateY(-1px)", boxShadow: "lg" }}
+              _hover={{ bgGradient: "linear(to-r, blue.600, blue.700)", transform: "translateY(-1px)", boxShadow: "lg" }}
               _active={{ transform: "translateY(0)" }}
               onClick={() => { clearBuilder(); setEditingWorkflowId(null); setView("edit"); }}
               size="md" fontWeight="bold" leftIcon={<FaPlusCircle />} transition="all 0.2s"
@@ -655,7 +660,7 @@ const WorkflowBuilderContent = () => {
 
       {/* ═══════════════ EDIT VIEW ═══════════════ */}
       {view === "edit" && (
-        <Box maxW="5xl" mx="auto">
+        <Box maxW="8xl" mx="auto">
           <Flex align="center" justify="space-between" mb={8} borderBottomWidth="1px" borderColor={stepBorder} pb={4}>
             <HStack spacing={3}>
               <Text fontSize="md" fontWeight="bold" color="brand.500" cursor="pointer"

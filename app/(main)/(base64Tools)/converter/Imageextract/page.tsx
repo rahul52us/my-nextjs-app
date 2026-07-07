@@ -206,7 +206,7 @@ const SkyBlueExtractor: React.FC = () => {
   };
 
   return (
-    <Box minH="100vh" bg={bgColor} py={12} px={4}>
+    <Box minH="100vh" bg="transparent" py={12} px={4}>
       <Container maxW="container.xl">
         <VStack spacing={10} align="stretch">
           {/* Hero Section */}

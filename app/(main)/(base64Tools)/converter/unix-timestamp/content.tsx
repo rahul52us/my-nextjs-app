@@ -132,7 +132,7 @@ const UnixTimestampContent: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor}>
+    <Box p={4} bg="transparent" color={textColor}>
       <Heading
         as="h1"
         size="xl"

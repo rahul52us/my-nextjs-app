@@ -485,7 +485,7 @@ const CsvToExcel = () => {
                     ? "0 15px 30px -10px rgba(72,187,120,0.5)"
                     : `0 15px 30px -10px ${accentHex}88`}
                   _hover={{
-                    bg: converted ? "green.400" : "#006a96",
+                    bg: converted ? "green.400" : "#007AAC",
                     transform: "translateY(-2px)",
                     boxShadow: converted
                       ? "0 20px 35px -10px rgba(72,187,120,0.6)"

@@ -117,7 +117,7 @@ const FileEncryption = () => {
   return (
     <Box
       p={{ base: 4, md: 8 }}
-      bg={bgColor}
+      bg="transparent"
       color={textColor}
       minH="80vh"
       borderRadius="lg"

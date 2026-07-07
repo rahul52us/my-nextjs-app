@@ -96,7 +96,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
         maxW={{ base: "100%", md: "85%" }}
         height="100vh"
         maxH="100vh"
-        borderTopRadius={{ base: "2xl", md: "3xl" }}
+        // borderTopRadius={{ base: "2xl", md: "3xl" }}
         overflow="hidden"
         bg={bodyBg}
         boxShadow="0 -10px 40px rgba(0,0,0,0.3)"
@@ -115,7 +115,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 align="center"
                 justify="center"
                 boxSize="42px"
-                borderRadius="lg"
+                // borderRadius="lg"
                 bg="whiteAlpha.200"
                 flexShrink={0}
               >
@@ -153,7 +153,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 isDisabled={!downloadUrl}
                 size={{ base: "sm", md: "md" }}
                 fontWeight="700"
-                borderRadius="xl"
+                // borderRadius="xl"
                 bg="linear-gradient(135deg, #3b82f6, #6366f1)"
                 color="white"
                 _hover={{
@@ -172,7 +172,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 position="static"
                 color="whiteAlpha.800"
                 _hover={{ color: "white", bg: "whiteAlpha.200" }}
-                borderRadius="lg"
+                // borderRadius="lg"
                 size="lg"
               />
             </HStack>
@@ -205,7 +205,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 w="full"
                 maxW="560px"
                 bg={progressCardBg}
-                borderRadius="lg"
+                // borderRadius="lg"
                 border="1px solid"
                 borderColor={timedOut ? "red.200" : "blackAlpha.100"}
                 boxShadow="0 18px 45px rgba(15,23,42,0.12)"
@@ -218,7 +218,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                         align="center"
                         justify="center"
                         boxSize="42px"
-                        borderRadius="lg"
+                        // borderRadius="lg"
                         bg={timedOut ? "red.50" : "brand.50"}
                         color={timedOut ? "red.500" : "brand.500"}
                       >
@@ -242,7 +242,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                     value={currentPct}
                     size="sm"
                     colorScheme={timedOut ? "red" : "brand"}
-                    borderRadius="full"
+                    // borderRadius="full"
                     bg={progressTrackBg}
                   />
 
@@ -290,7 +290,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
             /* PDF iframe */
             <Box
               flex="1"
-              borderRadius="xl"
+              // borderRadius="xl"
               overflow="hidden"
               bg={iframeBg}
               boxShadow="inset 0 0 0 1px rgba(99,102,241,0.15)"
@@ -301,7 +301,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
               <Box
                 position="absolute"
                 inset={0}
-                borderRadius="xl"
+                // borderRadius="xl"
                 border="1px solid"
                 borderColor="brand.500"
                 opacity={0.3}
@@ -316,7 +316,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                   height: "100%",
                   border: "none",
                   display: "block",
-                  borderRadius: "inherit",
+                  // borderRadius: "inherit",
                 }}
               />
             </Box>

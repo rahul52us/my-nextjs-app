@@ -69,7 +69,7 @@ export default function BaseConverterContent() {
   const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
 
   return (
-    <Box p={4} bg={bgColor} color={textColor} minH="85vh">
+    <Box p={4} bg="transparent" color={textColor} minH="85vh">
       <Heading
         as="h1"
         size="xl"

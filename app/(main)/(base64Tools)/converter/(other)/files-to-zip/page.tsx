@@ -327,7 +327,7 @@ const ZipCompression: React.FC = () => {
   const totalSize = entries.reduce((sum, e) => sum + e.file.size, 0);
 
   return (
-    <Box p={{ base: 4, md: 8 }} bg={bgColor} color={textColor} minH="78vh" borderRadius="lg">
+    <Box p={{ base: 4, md: 8 }} bg="transparent" minH="78vh" borderRadius="lg">
       {/* ── Title ── */}
       <Heading
         as="h1"
@@ -580,4 +580,4 @@ const ZipCompression: React.FC = () => {
   );
 };
 
-export default ZipCompression;
+export default ZipCompression;

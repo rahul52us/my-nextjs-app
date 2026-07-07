@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -34,8 +34,6 @@ const FileToBinaryContent: React.FC = () => {
   const [fileName, setFileName] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const toast = useToast();
-
-  const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
   const convertFileToBinary = (file: File): Promise<string> => {
@@ -216,7 +214,7 @@ const FileToBinaryContent: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor}>
+    <Box p={4} bg="transparent" color={textColor}>
       <Heading
         as="h1"
         size="xl"

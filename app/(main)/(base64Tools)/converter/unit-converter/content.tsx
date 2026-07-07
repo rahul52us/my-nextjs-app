@@ -80,7 +80,7 @@ export default function UnitConverterContent() {
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr 1fr" });
 
     return (
-        <Box p={{ base: 4, md: 6 }} bg={bgColor} color={textColor} minH="78vh">
+        <Box p={{ base: 4, md: 6 }} bg="transparent" color={textColor} minH="78vh">
             {/* Header */}
             <Heading
                 as="h1"

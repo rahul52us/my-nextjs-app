@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -35,8 +35,6 @@ const BinaryToHexContent: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const toast = useToast();
-
-  const bgColor = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
   const convertBinaryToHex = (binary: string): string => {
@@ -229,7 +227,7 @@ const BinaryToHexContent: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor}>
+    <Box p={4} bg="transparent" color={textColor}>
       <Heading
         as="h1"
         size="xl"

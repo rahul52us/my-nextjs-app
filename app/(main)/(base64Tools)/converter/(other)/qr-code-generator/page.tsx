@@ -87,7 +87,7 @@ const QRCodeGenerator: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg={bgColor} color={textColor} minH={"78vh"}>
+    <Box p={4} bg="transparent" color={textColor} minH={"78vh"}>
       <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
         textAlign="center" mb={6}>
         QR Code Generator

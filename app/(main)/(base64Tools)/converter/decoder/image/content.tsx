@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, ChangeEvent, DragEvent, useRef } from "react";
 import { saveAs } from "file-saver";
@@ -36,17 +36,16 @@ const Base64ImageContent = () => {
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
     const [isDragActive, setIsDragActive] = useState<boolean>(false);
     const dragCounter = useRef(0);
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Dropzone theme tokens — same colorMode source as the rest of the box,
     // so the drag-active state stays correct in both light and dark mode.
-    const dropzoneBorder = useColorModeValue("purple.300", "purple.500");
-    const dropzoneBg = useColorModeValue("purple.50", "gray.700");
-    const dropzoneHoverBg = useColorModeValue("purple.100", "gray.600");
+    const dropzoneBorder = useColorModeValue("blue.300", "blue.500");
+    const dropzoneBg = useColorModeValue("blue.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("blue.100", "gray.600");
     const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
-    const dragActiveBg = useColorModeValue("purple.100", "gray.600");
-    const dragActiveBorder = "purple.500";
+    const dragActiveBg = useColorModeValue("blue.100", "gray.600");
+    const dragActiveBorder = "blue.500";
 
     const extractMimeAndData = (input: string) => {
         const regex = /^data:(.*?);base64,(.*)$/;
@@ -238,7 +237,7 @@ const Base64ImageContent = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor}>
+        <Box p={4} bg="transparent" color={textColor}>
             <Heading
                 as="h1"
                 size="xl"
@@ -294,7 +293,7 @@ const Base64ImageContent = () => {
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
-      borderColor: "purple.500",
+      borderColor: "blue.500",
       bg: dropzoneHoverBg,
     }}
     onDragEnter={handleDragEnter}
@@ -302,7 +301,7 @@ const Base64ImageContent = () => {
     onDragLeave={handleDragLeave}
     onDrop={handleDrop}
   >
-    <Icon as={FaImage} boxSize={8} color={isDragActive ? "purple.500" : "purple.400"} />
+    <Icon as={FaImage} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
     <Text fontWeight="semibold" color={dropzoneTextColor}>
       {isDragActive ? "Drop it here" : "Click to upload or drag & drop Image"}
     </Text>

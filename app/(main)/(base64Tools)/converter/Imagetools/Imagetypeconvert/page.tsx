@@ -154,7 +154,7 @@ const ImageConverter: React.FC = () => {
 
   return (
     <div className={`min-h-screen p-4 md:p-8 font-sans transition-colors duration-300 ${pageBg}`}>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-8xl mx-auto">
 
         {/* Navigation */}
         <nav className={`flex items-center justify-between mb-8 p-4 rounded-2xl shadow-sm border transition-colors duration-300 ${cardBg}`}>

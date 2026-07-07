@@ -9,11 +9,8 @@ import {
     Text,
     VStack,
     useToast,
-    Fade,
     IconButton,
     Tooltip,
-    FormControl,
-    FormLabel,
     Alert,
     Grid,
     useBreakpointValue,
@@ -22,7 +19,6 @@ import {
 } from "@chakra-ui/react";
 import { FaCopy, FaExchangeAlt } from "react-icons/fa";
 import debounce from "lodash.debounce";
-import stores from "../../../../store/stores";
 
 const convertTime = (value: number, fromUnit: string, toUnit: string): number => {
     const conversionRates: Record<string, Record<string, number>> = {
@@ -52,49 +48,20 @@ export default function TimeConverterContent() {
     const [value, setValue] = useState("");
     const [precision, setPrecision] = useState<number>(2);
     const [result, setResult] = useState<{ value: string; steps: string[] } | null>(null);
-    const [humanReadable] = useState<boolean>(false);
-    const [history, setHistory] = useState<string[]>([]);
     const [error, setError] = useState("");
     const toast = useToast();
 
-    // ✅ All colors dark-mode aware
-    const bgColor = useColorModeValue("gray.50", "gray.900");
-    const textColor = useColorModeValue("gray.800", "gray.100");
-    const cardBg = useColorModeValue("white", "gray.800");
-    const subtitleColor = useColorModeValue("gray.600", "gray.400");
-    const labelColor = useColorModeValue("teal.600", "teal.300");
-    const inputBg = useColorModeValue("white", "gray.700");
-    const inputBorderColor = useColorModeValue("gray.200", "gray.600");
-    const inputHoverBorder = useColorModeValue("teal.300", "teal.400");
-    const inputTextColor = useColorModeValue("gray.800", "gray.100");
-    const placeholderColor = useColorModeValue("gray.400", "gray.500");
-
-    // Result box
-    const resultBg = useColorModeValue("teal.50", "teal.900");
-    const resultBorder = useColorModeValue("teal.200", "teal.700");
-    const resultHeadingColor = useColorModeValue("teal.800", "teal.100");
-    const resultValueColor = useColorModeValue("teal.900", "white");
-    const resultStepLabelColor = useColorModeValue("teal.700", "teal.300");
-    const resultStepTextColor = useColorModeValue("gray.600", "gray.300");
-
-    // History box
-    const historyBg = useColorModeValue("gray.50", "gray.700");
-    const historyBorder = useColorModeValue("gray.200", "gray.600");
-    const historyItemBg = useColorModeValue("white", "gray.600");
-    const historyItemHoverBg = useColorModeValue("gray.100", "gray.500");
-    const historyTextColor = useColorModeValue("gray.600", "gray.200");
-    const historyLabelColor = useColorModeValue("teal.700", "teal.300");
-
-    // Overview box
-    const overviewBg = useColorModeValue("brand.50", "brand.900");
-    const overviewHeadingColor = useColorModeValue("brand.700", "brand.200");
-    const overviewTextColor = useColorModeValue("gray.700", "gray.200");
-
-    // Swap button
-    const swapBg = useColorModeValue("white", "gray.700");
-    const swapHoverBg = useColorModeValue("teal.50", "teal.800");
-
     const responsiveGridColumns = useBreakpointValue({ base: "1fr", md: "1fr 1fr" });
+
+    // Dark mode aware color tokens
+    const cardBg = useColorModeValue("white", "gray.700");
+    const pageBg = useColorModeValue("gray.50", "gray.900");
+    const borderColor = useColorModeValue("gray.200", "gray.600");
+    const mutedText = useColorModeValue("gray.600", "gray.300");
+    const headingColor = useColorModeValue("blue.500", "blue.300");
+    const resultBg = useColorModeValue("blue.50", "blue.900");
+    const overviewBg = useColorModeValue("white", "gray.700");
+    const stepText = useColorModeValue("gray.600", "gray.300");
 
     const handleConversion = useCallback(
         debounce(() => {
@@ -110,19 +77,8 @@ export default function TimeConverterContent() {
                 return;
             }
             try {
-                let convertedValue = convertTime(parsedValue, fromUnit, toUnit);
-                let displayValue = convertedValue.toFixed(precision);
-
-                if (humanReadable && convertedValue >= 60) {
-                    const sizes = ["s", "min", "hr", "d", "wk"];
-                    const thresholds = [1, 60, 3600, 86400, 604800];
-                    let index = 0;
-                    while (convertedValue >= thresholds[index + 1] && index < sizes.length - 1) {
-                        convertedValue /= thresholds[index + 1] / thresholds[index];
-                        index++;
-                    }
-                    displayValue = `${convertedValue.toFixed(2)} ${sizes[index]}`;
-                }
+                const convertedValue = convertTime(parsedValue, fromUnit, toUnit);
+                const displayValue = convertedValue.toFixed(precision);
 
                 const fromFactor = 1 / convertTime(1, toUnit, fromUnit);
                 const steps = [
@@ -131,27 +87,24 @@ export default function TimeConverterContent() {
                 ];
 
                 setResult({ value: displayValue, steps });
-                setHistory((prev) => [`${parsedValue} ${fromUnit} = ${displayValue}`, ...prev.slice(0, 4)]);
                 setError("");
             } catch {
                 setError("Invalid conversion units.");
                 setResult(null);
             }
         }, 300),
-        [value, fromUnit, toUnit, precision, humanReadable]
+        [value, fromUnit, toUnit, precision]
     );
 
     useEffect(() => {
         handleConversion();
         return () => handleConversion.cancel();
-    }, [value, fromUnit, toUnit, precision, humanReadable, handleConversion]);
+    }, [value, fromUnit, toUnit, precision, handleConversion]);
 
     const handleSwap = () => {
         setFromUnit(toUnit);
         setToUnit(fromUnit);
     };
-
-    const { themeStore: { themeConfig } } = stores;
 
     const handleCopy = () => {
         if (result) {
@@ -167,226 +120,152 @@ export default function TimeConverterContent() {
     };
 
     return (
-        <Flex minH="100vh" bg={bgColor} color={textColor} p={{ base: 4, md: 6 }} w="100%" justify="center">
-            <Box
-                bg={cardBg}
-                p={{ base: 6, md: 10 }}
-                borderRadius="2xl"
-                boxShadow="0 8px 24px rgba(0, 0, 0, 0.15)"
-                w="100%"
-                maxW="1200px"
-                transition="all 0.3s ease"
-                _hover={{ boxShadow: "0 12px 32px rgba(0, 0, 0, 0.2)" }}
-            >
-                <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+        <Box maxW="1200px" mx="auto" p={{ base: 4, md: 6 }} w="100%" bg={pageBg}>
+            <VStack spacing={6} align="stretch">
+                {/* Header */}
+                <Heading as="h1" size="xl" color={headingColor} textAlign="center">
+                    Time Converter
+                </Heading>
+                <Text textAlign="center" fontSize="md" color={mutedText} maxW="600px" mx="auto">
+                    Convert time units instantly with detailed steps and history.
+                </Text>
 
-                    {/* Header */}
-                    <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]} textAlign="center">
-                        Time Converter
-                    </Heading>
-                    <Text textAlign="center" fontSize="md" color={subtitleColor} maxW="600px" mx="auto">
-                        Convert time units instantly with detailed steps and history.
-                    </Text>
-
-                    {/* Input Section */}
-                    <Grid templateColumns={responsiveGridColumns} gap={6}>
-                        <FormControl>
-                            <FormLabel fontWeight="bold" color={labelColor}>From Unit</FormLabel>
-                            <Select
-                                value={fromUnit}
-                                onChange={(e) => setFromUnit(e.target.value)}
-                                bg={inputBg}
-                                color={inputTextColor}
-                                border="2px solid"
-                                borderColor={inputBorderColor}
-                                borderRadius="md"
-                                _hover={{ borderColor: inputHoverBorder }}
-                                _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                                transition="all 0.2s ease"
-                            >
-                                {timeUnits.map((unit) => (
-                                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl>
-                            <FormLabel fontWeight="bold" color={labelColor}>To Unit</FormLabel>
-                            <Select
-                                value={toUnit}
-                                onChange={(e) => setToUnit(e.target.value)}
-                                bg={inputBg}
-                                color={inputTextColor}
-                                border="2px solid"
-                                borderColor={inputBorderColor}
-                                borderRadius="md"
-                                _hover={{ borderColor: inputHoverBorder }}
-                                _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                                transition="all 0.2s ease"
-                            >
-                                {timeUnits.map((unit) => (
-                                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-
-                    <Flex direction={{ base: "column", md: "row" }} gap={4} align="center">
-                        <Input
-                            placeholder="Enter value to convert (e.g., 3600)"
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                            bg={inputBg}
-                            color={inputTextColor}
-                            _placeholder={{ color: placeholderColor }}
-                            border="2px solid"
-                            borderColor={inputBorderColor}
+                {/* Input Section */}
+                <Grid templateColumns={responsiveGridColumns} gap={6}>
+                    <Box>
+                        <Text fontWeight="bold" mb={2}>From Unit</Text>
+                        <Select
+                            value={fromUnit}
+                            onChange={(e) => setFromUnit(e.target.value)}
+                            bg={cardBg}
+                            border="1px solid"
+                            borderColor={borderColor}
                             borderRadius="md"
-                            _hover={{ borderColor: inputHoverBorder }}
-                            _focus={{ borderColor: "teal.400", boxShadow: "0 0 0 3px rgba(56, 178, 172, 0.3)" }}
-                            transition="all 0.2s ease"
-                            flex="1"
-                            py={6}
-                        />
-                        <HStack spacing={3}>
-                            <Text fontSize="sm" color={subtitleColor} whiteSpace="nowrap">
-                                Precision:
-                            </Text>
-                            <Input
-                                type="number"
-                                value={precision}
-                                onChange={(e) => setPrecision(Math.max(0, Math.min(10, Number(e.target.value))))}
-                                min={0}
-                                max={10}
-                                w="80px"
-                                bg={inputBg}
-                                color={inputTextColor}
-                                border="2px solid"
-                                borderColor={inputBorderColor}
-                                _hover={{ borderColor: inputHoverBorder }}
-                                _focus={{ borderColor: "teal.400" }}
-                                transition="all 0.2s ease"
-                            />
-                        </HStack>
-                    </Flex>
-
-                    <Flex align="center" justify="center" gap={4}>
-                        <Tooltip label="Swap Units" placement="top">
-                            <IconButton
-                                aria-label="Swap units"
-                                icon={<FaExchangeAlt />}
-                                size="md"
-                                colorScheme="teal"
-                                variant="outline"
-                                onClick={handleSwap}
-                                borderRadius="full"
-                                bg={swapBg}
-                                _hover={{ bg: swapHoverBg }}
-                            />
-                        </Tooltip>
-                    </Flex>
-
-                    {/* Error Alert */}
-                    {error && value.length > 0 && (
-                        <Alert status="error" borderRadius="md" p={3}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    {/* Result */}
-                    {result && (
-                        <Fade in={!!result}>
-                            <Box
-                                p={{ base: 4, md: 6 }}
-                                bg={resultBg}
-                                borderRadius="lg"
-                                border="1px solid"
-                                borderColor={resultBorder}
-                                boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
-                            >
-                                <VStack spacing={4} align="stretch">
-                                    <Flex justify="space-between" align="center">
-                                        <Text fontSize={{ base: "lg", md: "xl" }} color={resultHeadingColor} fontWeight="semibold">
-                                            {value} {fromUnit} ={" "}
-                                            <Text as="span" fontWeight="bold" color={resultValueColor}>
-                                                {result.value}
-                                            </Text>
-                                        </Text>
-                                        <Tooltip label="Copy to Clipboard" placement="top">
-                                            <IconButton
-                                                aria-label="Copy result"
-                                                icon={<FaCopy />}
-                                                size="sm"
-                                                colorScheme="teal"
-                                                variant="ghost"
-                                                onClick={handleCopy}
-                                                _hover={{ bg: useColorModeValue("teal.100", "teal.800") }}
-                                            />
-                                        </Tooltip>
-                                    </Flex>
-                                    <Box>
-                                        <Text fontSize="sm" color={resultStepLabelColor} fontWeight="medium">
-                                            Calculation Steps:
-                                        </Text>
-                                        {result?.steps?.map((step: string, index: number) => (
-                                            <Text key={index} fontSize="sm" color={resultStepTextColor} mt={1} fontFamily="monospace">
-                                                {step}
-                                            </Text>
-                                        ))}
-                                    </Box>
-                                </VStack>
-                            </Box>
-                        </Fade>
-                    )}
-
-                    {/* History */}
-                    {history.length > 0 && (
-                        <Box mt={6}>
-                            <Text fontSize="sm" color={historyLabelColor} fontWeight="medium" mb={2} textAlign="center">
-                                Recent Conversions:
-                            </Text>
-                            <VStack
-                                align="stretch"
-                                spacing={2}
-                                p={4}
-                                bg={historyBg}
-                                borderRadius="lg"
-                                border="1px solid"
-                                borderColor={historyBorder}
-                            >
-                                {history.map((entry, index) => (
-                                    <Text
-                                        key={index}
-                                        fontSize="sm"
-                                        color={historyTextColor}
-                                        p={2}
-                                        bg={historyItemBg}
-                                        borderRadius="md"
-                                        _hover={{ bg: historyItemHoverBg }}
-                                    >
-                                        {entry}
-                                    </Text>
-                                ))}
-                            </VStack>
-                        </Box>
-                    )}
-
-                    {/* Overview */}
-                    <Box mt={6} p={4} bg={overviewBg} borderRadius="lg" shadow="md">
-                        <Text fontSize="lg" fontWeight="bold" color={overviewHeadingColor} mb={2}>
-                            Time Conversion Overview:
-                        </Text>
-                        <VStack align="start" spacing={2}>
-                            <Text color={overviewTextColor}><strong>Seconds (s):</strong> Base unit; 1 min = 60s.</Text>
-                            <Text color={overviewTextColor}><strong>Minutes (min):</strong> 1 hr = 60 min, 1 min = 60s.</Text>
-                            <Text color={overviewTextColor}><strong>Hours (hr):</strong> 1 day = 24 hr, 1 hr = 3600s.</Text>
-                            <Text color={overviewTextColor}><strong>Days (d):</strong> 1 week = 7 days, 1 day = 86400s.</Text>
-                            <Text color={overviewTextColor}><strong>Weeks (wk):</strong> 1 week = 604800s.</Text>
-                        </VStack>
+                        >
+                            {timeUnits.map((unit) => (
+                                <option key={unit.value} value={unit.value}>{unit.label}</option>
+                            ))}
+                        </Select>
                     </Box>
 
-                </VStack>
-            </Box>
-        </Flex>
+                    <Box>
+                        <Text fontWeight="bold" mb={2}>To Unit</Text>
+                        <Select
+                            value={toUnit}
+                            onChange={(e) => setToUnit(e.target.value)}
+                            bg={cardBg}
+                            border="1px solid"
+                            borderColor={borderColor}
+                            borderRadius="md"
+                        >
+                            {timeUnits.map((unit) => (
+                                <option key={unit.value} value={unit.value}>{unit.label}</option>
+                            ))}
+                        </Select>
+                    </Box>
+                </Grid>
+
+                <Flex direction={{ base: "column", md: "row" }} gap={4} align="center">
+                    <Input
+                        placeholder="Enter value to convert (e.g., 3600)"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        bg={cardBg}
+                        border="1px solid"
+                        borderColor={borderColor}
+                        borderRadius="md"
+                        flex="1"
+                    />
+                    <HStack spacing={3}>
+                        <Text fontSize="sm" color={mutedText} whiteSpace="nowrap">
+                            Precision:
+                        </Text>
+                        <Input
+                            type="number"
+                            value={precision}
+                            onChange={(e) => setPrecision(Math.max(0, Math.min(10, Number(e.target.value))))}
+                            min={0}
+                            max={10}
+                            w="80px"
+                            bg={cardBg}
+                            border="1px solid"
+                            borderColor={borderColor}
+                            borderRadius="md"
+                        />
+                    </HStack>
+                </Flex>
+
+                <Flex align="center" justify="center">
+                    <Tooltip label="Swap Units" placement="top">
+                        <IconButton
+                            aria-label="Swap units"
+                            icon={<FaExchangeAlt />}
+                            size="md"
+                            variant="outline"
+                            onClick={handleSwap}
+                            borderRadius="full"
+                        />
+                    </Tooltip>
+                </Flex>
+
+                {/* Error Alert */}
+                {error && value.length > 0 && (
+                    <Alert status="error" borderRadius="md" p={3}>
+                        {error}
+                    </Alert>
+                )}
+
+                {/* Result */}
+                {result && (
+                    <Box
+                        p={{ base: 4, md: 6 }}
+                        bg={resultBg}
+                        borderRadius="md"
+                    >
+                        <Flex justify="space-between" align="center">
+                            <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="semibold">
+                                {value} {fromUnit} ={" "}
+                                <Text as="span" fontWeight="bold">
+                                    {result.value} {toUnit}
+                                </Text>
+                            </Text>
+                            <Tooltip label="Copy to Clipboard" placement="top">
+                                <IconButton
+                                    aria-label="Copy result"
+                                    icon={<FaCopy />}
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleCopy}
+                                />
+                            </Tooltip>
+                        </Flex>
+                        <Box mt={3}>
+                            <Text fontSize="sm" fontWeight="medium">
+                                Calculation Steps:
+                            </Text>
+                            {result.steps.map((step, index) => (
+                                <Text key={index} fontSize="sm" color={stepText} mt={1} fontFamily="monospace">
+                                    {step}
+                                </Text>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Overview */}
+                <Box p={4} bg={overviewBg} borderRadius="md" border="1px solid" borderColor={borderColor}>
+                    <Text fontSize="lg" fontWeight="bold" mb={2}>
+                        Time Conversion Overview:
+                    </Text>
+                    <VStack align="start" spacing={2}>
+                        <Text><strong>Seconds (s):</strong> Base unit; 1 min = 60s.</Text>
+                        <Text><strong>Minutes (min):</strong> 1 hr = 60 min, 1 min = 60s.</Text>
+                        <Text><strong>Hours (hr):</strong> 1 day = 24 hr, 1 hr = 3600s.</Text>
+                        <Text><strong>Days (d):</strong> 1 week = 7 days, 1 day = 86400s.</Text>
+                        <Text><strong>Weeks (wk):</strong> 1 week = 604800s.</Text>
+                    </VStack>
+                </Box>
+            </VStack>
+        </Box>
     );
 }

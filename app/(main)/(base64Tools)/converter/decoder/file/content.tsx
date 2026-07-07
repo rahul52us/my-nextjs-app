@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, ChangeEvent, DragEvent, useMemo, useEffect, useRef } from "react";
 import { saveAs } from "file-saver";
@@ -188,20 +188,18 @@ const Base64ToFileContent = () => {
     const [currentPages, setCurrentPages] = useState<Record<string, number>>({});
     const [isDragActive, setIsDragActive] = useState<boolean>(false);
     const dragCounter = useRef(0);
-
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
     const itemsPerPage = 10;
     const maxRows = 1000;
 
     // Dropzone theme tokens — same colorMode source as the rest of the box,
     // so the drag-active state stays correct in both light and dark mode.
-    const dropzoneBorder = useColorModeValue("green.300", "green.500");
-    const dropzoneBg = useColorModeValue("green.50", "gray.700");
-    const dropzoneHoverBg = useColorModeValue("green.100", "gray.600");
+    const dropzoneBorder = useColorModeValue("blue.300", "blue.500");
+    const dropzoneBg = useColorModeValue("blue.50", "gray.700");
+    const dropzoneHoverBg = useColorModeValue("blue.100", "gray.600");
     const dropzoneTextColor = useColorModeValue("gray.700", "gray.200");
-    const dragActiveBg = useColorModeValue("green.100", "gray.600");
-    const dragActiveBorder = "green.500";
+    const dragActiveBg = useColorModeValue("blue.100", "gray.600");
+    const dragActiveBorder = "blue.500";
 
     const decodeBase64ToBlob = (
         input: string
@@ -675,7 +673,7 @@ const Base64ToFileContent = () => {
         : 0;
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} minH="78vh">
+        <Box p={4} bg="transparent" color={textColor} minH="78vh">
             <Heading
                 as="h1"
                 size="xl"
@@ -728,7 +726,7 @@ const Base64ToFileContent = () => {
     cursor="pointer"
     transition="all 0.2s"
     _hover={{
-      borderColor: "green.500",
+      borderColor: "blue.500",
       bg: dropzoneHoverBg,
     }}
     onDragEnter={handleDragEnter}
@@ -736,7 +734,7 @@ const Base64ToFileContent = () => {
     onDragLeave={handleDragLeave}
     onDrop={handleDrop}
   >
-    <Icon as={FaFileAlt} boxSize={8} color={isDragActive ? "green.500" : "green.400"} />
+    <Icon as={FaFileAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
     <Text fontWeight="semibold" color={dropzoneTextColor}>
       {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
     </Text>

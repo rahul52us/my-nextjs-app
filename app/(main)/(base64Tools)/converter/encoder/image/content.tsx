@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, ChangeEvent } from "react";
 import {
@@ -28,7 +28,6 @@ const ImageToBase64Content = () => {
     const [format, setFormat] = useState<string>("dataUri");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const toast = useToast();
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -220,7 +219,7 @@ const ImageToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor} minH="78vh">
+        <Box p={4} bg="transparent" color={textColor} minH="78vh">
             <Heading
                 as="h1"
                 size="xl"

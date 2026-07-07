@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -30,8 +30,6 @@ const HexToBase64Content: React.FC = () => {
     const [isDragActive, setIsDragActive] = useState<boolean>(false);
     const dragCounter = useRef(0);
     const toast = useToast();
-
-    const bgColor = useColorModeValue("gray.100", "gray.800");
     const textColor = useColorModeValue("gray.800", "gray.100");
 
     // Dropzone theme tokens — same colorMode source as the rest of the box,
@@ -249,7 +247,7 @@ const HexToBase64Content: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg={bgColor} color={textColor}>
+        <Box p={4} bg="transparent" color={textColor}>
             <Heading
                 as="h1"
                 size="xl"
