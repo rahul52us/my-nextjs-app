@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import {
     Box,
@@ -55,11 +55,10 @@ export default function TimeConverterContent() {
 
     // Dark mode aware color tokens
     const cardBg = useColorModeValue("white", "gray.700");
-    const pageBg = useColorModeValue("gray.50", "gray.900");
     const borderColor = useColorModeValue("gray.200", "gray.600");
     const mutedText = useColorModeValue("gray.600", "gray.300");
-    const headingColor = useColorModeValue("blue.500", "blue.300");
-    const resultBg = useColorModeValue("blue.50", "blue.900");
+    const headingColor = useColorModeValue("brand.500", "brand.300");
+    const resultBg = useColorModeValue("brand.50", "brand.900");
     const overviewBg = useColorModeValue("white", "gray.700");
     const stepText = useColorModeValue("gray.600", "gray.300");
 
@@ -120,7 +119,7 @@ export default function TimeConverterContent() {
     };
 
     return (
-        <Box maxW="1200px" mx="auto" p={{ base: 4, md: 6 }} w="100%" bg={pageBg}>
+        <Box maxW="1200px" mx="auto" p={{ base: 4, md: 6 }} w="100%" bg="transparent">
             <VStack spacing={6} align="stretch">
                 {/* Header */}
                 <Heading as="h1" size="xl" color={headingColor} textAlign="center">

@@ -21,7 +21,7 @@ import {
 import Editor from '@monaco-editor/react';
 import html2canvas from 'html2canvas';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4'];
+const COLORS = ['#007acc', '#66b7ff', '#33a0ff', '#0066b3', '#005299', '#99cfff', '#003d80'];
 
 const DataVizStudio = () => {
   // WORKFLOW STATE
@@ -45,8 +45,8 @@ const DataVizStudio = () => {
   const tabSelectedBg = useColorModeValue("white", "gray.700");
   const tabHoverBg = useColorModeValue("gray.200", "whiteAlpha.200");
   const inputBg = useColorModeValue("white", "whiteAlpha.50");
-  const iconColor = useColorModeValue("indigo.500", "indigo.200");
-  const uploadHoverBg = useColorModeValue("indigo.50", "indigo.900");
+  const iconColor = useColorModeValue("brand.500", "brand.200");
+  const uploadHoverBg = useColorModeValue("brand.50", "brand.900");
   const downloadImageBg = useColorModeValue("#ffffff", "#0a0a0c");
   const chartGridStroke = useColorModeValue("#e2e8f0", "#2d2d3d");
 
@@ -185,17 +185,17 @@ const DataVizStudio = () => {
                 <FiActivity size={24} />
             </Center> */}
             <VStack align="start" spacing={0}>
-              <Heading size="md" fontWeight="800" letterSpacing="-0.5px">VizPro <Text as="span" color="indigo.500">Studio</Text></Heading>
+              <Heading size="md" fontWeight="800" letterSpacing="-0.5px">VizPro <Text as="span" color="brand.500">Studio</Text></Heading>
               <HStack spacing={2} fontSize="xs" color={secondaryText} fontWeight="bold">
-                <Text color={step === 1 ? "indigo.500" : "inherit"}>1. INGESTION</Text>
+                <Text color={step === 1 ? "brand.500" : "inherit"}>1. INGESTION</Text>
                 <Icon as={FiArrowRight} />
-                <Text color={step === 2 ? "indigo.500" : "inherit"}>2. VISUALIZATION</Text>
+                <Text color={step === 2 ? "brand.500" : "inherit"}>2. VISUALIZATION</Text>
               </HStack>
             </VStack>
           </HStack>
           
           {step === 2 && (
-            <Button leftIcon={<FiEdit3 />} variant="ghost" colorScheme="indigo" onClick={() => setStep(1)} size="sm" borderRadius="full">
+            <Button leftIcon={<FiEdit3 />} variant="ghost" colorScheme="brand" onClick={() => setStep(1)} size="sm" borderRadius="full">
               Switch Data Source
             </Button>
           )}
@@ -227,8 +227,8 @@ const DataVizStudio = () => {
                   <TabPanels>
                     <TabPanel p={0}>
                       <Box 
-                        border="2px dashed" borderColor={useColorModeValue("indigo.200", "whiteAlpha.200")} borderRadius="30px" p={{ base: 10, md: 16 }} textAlign="center" position="relative" 
-                        _hover={{ bg: uploadHoverBg, borderColor: useColorModeValue("indigo.400", "indigo.300") }} transition="all 0.3s ease" cursor="pointer"
+                        border="2px dashed" borderColor={useColorModeValue("brand.200", "whiteAlpha.200")} borderRadius="30px" p={{ base: 10, md: 16 }} textAlign="center" position="relative" 
+                        _hover={{ bg: uploadHoverBg, borderColor: useColorModeValue("brand.400", "brand.300") }} transition="all 0.3s ease" cursor="pointer"
                       >
                         {isParsing && (
                           <Box position="absolute" inset={0} bg="blackAlpha.300" zIndex={2} display="flex" alignItems="center" justifyContent="center" borderRadius="30px">
@@ -248,7 +248,7 @@ const DataVizStudio = () => {
                       <Box borderRadius="24px" overflow="hidden" border="1px solid" borderColor={cardBorder}>
                         <Editor height="220px" defaultLanguage="json" theme={useColorModeValue("light", "vs-dark")} value={jsonValue} onChange={(val) => setJsonValue(val || '')} />
                       </Box>
-                      <Button mt={6} w="full" colorScheme="indigo" borderRadius="18px" h="50px" onClick={handleJsonApply} shadow="lg">
+                      <Button mt={6} w="full" colorScheme="brand" borderRadius="18px" h="50px" onClick={handleJsonApply} shadow="lg">
                         Parse JSON Data
                       </Button>
                     </TabPanel>
@@ -276,7 +276,7 @@ const DataVizStudio = () => {
                       </Box>
                     </SimpleGrid>
                     <Button 
-                      size="lg" h="65px" colorScheme="indigo" borderRadius="22px" rightIcon={<FiMaximize2 />} shadow="0 15px 30px -10px rgba(99, 102, 241, 0.5)"
+                      size="lg" h="65px" colorScheme="brand" borderRadius="22px" rightIcon={<FiMaximize2 />} shadow="0 15px 30px -10px rgba(0, 122, 204, 0.5)"
                       onClick={() => setStep(2)} isDisabled={!mapping.label || !mapping.value}
                     >
                       Generate Workspace
@@ -312,15 +312,15 @@ const DataVizStudio = () => {
                     <IconButton 
                         aria-label="Bar" icon={<FiBarChart2 />} borderRadius="14px"
                         variant={chartType === 'bar' ? "solid" : "ghost"} 
-                        colorScheme="indigo" onClick={() => setChartType('bar')} 
+                        colorScheme="brand" onClick={() => setChartType('bar')} 
                     />
                     <IconButton 
                         aria-label="Pie" icon={<FiPieChart />} borderRadius="14px"
                         variant={chartType === 'pie' ? "solid" : "ghost"} 
-                        colorScheme="indigo" onClick={() => setChartType('pie')} 
+                        colorScheme="brand" onClick={() => setChartType('pie')} 
                     />
                     <Divider orientation="vertical" h="20px" mx={2} display={{ base: "none", sm: "block" }} />
-                    <Button leftIcon={<FiDownload />} colorScheme="indigo" variant="solid" borderRadius="14px" size="sm" onClick={downloadImage} w={{ base: "100%", sm: "auto" }}>Export PNG</Button>
+                    <Button leftIcon={<FiDownload />} colorScheme="brand" variant="solid" borderRadius="14px" size="sm" onClick={downloadImage} w={{ base: "100%", sm: "auto" }}>Export PNG</Button>
                 </Stack>
               </Flex>
 
@@ -346,11 +346,11 @@ const DataVizStudio = () => {
                           <YAxis fontSize={11} tick={{ fill: secondaryText }} axisLine={false} tickLine={false} />
                           <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
                           <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={35}>
-                            {chartData.map((_, i) => <Cell key={i} fill="url(#indigoGradient)" />)}
+                            {chartData.map((_, i) => <Cell key={i} fill="url(#brandGradient)" />)}
                             <defs>
-                              <linearGradient id="indigoGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#818cf8" />
-                                <stop offset="100%" stopColor="#6366f1" />
+                              <linearGradient id="brandGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#66b7ff" />
+                                <stop offset="100%" stopColor="#007acc" />
                               </linearGradient>
                             </defs>
                           </Bar>
@@ -404,7 +404,7 @@ const MetricCard = ({ label, value, icon }: any) => {
   return (
     <Box bg={cardBg} p={6} borderRadius="24px" border="1px solid" borderColor={cardBorder} shadow="sm">
         <Flex align="center" gap={4}>
-            <Center p={3} bg={useColorModeValue("indigo.50", "indigo.900")} color={useColorModeValue("indigo.500", "indigo.200")} borderRadius="15px">
+            <Center p={3} bg={useColorModeValue("brand.50", "brand.900")} color={useColorModeValue("brand.500", "brand.200")} borderRadius="15px">
                 <Icon as={icon} size={22} />
             </Center>
             <Box>

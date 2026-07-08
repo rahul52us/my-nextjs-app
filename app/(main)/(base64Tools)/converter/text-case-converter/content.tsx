@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -141,18 +141,18 @@ const TextCaseConverterContent: React.FC = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             bg={useColorModeValue("white", "gray.700")}
-            _focus={{ borderColor: "teal.500" }}
+            _focus={{ borderColor: "brand.400" }}
             rows={8}
             rounded="md"
           />
         </FormControl>
 
         <Stack spacing={3} direction={["column", "row"]} flexWrap="wrap">
-          <Button colorScheme="teal" onClick={() => handleTransform("upper")}>Uppercase</Button>
-          <Button colorScheme="teal" onClick={() => handleTransform("lower")}>Lowercase</Button>
-          <Button colorScheme="teal" onClick={() => handleTransform("title")}>Title Case</Button>
-          <Button colorScheme="teal" onClick={() => handleTransform("sentence")}>Sentence Case</Button>
-          <Button colorScheme="teal" onClick={() => handleTransform("toggle")}>Toggle Case</Button>
+          <Button colorScheme="brand" onClick={() => handleTransform("upper")}>Uppercase</Button>
+          <Button colorScheme="brand" onClick={() => handleTransform("lower")}>Lowercase</Button>
+          <Button colorScheme="brand" onClick={() => handleTransform("title")}>Title Case</Button>
+          <Button colorScheme="brand" onClick={() => handleTransform("sentence")}>Sentence Case</Button>
+          <Button colorScheme="brand" onClick={() => handleTransform("toggle")}>Toggle Case</Button>
           <Button colorScheme="red" onClick={handleClear}>Clear</Button>
         </Stack>
 
@@ -164,7 +164,7 @@ const TextCaseConverterContent: React.FC = () => {
           </Box>
         )}
 
-        <Divider borderColor="teal.500" />
+        <Divider borderColor="brand.400" />
 
         <FormControl>
           <FormLabel fontSize="lg" fontWeight="semibold">

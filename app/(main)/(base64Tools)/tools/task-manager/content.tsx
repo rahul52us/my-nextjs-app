@@ -47,6 +47,10 @@ import {
   Th,
   Td,
   TableContainer,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import AttachmentUpload from "../../../../component/attachments/AttachmentUpload";
 import AttachmentsList from "../../../../component/attachments/AttachmentsList";
@@ -2007,17 +2011,48 @@ export default function TaskManagerContent() {
                             </Badge>
                           </Td>
                           <Td py={4}>
-                            <Badge
-                              bgImage={statusInfo.bg}
-                              color="white"
-                              borderRadius="full"
-                              px={3}
-                              py={0.5}
-                              fontSize="xs"
-                              boxShadow={`0 2px 6px ${statusInfo.glowColor}`}
-                            >
-                              {statusInfo.title}
-                            </Badge>
+                            <Menu isLazy>
+                              <MenuButton
+                                as="div"
+                                cursor="pointer"
+                                role="button"
+                                display="inline-block"
+                                transition="all 0.15s ease-in-out"
+                                _hover={{ opacity: 0.85, transform: "scale(1.02)" }}
+                              >
+                                <Badge
+                                  bgImage={statusInfo.bg}
+                                  color="white"
+                                  borderRadius="full"
+                                  px={3}
+                                  py={0.5}
+                                  fontSize="xs"
+                                  boxShadow={`0 2px 6px ${statusInfo.glowColor}`}
+                                >
+                                  {statusInfo.title}
+                                </Badge>
+                              </MenuButton>
+                              <MenuList zIndex={10}>
+                                {Object.entries(statusConfig).map(([statusKey, info]) => (
+                                  <MenuItem
+                                    key={statusKey}
+                                    onClick={() => handleUpdateTask(task.id, { status: statusKey as Task["status"] })}
+                                  >
+                                    <Badge
+                                      bgImage={info.bg}
+                                      color="white"
+                                      borderRadius="full"
+                                      px={3}
+                                      py={0.5}
+                                      fontSize="xs"
+                                      boxShadow={`0 2px 6px ${info.glowColor}`}
+                                    >
+                                      {info.title}
+                                    </Badge>
+                                  </MenuItem>
+                                ))}
+                              </MenuList>
+                            </Menu>
                           </Td>
                           <Td py={4} color={taskTitleColor} fontSize="sm">
                             <HStack spacing={1}>

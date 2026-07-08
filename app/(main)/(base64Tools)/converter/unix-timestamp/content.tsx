@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -159,7 +159,7 @@ const UnixTimestampContent: React.FC = () => {
             value={timestampInput}
             onChange={(e) => setTimestampInput(e.target.value)}
             bg={useColorModeValue("white", "gray.700")}
-            _focus={{ borderColor: "teal.500" }}
+            _focus={{ borderColor: "brand.400" }}
           />
         </FormControl>
 
@@ -172,12 +172,12 @@ const UnixTimestampContent: React.FC = () => {
             value={dateTimeInput}
             onChange={(e) => setDateTimeInput(e.target.value)}
             bg={useColorModeValue("white", "gray.700")}
-            _focus={{ borderColor: "teal.500" }}
+            _focus={{ borderColor: "brand.400" }}
           />
         </FormControl>
 
         <Stack spacing={4} direction={["column", "row"]} justify="space-between">
-          <Button colorScheme="teal" size="lg" leftIcon={<Icon as={FaClock} />} onClick={convertFromTimestamp}>
+          <Button colorScheme="brand" size="lg" leftIcon={<Icon as={FaClock} />} onClick={convertFromTimestamp}>
             Convert Timestamp
           </Button>
           <Button colorScheme="brand" size="lg" leftIcon={<Icon as={FaCalendarAlt} />} onClick={convertFromDateTime}>
@@ -202,7 +202,7 @@ const UnixTimestampContent: React.FC = () => {
           </Box>
         )}
 
-        <Divider borderColor="teal.500" />
+        <Divider borderColor="brand.400" />
 
         <VStack spacing={4} align="stretch">
           <Box p={4} bg={useColorModeValue("gray.200", "gray.700")} borderRadius="md">

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -14,26 +14,33 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import JsBarcode from "jsbarcode";
-import { FaDownload, FaTrash } from "react-icons/fa";
-import html2canvas from "html2canvas";
+import { FaDownload, FaTrash, FaBarcode } from "react-icons/fa";
 import stores from "../../../../../store/stores";
 
 const BarcodeGenerator: React.FC = () => {
   const [input, setInput] = useState<string>("");
   const [size, setSize] = useState<number>(256);
   const [isLoading] = useState<boolean>(false);
-  const bgColor = useColorModeValue("gray.100", "gray.800");
-  const textColor = useColorModeValue("gray.800", "gray.100");
-  const toast = useToast(); // For showing toast notifications
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-      const {
-  themeStore: { themeConfig },
-} = stores;
+  // ---- Theme-aware colors ----
+  const pageColor = useColorModeValue("gray.800", "gray.100");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const cardBorder = useColorModeValue("gray.200", "gray.700");
+  const sectionBg = useColorModeValue("gray.50", "gray.900");
+  const subTextColor = useColorModeValue("gray.500", "gray.400");
+  const previewBorder = useColorModeValue("gray.200", "gray.600");
 
-  // Handle download as image (PNG)
-  const handleDownload = async () => {
-    const barcodeElement = document.getElementById("barcode");
-    if (!barcodeElement) {
+  const toast = useToast();
+
+  const {
+    themeStore: { themeConfig },
+  } = stores;
+
+  // Handle download as image (PNG) — reads directly from the canvas we drew on
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !input) {
       toast({
         title: "Barcode Not Found",
         description: "Please enter a valid input to generate the barcode.",
@@ -44,12 +51,13 @@ const BarcodeGenerator: React.FC = () => {
       return;
     }
     try {
-      const canvas = await html2canvas(barcodeElement);
-      const dataUrl = canvas.toDataURL("image/png"); // Convert canvas to image (PNG)
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
-      link.download = "barcode.png"; // Set the filename
+      link.download = "barcode.png";
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
 
       toast({
         title: "Download Successful",
@@ -80,91 +88,150 @@ const BarcodeGenerator: React.FC = () => {
     setInput(e.target.value);
   };
 
-  // Generate Barcode (on input change)
-  const generateBarcode = () => {
-    const canvas = document.createElement("canvas");
-    JsBarcode(canvas, input, {
-      format: "CODE128",
-      lineColor: "#000000",
-      width: 2,
-      height: 50,
-      displayValue: false,
-    });
-    return canvas.toDataURL();
-  };
+  // Draw the barcode directly on the visible canvas whenever the input changes
+  useEffect(() => {
+    if (!input || !canvasRef.current) return;
+    try {
+      JsBarcode(canvasRef.current, input, {
+        format: "CODE128",
+        lineColor: "#000000",
+        width: 2,
+        height: 50,
+        displayValue: false,
+      });
+    } catch (error) {
+      console.error("Error generating barcode:", error);
+    }
+  }, [input]);
 
   return (
-    <Box p={4} bg="transparent" color={textColor} minH={"78vh"}>
-      <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}
- textAlign="center" mb={6}>
-        Barcode Generator
-      </Heading>
+    <Box bg="transparent" color={pageColor} minH={"78vh"} py={8} px={4}>
+      {/* ---- Header ---- */}
+      <Box textAlign="center" mb={8}>
+        <HStack justify="center" spacing={3} mb={2}>
+          <Box
+            bg={themeConfig.colors.brand[300]}
+            color="white"
+            borderRadius="full"
+            p={2}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <FaBarcode size={20} />
+          </Box>
+          <Heading as="h1" size="xl" color={themeConfig.colors.brand[300]}>
+            Barcode Generator
+          </Heading>
+        </HStack>
+        <Text color={subTextColor} fontSize="md">
+          Enter text or a number below and get an instant, downloadable barcode.
+        </Text>
+      </Box>
 
-      <Input
-        placeholder="Enter text or number"
-        value={input}
-        onChange={handleInputChange}
-        size="lg"
-        mb={3}
-        autoFocus
-      />
-
-      <Select
-        value={size}
-        onChange={(e) => setSize(Number(e.target.value))}
-        mb={5}
+      {/* ---- Main card ---- */}
+      <Box
+        maxW="640px"
+        mx="auto"
+        bg={cardBg}
+        border="1px solid"
+        borderColor={cardBorder}
+        borderRadius="xl"
+        boxShadow="sm"
+        p={{ base: 5, md: 8 }}
       >
-        <option value={128}>128x128</option>
-        <option value={256}>256x256</option>
-        <option value={512}>512x512</option>
-      </Select>
-
-      {isLoading ? (
-        <Box mt={5} display="flex" justifyContent="center">
-          <Spinner size="lg" />
-        </Box>
-      ) : input ? (
-        <Box
-          id="barcode"
-          mt={5}
-          bg="white"
-          p={5}
-          borderRadius="md"
-          display="inline-block"
-          maxWidth="100%"
-          boxShadow="md"
-        >
-          <img
-            src={generateBarcode()}
-            alt="Generated Barcode"
-            style={{ display: "block", maxWidth: "100%", height: "auto" }}
+        <Box mb={5}>
+          <Text fontWeight="semibold" mb={2} fontSize="sm">
+            Text or Number
+          </Text>
+          <Input
+            placeholder="Enter text or number"
+            value={input}
+            onChange={handleInputChange}
+            size="lg"
+            autoFocus
+            borderRadius="md"
           />
         </Box>
-      ) : (
-        <Text mt={5} textAlign="center" color="gray.500">
-          Enter text or number to generate a barcode
-        </Text>
-      )}
 
-      <HStack spacing={4} mt={5} justify="center">
-        <Button
-          leftIcon={<FaDownload />}
-          colorScheme="brand"
-          onClick={handleDownload}
-          isDisabled={!input || isLoading}
-          isLoading={isLoading}
+        <Box mb={6}>
+          <Text fontWeight="semibold" mb={2} fontSize="sm">
+            Size
+          </Text>
+          <Select
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+            size="lg"
+            borderRadius="md"
+          >
+            <option value={128}>128x128</option>
+            <option value={256}>256x256</option>
+            <option value={512}>512x512</option>
+          </Select>
+        </Box>
+
+        {/* ---- Live preview ---- */}
+        <Box
+          bg={sectionBg}
+          border="1px dashed"
+          borderColor={previewBorder}
+          borderRadius="lg"
+          minH="180px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          p={5}
+          mb={6}
         >
-          Download Barcode
-        </Button>
-        <Button
-          leftIcon={<FaTrash />}
-          colorScheme="red"
-          onClick={handleClear}
-          isDisabled={!input}
-        >
-          Clear
-        </Button>
-      </HStack>
+          {isLoading ? (
+            <Spinner size="lg" color={themeConfig.colors.brand[300]} />
+          ) : (
+            <>
+              <Box
+                bg="white"
+                p={5}
+                borderRadius="md"
+                display={input ? "inline-block" : "none"}
+                maxWidth="100%"
+                boxShadow="md"
+              >
+                <canvas
+                  ref={canvasRef}
+                  style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                />
+              </Box>
+              {!input && (
+                <Text textAlign="center" color={subTextColor}>
+                  Enter text or number to generate a barcode
+                </Text>
+              )}
+            </>
+          )}
+        </Box>
+
+        <HStack spacing={4} justify="center">
+          <Button
+            leftIcon={<FaDownload />}
+            colorScheme="brand"
+            size="lg"
+            onClick={handleDownload}
+            isDisabled={!input || isLoading}
+            isLoading={isLoading}
+          >
+            Download Barcode
+          </Button>
+          <Button
+            leftIcon={<FaTrash />}
+            colorScheme="red"
+            variant="outline"
+            size="lg"
+            onClick={handleClear}
+            isDisabled={!input}
+          >
+            Clear
+          </Button>
+        </HStack>
+      </Box>
     </Box>
   );
 };
