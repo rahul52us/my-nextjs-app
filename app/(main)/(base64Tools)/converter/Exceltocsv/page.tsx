@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useCallback, useRef } from "react";
+import { observer } from "mobx-react-lite";
+import stores from "../../../../store/stores";
 import {
   Box, Button, VStack, Text, useToast, Heading, Icon, Center,
   HStack, Badge, Card, CardBody, IconButton, Divider,
@@ -22,9 +24,9 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
-const accentHex = "#007AAC"; // Accent color for buttons, highlights, etc.
-
-const FileConverter = () => {
+const FileConverter = observer(() => {
+  const accentHex = stores.themeStore.themeConfig?.colors?.brand?.[500] || "#007AAC";
+  const accentHexDark = stores.themeStore.themeConfig?.colors?.brand?.[600] || "#005d85";
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [rowData, setRowData] = useState<any[]>([]);
@@ -388,11 +390,11 @@ const FileConverter = () => {
                   color="white"
                   boxShadow={`0 15px 30px -10px ${accentHex}88`}
                   _hover={{
-                    bg: "#007AAC",
+                    bg: accentHex,
                     transform: "translateY(-2px)",
                     boxShadow: `0 20px 35px -10px ${accentHex}99`,
                   }}
-                  _active={{ transform: "scale(0.98)", bg: "#005d85" }}
+                  _active={{ transform: "scale(0.98)", bg: accentHexDark }}
                   _disabled={{ opacity: 0.5, cursor: "not-allowed", transform: "none" }}
                   transition="all 0.2s"
                 >
@@ -419,6 +421,6 @@ const FileConverter = () => {
       </Container>
     </Box>
   );
-};
+});
 
 export default FileConverter;

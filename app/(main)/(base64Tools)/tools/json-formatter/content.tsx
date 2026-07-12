@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback } from "react";
@@ -63,8 +63,8 @@ const JsonFormatterContent = () => {
     const fileInputHoverBgColor = useColorModeValue("brand.50", "gray.600");
     const editorTheme = useColorModeValue("vs-light", "vs-dark");
     const jsonTheme = useColorModeValue("rjv-default", "monokai");
-    const primaryColor = "#007ACC";
-    const primaryHoverColor = "#006bb3";
+    const primaryColor = "brand.500";
+    const primaryHoverColor = "brand.600";
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -145,7 +145,7 @@ const JsonFormatterContent = () => {
 
     return (
         <Box p={1} bg={bgColor} color={textColor} minH="80vh">
-            <Heading as="h1" size="xl" color={primaryColor} textAlign="center" mb={4}>
+            <Heading as="h1" size="xl" color="brand.500" textAlign="center" mb={4}>
                 JSON Formatter & Validator
             </Heading>
 
@@ -229,15 +229,13 @@ const JsonFormatterContent = () => {
                                             width="150px" // Limit width for better spacing
                                         >
                                             <SliderTrack>
-                                                <SliderFilledTrack bg={primaryColor} />
+                                                <SliderFilledTrack bg="brand.500" />
                                             </SliderTrack>
-                                            <SliderThumb bg={primaryColor} />
+                                            <SliderThumb bg="brand.500" />
                                         </Slider>
                                         <Text fontSize="sm" color={mutedTextColor}>Size: {fontSize}px</Text>
                                     </HStack>
                                 </HStack>
-
-                                {/* ReactJson Component */}
                                 <ReactJson
                                     src={formattedJson}
                                     theme={jsonTheme}

@@ -130,26 +130,26 @@ const ImageConverter: React.FC = () => {
   const fmtInactive  = isDark
     ? 'bg-gray-800 border-transparent text-gray-400 hover:bg-gray-700'
     : 'bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100';
-  const convertBtn   = 'bg-[#007ACC] hover:bg-[#006bb3]';
+  const convertBtn   = 'bg-[var(--chakra-colors-brand-500)] hover:bg-[var(--chakra-colors-brand-600)]';
   const zipBtn       = isDark
     ? 'bg-emerald-950 text-emerald-400 border border-emerald-900 hover:bg-emerald-900'
     : 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100';
   const uploadBox    = isDark
-    ? 'border-gray-700 bg-gray-900 hover:border-[#007ACC] hover:bg-[#007ACC]/10'
-    : 'border-slate-200 bg-white hover:border-[#007ACC] hover:bg-[#007ACC]/5';
+    ? 'border-gray-700 bg-gray-900 hover:border-[var(--chakra-colors-brand-500)] hover:bg-[var(--chakra-colors-brand-500)]/10'
+    : 'border-slate-200 bg-white hover:border-[var(--chakra-colors-brand-500)] hover:bg-[var(--chakra-colors-brand-50)]';
   const uploadIcon   = isDark
-    ? 'bg-gray-800 text-gray-500 group-hover:text-[#8fd3ff] group-hover:bg-gray-700'
-    : 'bg-slate-50 text-slate-400 group-hover:text-[#007ACC] group-hover:bg-white';
+    ? 'bg-gray-800 text-gray-500 group-hover:text-[var(--chakra-colors-brand-300)] group-hover:bg-gray-700'
+    : 'bg-slate-50 text-slate-400 group-hover:text-[var(--chakra-colors-brand-500)] group-hover:bg-white';
   const uploadText   = isDark ? 'text-gray-400' : 'text-slate-600';
   const fileNameCls  = isDark ? 'text-slate-200' : 'text-slate-700';
   const badgeBg      = isDark ? 'bg-gray-800 text-gray-400'   : 'bg-slate-100 text-slate-500';
   const arrowCls     = isDark ? 'text-gray-600'               : 'text-slate-300';
   const selectCls    = isDark
-    ? 'bg-[#007ACC]/15 text-[#8fd3ff] hover:bg-[#007ACC]/25'
-    : 'bg-[#007ACC]/10 text-[#007ACC] hover:bg-[#007ACC]/20';
-  const saveBtnCls   = 'bg-[#007ACC] hover:bg-[#006bb3]';
+    ? 'bg-[var(--chakra-colors-brand-500)]/15 text-[var(--chakra-colors-brand-300)] hover:bg-[var(--chakra-colors-brand-500)]/25'
+    : 'bg-[var(--chakra-colors-brand-500)]/10 text-[var(--chakra-colors-brand-500)] hover:bg-[var(--chakra-colors-brand-500)]/20';
+  const saveBtnCls   = 'bg-[var(--chakra-colors-brand-500)] hover:bg-[var(--chakra-colors-brand-600)]';
   const removeCls    = isDark ? 'text-gray-600 hover:text-red-400'  : 'text-slate-300 hover:text-red-500';
-  const shieldBadge  = isDark ? 'bg-[#007ACC]/15 text-[#8fd3ff]'    : 'bg-[#007ACC]/10 text-[#007ACC]';
+  const shieldBadge  = isDark ? 'bg-[var(--chakra-colors-brand-500)]/15 text-[var(--chakra-colors-brand-300)]'    : 'bg-[var(--chakra-colors-brand-500)]/10 text-[var(--chakra-colors-brand-500)]';
   const emptyBg      = isDark ? 'bg-gray-900 border-gray-800'       : 'bg-white border-slate-100';
 
   return (
@@ -159,11 +159,11 @@ const ImageConverter: React.FC = () => {
         {/* Navigation */}
         <nav className={`flex items-center justify-between mb-8 p-4 rounded-2xl shadow-sm border transition-colors duration-300 ${cardBg}`}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#007ACC] rounded-lg flex items-center justify-center text-white">
+            <div className="w-8 h-8 bg-[var(--chakra-colors-brand-500)] rounded-lg flex items-center justify-center text-white">
               <Layers size={18} />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              SwiftBatch <span className="text-[#007ACC]">v2</span>
+              SwiftBatch <span className="text-[var(--chakra-colors-brand-500)]">v2</span>
             </span>
           </div>
           <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${shieldBadge}`}>
@@ -191,7 +191,7 @@ const ImageConverter: React.FC = () => {
                         onClick={() => setGlobalTarget(f.mime)}
                         className={`p-3 rounded-xl text-sm font-bold transition-all border text-left flex items-center justify-between ${
                           globalTarget === f.mime
-                            ? 'bg-[#007ACC] border-[#007ACC] text-white shadow-lg'
+                            ? 'bg-[var(--chakra-colors-brand-500)] border-[var(--chakra-colors-brand-500)] text-white shadow-lg'
                             : fmtInactive
                         }`}
                       >
@@ -283,7 +283,7 @@ const ImageConverter: React.FC = () => {
                         <Download size={14} /> Save
                       </a>
                    ) : img.status === 'converting' ? (
-                      <div className="p-3"><RefreshCw className="animate-spin text-[#007ACC]" size={18} /></div>
+                      <div className="p-3"><RefreshCw className="animate-spin text-[var(--chakra-colors-brand-500)]" size={18} /></div>
                     ) : (
                       <button onClick={() => removeImage(img.id)} className={`p-3 transition-colors ${removeCls}`}>
                         <X size={20} />

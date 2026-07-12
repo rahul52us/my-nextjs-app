@@ -1,5 +1,7 @@
-﻿'use client';
+'use client';
 import { useState, useRef, useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
+import stores from '../../../../store/stores';
 import {
   Box,
   Button,
@@ -124,12 +126,12 @@ const calculateATSScore = (data: ResumeData): { score: number; feedback: string[
 };
 
 // Timeline Component
-const Timeline: React.FC<{ items: Array<Education | Experience> }> = ({ items }) => (
+const Timeline: React.FC<{ items: Array<Education | Experience> }> = observer(({ items }) => (
   <VStack align="start" spacing={6} position="relative" pl={8}>
-    <Box position="absolute" left="2" top="0" bottom="0" w="2px" bg="teal.300" />
+    <Box position="absolute" left="2" top="0" bottom="0" w="2px" bg="brand.300" />
     {items.map((item, index) => (
       <Box key={index} position="relative" as={motion.div} whileHover={{ scale: 1.02 }}>
-        <Circle size="4" bg="teal.500" position="absolute" left="-6" top="2" />
+        <Circle size="4" bg="brand.500" position="absolute" left="-6" top="2" />
         <Box pl={6}>
           {'institution' in item ? (
             <>
@@ -147,10 +149,10 @@ const Timeline: React.FC<{ items: Array<Education | Experience> }> = ({ items })
       </Box>
     ))}
   </VStack>
-);
+));
 
 // Modern Template
-const ModernTemplate: React.FC<TemplateProps> = ({ data }) => (
+const ModernTemplate: React.FC<TemplateProps> = observer(({ data }) => (
   <Box
     p={6}
     borderRadius="xl"
@@ -187,7 +189,7 @@ const ModernTemplate: React.FC<TemplateProps> = ({ data }) => (
             <Heading size="md" mb={3} color={data.theme.primaryColor}>{translations[data.language].skills}</Heading>
             <Flex wrap="wrap" gap={2}>
               {data.skills.map(skill => (
-                <Badge key={skill.id} p={2} bg="teal.100" color="teal.800" borderRadius="full">{skill.name}</Badge>
+                <Badge key={skill.id} p={2} bg="brand.100" color="brand.800" borderRadius="full">{skill.name}</Badge>
               ))}
             </Flex>
           </>
@@ -195,10 +197,10 @@ const ModernTemplate: React.FC<TemplateProps> = ({ data }) => (
       </Box>
     ))}
   </Box>
-);
+));
 
 // Professional Template
-const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => (
+const ProfessionalTemplate: React.FC<TemplateProps> = observer(({ data }) => (
   <Box
     p={8}
     border="2px solid"
@@ -251,13 +253,13 @@ const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => (
       </Box>
     ))}
   </Box>
-);
+));
 
 // Creative Template
-const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => (
+const CreativeTemplate: React.FC<TemplateProps> = observer(({ data }) => (
   <Box
     p={6}
-    bgGradient="linear(to-br, teal.100, purple.200)"
+    bgGradient="linear(to-br, brand.100, purple.200)"
     color="black"
     minH="100vh"
     fontFamily={data.theme.fontFamily}
@@ -290,7 +292,7 @@ const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => (
             <Heading size="md" color={data.theme.primaryColor} mb={3}>{translations[data.language].skills}</Heading>
             <Flex wrap="wrap" gap={2}>
               {data.skills.map(skill => (
-                <Badge key={skill.id} p={2} bg="teal.100" color="teal.800" borderRadius="full">{skill.name}</Badge>
+                <Badge key={skill.id} p={2} bg="brand.100" color="brand.800" borderRadius="full">{skill.name}</Badge>
               ))}
             </Flex>
           </>
@@ -298,16 +300,16 @@ const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => (
       </Box>
     ))}
   </Box>
-);
+));
 
 // AI Assistant Component
-const AIAssistant: React.FC<{ jobRole: string; applySuggestions: () => void }> = ({ jobRole, applySuggestions }) => (
+const AIAssistant: React.FC<{ jobRole: string; applySuggestions: () => void }> = observer(({ jobRole, applySuggestions }) => (
   <Box
     position="fixed"
     bottom="4"
     right="4"
     p={3}
-    bg="teal.500"
+    bg="brand.500"
     color="white"
     borderRadius="full"
     boxShadow="lg"
@@ -321,9 +323,9 @@ const AIAssistant: React.FC<{ jobRole: string; applySuggestions: () => void }> =
       </Button>
     </Tooltip>
   </Box>
-);
+));
 
-const ResumeBuilder: React.FC = () => {
+const ResumeBuilder: React.FC = observer(() => {
   const { colorMode } = useColorMode();
   const toast = useToast();
   const printRef = useRef<HTMLDivElement>(null);
@@ -340,7 +342,7 @@ const ResumeBuilder: React.FC = () => {
     skills: [{ id: uuidv4(), name: '' }],
     sectionOrder: ['summary', 'education', 'experience', 'skills'],
     language: 'en',
-    theme: { primaryColor: 'teal.500', fontFamily: 'Arial, sans-serif' },
+    theme: { primaryColor: 'brand.500', fontFamily: 'Arial, sans-serif' },
   });
   const [savedResumes, setSavedResumes] = useState<SavedResume[]>([]);
   const [template, setTemplate] = useState<'modern' | 'professional' | 'creative'>('modern');
@@ -580,7 +582,7 @@ const ResumeBuilder: React.FC = () => {
       skills: [{ id: uuidv4(), name: '' }],
       sectionOrder: ['summary', 'education', 'experience', 'skills'],
       language: 'en',
-      theme: { primaryColor: 'teal.500', fontFamily: 'Arial, sans-serif' },
+      theme: { primaryColor: 'brand.500', fontFamily: 'Arial, sans-serif' },
     });
   };
 
@@ -695,7 +697,7 @@ const ResumeBuilder: React.FC = () => {
   };
 
   return (
-    <Container maxW="100vw" p={0} bgGradient="linear(to-br, teal.50, purple.50)" minH="100vh" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+    <Container maxW="100vw" p={0} bgGradient="linear(to-br, brand.50, purple.50)" minH="100vh" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
       <Flex direction={{ base: 'column', md: 'row' }} minH="100vh">
         {/* Sidebar */}
         <Box
@@ -711,7 +713,7 @@ const ResumeBuilder: React.FC = () => {
           position={{ md: 'sticky' }}
           top="0"
         >
-          <Heading size="lg" mb={4} color="teal.600">{translations[resumeData.language].resumeBuilder}</Heading>
+          <Heading size="lg" mb={4} color="brand.600">{translations[resumeData.language].resumeBuilder}</Heading>
           <VStack spacing={4} align="stretch">
             {/* Progress Dashboard */}
             <Box p={4} bg="whiteAlpha.800" borderRadius="xl" boxShadow="sm">
@@ -721,7 +723,7 @@ const ResumeBuilder: React.FC = () => {
                   <InfoOutlineIcon />
                 </Tooltip>
               </Flex>
-              <Progress value={atsScore.score} colorScheme="teal" size="sm" borderRadius="md" />
+              <Progress value={atsScore.score} colorScheme="brand" size="sm" borderRadius="md" />
               <Text fontSize="sm" mt={1} color={atsScore.score > 80 ? 'green.500' : 'orange.500'}>
                 {atsScore.score}% Complete
               </Text>
@@ -738,7 +740,7 @@ const ResumeBuilder: React.FC = () => {
               <Button size="sm" colorScheme="gray" onClick={resetForm}>New</Button>
               <Button size="sm" colorScheme="purple" onClick={exportJson}>JSON</Button>
               <Button size="sm" colorScheme="orange" onClick={exportDocx}>DOCX</Button>
-              <Button size="sm" colorScheme="teal" leftIcon={<DownloadIcon />} onClick={handlePrint}>PDF</Button>
+              <Button size="sm" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={handlePrint}>PDF</Button>
             </HStack>
             {/* Personal Info Card */}
             <Box p={4} bg="whiteAlpha.800" borderRadius="xl" boxShadow="sm">
@@ -769,7 +771,7 @@ const ResumeBuilder: React.FC = () => {
                             onChange={(e) => setJobRole(e.target.value)}
                             placeholder="e.g., Software Engineer"
                             borderRadius="md"
-                            _hover={{ borderColor: 'teal.300' }}
+                            _hover={{ borderColor: 'brand.300' }}
                           />
                           <Tooltip label="Use voice input" placement="top">
                             <IconButton
@@ -790,7 +792,7 @@ const ResumeBuilder: React.FC = () => {
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             placeholder="John Doe"
                             borderRadius="md"
-                            _hover={{ borderColor: 'teal.300' }}
+                            _hover={{ borderColor: 'brand.300' }}
                             borderColor={resumeData.name ? 'green.300' : 'red.300'}
                           />
                           <Tooltip label="Use voice input" placement="top">
@@ -812,7 +814,7 @@ const ResumeBuilder: React.FC = () => {
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             placeholder="john.doe@example.com"
                             borderRadius="md"
-                            _hover={{ borderColor: 'teal.300' }}
+                            _hover={{ borderColor: 'brand.300' }}
                             borderColor={resumeData.email ? 'green.300' : 'red.300'}
                           />
                           <Tooltip label="Use voice input" placement="top">
@@ -834,7 +836,7 @@ const ResumeBuilder: React.FC = () => {
                             onChange={(e) => handleInputChange('phone', e.target.value)}
                             placeholder="123-456-7890"
                             borderRadius="md"
-                            _hover={{ borderColor: 'teal.300' }}
+                            _hover={{ borderColor: 'brand.300' }}
                             borderColor={resumeData.phone ? 'green.300' : 'red.300'}
                           />
                           <Tooltip label="Use voice input" placement="top">
@@ -856,7 +858,7 @@ const ResumeBuilder: React.FC = () => {
                             onChange={(e) => handleInputChange('summary', e.target.value)}
                             placeholder="Tell your story..."
                             borderRadius="md"
-                            _hover={{ borderColor: 'teal.300' }}
+                            _hover={{ borderColor: 'brand.300' }}
                             borderColor={resumeData.summary ? 'green.300' : 'red.300'}
                           />
                           <Tooltip label="Use voice input" placement="top">
@@ -913,7 +915,7 @@ const ResumeBuilder: React.FC = () => {
                                     borderRadius="md"
                                     boxShadow="sm"
                                     w="full"
-                                    _hover={{ bg: 'teal.50' }}
+                                    _hover={{ bg: 'brand.50' }}
                                     as={motion.div}
                                     whileHover={{ scale: 1.02 }}
                                   >
@@ -925,7 +927,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={edu.institution}
                                           onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={edu.institution ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -944,7 +946,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={edu.degree}
                                           onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={edu.degree ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -963,7 +965,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={edu.year}
                                           onChange={(e) => handleEducationChange(edu.id, 'year', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={edu.year ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1025,7 +1027,7 @@ const ResumeBuilder: React.FC = () => {
                                     borderRadius="md"
                                     boxShadow="sm"
                                     w="full"
-                                    _hover={{ bg: 'teal.50' }}
+                                    _hover={{ bg: 'brand.50' }}
                                     as={motion.div}
                                     whileHover={{ scale: 1.02 }}
                                   >
@@ -1037,7 +1039,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={exp.company}
                                           onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={exp.company ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1056,7 +1058,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={exp.role}
                                           onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={exp.role ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1075,7 +1077,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={exp.startDate}
                                           onChange={(e) => handleExperienceChange(exp.id, 'startDate', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={exp.startDate ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1094,7 +1096,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={exp.endDate}
                                           onChange={(e) => handleExperienceChange(exp.id, 'endDate', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={exp.endDate ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1113,7 +1115,7 @@ const ResumeBuilder: React.FC = () => {
                                           value={exp.description}
                                           onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)}
                                           borderRadius="md"
-                                          _hover={{ borderColor: 'teal.300' }}
+                                          _hover={{ borderColor: 'brand.300' }}
                                           borderColor={exp.description ? 'green.300' : 'red.300'}
                                         />
                                         <Tooltip label="Use voice input" placement="top">
@@ -1181,7 +1183,7 @@ const ResumeBuilder: React.FC = () => {
                                         value={skill.name}
                                         onChange={(e) => handleSkillChange(skill.id, e.target.value)}
                                         borderRadius="md"
-                                        _hover={{ borderColor: 'teal.300' }}
+                                        _hover={{ borderColor: 'brand.300' }}
                                         borderColor={skill.name ? 'green.300' : 'red.300'}
                                       />
                                       <Tooltip label="Use voice input" placement="top">
@@ -1238,8 +1240,9 @@ const ResumeBuilder: React.FC = () => {
                           }))}
                           borderRadius="md"
                         >
+                          <option value="brand.500">Theme Color</option>
                           <option value="teal.500">Teal</option>
-                          <option value="brand.500">Blue</option>
+                          <option value="blue.500">Blue</option>
                           <option value="purple.500">Purple</option>
                         </Select>
                       </FormControl>
@@ -1289,7 +1292,7 @@ const ResumeBuilder: React.FC = () => {
                                         bg="whiteAlpha.900"
                                         borderRadius="md"
                                         w="full"
-                                        _hover={{ bg: 'teal.50' }}
+                                        _hover={{ bg: 'brand.50' }}
                                         as={motion.div}
                                         whileHover={{ scale: 1.02 }}
                                       >
@@ -1333,7 +1336,7 @@ const ResumeBuilder: React.FC = () => {
         {/* Resize Divider */}
         <Box
           w="4px"
-          bg="teal.200"
+          bg="brand.200"
           cursor="col-resize"
           onMouseDown={handleMouseDown}
           display={{ base: 'none', md: 'block' }}
@@ -1428,7 +1431,7 @@ const ResumeBuilder: React.FC = () => {
           </ModalBody>
           <ModalFooter>
             <Button
-              colorScheme="teal"
+              colorScheme="brand"
               onClick={() => {
                 if (onboardingStep < 2) setOnboardingStep(prev => prev + 1);
                 else onOnboardingClose();
@@ -1444,6 +1447,6 @@ const ResumeBuilder: React.FC = () => {
       </Modal>
     </Container>
   );
-};
+});
 
 export default ResumeBuilder;

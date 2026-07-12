@@ -398,6 +398,7 @@ export default function TaskManagerContent() {
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [activeBucketId, setActiveBucketId] = useState<string>("");
   const [loadingBuckets, setLoadingBuckets] = useState(true);
+  const [showBuckets, setShowBuckets] = useState(false);
 
   // Bucket CRUD Modal/Alert States
   const { isOpen: isBucketModalOpen, onOpen: onBucketModalOpen, onClose: onBucketModalClose } = useDisclosure();
@@ -1449,113 +1450,115 @@ export default function TaskManagerContent() {
       {viewMode === "board" ? (
         <Flex direction={{ base: "column", lg: "row" }} gap={6} align="stretch">
           {/* Buckets Sidebar */}
-          <Box
-            w={{ base: "full", lg: "260px" }}
-            flexShrink={0}
-            bg={boardBg}
-            borderRadius="2xl"
-            p={4}
-            border="1px solid"
-            borderColor={borderColor}
-            backdropFilter="blur(10px)"
-            alignSelf="flex-start"
-          >
-            <Flex justify="space-between" align="center" mb={4}>
-              <Heading size="xs" textTransform="uppercase" letterSpacing="wider" color={textMuted}>
-                Buckets
-              </Heading>
-              <IconButton
-                size="xs"
-                colorScheme="brand"
-                bg="brand.500"
-                color="white"
-                icon={<FaPlus />}
-                aria-label="Add Bucket"
-                _hover={{ bg: "brand.600" }}
-                onClick={openCreateBucketModal}
-              />
-            </Flex>
+          {showBuckets && (
+            <Box
+              w={{ base: "full", lg: "260px" }}
+              flexShrink={0}
+              bg={boardBg}
+              borderRadius="2xl"
+              p={4}
+              border="1px solid"
+              borderColor={borderColor}
+              backdropFilter="blur(10px)"
+              alignSelf="flex-start"
+            >
+              <Flex justify="space-between" align="center" mb={4}>
+                <Heading size="xs" textTransform="uppercase" letterSpacing="wider" color={textMuted}>
+                  Buckets
+                </Heading>
+                <IconButton
+                  size="xs"
+                  colorScheme="brand"
+                  bg="brand.500"
+                  color="white"
+                  icon={<FaPlus />}
+                  aria-label="Add Bucket"
+                  _hover={{ bg: "brand.600" }}
+                  onClick={openCreateBucketModal}
+                />
+              </Flex>
 
-            <VStack spacing={2} align="stretch">
-              {loadingBuckets ? (
-                <Flex justify="center" py={4}>
-                  <Spinner size="sm" color="brand.400" />
-                </Flex>
-              ) : buckets.length === 0 ? (
-                <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
-                  No buckets found.
-                </Text>
-              ) : (
-                buckets.map((bucket) => {
-                  const isActive = bucket.id === activeBucketId;
-                  return (
-                    <Flex
-                      key={bucket.id}
-                      align="center"
-                      justify="space-between"
-                      p={3}
-                      borderRadius="xl"
-                      bg={isActive ? "brand.500" : "transparent"}
-                      color={isActive ? "white" : taskTitleColor}
-                      cursor="pointer"
-                      onClick={() => setActiveBucketId(bucket.id)}
-                      transition="all 0.2s"
-                      _hover={{
-                        bg: isActive ? "brand.600" : cardHoverBg,
-                      }}
-                      role="group"
-                    >
-                      <HStack spacing={2.5} flex={1} minW={0}>
-                        {bucket.isDefault ? <FaLock size="12px" /> : <FaFolder size="14px" />}
-                        <Text fontSize="sm" fontWeight={isActive ? "bold" : "medium"} isTruncated flex={1}>
-                          {bucket.name}
-                        </Text>
-                        <Badge
-                          colorScheme={isActive ? "blackAlpha" : "brand"}
-                          variant={isActive ? "solid" : "subtle"}
-                          borderRadius="full"
-                          px={2}
-                          py={0.5}
-                          fontSize="2xs"
-                        >
-                          {bucket.taskCount || 0}
-                        </Badge>
-                      </HStack>
-
-                      {!bucket.isDefault && (
-                        <HStack spacing={1} display="none" _groupHover={{ display: "flex" }} ml={2}>
-                          <IconButton
-                            size="xs"
-                            variant="ghost"
-                            color={isActive ? "white" : "brand.400"}
-                            icon={<FaEdit size="10px" />}
-                            aria-label="Rename bucket"
-                            _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openRenameBucketModal(bucket);
-                            }}
-                          />
-                          <IconButton
-                            size="xs"
-                            variant="ghost"
-                            color={isActive ? "white" : "red.400"}
-                            icon={<FaTrash size="10px" />}
-                            aria-label="Delete bucket"
-                            _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDeleteBucketAlert(bucket);
-                            }}
-                          />
+              <VStack spacing={2} align="stretch">
+                {loadingBuckets ? (
+                  <Flex justify="center" py={4}>
+                    <Spinner size="sm" color="brand.400" />
+                  </Flex>
+                ) : buckets.length === 0 ? (
+                  <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
+                    No buckets found.
+                  </Text>
+                ) : (
+                  buckets.map((bucket) => {
+                    const isActive = bucket.id === activeBucketId;
+                    return (
+                      <Flex
+                        key={bucket.id}
+                        align="center"
+                        justify="space-between"
+                        p={3}
+                        borderRadius="xl"
+                        bg={isActive ? "brand.500" : "transparent"}
+                        color={isActive ? "white" : taskTitleColor}
+                        cursor="pointer"
+                        onClick={() => setActiveBucketId(bucket.id)}
+                        transition="all 0.2s"
+                        _hover={{
+                          bg: isActive ? "brand.600" : cardHoverBg,
+                        }}
+                        role="group"
+                      >
+                        <HStack spacing={2.5} flex={1} minW={0}>
+                          {bucket.isDefault ? <FaLock size="12px" /> : <FaFolder size="14px" />}
+                          <Text fontSize="sm" fontWeight={isActive ? "bold" : "medium"} isTruncated flex={1}>
+                            {bucket.name}
+                          </Text>
+                          <Badge
+                            colorScheme={isActive ? "blackAlpha" : "brand"}
+                            variant={isActive ? "solid" : "subtle"}
+                            borderRadius="full"
+                            px={2}
+                            py={0.5}
+                            fontSize="2xs"
+                          >
+                            {bucket.taskCount || 0}
+                          </Badge>
                         </HStack>
-                      )}
-                    </Flex>
-                  );
-                })
-              )}
-            </VStack>
-          </Box>
+
+                        {!bucket.isDefault && (
+                          <HStack spacing={1} display="none" _groupHover={{ display: "flex" }} ml={2}>
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              color={isActive ? "white" : "brand.400"}
+                              icon={<FaEdit size="10px" />}
+                              aria-label="Rename bucket"
+                              _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRenameBucketModal(bucket);
+                              }}
+                            />
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              color={isActive ? "white" : "red.400"}
+                              icon={<FaTrash size="10px" />}
+                              aria-label="Delete bucket"
+                              _hover={{ bg: isActive ? "brand.700" : "whiteAlpha.200" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteBucketAlert(bucket);
+                              }}
+                            />
+                          </HStack>
+                        )}
+                      </Flex>
+                    );
+                  })
+                )}
+              </VStack>
+            </Box>
+          )}
 
           {/* Task Board Area */}
           <Box flex={1} minW={0}>
@@ -1638,8 +1641,8 @@ export default function TaskManagerContent() {
                               task.priority === "high"
                                 ? "red"
                                 : task.priority === "medium"
-                                ? "orange"
-                                : "brand";
+                                  ? "orange"
+                                  : "brand";
 
                             const isDueDatePassed =
                               task.dueDate &&
@@ -1950,8 +1953,8 @@ export default function TaskManagerContent() {
                         task.priority === "high"
                           ? "red"
                           : task.priority === "medium"
-                          ? "orange"
-                          : "brand";
+                            ? "orange"
+                            : "brand";
 
                       const statusConfig = {
                         future: {
@@ -2238,8 +2241,8 @@ export default function TaskManagerContent() {
                         viewingTask.priority === "high"
                           ? "red"
                           : viewingTask.priority === "medium"
-                          ? "orange"
-                          : "brand"
+                            ? "orange"
+                            : "brand"
                       }
                       borderRadius="md"
                       px={2}
@@ -2542,9 +2545,9 @@ export default function TaskManagerContent() {
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
                   isDisabled={isTaskSubmitting}
-                    borderRadius="lg"
+                  borderRadius="lg"
                   borderColor={borderColor}
-                    min={formatDateInput(new Date())}
+                  min={formatDateInput(new Date())}
                   _focus={{ borderColor: "brand.400" }}
                 />
               </FormControl>
@@ -2714,7 +2717,7 @@ export default function TaskManagerContent() {
 
           <AlertDialogBody color={textMuted}>
             Are you sure you want to delete the bucket
-            {pendingDeleteBucket?.name ? ` "${pendingDeleteBucket.name}"` : ""}? 
+            {pendingDeleteBucket?.name ? ` "${pendingDeleteBucket.name}"` : ""}?
             <Text mt={2} color="red.400" fontWeight="bold">
               Warning: All tasks within this bucket will be deleted permanently. This action cannot be undone.
             </Text>
@@ -2740,6 +2743,40 @@ export default function TaskManagerContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Floating Buckets Toggle Button */}
+      {viewMode === "board" && (
+        <Button
+          position="fixed"
+          bottom="8"
+          left="50%"
+          transform="translateX(-50%)"
+          zIndex={200}
+          leftIcon={<FaFolder />}
+          colorScheme="brand"
+          bg={showBuckets ? "brand.600" : "brand.500"}
+          color="white"
+          borderRadius="full"
+          px={6}
+          py={6}
+          boxShadow="0 8px 30px rgba(0, 0, 0, 0.2)"
+          backdropFilter="blur(8px)"
+          border="1px solid"
+          borderColor={useColorModeValue("brand.400", "brand.300")}
+          onClick={() => setShowBuckets((prev) => !prev)}
+          _hover={{
+            bg: showBuckets ? "brand.700" : "brand.600",
+            transform: "translateX(-50%) scale(1.05)",
+            boxShadow: "0 10px 30px var(--chakra-colors-brand-500)",
+          }}
+          _active={{
+            transform: "translateX(-50%) scale(0.98)",
+          }}
+          transition="all 0.2s ease-in-out"
+        >
+          {showBuckets ? "Buckets" : "Buckets"}
+        </Button>
+      )}
     </Box>
   );
 }

@@ -43,8 +43,8 @@ const TextFormatter = () => {
   const outputBorderColor = useColorModeValue("gray.200", "gray.600");
   const outputTextColor = useColorModeValue("gray.700", "gray.200");
   const mutedTextColor = useColorModeValue("gray.500", "gray.400");
-  const primaryColor = "#007ACC";
-  const primaryHoverColor = "#006bb3";
+  const primaryColor = "brand.500";
+  const primaryHoverColor = "brand.600";
   const toast = useToast();
 
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {

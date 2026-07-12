@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useCallback, useRef } from "react";
+import { observer } from "mobx-react-lite";
+import stores from "../../../../store/stores";
 import {
   Box, Button, VStack, Text, useToast, Heading, Icon, Center,
   HStack, Badge, Card, CardBody, IconButton, Divider,
@@ -21,9 +23,8 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
-const accentHex = "#007AAC";
-
-const CsvToExcel = () => {
+const CsvToExcel = observer(() => {
+  const accentHex = stores.themeStore.themeConfig?.colors?.brand?.[500] || "#007AAC";
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [rowData, setRowData] = useState<any[]>([]);
@@ -485,7 +486,7 @@ const CsvToExcel = () => {
                     ? "0 15px 30px -10px rgba(72,187,120,0.5)"
                     : `0 15px 30px -10px ${accentHex}88`}
                   _hover={{
-                    bg: converted ? "green.400" : "#007AAC",
+                    bg: converted ? "green.400" : accentHex,
                     transform: "translateY(-2px)",
                     boxShadow: converted
                       ? "0 20px 35px -10px rgba(72,187,120,0.6)"
@@ -518,6 +519,6 @@ const CsvToExcel = () => {
       </Container>
     </Box>
   );
-};
+});
 
 export default CsvToExcel;

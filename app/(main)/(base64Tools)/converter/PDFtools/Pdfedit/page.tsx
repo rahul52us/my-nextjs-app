@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef } from "react";
 import {
@@ -52,9 +52,9 @@ const PDFProEditor = () => {
   const paginationBg = useColorModeValue("white", "gray.700");
   const uploadBorderColor = useColorModeValue("#CBD5E0", "#4A5568");
   const uploadHeadingColor = useColorModeValue("gray.700", "gray.200");
-  const uploadIconColor = useColorModeValue("#3182CE", "#63B3ED");
+  const uploadIconColor = useColorModeValue("var(--chakra-colors-brand-500)", "var(--chakra-colors-brand-300)");
   const pageTextColor = useColorModeValue("gray.600", "gray.300");
-  const elementOutlineColor = useColorModeValue("#3182CE", "#63B3ED");
+  const elementOutlineColor = useColorModeValue("var(--chakra-colors-brand-500)", "var(--chakra-colors-brand-300)");
   const resizeHandleBg = useColorModeValue("brand.500", "brand.300");
 
   const pdfScale = useBreakpointValue({ base: 0.8, sm: 1.0, md: 1.2, lg: 1.5 }) || 1.5;
@@ -97,10 +97,10 @@ const PDFProEditor = () => {
         prev.map(m =>
           m.id === resizingId
             ? {
-                ...m,
-                width: Math.max(20, e.clientX - (dragStart.x + m.x) + dragStart.w),
-                height: Math.max(20, e.clientY - (dragStart.y + m.y) + dragStart.h),
-              }
+              ...m,
+              width: Math.max(20, e.clientX - (dragStart.x + m.x) + dragStart.w),
+              height: Math.max(20, e.clientY - (dragStart.y + m.y) + dragStart.h),
+            }
             : m
         )
       );

@@ -466,7 +466,7 @@ const PDFWatermarker: React.FC = observer(() => {
                     {/* Text color change kiya */}
                     <span
                       className="text-xs font-black"
-                      style={{ color: "#007ACC" }}
+                      style={{ color: brandColor }}
                     >
                       {Math.round(opacity * 100)}%
                     </span>
@@ -479,7 +479,7 @@ const PDFWatermarker: React.FC = observer(() => {
                     step="0.05"
                     className={`w-full h-2 ${rangeBg} rounded-lg appearance-none cursor-pointer`}
                     // Slider handle ka color override karne ke liye style use kiya
-                    style={{ accentColor: "#007ACC" }}
+                    style={{ accentColor: brandColor }}
                     value={opacity}
                     onChange={(e) => setOpacity(parseFloat(e.target.value))}
                   />

@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { observer } from "mobx-react-lite";
+import stores from "../../../../store/stores";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import {
@@ -190,7 +192,7 @@ const workflowDebug = (label: string, payload?: unknown) => {
   console.log(`[WorkflowDebug][${time}] ${label}`, payload);
 };
 
-const WorkflowBuilderContent = () => {
+const WorkflowBuilderContent = observer(() => {
   const router = useRouter();
   const toast = useToast();
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
@@ -992,6 +994,6 @@ const WorkflowBuilderContent = () => {
 
     </Box>
   );
-};
+});
 
 export default WorkflowBuilderContent;

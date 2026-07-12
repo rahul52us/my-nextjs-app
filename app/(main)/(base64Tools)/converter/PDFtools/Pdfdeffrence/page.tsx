@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useRef } from 'react';
 import {
   Box, Container, Flex, Heading, HStack, Icon, Stack, Text, useToast,
@@ -37,7 +37,7 @@ const FileComparer = () => {
   const bgColor      = useColorModeValue('gray.50',   'gray.950');
   const cardBg       = useColorModeValue('white',     'gray.900');
   const borderColor  = useColorModeValue('gray.200',  'gray.700');
-  const accentColor  = useColorModeValue('blue.600',  'blue.300');
+  const accentColor  = useColorModeValue('brand.500',  'brand.300');
   const subText      = useColorModeValue('gray.500',  'gray.400');
   const labelColor   = useColorModeValue('gray.400',  'gray.500');
   const editorTheme  = isDark ? 'vs-dark' : 'vs-light';
@@ -45,19 +45,19 @@ const FileComparer = () => {
   // Tab bar
   const tabBarBg     = useColorModeValue('gray.200',  'gray.700');
   const tabSelBg     = useColorModeValue('white',     'gray.800');
-  const tabSelColor  = useColorModeValue('blue.600',  'blue.300');
+  const tabSelColor  = useColorModeValue('brand.500',  'brand.300');
 
   // Pixel comparison banner
-  const bannerBg     = useColorModeValue('blue.50',   'blue.900');
-  const bannerBorder = useColorModeValue('blue.100',  'blue.700');
-  const bannerText   = useColorModeValue('blue.700',  'blue.200');
-  const bannerIcon   = useColorModeValue('blue.500',  'blue.300');
+  const bannerBg     = useColorModeValue('brand.50',   'brand.900');
+  const bannerBorder = useColorModeValue('brand.100',  'brand.700');
+  const bannerText   = useColorModeValue('brand.700',  'brand.200');
+  const bannerIcon   = useColorModeValue('brand.500',  'brand.300');
 
   // Swap button
   const swapBg       = useColorModeValue('white',     'gray.800');
   const swapBorder   = useColorModeValue('gray.200',  'gray.600');
-  const swapHoverBg  = useColorModeValue('blue.50',   'blue.900');
-  const swapHoverColor = useColorModeValue('blue.600','blue.300');
+  const swapHoverBg  = useColorModeValue('brand.50',   'brand.900');
+  const swapHoverColor = useColorModeValue('brand.500','brand.300');
   const swapIconColor = useColorModeValue('gray.600',  'gray.300');
 
   // Overlay bg
@@ -67,8 +67,8 @@ const FileComparer = () => {
   const rightPanelBg = useColorModeValue('gray.50',   'gray.800');
 
   // Upload box drag-active colors — theme-consistent, shared by both boxes
-  const dragActiveBorder = useColorModeValue('blue.400', 'blue.300');
-  const dragActiveBg     = useColorModeValue('blue.50',  'blue.900');
+  const dragActiveBorder = useColorModeValue('brand.400', 'brand.300');
+  const dragActiveBg     = useColorModeValue('brand.50',  'brand.900');
 
   const extractText = async (file: File): Promise<string> => {
     const extension = file.name.split('.').pop()?.toLowerCase();
@@ -172,7 +172,7 @@ const FileComparer = () => {
       >
         <Flex justify="space-between" align="center" maxW="1400px" mx="auto">
           <HStack spacing={3}>
-            <Box p={2} bg={useColorModeValue('blue.50', 'blue.900')} borderRadius="lg">
+            <Box p={2} bg={useColorModeValue('brand.50', 'brand.900')} borderRadius="lg">
               <Icon as={Zap} color={accentColor} boxSize={5} />
             </Box>
             <VStack align="start" spacing={0}>
@@ -373,11 +373,11 @@ const UploadBox = ({
   title, fileName, inputRef, onUpload, onFileDrop, isDark, cardBg, borderColor,
   dragActiveBorder, dragActiveBg,
 }: any) => {
-  const hoverBorder  = isDark ? 'blue.400' : 'blue.400';
+  const hoverBorder  = isDark ? 'brand.400' : 'brand.400';
   const hoverBg      = isDark ? 'gray.800' : 'gray.50';
-  const iconBg       = fileName ? 'blue.600' : (isDark ? 'gray.700' : 'gray.100');
+  const iconBg       = fileName ? 'brand.500' : (isDark ? 'gray.700' : 'gray.100');
   const iconColor    = fileName ? 'white'    : (isDark ? 'gray.400' : 'gray.400');
-  const titleColor   = isDark ? 'blue.300' : 'blue.600';
+  const titleColor   = isDark ? 'brand.300' : 'brand.500';
   const nameColor    = isDark ? 'gray.200' : 'gray.700';
 
   const [isDragActive, setIsDragActive] = useState(false);
@@ -430,7 +430,7 @@ const UploadBox = ({
       p={6}
       borderRadius="2xl"
       border="2px dashed"
-      borderColor={isDragActive ? dragActiveBorder : (fileName ? 'blue.400' : borderColor)}
+      borderColor={isDragActive ? dragActiveBorder : (fileName ? 'brand.400' : borderColor)}
       transform={isDragActive ? "scale(1.01)" : "scale(1)"}
       transition="all 0.2s"
       _hover={{ borderColor: hoverBorder, bg: hoverBg }}
