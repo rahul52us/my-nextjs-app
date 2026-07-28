@@ -10,6 +10,8 @@ import { FiUploadCloud, FiShield, FiCheckCircle, FiTrash2, FiEye } from 'react-i
 import stores from "../../../../../store/stores";
 import { useWorkflowAutoAdvance } from "../../../../../hooks/useWorkflowAutoAdvance";
 import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
+import { useFileTransfer } from "../../../../../context/FileTransferContext";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
 const PDFToWordContent = () => {
     type ConversionProgress = { step: string; pct: number; elapsed?: number; timedOut?: boolean };
@@ -38,6 +40,32 @@ const PDFToWordContent = () => {
     const subTextColor = useColorModeValue("gray.500", "gray.400");
     const dropzoneBg = useColorModeValue("gray.50", "gray.600");
     const dropzoneActiveBg = useColorModeValue("brand.50", "brand.900");
+
+    const { consumeTransferForTool } = useFileTransfer();
+    const [transferredSource, setTransferredSource] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const checkTransfer = async () => {
+            const state = await consumeTransferForTool("pdf-to-word");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                const fileObj = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+                setSelectedFile(fileObj);
+                setFileName(fileObj.name);
+                setTransferredSource(state.sourceToolName || state.sourceToolId);
+                toast({
+                    title: "✨ File Loaded from Previous Step",
+                    description: `Auto-loaded ${fileObj.name} from ${state.sourceToolName || state.sourceToolId}`,
+                    status: "info",
+                    duration: 4000,
+                    isClosable: true,
+                });
+            }
+        };
+        void checkTransfer();
+        return () => { isMounted = false; };
+    }, []);
 
     const { themeStore: { themeConfig } } = stores;
     const { advanceWorkflow } = useWorkflowAutoAdvance();
@@ -425,6 +453,10 @@ const PDFToWordContent = () => {
                             cardBg={cardBg}
                         />
                     </SimpleGrid>
+
+                    {downloadUrl && (
+                        <ContinueToSection currentTool="pdf-to-word" />
+                    )}
 
                     <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
 

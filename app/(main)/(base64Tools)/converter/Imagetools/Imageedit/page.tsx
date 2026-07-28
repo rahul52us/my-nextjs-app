@@ -17,6 +17,8 @@ import ReactCrop, { type Crop, centerCrop, makeAspectCrop, PixelCrop } from 'rea
 import 'react-image-crop/dist/ReactCrop.css';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 // --- Types & Defaults ---
 interface Filters {
@@ -142,6 +144,26 @@ const AIasist: React.FC = observer(() => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const { consumeTransferForTool } = useFileTransfer();
+
+  useEffect(() => {
+    let isMounted = true;
+    const check = async () => {
+      const state = await consumeTransferForTool('image-editor');
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const url = item.previewUrl || (item.file instanceof File ? URL.createObjectURL(item.file) : URL.createObjectURL(new Blob([item.file], { type: item.fileType })));
+        try {
+          const loaded = await loadImage(url);
+          if (isMounted) setImage(loaded);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    void check();
+    return () => { isMounted = false; };
+  }, []);
 
   // ⚠️ SECURITY: Never ship a real API key inside client-side/frontend code —
   // anyone can open devtools and steal it. Move the remove.bg call to a
@@ -574,6 +596,7 @@ const AIasist: React.FC = observer(() => {
           </div>
         </div>
       )}
+      {image && <ContinueToSection currentTool="image-editor" />}
     </div>
   );
 });

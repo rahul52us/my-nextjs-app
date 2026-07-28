@@ -18,9 +18,26 @@ import {
 } from "@chakra-ui/react";
 import { FiUploadCloud, FiCheckCircle, FiTrash2, FiEye } from "react-icons/fi";
 import ConversionPreviewDrawer from "../../../../component/common/ConversionPreviewDrawer";
+import { useFileTransfer } from "../../../../context/FileTransferContext";
+import ContinueToSection from "../../../../component/common/ContinueToSection";
 
 const WordToPdfConverterContent = () => {
     const [file, setFile] = useState<File | null>(null);
+    const { consumeTransferForTool } = useFileTransfer();
+
+    React.useEffect(() => {
+        let isMounted = true;
+        const check = async () => {
+            const state = await consumeTransferForTool("word-to-pdf");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                const f = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+                setFile(f);
+            }
+        };
+        void check();
+        return () => { isMounted = false; };
+    }, []);
     const [loading, setLoading] = useState(false);
 
     // Preview modal state
@@ -310,6 +327,7 @@ const WordToPdfConverterContent = () => {
                 downloadName={downloadName}
                 outputLabel="PDF"
             />
+            {file && <ContinueToSection currentTool="word-to-pdf" />}
         </Box>
     );
 };

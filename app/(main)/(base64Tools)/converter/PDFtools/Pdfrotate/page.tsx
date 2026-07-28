@@ -16,6 +16,8 @@ import {
   DeleteIcon, DownloadIcon, RepeatIcon 
 } from '@chakra-ui/icons';
 import { FaFilePdf, FaSyncAlt, FaTools, FaUpload } from 'react-icons/fa';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 // PDF Worker setup
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -27,7 +29,24 @@ const AIRotator: React.FC = () => {
   const [pageSelection, setPageSelection] = useState<string>('all');
   const [isProcessing, setIsProcessing] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
+  const [downloadedBlob, setDownloadedBlob] = useState<Blob | null>(null);
+  const { consumeTransferForTool } = useFileTransfer();
   const toast = useToast();
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const checkTransfer = async () => {
+      const state = await consumeTransferForTool('pdf-to-jpg');
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const fileObj = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+        setFile(fileObj);
+        setFileUrl(URL.createObjectURL(fileObj));
+      }
+    };
+    void checkTransfer();
+    return () => { isMounted = false; };
+  }, []);
 
   // ✅ DARK MODE COLORS
   const bgMain = useColorModeValue("gray.50", "gray.900");
@@ -218,6 +237,7 @@ const AIRotator: React.FC = () => {
 
           </Flex>
         )}
+      {file && <ContinueToSection currentTool="pdf-to-jpg" />}
       </Container>
     </Box>
   );

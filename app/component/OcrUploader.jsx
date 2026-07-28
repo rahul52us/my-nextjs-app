@@ -95,6 +95,7 @@ const MotionBox = motion(Box);
 function parseOcrResponse(data) {
   const out = {
     paragraphs: [],
+    words: [],
     tables: [],
     fields: null,
     rawText: "",
@@ -105,6 +106,7 @@ function parseOcrResponse(data) {
   for (const page of data.results) {
     const ocr = page?.ocr ?? {};
 
+    // ── Paragraphs ──
     if (ocr.paragraphs) {
       if (typeof ocr.paragraphs === "string") {
         const lines = ocr.paragraphs.split("\n").filter((l) => l.trim());
@@ -130,6 +132,82 @@ function parseOcrResponse(data) {
       }
     }
 
+    // ── Words ── (from ocr.words or from ocr.lines[*].words)
+    if (Array.isArray(ocr.words)) {
+      ocr.words.forEach((w) => {
+        const text = w?.content ?? w?.text ?? "";
+        if (text) {
+          let boundingRegions = null;
+
+          if (Array.isArray(w?.boundingRegions)) {
+            // already in the expected format
+            boundingRegions = w.boundingRegions;
+          } else if (Array.isArray(w?.boundingBox)) {
+            // convert flat point-array -> {pageNumber, polygon} format
+            boundingRegions = [
+              {
+                pageNumber: page.page ?? 1,
+                polygon: w.boundingBox.map((pt) => ({ x: pt.x, y: pt.y })),
+              },
+            ];
+          }
+
+          out.words.push({
+            text,
+            confidence: w?.confidence ?? null,
+            boundingRegions,
+          });
+        }
+      });
+    } else if (Array.isArray(ocr.lines)) {
+      ocr.lines.forEach((line) => {
+        if (Array.isArray(line.words)) {
+          line.words.forEach((w) => {
+            const text = w?.content ?? w?.text ?? "";
+            if (text) {
+              let boundingRegions = null;
+              if (Array.isArray(w?.boundingRegions)) {
+                boundingRegions = w.boundingRegions;
+              } else if (Array.isArray(w?.boundingBox)) {
+                boundingRegions = [
+                  {
+                    pageNumber: page.page ?? 1,
+                    polygon: w.boundingBox.map((pt) => ({ x: pt.x, y: pt.y })),
+                  },
+                ];
+              }
+              out.words.push({
+                text,
+                confidence: w?.confidence ?? null,
+                boundingRegions,
+              });
+            }
+          });
+        } else {
+          const text = line?.content ?? line?.text ?? "";
+          if (text) {
+            let boundingRegions = null;
+            if (Array.isArray(line?.boundingRegions)) {
+              boundingRegions = line.boundingRegions;
+            } else if (Array.isArray(line?.boundingBox)) {
+              boundingRegions = [
+                {
+                  pageNumber: page.page ?? 1,
+                  polygon: line.boundingBox.map((pt) => ({ x: pt.x, y: pt.y })),
+                },
+              ];
+            }
+            out.words.push({
+              text,
+              confidence: line?.confidence ?? null,
+              boundingRegions,
+            });
+          }
+        }
+      });
+    }
+
+    // ── Tables ──
     if (Array.isArray(ocr.tables)) {
       ocr.tables.forEach((tbl, idx) => {
         out.tables.push(normaliseTable(tbl, idx));
@@ -373,6 +451,131 @@ function ParagraphsPanel({
         );
       })}
     </VStack>
+  );
+}
+
+// ─── Words Panel ─────────────────────────────────────────────────────────────
+function WordsPanel({ words, labelColor, textColor, sectionBg, borderColor, onHoverItem }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  if (!words || !words.length)
+    return <Text color={labelColor}>No words extracted. Enable paragraph or table extraction to get word-level data.</Text>;
+
+  const filtered = searchQuery
+    ? words.filter((w) => w.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    : words;
+
+  return (
+    <Box>
+      <Box mb={4}>
+        <InputGroup size="sm" maxW="280px">
+          <InputLeftElement pointerEvents="none">
+            <Search size={14} color="gray.400" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search words..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            bg={sectionBg}
+            borderColor={borderColor}
+            borderRadius="xl"
+            _focus={{ borderColor: "brand.400", boxShadow: "none" }}
+          />
+        </InputGroup>
+      </Box>
+
+      <Box
+        maxH="480px"
+        overflowY="auto"
+        borderWidth="1px"
+        borderColor={borderColor}
+        borderRadius="2xl"
+        p={3}
+        bg={sectionBg}
+      >
+        <Box
+          display="flex"
+          flexWrap="wrap"
+          gap={1.5}
+        >
+          {filtered.map((word, i) => {
+            const hasBounds = word.boundingRegions && word.boundingRegions.length > 0;
+            const conf = word.confidence !== null ? Math.round(word.confidence * 100) : null;
+            const isHovered = hoveredIdx === i;
+            return (
+              <Box
+                key={i}
+                as="span"
+                display="inline-flex"
+                alignItems="center"
+                gap={1}
+                px={2}
+                py={1}
+                borderRadius="lg"
+                fontSize="xs"
+                fontWeight={isHovered ? "bold" : "medium"}
+                color={hasBounds ? (isHovered ? "white" : textColor) : labelColor}
+                bg={
+                  hasBounds
+                    ? isHovered
+                      ? "brand.500"
+                      : "brand.50"
+                    : sectionBg
+                }
+                borderWidth="1px"
+                borderColor={
+                  hasBounds
+                    ? isHovered
+                      ? "brand.500"
+                      : "brand.200"
+                    : borderColor
+                }
+                cursor={hasBounds ? "pointer" : "default"}
+                transition="all 0.12s"
+                _hover={hasBounds ? { bg: "brand.500", color: "white", borderColor: "brand.500" } : {}}
+                onMouseEnter={() => {
+                  if (hasBounds && onHoverItem) {
+                    setHoveredIdx(i);
+                    onHoverItem({
+                      bounds: word.boundingRegions,
+                      type: "word",
+                      label: word.text,
+                      colorIndex: i % 6,
+                    });
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (hasBounds && onHoverItem) {
+                    setHoveredIdx(null);
+                    onHoverItem(null);
+                  }
+                }}
+                title={conf !== null ? `Confidence: ${conf}%` : undefined}
+              >
+                {word.text}
+                {conf !== null && conf < 90 && (
+                  <Box
+                    as="span"
+                    fontSize="9px"
+                    opacity={0.7}
+                    ml={0.5}
+                  >
+                    {conf}%
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+
+      <HStack mt={3} spacing={4} fontSize="xs" color={labelColor}>
+        <Text><strong>{words.length}</strong> total words</Text>
+        {searchQuery && <Text><strong>{filtered.length}</strong> matching</Text>}
+        <Text>Hover over a word to highlight it on the document preview</Text>
+      </HStack>
+    </Box>
   );
 }
 
@@ -1135,7 +1338,7 @@ const AiPromptPanel = ({
                 <Text mt={1} fontSize="10px" color={labelColor}>
                   Ask this document
                 </Text>
-                
+
               </Box>
             </VStack>
           ))
@@ -1416,6 +1619,17 @@ export default function OcrUploader() {
         }
       });
     }
+    if (parsed?.words && Array.isArray(parsed.words)) {
+      parsed.words.forEach((w) => {
+        if (w.boundingRegions) {
+          w.boundingRegions.forEach((r) =>
+            r.polygon?.forEach((pt) => {
+              if (pt.x > maxX) maxX = pt.x;
+            }),
+          );
+        }
+      });
+    }
     if (parsed?.fields && typeof parsed.fields === "object") {
       Object.values(parsed.fields).forEach((val) => {
         if (val && typeof val === "object" && val.boundingRegions) {
@@ -1480,11 +1694,18 @@ export default function OcrUploader() {
       const fill =
         hoveredBounds.type === "cell"
           ? "rgba(251, 191, 36, 0.35)"
-          : color.fill
+          : hoveredBounds.type === "word"
+            ? "rgba(251, 146, 60, 0.30)"
+            : color.fill
               .replace("0.12", "0.25")
               .replace("0.22", "0.4")
               .replace("0.05", "0.2");
-      const stroke = hoveredBounds.type === "cell" ? "#fbbf24" : color.stroke;
+      const stroke =
+        hoveredBounds.type === "cell"
+          ? "#fbbf24"
+          : hoveredBounds.type === "word"
+            ? "#f97316"
+            : color.stroke;
 
       drawPolygon(region.polygon, fill, stroke, 2);
 
@@ -1686,6 +1907,7 @@ export default function OcrUploader() {
     formData.append("extractParagraphs", extractParagraphs);
     formData.append("extractTables", extractTables);
     formData.append("extractFields", extractFields);
+    formData.append("extractWords", true);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/ocr`, {
@@ -1753,11 +1975,11 @@ export default function OcrUploader() {
         typeof data === "string"
           ? data
           : data?.answer ||
-            data?.data?.answer ||
-            data?.response ||
-            data?.result ||
-            data?.message ||
-            JSON.stringify(data, null, 2);
+          data?.data?.answer ||
+          data?.response ||
+          data?.result ||
+          data?.message ||
+          JSON.stringify(data, null, 2);
       const cleanAnswer =
         String(answer || "")
           .replace(/\n{3,}/g, "\n\n")
@@ -1768,10 +1990,10 @@ export default function OcrUploader() {
         prev.map((item) =>
           item.id === messageId
             ? {
-                ...item,
-                answer: cleanAnswer,
-                status: "done",
-              }
+              ...item,
+              answer: cleanAnswer,
+              status: "done",
+            }
             : item,
         ),
       );
@@ -1781,8 +2003,8 @@ export default function OcrUploader() {
         error?.code === "ECONNABORTED"
           ? "The Q&A server is taking longer than expected. This may take up to 30-60 seconds if the server was asleep. Please try again."
           : error?.response?.data?.error ||
-            error?.response?.data?.message ||
-            "Unable to get an answer right now. The server may be waking up and this can take up to 30-60 seconds. Please try again.";
+          error?.response?.data?.message ||
+          "Unable to get an answer right now. The server may be waking up and this can take up to 30-60 seconds. Please try again.";
 
       setAiError(message);
       setAiMessages((prev) => prev.filter((item) => item.id !== messageId));
@@ -1791,6 +2013,7 @@ export default function OcrUploader() {
     }
   };
   const showParagraphsTab = extractParagraphs && parsed?.paragraphs?.length > 0;
+  const showWordsTab = parsed?.words?.length > 0;
   const showTablesTab = extractTables && parsed?.tables?.length > 0;
   const showFieldsTab =
     extractFields && parsed?.fields && Object.keys(parsed.fields).length > 0;
@@ -2718,6 +2941,34 @@ export default function OcrUploader() {
                         </HStack>
                       </Tab>
                     )}
+                    {showWordsTab && (
+                      <Tab
+                        flex={1}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        px={4}
+                        py={2}
+                        borderRadius="xl"
+                        _selected={{
+                          bg: useColorModeValue("white", "gray.900"),
+                          color: "orange.400",
+                          shadow: "sm",
+                        }}
+                      >
+                        <HStack spacing={1.5} justify="center">
+                          <Sparkles size={13} />
+                          <Text>Words</Text>
+                          <Badge
+                            colorScheme="orange"
+                            variant="solid"
+                            borderRadius="full"
+                            fontSize="9px"
+                          >
+                            {parsed.words.length}
+                          </Badge>
+                        </HStack>
+                      </Tab>
+                    )}
                     {showTablesTab && (
                       <Tab
                         flex={1}
@@ -2799,6 +3050,18 @@ export default function OcrUploader() {
                       <TabPanel px={0} py={1}>
                         <ParagraphsPanel
                           paragraphs={parsed.paragraphs}
+                          labelColor={labelColor}
+                          textColor={textColor}
+                          sectionBg={sectionBg}
+                          borderColor={borderColor}
+                          onHoverItem={setHoveredBounds}
+                        />
+                      </TabPanel>
+                    )}
+                    {showWordsTab && (
+                      <TabPanel px={0} py={1}>
+                        <WordsPanel
+                          words={parsed.words}
                           labelColor={labelColor}
                           textColor={textColor}
                           sectionBg={sectionBg}
@@ -2907,18 +3170,18 @@ export default function OcrUploader() {
                   py={4}
                 >
                   <HStack spacing={2.5} align="center">
-  <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
-    <Sparkles size={16} />
-  </Box>
-  <VStack spacing={0} align="start">
-    <Text fontSize="md" fontWeight="bold">
-      Ask this document
-    </Text>
-    <Text fontSize="xs" color={labelColor} noOfLines={1} maxW="300px">
-      {file?.name || "Current document"}
-    </Text>
-  </VStack>
-</HStack>
+                    <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
+                      <Sparkles size={16} />
+                    </Box>
+                    <VStack spacing={0} align="start">
+                      <Text fontSize="md" fontWeight="bold">
+                        Ask this document
+                      </Text>
+                      <Text fontSize="xs" color={labelColor} noOfLines={1} maxW="300px">
+                        {file?.name || "Current document"}
+                      </Text>
+                    </VStack>
+                  </HStack>
                 </DrawerHeader>
                 <DrawerBody p={0} overflow="hidden" display="flex" flexDirection="column">
                   <AiPromptPanel

@@ -39,6 +39,8 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import stores from '../../../../../store/stores';
+import { useFileTransfer } from "../../../../../context/FileTransferContext";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
 const MotionBox = motion(Box);
 
@@ -58,6 +60,21 @@ const ExcelToPdfContent = () => {
     const [fileName, setFileName] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const [isDragActive, setIsDragActive] = useState<boolean>(false);
+    const { consumeTransferForTool } = useFileTransfer();
+
+    React.useEffect(() => {
+        let isMounted = true;
+        const check = async () => {
+            const state = await consumeTransferForTool("excel-to-pdf");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                const f = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+                setFileName(f.name);
+            }
+        };
+        void check();
+        return () => { isMounted = false; };
+    }, []);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
@@ -341,6 +358,7 @@ const ExcelToPdfContent = () => {
                         <Text fontSize="xs" fontWeight="bold" color={textColor}>Data processing stays in your browser</Text>
                     </HStack>
 
+                    {fileName && <ContinueToSection currentTool="excel-to-pdf" />}
                 </VStack>
             </Container>
         </Box>

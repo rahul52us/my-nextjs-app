@@ -15,6 +15,8 @@ import { observer } from "mobx-react-lite";
 import stores from "../../../../../store/stores";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -50,9 +52,25 @@ const PDFWatermarker: React.FC = observer(() => {
   const { themeStore } = stores;
   const brandColor = themeStore.themeConfig?.colors?.brand?.[500] || "#007ACC";
 
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [watermarkText, setWatermarkText] = useState<string>("PROPRIETARY");
+  const [pdfFile, setPdfFile] = React.useState<File | null>(null);
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+  const [watermarkText, setWatermarkText] = React.useState<string>("PROPRIETARY");
+  const { consumeTransferForTool } = useFileTransfer();
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const check = async () => {
+      const state = await consumeTransferForTool('pdf-watermark');
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const f = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+        setPdfFile(f);
+        setPdfUrl(URL.createObjectURL(f));
+      }
+    };
+    void check();
+    return () => { isMounted = false; };
+  }, []);
   const [fontSize, setFontSize] = useState<number>(60);
   const [rotation, setRotation] = useState<number>(-45);
   const [opacity, setOpacity] = useState<number>(0.3);
@@ -690,6 +708,7 @@ const PDFWatermarker: React.FC = observer(() => {
           </div>
         </div>
       </div>
+      {pdfFile && <ContinueToSection currentTool="pdf-watermark" />}
     </div>
   );
 });

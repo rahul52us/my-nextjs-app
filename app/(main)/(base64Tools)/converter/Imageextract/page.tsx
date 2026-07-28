@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useCallback } from 'react';
 import {
   Box, VStack, Heading, Text, SimpleGrid, Image, useToast,
@@ -20,6 +20,8 @@ import {
   Zap,
   Wand2
 } from 'lucide-react';
+import { useFileTransfer } from '../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../component/common/ContinueToSection';
 
 // Initialize PDF.js Worker - Fixed URL
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -36,6 +38,22 @@ interface ExtractedImage {
 const SkyBlueExtractor: React.FC = () => {
   const [images, setImages] = useState<ExtractedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const { consumeTransferForTool } = useFileTransfer();
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const check = async () => {
+      const state = await consumeTransferForTool('image-extract');
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const f = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+        setUploadedFile(f);
+      }
+    };
+    void check();
+    return () => { isMounted = false; };
+  }, []);
   const toast = useToast();
 
   // Sky Blue Theme Palette
@@ -318,6 +336,7 @@ const SkyBlueExtractor: React.FC = () => {
           )}
         </VStack>
       </Container>
+      {images.length > 0 && <ContinueToSection currentTool="image-extract" />}
     </Box>
   );
 };

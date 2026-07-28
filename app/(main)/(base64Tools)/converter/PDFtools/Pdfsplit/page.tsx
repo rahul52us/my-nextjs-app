@@ -45,6 +45,8 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Document, Page, pdfjs } from 'react-pdf';
 import JSZip from 'jszip';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -86,6 +88,25 @@ const PdfSplitter: React.FC = () => {
   const [historyFuture, setHistoryFuture] = useState<HistorySnapshot[]>([]);
   const cropContainerRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+  const { consumeTransferForTool } = useFileTransfer();
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const check = async () => {
+      const state = await consumeTransferForTool('pdf-split');
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const f = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+        const url = URL.createObjectURL(f);
+        const pdfBytes = await f.arrayBuffer();
+        const pdfDoc = await (await import('pdf-lib')).PDFDocument.load(pdfBytes);
+        setFileData({ file: f, url, pageCount: pdfDoc.getPageCount() });
+      }
+    };
+    void check();
+    return () => { isMounted = false; };
+  }, []);
+
 
   // ── Theme tokens ──
   const bgPage        = useColorModeValue('gray.50',   'gray.950');
@@ -146,7 +167,7 @@ const PdfSplitter: React.FC = () => {
 
   const restoreSnapshot = useCallback((snapshot: HistorySnapshot) => {
     if (fileData?.url) URL.revokeObjectURL(fileData.url);
-    const blob = new Blob([snapshot.pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([snapshot.pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
     const newFile = new File([blob], snapshot.fileName, { type: 'application/pdf' });
     const newUrl = URL.createObjectURL(blob);
     setFileData({ file: newFile, url: newUrl, pageCount: snapshot.pageCount });
@@ -722,6 +743,7 @@ const PdfSplitter: React.FC = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {fileData && <ContinueToSection currentTool="pdf-split" />}
     </Box>
   );
 };

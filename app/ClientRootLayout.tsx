@@ -13,6 +13,8 @@ import Notification from './component/common/Notification/Notification';
 import React from 'react';
 import FeedbackButton from './component/common/FeedbackButton';
 
+import { FileTransferProvider } from './context/FileTransferContext';
+
 const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -55,7 +57,9 @@ const ClientRootLayout = observer(({ children }: { children: React.ReactNode }) 
     <ChakraProvider theme={theme}>
       <CSSReset />
       <Notification />
-      <LayoutComponent>{children}</LayoutComponent>
+      <FileTransferProvider>
+        <LayoutComponent>{children}</LayoutComponent>
+      </FileTransferProvider>
       <FeedbackButton />
     </ChakraProvider>
   );

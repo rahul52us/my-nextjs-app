@@ -13,6 +13,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 const MotionListItem = motion(ListItem);
 
@@ -34,7 +36,24 @@ const PdfMerger = () => {
   const [isFilenameModalOpen, setIsFilenameModalOpen] = useState(false);
   const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { consumeTransferForTool } = useFileTransfer();
   const toast = useToast();
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const checkTransfer = async () => {
+      const state = await consumeTransferForTool('pdf-merge');
+      if (isMounted && state && state.items.length > 0) {
+        const newFiles: FileWithId[] = state.items.map((it) => {
+          const f = it.file instanceof File ? it.file : new File([it.file], it.fileName, { type: it.fileType });
+          return { id: Math.random().toString(36).substring(2, 9), file: f, preview: it.previewUrl || URL.createObjectURL(f), type: (f.type.startsWith('image') ? 'image' : 'application/pdf') as FileDocType };
+        });
+        setFiles(newFiles);
+      }
+    };
+    void checkTransfer();
+    return () => { isMounted = false; };
+  }, []);
 
   // Drag & drop state
   const [isDragActive, setIsDragActive] = useState(false);
@@ -336,6 +355,7 @@ const PdfMerger = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {downloadBlob && <ContinueToSection currentTool="pdf-merge" />}
     </Box>
   );
 };

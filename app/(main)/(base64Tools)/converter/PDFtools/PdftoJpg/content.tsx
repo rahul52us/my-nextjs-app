@@ -30,6 +30,7 @@ import {
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -318,6 +319,10 @@ const PdfToJpgContent = () => {
                     </SimpleGrid>
                 )}
             </Box>
+
+            {images.length > 0 && (
+                <ContinueToSection currentTool="pdf-to-jpg" convertedFiles={images} />
+            )}
         </Container>
     );
 };

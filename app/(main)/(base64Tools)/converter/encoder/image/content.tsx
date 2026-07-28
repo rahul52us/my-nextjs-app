@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, ChangeEvent } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import {
     Box,
     Button,
@@ -20,10 +19,26 @@ import {
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import { useFileTransfer } from "../../../../../context/FileTransferContext";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
 const ImageToBase64Content = () => {
     const [base64, setBase64] = useState<string>("");
     const [fileName, setFileName] = useState<string | null>(null);
+    const { consumeTransferForTool } = useFileTransfer();
+
+    React.useEffect(() => {
+        let isMounted = true;
+        const check = async () => {
+            const state = await consumeTransferForTool("image-to-base64");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                setFileName(item.fileName);
+            }
+        };
+        void check();
+        return () => { isMounted = false; };
+    }, []);
     const [fileType, setFileType] = useState<string>("");
     const [format, setFormat] = useState<string>("dataUri");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -330,6 +345,7 @@ const ImageToBase64Content = () => {
                     </Button>
                 </SimpleGrid>
             </VStack>
+            {base64 && <ContinueToSection currentTool="image-to-base64" />}
         </Box>
     );
 };
