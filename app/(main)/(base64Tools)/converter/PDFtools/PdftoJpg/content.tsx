@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useRef, DragEvent } from 'react';
+import React, { useState, useEffect, useRef, DragEvent } from 'react';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
 import {
     Box,
     Button,
@@ -32,7 +33,9 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+}
 
 interface ImageResult {
     url: string;
@@ -48,6 +51,7 @@ const PdfToJpgContent = () => {
     const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+    const { consumeTransferForTool, clearTransferState } = useFileTransfer();
 
     // Semantic colors for Dark Mode
     const bgColor = useColorModeValue('white', 'gray.800');
@@ -56,6 +60,28 @@ const PdfToJpgContent = () => {
     const textColor = useColorModeValue('gray.500', 'gray.400');
     const dropzoneHoverBg = useColorModeValue('brand.50', 'gray.700');
     const iconContainerBg = useColorModeValue('brand.50', 'brand.900');
+
+    useEffect(() => {
+        let isMounted = true;
+        const checkTransfer = async () => {
+            const state = await consumeTransferForTool("pdf-to-jpg");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                const fileObj = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+                void convertPdfToJpg(fileObj);
+                toast({
+                    title: "✨ File Auto-Loaded",
+                    description: `Loaded ${fileObj.name} from ${state.sourceToolName}`,
+                    status: "info",
+                    duration: 4000,
+                    isClosable: true,
+                });
+                await clearTransferState();
+            }
+        };
+        void checkTransfer();
+        return () => { isMounted = false; };
+    }, []);
 
     const clearImages = () => {
         images.forEach((img) => URL.revokeObjectURL(img.url));
@@ -85,17 +111,11 @@ const PdfToJpgContent = () => {
         const file = e.dataTransfer.files?.[0];
         if (!file) return;
 
-        const fakeEvent = {
-            target: {
-                files: [file],
-            },
-        } as unknown as React.ChangeEvent<HTMLInputElement>;
-
-        void convertPdfToJpg(fakeEvent);
+        void convertPdfToJpg(file);
     };
 
-    const convertPdfToJpg = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const convertPdfToJpg = async (input: React.ChangeEvent<HTMLInputElement> | File) => {
+        const file = input instanceof File ? input : input.target.files?.[0];
         if (!file) return;
 
         setFileName(file.name.replace(/\.[^/.]+$/, ""));

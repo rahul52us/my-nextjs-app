@@ -15,8 +15,10 @@ import {
 import { FiChevronRight } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import {
-  getRelatedTools,
-  toolContextSubtexts,
+  getDynamicRelatedTools,
+  detectOutputType,
+  outputContextSubtexts,
+  TOOLS_REGISTRY,
   ToolMeta,
 } from "../../config/toolsConfig";
 import { useFileTransfer } from "../../context/FileTransferContext";
@@ -31,6 +33,7 @@ interface ContinueToSectionProps {
     url?: string;
     pageNumber?: number;
     name?: string;
+    type?: string;
   }>;
   /** Optional custom title override */
   customTitle?: string;
@@ -68,14 +71,15 @@ export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
   const chevronColor = useColorModeValue("gray.400", "gray.500");
   const chevronHoverColor = useColorModeValue("brand.600", "brand.300");
 
-  const relatedTools: ToolMeta[] = getRelatedTools(currentTool, maxTools);
+  const currentToolMeta = TOOLS_REGISTRY[currentTool];
+  const detectedFormat = detectOutputType(convertedFiles, currentToolMeta?.outputType);
+  const relatedTools: ToolMeta[] = getDynamicRelatedTools(currentTool, detectedFormat, maxTools, convertedFiles);
 
   if (!relatedTools || relatedTools.length === 0) {
     return null;
   }
 
-  const defaultSubtext =
-    toolContextSubtexts[currentTool] || toolContextSubtexts.default;
+  const defaultSubtext = outputContextSubtexts[detectedFormat] || outputContextSubtexts.default;
   const displaySubtext = customSubtext || defaultSubtext;
 
   const handleToolClick = async (tool: ToolMeta) => {

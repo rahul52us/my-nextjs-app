@@ -454,8 +454,16 @@ const PDFToWordContent = () => {
                         />
                     </SimpleGrid>
 
-                    {downloadUrl && (
-                        <ContinueToSection currentTool="pdf-to-word" />
+                    {selectedFile && (
+                        <ContinueToSection
+                            currentTool="pdf-to-word"
+                            convertedFiles={[{
+                                url: downloadUrl || previewUrl || undefined,
+                                file: selectedFile,
+                                name: `${selectedFile.name.replace(/\.[^/.]+$/, "")}.docx`,
+                                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            }]}
+                        />
                     )}
 
                     <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />

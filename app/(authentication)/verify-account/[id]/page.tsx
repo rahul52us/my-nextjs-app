@@ -1,17 +1,11 @@
-'use client';
+import type { Metadata } from 'next';
+import ToolContent from './content';
 
-import { useParams } from 'next/navigation';
-
-const VerifyAccount = () => {
-  const params = useParams();
-  const id = params?.id;
-
-  return (
-    <div>
-      <h1>Verify Account</h1>
-      <p>Verification ID: {id}</p>
-    </div>
-  );
+export const metadata: Metadata = {
+  title: "Verify Account | Toolsahayata",
+  description: "Verify your email address to activate your Toolsahayata account.",
 };
 
-export default VerifyAccount;
+export default function Page() {
+  return <ToolContent />;
+}

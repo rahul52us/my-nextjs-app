@@ -25,6 +25,7 @@ import {
     Input,
     HStack,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import stores from "../../../../../store/stores";
 
 const Base64ImageContent = () => {
@@ -380,6 +381,12 @@ const Base64ImageContent = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+            {previewContent && (
+                <ContinueToSection
+                    currentTool="base64-to-image"
+                    convertedFiles={[{ url: previewContent, name: "decoded-image.png", type: "image/png" }]}
+                />
+            )}
         </Box>
     );
 };

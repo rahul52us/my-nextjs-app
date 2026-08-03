@@ -28,6 +28,7 @@ import {
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
 const BinaryToTextContent: React.FC = () => {
   const [binaryInput, setBinaryInput] = useState<string>("");
@@ -393,6 +394,12 @@ const BinaryToTextContent: React.FC = () => {
             </HStack>
           )}
         </Box>
+        {textOutput && (
+          <ContinueToSection
+            currentTool="binary-to-text"
+            convertedFiles={[{ name: "converted-text.txt", type: "text/plain" }]}
+          />
+        )}
       </VStack>
     </Box>
   );

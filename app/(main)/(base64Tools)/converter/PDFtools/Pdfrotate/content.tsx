@@ -17,7 +17,9 @@ import {
 import { FaFilePdf, FaSyncAlt, FaTools, FaUpload } from 'react-icons/fa';
 
 // PDF Worker setup
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 const PdfRotatorContent: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);

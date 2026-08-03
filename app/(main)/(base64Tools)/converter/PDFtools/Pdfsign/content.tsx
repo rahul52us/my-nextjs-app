@@ -16,8 +16,13 @@ import {
 import { DeleteIcon, DownloadIcon, EditIcon } from '@chakra-ui/icons';
 import { FaSignature, FaFont, FaFileUpload, FaRegEye, FaEraser, FaImage } from 'react-icons/fa';
 
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
+
 // Fixed Worker Path
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 const PdfSignatureContent: React.FC = () => {
     const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -35,6 +40,7 @@ const PdfSignatureContent: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const toast = useToast();
+    const { consumeTransferForTool, clearTransferState } = useFileTransfer();
     const pageBg = useColorModeValue("gray.50", "gray.900");
     const cardBg = useColorModeValue("white", "gray.800");
     const panelBg = useColorModeValue("gray.200", "gray.800");
@@ -48,6 +54,29 @@ const PdfSignatureContent: React.FC = () => {
     const inputBg = useColorModeValue("white", "gray.800");
     const previewBadgeBg = useColorModeValue("whiteAlpha.900", "gray.700");
     const previewBadgeText = useColorModeValue("gray.800", "gray.100");
+
+    useEffect(() => {
+        let isMounted = true;
+        const checkTransfer = async () => {
+            const state = await consumeTransferForTool("pdf-sign");
+            if (isMounted && state && state.items.length > 0) {
+                const item = state.items[0];
+                const fileObj = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+                setPdfFile(fileObj);
+                setPdfUrl(URL.createObjectURL(fileObj));
+                toast({
+                    title: "✨ File Auto-Loaded",
+                    description: `Loaded ${fileObj.name} from ${state.sourceToolName}`,
+                    status: "info",
+                    duration: 4000,
+                    isClosable: true,
+                });
+                await clearTransferState();
+            }
+        };
+        void checkTransfer();
+        return () => { isMounted = false; };
+    }, []);
 
     useEffect(() => {
         return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
@@ -265,6 +294,13 @@ const PdfSignatureContent: React.FC = () => {
                         </Box>
                     </Box>
                 </SimpleGrid>
+
+                {pdfFile && (
+                    <ContinueToSection
+                        currentTool="pdf-sign"
+                        convertedFiles={[{ file: pdfFile, name: pdfFile.name, type: 'application/pdf' }]}
+                    />
+                )}
             </Container>
         </Box>
     );

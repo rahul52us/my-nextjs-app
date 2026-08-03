@@ -19,6 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt, FaFileAlt  } from "react-icons/fa";
 import { saveAs } from "file-saver";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import stores from "../../../../../store/stores";
 
 const FileToBase64Content = () => {
@@ -361,6 +362,12 @@ const FileToBase64Content = () => {
                         Reset
                     </Button>
                 </HStack>
+                {base64 && (
+                    <ContinueToSection
+                        currentTool="file-to-base64"
+                        convertedFiles={[{ name: fileName || "file-base64.txt", type: "text/plain" }]}
+                    />
+                )}
             </VStack>
         </Box>
     );

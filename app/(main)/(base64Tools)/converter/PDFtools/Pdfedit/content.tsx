@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -17,8 +17,12 @@ import {
   FiRotateCcw, FiMousePointer, FiEyeOff, FiBold, FiItalic,
 } from 'react-icons/fi';
 import stores from '../../../../../store/stores';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 type ElementType = 'text' | 'shape' | 'image' | 'redaction';
 
@@ -54,8 +58,31 @@ const AdvancedPDFEditorContent: React.FC = () => {
   const toast = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
   const selectedElement = elements.find(el => el.id === selectedId);
+  const { consumeTransferForTool, clearTransferState } = useFileTransfer();
 
   const { themeStore: { themeConfig } } = stores;
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkTransfer = async () => {
+      const state = await consumeTransferForTool("pdf-edit");
+      if (isMounted && state && state.items.length > 0) {
+        const item = state.items[0];
+        const fileObj = item.file instanceof File ? item.file : new File([item.file], item.fileName, { type: item.fileType });
+        setFile(fileObj);
+        toast({
+          title: "✨ File Auto-Loaded",
+          description: `Loaded ${fileObj.name} from ${state.sourceToolName}`,
+          status: "info",
+          duration: 4000,
+          isClosable: true,
+        });
+        await clearTransferState();
+      }
+    };
+    void checkTransfer();
+    return () => { isMounted = false; };
+  }, []);
 
   // ✅ Dark/light theme colors
   const pageBg = useColorModeValue("#f8fafc", "gray.900");
@@ -434,6 +461,13 @@ const AdvancedPDFEditorContent: React.FC = () => {
             onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
             isDisabled={currentPage === numPages} aria-label="next" />
         </HStack>
+
+        {file && (
+          <ContinueToSection
+            currentTool="pdf-edit"
+            convertedFiles={[{ file, name: file.name, type: 'application/pdf' }]}
+          />
+        )}
 
       </VStack>
     </Box>

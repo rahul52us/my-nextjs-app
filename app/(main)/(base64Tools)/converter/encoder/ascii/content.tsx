@@ -28,6 +28,7 @@ import {
 } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
 const AsciiToBase64Content: React.FC = () => {
   const [asciiInput, setAsciiInput] = useState<string>("");
@@ -406,6 +407,12 @@ const AsciiToBase64Content: React.FC = () => {
             </HStack>
           )}
         </Box>
+        {base64Output && (
+          <ContinueToSection
+            currentTool="ascii-to-base64"
+            convertedFiles={[{ name: "ascii-encoded.txt", type: "text/plain" }]}
+          />
+        )}
       </VStack>
     </Box>
   );

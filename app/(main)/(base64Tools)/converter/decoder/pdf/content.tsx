@@ -21,6 +21,7 @@ import {
     ModalFooter,
     useDisclosure,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import stores from "../../../../../store/stores";
 
 const Base64PdfContent = () => {
@@ -231,6 +232,12 @@ const Base64PdfContent = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+            {base64 && (
+                <ContinueToSection
+                    currentTool="base64-to-pdf"
+                    convertedFiles={[{ name: "decoded.pdf", type: "application/pdf" }]}
+                />
+            )}
         </Box>
     );
 };

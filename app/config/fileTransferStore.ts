@@ -74,19 +74,27 @@ export async function setTransferFiles(payload: TransferPayload): Promise<void> 
     let name = raw.name || `file-${i + 1}`;
     let type = raw.type || "application/octet-stream";
 
-    if (raw.file instanceof File || raw.file instanceof Blob) {
+    if (raw.blob instanceof Blob) {
+      fileObj = raw.blob;
+      if (raw.name) name = raw.name;
+      if (raw.type) type = raw.type;
+      type = fileObj.type || type;
+    } else if (raw.file instanceof File || raw.file instanceof Blob) {
       fileObj = raw.file;
-      if (raw.file instanceof File) {
+      if (raw.name) name = raw.name;
+      if (raw.type) type = raw.type;
+      if (raw.file instanceof File && !raw.name) {
         name = raw.file.name;
+      }
+      if (raw.file instanceof File && !raw.type) {
         type = raw.file.type || type;
       }
-    } else if (raw.blob instanceof Blob) {
-      fileObj = raw.blob;
-      type = raw.blob.type || type;
     } else if (raw.url && raw.url.startsWith("data:")) {
       try {
         const res = await fetch(raw.url);
         fileObj = await res.blob();
+        if (raw.name) name = raw.name;
+        if (raw.type) type = raw.type;
         type = fileObj.type || type;
       } catch (err) {
         console.warn("Failed to convert data URL to Blob", err);

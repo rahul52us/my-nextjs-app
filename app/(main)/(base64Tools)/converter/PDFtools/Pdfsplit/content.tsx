@@ -36,7 +36,9 @@ import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 interface FileData {
   file: File;
