@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import {
   Box,
@@ -109,8 +108,8 @@ export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
   const gridColumns = isVertical
     ? 1
     : isDrawerVariant
-    ? { base: 1, sm: 2 }
-    : { base: 1, sm: 2, md: 2, lg: Math.min(relatedTools.length, 4) };
+      ? { base: 1, sm: 2 }
+      : { base: 1, sm: 2, md: 2, lg: Math.min(relatedTools.length, 4) };
 
   return (
     <Box
