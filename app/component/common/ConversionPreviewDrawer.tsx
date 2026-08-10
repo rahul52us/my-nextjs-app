@@ -20,6 +20,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { FiAlertCircle, FiCheck, FiDownload, FiEye, FiFileText, FiRefreshCw } from "react-icons/fi";
+import ContinueToSection from "./ContinueToSection";
 
 const CONVERSION_STEPS = [
   { key: "uploading", label: "Uploading file", pct: 5 },
@@ -43,6 +44,17 @@ interface ConversionPreviewDrawerProps {
   outputLabel?: string;
   progress?: { step: string; pct: number; elapsed?: number; timedOut?: boolean } | null;
   onRetry?: () => void;
+  /** Tool slug for ContinueToSection e.g. "pdf-to-word" */
+  currentTool?: string;
+  /** Converted files array for file transfer to next tool */
+  convertedFiles?: Array<{
+    file?: File | Blob;
+    blob?: Blob;
+    url?: string;
+    pageNumber?: number;
+    name?: string;
+    type?: string;
+  }>;
 }
 
 const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
@@ -54,6 +66,8 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
   outputLabel = "file",
   progress,
   onRetry,
+  currentTool,
+  convertedFiles,
 }) => {
   const headerBg = useColorModeValue(
     "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
@@ -96,7 +110,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
         maxW={{ base: "100%", md: "85%" }}
         height="100vh"
         maxH="100vh"
-        // borderTopRadius={{ base: "2xl", md: "3xl" }}
         overflow="hidden"
         bg={bodyBg}
         boxShadow="0 -10px 40px rgba(0,0,0,0.3)"
@@ -115,7 +128,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 align="center"
                 justify="center"
                 boxSize="42px"
-                // borderRadius="lg"
                 bg="whiteAlpha.200"
                 flexShrink={0}
               >
@@ -153,7 +165,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 isDisabled={!downloadUrl}
                 size={{ base: "sm", md: "md" }}
                 fontWeight="700"
-                // borderRadius="xl"
                 bg="linear-gradient(135deg, #3b82f6, #6366f1)"
                 color="white"
                 _hover={{
@@ -172,7 +183,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 position="static"
                 color="whiteAlpha.800"
                 _hover={{ color: "white", bg: "whiteAlpha.200" }}
-                // borderRadius="lg"
                 size="lg"
               />
             </HStack>
@@ -190,7 +200,7 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
         </Box>
 
         {/* ── Preview Body ──────────────────────────────────────────── */}
-        <DrawerBody p={{ base: 3, md: 6 }} flex="1" display="flex" flexDir="column" overflow="hidden">
+        <DrawerBody p={{ base: 3, md: 6 }} flex="1" display="flex" flexDir="column" overflowY="auto">
           {!previewUrl ? (
             /* Loading state */
             <Flex
@@ -205,7 +215,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                 w="full"
                 maxW="560px"
                 bg={progressCardBg}
-                // borderRadius="lg"
                 border="1px solid"
                 borderColor={timedOut ? "red.200" : "blackAlpha.100"}
                 boxShadow="0 18px 45px rgba(15,23,42,0.12)"
@@ -218,7 +227,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                         align="center"
                         justify="center"
                         boxSize="42px"
-                        // borderRadius="lg"
                         bg={timedOut ? "red.50" : "brand.50"}
                         color={timedOut ? "red.500" : "brand.500"}
                       >
@@ -242,7 +250,6 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
                     value={currentPct}
                     size="sm"
                     colorScheme={timedOut ? "red" : "brand"}
-                    // borderRadius="full"
                     bg={progressTrackBg}
                   />
 
@@ -287,47 +294,61 @@ const ConversionPreviewDrawer: React.FC<ConversionPreviewDrawerProps> = ({
               </Box>
             </Flex>
           ) : (
-            /* PDF iframe */
-            <Box
-              flex="1"
-              // borderRadius="xl"
-              overflow="hidden"
-              bg={iframeBg}
-              boxShadow="inset 0 0 0 1px rgba(99,102,241,0.15)"
-              position="relative"
-              height="100%"
-            >
-              {/* Subtle gradient border glow */}
+            /* PDF iframe & Continue to section */
+            <VStack spacing={4} align="stretch" w="full" flex="1">
               <Box
-                position="absolute"
-                inset={0}
-                // borderRadius="xl"
-                border="1px solid"
-                borderColor="brand.500"
-                opacity={0.3}
-                pointerEvents="none"
-                zIndex={1}
-              />
-              <iframe
-                src={previewUrl}
-                title="Converted File Preview"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  display: "block",
-                  // borderRadius: "inherit",
-                }}
-              />
-            </Box>
-          )}
+                h={{ base: "400px", md: "550px" }}
+                w="full"
+                borderRadius="xl"
+                overflow="hidden"
+                bg={iframeBg}
+                boxShadow="inset 0 0 0 1px rgba(99,102,241,0.15)"
+                position="relative"
+                flexShrink={0}
+              >
+                {/* Subtle gradient border glow */}
+                <Box
+                  position="absolute"
+                  inset={0}
+                  borderRadius="xl"
+                  border="1px solid"
+                  borderColor="brand.500"
+                  opacity={0.3}
+                  pointerEvents="none"
+                  zIndex={1}
+                />
+                <iframe
+                  src={previewUrl}
+                  title="Converted File Preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                    display: "block",
+                  }}
+                />
+              </Box>
 
-          {/* Footer note */}
-          <Flex justify="center" mt={3}>
-            <Text fontSize="xs" color="gray.500" textAlign="center">
-              Preview shows the converted document. Verify formatting before downloading.
-            </Text>
-          </Flex>
+              {/* Footer note */}
+              <Flex justify="center" px={2}>
+                <Text fontSize="xs" color="gray.500" textAlign="center">
+                  Preview shows the converted document. Verify formatting before downloading.
+                </Text>
+              </Flex>
+
+              {/* Continue To Section inside Drawer */}
+              {currentTool && (
+                <Box w="full" pt={2}>
+                  <ContinueToSection
+                    currentTool={currentTool}
+                    convertedFiles={convertedFiles}
+                    maxTools={4}
+                    isDrawer={true}
+                  />
+                </Box>
+              )}
+            </VStack>
+          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>

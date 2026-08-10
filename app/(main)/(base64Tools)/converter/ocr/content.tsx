@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import OcrUploader from "../../../../component/OcrUploader";
 import { useFileTransfer } from "../../../../context/FileTransferContext";
-import ContinueToSection from "../../../../component/common/ContinueToSection";
 import { useToast } from "@chakra-ui/react";
 
 export default function OcrPage() {
@@ -36,7 +35,6 @@ export default function OcrPage() {
   return (
     <>
       <OcrUploader />
-      <ContinueToSection currentTool="ocr" />
     </>
   );
 }

@@ -194,113 +194,129 @@ const PdfSignatureContent: React.FC = () => {
 
     return (
         <Box minH="100vh" bg={pageBg} py={8} px={4} color={textPrimary}>
-            <Container maxW="container.xl">
-                <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
+            <Container maxW="1350px" px={{ base: 4, md: 8 }}>
+                <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+                    {/* Main Signature Workspace */}
+                    <Box flex="1" w="full" minW={0}>
+                        <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
+                            {/* LEFT: CONTROLS */}
+                            <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
+                                <VStack align="stretch" spacing={6}>
+                                    <Box>
+                                        <Heading size="md" display="flex" alignItems="center" gap={2}>
+                                            <Icon as={FaSignature} color="brand.500" /> Signature Maker
+                                        </Heading>
+                                        <Text fontSize="xs" color={textMuted} fontWeight="bold" mt={1}>PRO WORKSPACE</Text>
+                                    </Box>
 
-                    {/* LEFT: CONTROLS */}
-                    <Box gridColumn={{ lg: "span 4" }} p={6} bg={cardBg} rounded="3xl" shadow="sm" border="1px" borderColor={borderColor}>
-                        <VStack align="stretch" spacing={6}>
-                            <Box>
-                                <Heading size="md" display="flex" alignItems="center" gap={2}>
-                                    <Icon as={FaSignature} color="brand.500" /> Signature Maker
-                                </Heading>
-                                <Text fontSize="xs" color={textMuted} fontWeight="bold" mt={1}>PRO WORKSPACE</Text>
+                                    <HStack bg={tabBg} p={1} rounded="xl">
+                                        <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'brand' : 'gray'} onClick={() => setActiveTab('draw')} leftIcon={<EditIcon />}> Draw </Button>
+                                        <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'brand' : 'gray'} onClick={() => setActiveTab('type')} leftIcon={<Icon as={FaFont} />}> Type </Button>
+                                        <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'brand' : 'gray'} onClick={() => setActiveTab('upload')} leftIcon={<Icon as={FaImage} />}> Image </Button>
+                                    </HStack>
+
+                                    {activeTab === 'draw' && (
+                                        <Box position="relative" border="2px solid" borderColor={softBorderColor} rounded="2xl" bg={canvasBg} overflow="hidden">
+                                            <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
+                                            <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} rounded="full" onClick={clearCanvas} colorScheme="red" variant="ghost" />
+                                        </Box>
+                                    )}
+
+                                    {activeTab === 'type' && (
+                                        <VStack spacing={4}>
+                                            <Input bg={inputBg} color={textPrimary} borderColor={borderColor} placeholder="Type your name..." size="lg" rounded="xl" value={typedName} onChange={(e) => setTypedName(e.target.value)} />
+                                            <Box p={4} w="full" bg={canvasBg} rounded="xl" textAlign="center"><Text fontSize="2xl" fontFamily="serif" fontStyle="italic">{typedName || "Signature Preview"}</Text></Box>
+                                        </VStack>
+                                    )}
+
+                                    {activeTab === 'upload' && (
+                                        <Box {...getSigProps()} p={6} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "brand.400" }}>
+                                            <input {...getSigInputProps()} />
+                                            {uploadedSig ? (
+                                                <VStack><Box as="img" src={uploadedSig} maxH="80px" alt="Signature" /><Text fontSize="xs" color="brand.500">Click to change</Text></VStack>
+                                            ) : (
+                                                <VStack color={textSecondary}><Icon as={FaImage} w={8} h={8} /><Text fontSize="sm">Upload PNG/JPG Signature</Text></VStack>
+                                            )}
+                                        </Box>
+                                    )}
+
+                                    <Divider borderColor={softBorderColor} />
+
+                                    {/* PAGE SELECTION SETTINGS */}
+                                    <VStack align="stretch" spacing={3}>
+                                        <Text fontSize="xs" fontWeight="bold" color={textMuted}>PLACEMENT SETTINGS</Text>
+                                        <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} colorScheme="brand">
+                                            Apply signature to all pages
+                                        </Checkbox>
+                                        
+                                        {!applyToAll && (
+                                            <HStack justify="space-between">
+                                                <Text fontSize="sm">Sign specific page:</Text>
+                                                <NumberInput size="sm" maxW={20} defaultValue={1} min={1} max={numPages || 1} onChange={(val) => setTargetPage(parseInt(val))}>
+                                                    <NumberInputField bg={inputBg} color={textPrimary} borderColor={borderColor} />
+                                                </NumberInput>
+                                            </HStack>
+                                        )}
+                                    </VStack>
+
+                                    <Button colorScheme="brand" size="lg" h="60px" rounded="2xl" shadow="lg" onClick={handleExport} isDisabled={!pdfFile || isProcessing} leftIcon={isProcessing ? <Spinner size="xs" /> : <DownloadIcon />}>
+                                        {isProcessing ? "Processing..." : "Export Signed PDF"}
+                                    </Button>
+
+                                    <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor={borderColor} rounded="2xl" textAlign="center" bg={canvasBg} _hover={{ borderColor: 'brand.400' }}>
+                                        <input {...getInputProps()} />
+                                        <HStack justify="center" spacing={2} color={textSecondary}><Icon as={FaFileUpload} /><Text fontSize="sm" fontWeight="bold">Change PDF</Text></HStack>
+                                    </Box>
+                                </VStack>
                             </Box>
 
-                            <HStack bg={tabBg} p={1} rounded="xl">
-                                <Button flex={1} size="sm" variant={activeTab === 'draw' ? 'solid' : 'ghost'} colorScheme={activeTab === 'draw' ? 'brand' : 'gray'} onClick={() => setActiveTab('draw')} leftIcon={<EditIcon />}> Draw </Button>
-                                <Button flex={1} size="sm" variant={activeTab === 'type' ? 'solid' : 'ghost'} colorScheme={activeTab === 'type' ? 'brand' : 'gray'} onClick={() => setActiveTab('type')} leftIcon={<Icon as={FaFont} />}> Type </Button>
-                                <Button flex={1} size="sm" variant={activeTab === 'upload' ? 'solid' : 'ghost'} colorScheme={activeTab === 'upload' ? 'brand' : 'gray'} onClick={() => setActiveTab('upload')} leftIcon={<Icon as={FaImage} />}> Image </Button>
-                            </HStack>
+                            {/* RIGHT: PREVIEW */}
+                            <Box gridColumn={{ lg: "span 8" }} bg={panelBg} rounded="3xl" overflow="hidden" border="1px" borderColor={borderColor} position="relative">
+                                <HStack position="absolute" top={4} left={4} zIndex={10} bg={previewBadgeBg} px={3} py={1} rounded="full" shadow="sm">
+                                    <Icon as={FaRegEye} color="brand.500" />
+                                    <Text fontSize="xs" fontWeight="black" color={previewBadgeText}>PREVIEW</Text>
+                                </HStack>
 
-                            {activeTab === 'draw' && (
-                                <Box position="relative" border="2px solid" borderColor={softBorderColor} rounded="2xl" bg={canvasBg} overflow="hidden">
-                                    <canvas ref={canvasRef} width={400} height={200} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={() => setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={() => setIsDrawing(false)} style={{ width: '100%', cursor: 'crosshair' }} />
-                                    <IconButton aria-label="Clear" icon={<FaEraser />} size="sm" position="absolute" bottom={2} right={2} rounded="full" onClick={clearCanvas} colorScheme="red" variant="ghost" />
-                                </Box>
-                            )}
-
-                            {activeTab === 'type' && (
-                                <VStack spacing={4}>
-                                    <Input bg={inputBg} color={textPrimary} borderColor={borderColor} placeholder="Type your name..." size="lg" rounded="xl" value={typedName} onChange={(e) => setTypedName(e.target.value)} />
-                                    <Box p={4} w="full" bg={canvasBg} rounded="xl" textAlign="center"><Text fontSize="2xl" fontFamily="serif" fontStyle="italic">{typedName || "Signature Preview"}</Text></Box>
-                                </VStack>
-                            )}
-
-                            {activeTab === 'upload' && (
-                                <Box {...getSigProps()} p={6} border="2px dashed" borderColor={borderColor} rounded="xl" textAlign="center" cursor="pointer" bg={canvasBg} _hover={{ borderColor: "brand.400" }}>
-                                    <input {...getSigInputProps()} />
-                                    {uploadedSig ? (
-                                        <VStack><Box as="img" src={uploadedSig} maxH="80px" alt="Signature" /><Text fontSize="xs" color="brand.500">Click to change</Text></VStack>
+                                <Box h="80vh" overflowY="auto" p={6}>
+                                    {pdfUrl ? (
+                                        <Center>
+                                            <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)} loading={<Spinner size="xl" />}>
+                                                <Stack spacing={6}>
+                                                    {Array.from({ length: numPages }).map((_, i) => (
+                                                        <Box key={i} shadow="2xl" bg="white">
+                                                            <Page pageNumber={i + 1} width={600} renderTextLayer={false} renderAnnotationLayer={false} />
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Document>
+                                        </Center>
                                     ) : (
-                                        <VStack color={textSecondary}><Icon as={FaImage} w={8} h={8} /><Text fontSize="sm">Upload PNG/JPG Signature</Text></VStack>
+                                        <Center h="full">
+                                            <VStack color={textMuted} spacing={4}><Icon as={FaFileUpload} w={12} h={12} opacity={0.2} /><Text fontWeight="medium">Upload a PDF to start</Text></VStack>
+                                        </Center>
                                     )}
                                 </Box>
-                            )}
-
-                            <Divider />
-
-                            {/* New Feature UI: Page Settings */}
-                            <VStack align="stretch" spacing={3}>
-                                <Checkbox isChecked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} colorScheme="brand" size="sm">
-                                    Apply signature to all pages
-                                </Checkbox>
-                                {!applyToAll && (
-                                    <HStack justify="space-between">
-                                        <Text fontSize="sm">Sign specific page:</Text>
-                                        <NumberInput size="sm" maxW={20} defaultValue={1} min={1} max={numPages || 1} onChange={(val) => setTargetPage(parseInt(val))}>
-                                            <NumberInputField bg={inputBg} color={textPrimary} borderColor={borderColor} />
-                                        </NumberInput>
-                                    </HStack>
-                                )}
-                            </VStack>
-
-                            <Button colorScheme="brand" size="lg" h="60px" rounded="2xl" shadow="lg" onClick={handleExport} isDisabled={!pdfFile || isProcessing} leftIcon={isProcessing ? <Spinner size="xs" /> : <DownloadIcon />}>
-                                {isProcessing ? "Processing..." : "Export Signed PDF"}
-                            </Button>
-
-                            <Box {...getRootProps()} cursor="pointer" p={4} border="2px dashed" borderColor={borderColor} rounded="2xl" textAlign="center" bg={canvasBg} _hover={{ borderColor: 'brand.400' }}>
-                                <input {...getInputProps()} />
-                                <HStack justify="center" spacing={2} color={textSecondary}><Icon as={FaFileUpload} /><Text fontSize="sm" fontWeight="bold">Change PDF</Text></HStack>
                             </Box>
-                        </VStack>
+                        </SimpleGrid>
                     </Box>
 
-                    {/* RIGHT: PREVIEW (Unchanged Structure) */}
-                    <Box gridColumn={{ lg: "span 8" }} bg={panelBg} rounded="3xl" overflow="hidden" border="1px" borderColor={borderColor} position="relative">
-                        <HStack position="absolute" top={4} left={4} zIndex={10} bg={previewBadgeBg} px={3} py={1} rounded="full" shadow="sm">
-                            <Icon as={FaRegEye} color="brand.500" />
-                            <Text fontSize="xs" fontWeight="black" color={previewBadgeText}>PREVIEW</Text>
-                        </HStack>
-
-                        <Box h="80vh" overflowY="auto" p={6}>
-                            {pdfUrl ? (
-                                <Center>
-                                    <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)} loading={<Spinner size="xl" />}>
-                                        <Stack spacing={6}>
-                                            {Array.from({ length: numPages }).map((_, i) => (
-                                                <Box key={i} shadow="2xl" bg="white">
-                                                    <Page pageNumber={i + 1} width={600} renderTextLayer={false} renderAnnotationLayer={false} />
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Document>
-                                </Center>
-                            ) : (
-                                <Center h="full">
-                                    <VStack color={textMuted} spacing={4}><Icon as={FaFileUpload} w={12} h={12} opacity={0.2} /><Text fontWeight="medium">Upload a PDF to start</Text></VStack>
-                                </Center>
-                            )}
+                    {/* Right Sticky ContinueToSection Sidebar */}
+                    {pdfFile && (
+                        <Box
+                            w={{ base: "full", lg: "320px", xl: "340px" }}
+                            position={{ base: "relative", lg: "sticky" }}
+                            top={{ lg: "100px" }}
+                            alignSelf="flex-start"
+                            flexShrink={0}
+                        >
+                            <ContinueToSection
+                                currentTool="pdf-sign"
+                                variant="vertical"
+                                convertedFiles={[{ file: pdfFile, name: pdfFile.name, type: 'application/pdf' }]}
+                            />
                         </Box>
-                    </Box>
-                </SimpleGrid>
-
-                {pdfFile && (
-                    <ContinueToSection
-                        currentTool="pdf-sign"
-                        convertedFiles={[{ file: pdfFile, name: pdfFile.name, type: 'application/pdf' }]}
-                    />
-                )}
+                    )}
+                </Flex>
             </Container>
         </Box>
     );

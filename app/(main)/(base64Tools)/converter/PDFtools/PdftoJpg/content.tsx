@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, DragEvent } from 'react';
 import { useFileTransfer } from '../../../../../context/FileTransferContext';
 import {
     Box,
+    Flex,
     Button,
     Container,
     VStack,
@@ -181,7 +182,7 @@ const PdfToJpgContent = () => {
     };
 
     return (
-        <Container maxW="container.lg" py={10}>
+        <Container maxW="1350px" py={10} px={{ base: 4, md: 8 }}>
             {/* Header */}
             <HStack justifyContent="space-between" mb={8} flexWrap="wrap" spacing={4}>
                 <VStack align="start" spacing={0}>
@@ -216,133 +217,151 @@ const PdfToJpgContent = () => {
                 )}
             </HStack>
 
-            {/* Main Area */}
-            <Box
-                bg={bgColor}
-                borderRadius="3xl"
-                p={8}
-                border="1px solid"
-                borderColor={borderColor}
-                shadow="xl"
+            <Flex
+                direction={{ base: "column", lg: "row" }}
+                gap={{ base: 8, lg: 10 }}
+                align="flex-start"
+                justify="center"
             >
-                {!loading && images.length === 0 ? (
-                    <Center
-                        as="label"
-                        htmlFor="pdf-upload"
-                        cursor="pointer"
-                        border="3px dashed"
-                        borderColor={isDragActive ? 'brand.400' : useColorModeValue('gray.200', 'gray.600')}
-                        bg={isDragActive ? dropzoneHoverBg : 'transparent'}
-                        borderRadius="2xl"
-                        h="300px"
-                        transition="all 0.2s"
-                        _hover={{ borderColor: 'brand.400', bg: dropzoneHoverBg }}
-                        flexDirection="column"
-                        onDragOver={handleDragOver}
-                        onDragEnter={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        <VStack spacing={4}>
-                            <Box bg={iconContainerBg} color="brand.600" p={4} borderRadius="full">
-                                <Icon as={FiUpload} boxSize={8} />
-                            </Box>
-                            <VStack spacing={1}>
-                                <Text fontSize="xl" fontWeight="bold">Choose a PDF file</Text>
-                                <Text color="gray.400">or drag and drop it here</Text>
-                            </VStack>
-                        </VStack>
-                        <input
-                            id="pdf-upload"
-                            type="file"
-                            hidden
-                            accept="application/pdf"
-                            onChange={convertPdfToJpg}
-                            ref={fileInputRef}
-                        />
-                    </Center>
-                ) : loading ? (
-                    <Center h="300px" flexDirection="column">
-                        <VStack spacing={6} w="full" maxW="md">
-                            <Progress
-                                value={progress}
-                                size="xs"
-                                width="200px"
-                                borderRadius="full"
-                                colorScheme="brand"
-                                isAnimated
-                            />
-                            <VStack>
-                                <Text fontSize="lg" fontWeight="bold">Processing Pages...</Text>
-                                <Text fontSize="sm" color={textColor}>{progress}% complete</Text>
-                            </VStack>
-                        </VStack>
-                    </Center>
-                ) : (
-                    <SimpleGrid columns={[1, 2, 3]} spacing={8}>
-                        {images.map((img) => (
-                            <Box
-                                key={img.pageNumber}
-                                bg={cardBg}
-                                p={3}
-                                borderRadius="2xl"
-                                border="1px solid"
-                                borderColor={borderColor}
-                                role="group"
-                                position="relative"
-                            >
-                                <Box
-                                    borderRadius="xl"
-                                    overflow="hidden"
-                                    bg={useColorModeValue('white', 'gray.900')}
-                                    position="relative"
-                                    transition="transform 0.2s"
-                                    _groupHover={{ transform: 'translateY(-4px)' }}
-                                >
-                                    <Image src={img.url} alt={`Page ${img.pageNumber}`} />
-
-                                    <Center
-                                        position="absolute"
-                                        inset={0}
-                                        bg="blackAlpha.600"
-                                        opacity={0}
-                                        transition="opacity 0.2s"
-                                        _groupHover={{ opacity: 1 }}
-                                    >
-                                        <Tooltip label="Download Image">
-                                            <IconButton
-                                                as="a"
-                                                href={img.url}
-                                                download={`${fileName}-page-${img.pageNumber}.jpg`}
-                                                aria-label="Download"
-                                                icon={<FiDownload />}
-                                                size="lg"
-                                                colorScheme="whiteAlpha"
-                                                variant="solid"
-                                                borderRadius="full"
-                                            />
-                                        </Tooltip>
-                                    </Center>
+                {/* Main Area */}
+                <Box
+                    bg={bgColor}
+                    borderRadius="3xl"
+                    p={8}
+                    border="1px solid"
+                    borderColor={borderColor}
+                    shadow="xl"
+                    flex="1"
+                    w="full"
+                >
+                    {!loading && images.length === 0 ? (
+                        <Center
+                            as="label"
+                            htmlFor="pdf-upload"
+                            cursor="pointer"
+                            border="3px dashed"
+                            borderColor={isDragActive ? 'brand.400' : useColorModeValue('gray.200', 'gray.600')}
+                            bg={isDragActive ? dropzoneHoverBg : 'transparent'}
+                            borderRadius="2xl"
+                            h="300px"
+                            transition="all 0.2s"
+                            _hover={{ borderColor: 'brand.400', bg: dropzoneHoverBg }}
+                            flexDirection="column"
+                            onDragOver={handleDragOver}
+                            onDragEnter={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            <VStack spacing={4}>
+                                <Box bg={iconContainerBg} color="brand.600" p={4} borderRadius="full">
+                                    <Icon as={FiUpload} boxSize={8} />
                                 </Box>
+                                <VStack spacing={1}>
+                                    <Text fontSize="xl" fontWeight="bold">Choose a PDF file</Text>
+                                    <Text color="gray.400">or drag and drop it here</Text>
+                                </VStack>
+                            </VStack>
+                            <input
+                                id="pdf-upload"
+                                type="file"
+                                hidden
+                                accept="application/pdf"
+                                onChange={convertPdfToJpg}
+                                ref={fileInputRef}
+                            />
+                        </Center>
+                    ) : loading ? (
+                        <Center h="300px" flexDirection="column">
+                            <VStack spacing={6} w="full" maxW="md">
+                                <Progress
+                                    value={progress}
+                                    size="xs"
+                                    width="200px"
+                                    borderRadius="full"
+                                    colorScheme="brand"
+                                    isAnimated
+                                />
+                                <VStack>
+                                    <Text fontSize="lg" fontWeight="bold">Processing Pages...</Text>
+                                    <Text fontSize="sm" color={textColor}>{progress}% complete</Text>
+                                </VStack>
+                            </VStack>
+                        </Center>
+                    ) : (
+                        <SimpleGrid columns={[1, 2, 3]} spacing={8}>
+                            {images.map((img) => (
+                                <Box
+                                    key={img.pageNumber}
+                                    bg={cardBg}
+                                    p={3}
+                                    borderRadius="2xl"
+                                    border="1px solid"
+                                    borderColor={borderColor}
+                                    role="group"
+                                    position="relative"
+                                >
+                                    <Box
+                                        borderRadius="xl"
+                                        overflow="hidden"
+                                        bg={useColorModeValue('white', 'gray.900')}
+                                        position="relative"
+                                        transition="transform 0.2s"
+                                        _groupHover={{ transform: 'translateY(-4px)' }}
+                                    >
+                                        <Image src={img.url} alt={`Page ${img.pageNumber}`} />
 
-                                <HStack justify="space-between" mt={4} px={1}>
-                                    <Text fontSize="xs" fontWeight="black" color="gray.400" letterSpacing="widest">
-                                        PAGE {img.pageNumber}
-                                    </Text>
-                                    <HStack spacing={1} color="green.500">
-                                        <Icon as={FiCheckCircle} boxSize={3} />
-                                        <Text fontSize="10px" fontWeight="bold">JPG</Text>
+                                        <Center
+                                            position="absolute"
+                                            inset={0}
+                                            bg="blackAlpha.600"
+                                            opacity={0}
+                                            transition="opacity 0.2s"
+                                            _groupHover={{ opacity: 1 }}
+                                        >
+                                            <Tooltip label="Download Image">
+                                                <IconButton
+                                                    as="a"
+                                                    href={img.url}
+                                                    download={`${fileName}-page-${img.pageNumber}.jpg`}
+                                                    aria-label="Download"
+                                                    icon={<FiDownload />}
+                                                    size="lg"
+                                                    colorScheme="whiteAlpha"
+                                                    variant="solid"
+                                                    borderRadius="full"
+                                                />
+                                            </Tooltip>
+                                        </Center>
+                                    </Box>
+
+                                    <HStack justify="space-between" mt={4} px={1}>
+                                        <Text fontSize="xs" fontWeight="black" color="gray.400" letterSpacing="widest">
+                                            PAGE {img.pageNumber}
+                                        </Text>
+                                        <HStack spacing={1} color="green.500">
+                                            <Icon as={FiCheckCircle} boxSize={3} />
+                                            <Text fontSize="10px" fontWeight="bold">JPG</Text>
+                                        </HStack>
                                     </HStack>
-                                </HStack>
-                            </Box>
-                        ))}
-                    </SimpleGrid>
-                )}
-            </Box>
+                                </Box>
+                            ))}
+                        </SimpleGrid>
+                    )}
+                </Box>
 
-            {images.length > 0 && (
-                <ContinueToSection currentTool="pdf-to-jpg" convertedFiles={images} />
-            )}
+                {/* Right Sticky Sidebar */}
+                {images.length > 0 && (
+                    <Box
+                        w={{ base: "full", lg: "340px", xl: "360px" }}
+                        position={{ base: "relative", lg: "sticky" }}
+                        top={{ lg: "100px" }}
+                        alignSelf="flex-start"
+                        flexShrink={0}
+                    >
+                        <ContinueToSection currentTool="pdf-to-jpg" variant="vertical" convertedFiles={images} />
+                    </Box>
+                )}
+            </Flex>
         </Container>
     );
 };

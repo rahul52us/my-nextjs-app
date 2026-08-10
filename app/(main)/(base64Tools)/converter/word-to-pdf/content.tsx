@@ -3,6 +3,7 @@ import React, { useState, ChangeEvent } from "react";
 import {
     Box,
     Button,
+    Container,
     Flex,
     Heading,
     Input,
@@ -141,8 +142,7 @@ const WordToPdfConverterContent = () => {
 
     return (
         <Box bg={bgColor} minH="100vh" py={20} transition="background 0.2s">
-            <Flex direction="column" align="center" gap={10} px={4}>
-
+            <VStack spacing={10} align="center" w="full" px={4}>
                 {/* Title */}
                 <VStack spacing={2} textAlign="center">
                     <Heading size="2xl" fontWeight="900" letterSpacing="tight" color={textColor}>
@@ -157,166 +157,200 @@ const WordToPdfConverterContent = () => {
                     </Text>
                 </VStack>
 
-                {/* Upload card */}
-                <Box
-                    bg={cardBg}
-                    borderRadius="3xl"
-                    boxShadow="2xl"
-                    p={8}
-                    w={{ base: "100%", md: "lg" }}
-                >
-                    <VStack spacing={8}>
-                        {/* Dropzone */}
+                {/* Main 2-Column Section */}
+                <Container maxW="1350px" px={{ base: 4, md: 8 }}>
+                    <Flex
+                        direction={{ base: "column", lg: "row" }}
+                        gap={{ base: 8, lg: 10 }}
+                        align="flex-start"
+                        justify="center"
+                    >
+                        {/* Upload card */}
                         <Box
+                            bg={cardBg}
+                            borderRadius="3xl"
+                            boxShadow="2xl"
+                            p={8}
+                            flex="1"
                             w="full"
-                            position="relative"
-                            p={10}
-                            border="2px dashed"
-                            borderColor={file ? "brand.400" : "gray.500"}
-                            borderRadius="2xl"
-                            bg={file ? dropzoneActiveBg : dropzoneBg}
-                            transition="all 0.3s"
-                            opacity={loading ? 0.5 : 1}
+                            maxW={{ base: "100%", lg: "850px" }}
                         >
-                            <Input
-                                type="file"
-                                accept=".docx"
-                                onChange={handleFileChange}
-                                disabled={loading}
-                                position="absolute"
-                                top={0}
-                                left={0}
-                                w="full"
-                                h="full"
-                                opacity={0}
-                                cursor={loading ? "not-allowed" : "pointer"}
-                                zIndex={1}
-                            />
-                            {loading && (
+                            <VStack spacing={8}>
+                                {/* Dropzone */}
                                 <Box
-                                    position="absolute"
-                                    top={0}
-                                    left={0}
-                                    w="100%"
-                                    h="100%"
-                                    zIndex={2}
-                                    cursor="not-allowed"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        toast({
-                                            title: "Operation in progress",
-                                            description: "Please wait until the current operation is complete.",
-                                            status: "warning",
-                                            duration: 3000,
-                                            isClosable: true,
-                                        });
-                                    }}
-                                    onDragOver={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                    }}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        toast({
-                                            title: "Operation in progress",
-                                            description: "Please wait until the current operation is complete.",
-                                            status: "warning",
-                                            duration: 3000,
-                                            isClosable: true,
-                                        });
-                                    }}
-                                />
-                            )}
-                            <VStack spacing={4}>
-                                <Center
-                                    boxSize="60px"
-                                    bg={file ? "brand.500" : "brand.900"}
-                                    color="white"
-                                    borderRadius="xl"
+                                    w="full"
+                                    position="relative"
+                                    p={10}
+                                    border="2px dashed"
+                                    borderColor={file ? "brand.400" : "gray.500"}
+                                    borderRadius="2xl"
+                                    bg={file ? dropzoneActiveBg : dropzoneBg}
+                                    transition="all 0.3s"
+                                    opacity={loading ? 0.5 : 1}
                                 >
-                                    <Icon
-                                        as={file ? FiCheckCircle : FiUploadCloud}
-                                        boxSize={8}
+                                    <Input
+                                        type="file"
+                                        accept=".docx"
+                                        onChange={handleFileChange}
+                                        disabled={loading}
+                                        position="absolute"
+                                        top={0}
+                                        left={0}
+                                        w="full"
+                                        h="full"
+                                        opacity={0}
+                                        cursor={loading ? "not-allowed" : "pointer"}
+                                        zIndex={1}
                                     />
-                                </Center>
-                                <VStack spacing={1}>
-                                    <Text fontSize="xl" fontWeight="bold" color={textColor}>
-                                        {file ? file.name : "Upload your .docx file"}
-                                    </Text>
-                                    <Text fontSize="sm" color={subTextColor}>
-                                        Click or drag and drop your file here
-                                    </Text>
-                                </VStack>
+                                    {loading && (
+                                        <Box
+                                            position="absolute"
+                                            top={0}
+                                            left={0}
+                                            w="100%"
+                                            h="100%"
+                                            zIndex={2}
+                                            cursor="not-allowed"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toast({
+                                                    title: "Operation in progress",
+                                                    description: "Please wait until the current operation is complete.",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    isClosable: true,
+                                                });
+                                            }}
+                                        />
+                                    )}
+                                    <VStack spacing={4}>
+                                        <Center
+                                            boxSize="60px"
+                                            bg={file ? "brand.500" : "brand.900"}
+                                            color="white"
+                                            borderRadius="xl"
+                                        >
+                                            <Icon
+                                                as={file ? FiCheckCircle : FiUploadCloud}
+                                                boxSize={8}
+                                            />
+                                        </Center>
+                                        <VStack spacing={1}>
+                                            <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                                                {file ? file.name : "Upload your .docx file"}
+                                            </Text>
+                                            <Text fontSize="sm" color={subTextColor}>
+                                                Click or drag and drop your file here
+                                            </Text>
+                                        </VStack>
+                                    </VStack>
+                                </Box>
+
+                                {/* Progress bar while converting */}
+                                {loading && (
+                                    <Box w="full">
+                                        <Flex justify="space-between" mb={2}>
+                                            <Text
+                                                fontSize="xs"
+                                                fontWeight="bold"
+                                                color="brand.400"
+                                                textTransform="uppercase"
+                                            >
+                                                Converting &amp; generating preview
+                                            </Text>
+                                            <Text fontSize="xs" color={subTextColor}>
+                                                Please wait
+                                            </Text>
+                                        </Flex>
+                                        <Progress
+                                            size="xs"
+                                            isIndeterminate
+                                            colorScheme="brand"
+                                            borderRadius="full"
+                                        />
+                                    </Box>
+                                )}
+
+                                {/* Action buttons */}
+                                <ScaleFade in={!!file} unmountOnExit style={{ width: "100%" }}>
+                                    <HStack spacing={4}>
+                                        <Button
+                                            leftIcon={<FiEye />}
+                                            w="full"
+                                            size="lg"
+                                            height="60px"
+                                            onClick={handleConvert}
+                                            isLoading={loading}
+                                            loadingText="Converting…"
+                                            borderRadius="xl"
+                                            bgGradient="linear(to-r, brand.400, brand.600)"
+                                            color="white"
+                                            _hover={{
+                                                bgGradient: "linear(to-r, brand.500, brand.700)",
+                                                transform: "translateY(-2px)",
+                                                boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                                            }}
+                                            _active={{ transform: "translateY(0)" }}
+                                            transition="all 0.2s"
+                                        >
+                                            Convert &amp; Preview
+                                        </Button>
+                                        <Button
+                                            size="lg"
+                                            height="60px"
+                                            variant="ghost"
+                                            colorScheme="red"
+                                            onClick={handleClear}
+                                            borderRadius="xl"
+                                            isDisabled={loading}
+                                        >
+                                            <FiTrash2 />
+                                        </Button>
+                                    </HStack>
+                                </ScaleFade>
                             </VStack>
                         </Box>
 
-                        {/* Progress bar while converting */}
-                        {loading && (
-                            <Box w="full">
-                                <Flex justify="space-between" mb={2}>
-                                    <Text
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="brand.400"
-                                        textTransform="uppercase"
-                                    >
-                                        Converting &amp; generating preview
-                                    </Text>
-                                    <Text fontSize="xs" color={subTextColor}>
-                                        Please wait
-                                    </Text>
-                                </Flex>
-                                <Progress
-                                    size="xs"
-                                    isIndeterminate
-                                    colorScheme="brand"
-                                    borderRadius="full"
+                        {/* Right Sticky ContinueToSection */}
+                        {file && (
+                            <Box
+                                w={{ base: "full", lg: "340px", xl: "360px" }}
+                                position={{ base: "relative", lg: "sticky" }}
+                                top={{ lg: "100px" }}
+                                alignSelf="flex-start"
+                                flexShrink={0}
+                            >
+                                <ContinueToSection
+                                    currentTool="word-to-pdf"
+                                    variant="vertical"
+                                    convertedFiles={[{
+                                        url: previewUrl || undefined,
+                                        file: file,
+                                        name: downloadName,
+                                        type: 'application/pdf'
+                                    }]}
                                 />
                             </Box>
                         )}
-
-                        {/* Action buttons */}
-                        <ScaleFade in={!!file} unmountOnExit style={{ width: "100%" }}>
-                            <HStack spacing={4}>
-                                <Button
-                                    leftIcon={<FiEye />}
-                                    w="full"
-                                    size="lg"
-                                    height="60px"
-                                    onClick={handleConvert}
-                                    isLoading={loading}
-                                    loadingText="Converting…"
-                                    borderRadius="xl"
-                                    bgGradient="linear(to-r, brand.400, brand.600)"
-                                    color="white"
-                                    _hover={{
-                                        bgGradient: "linear(to-r, brand.500, brand.700)",
-                                        transform: "translateY(-2px)",
-                                        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                                    }}
-                                    _active={{ transform: "translateY(0)" }}
-                                    transition="all 0.2s"
-                                >
-                                    Convert &amp; Preview
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    height="60px"
-                                    variant="ghost"
-                                    colorScheme="red"
-                                    onClick={handleClear}
-                                    borderRadius="xl"
-                                    isDisabled={loading}
-                                >
-                                    <FiTrash2 />
-                                </Button>
-                            </HStack>
-                        </ScaleFade>
-                    </VStack>
-                </Box>
-            </Flex>
+                    </Flex>
+                </Container>
+            </VStack>
 
             {/* Preview Drawer */}
             <ConversionPreviewDrawer
@@ -326,8 +360,14 @@ const WordToPdfConverterContent = () => {
                 downloadUrl={previewUrl}
                 downloadName={downloadName}
                 outputLabel="PDF"
+                currentTool="word-to-pdf"
+                convertedFiles={file ? [{
+                    url: previewUrl || undefined,
+                    file: file,
+                    name: downloadName,
+                    type: 'application/pdf'
+                }] : []}
             />
-            {file && <ContinueToSection currentTool="word-to-pdf" />}
         </Box>
     );
 };

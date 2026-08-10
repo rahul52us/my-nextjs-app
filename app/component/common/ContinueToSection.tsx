@@ -1,18 +1,18 @@
 "use client";
+
 import React, { useState } from "react";
 import {
   Box,
   Heading,
   Text,
   SimpleGrid,
-  HStack,
-  VStack,
   Icon,
   Badge,
   useColorModeValue,
   Spinner,
+  Flex,
 } from "@chakra-ui/react";
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronRight, FiArrowRight } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import {
   getDynamicRelatedTools,
@@ -24,7 +24,7 @@ import {
 import { useFileTransfer } from "../../context/FileTransferContext";
 
 interface ContinueToSectionProps {
-  /** Current tool slug e.g. "pdf-to-jpg" */
+  /** Current tool slug e.g. "pdf-to-word" */
   currentTool: string;
   /** Converted image or file objects to carry forward to the destination tool */
   convertedFiles?: Array<{
@@ -41,6 +41,10 @@ interface ContinueToSectionProps {
   customSubtext?: string;
   /** Maximum number of suggested tool chips to display (default 4) */
   maxTools?: number;
+  /** Set true if rendered inside a drawer */
+  isDrawer?: boolean;
+  /** Display variant: "vertical" (sidebar stack), "horizontal" (bottom grid), "drawer" */
+  variant?: "horizontal" | "vertical" | "drawer";
 }
 
 export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
@@ -49,10 +53,14 @@ export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
   customTitle = "Continue to...",
   customSubtext,
   maxTools = 4,
+  isDrawer = false,
+  variant,
 }) => {
   const router = useRouter();
   const { setTransfer } = useFileTransfer();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
+
+  const activeVariant = isDrawer ? "drawer" : (variant || "vertical");
 
   // Semantic color tokens matching theme & dark mode
   const containerBg = useColorModeValue("white", "gray.800");
@@ -95,150 +103,177 @@ export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
     router.push(tool.route);
   };
 
+  const isVertical = activeVariant === "vertical";
+  const isDrawerVariant = activeVariant === "drawer";
+
+  const gridColumns = isVertical
+    ? 1
+    : isDrawerVariant
+    ? { base: 1, sm: 2 }
+    : { base: 1, sm: 2, md: 2, lg: Math.min(relatedTools.length, 4) };
+
   return (
     <Box
       w="full"
       bg={containerBg}
       borderRadius="2xl"
-      p={{ base: 5, md: 6 }}
-      mt={8}
+      p={{ base: 4, sm: 5 }}
       border="1px solid"
       borderColor={borderColor}
       shadow="md"
       transition="all 0.3s ease"
     >
       {/* Heading & Subtext */}
-      <VStack align="start" spacing={1} mb={5}>
-        <Heading
-          as="h3"
-          size="md"
-          fontWeight="bold"
-          color={headingColor}
-          letterSpacing="tight"
-        >
-          {customTitle}
-        </Heading>
+      <Flex direction="column" align="flex-start" gap={1} mb={4}>
+        <Flex align="center" justify="space-between" w="full">
+          <Heading
+            as="h3"
+            size={isDrawerVariant || isVertical ? "sm" : "md"}
+            fontWeight="bold"
+            color={headingColor}
+            letterSpacing="tight"
+          >
+            {customTitle}
+          </Heading>
+          {isVertical && (
+            <Badge colorScheme="brand" variant="subtle" fontSize="10px" borderRadius="md" px={2} py={0.5}>
+              Next Step
+            </Badge>
+          )}
+        </Flex>
         {displaySubtext && (
-          <Text fontSize="sm" color={subtextColor} fontWeight="medium">
+          <Text fontSize="xs" color={subtextColor} fontWeight="medium">
             {displaySubtext}
           </Text>
         )}
-      </VStack>
+      </Flex>
 
-      {/* Suggested Tool Chips Grid (Desktop: horizontal row / grid, Mobile: vertical stack) */}
-      <SimpleGrid columns={{ base: 1, sm: 2, md: relatedTools.length }} spacing={4}>
+      {/* Suggested Tool Chips Grid */}
+      <SimpleGrid columns={gridColumns} spacing={3}>
         {relatedTools.map((tool) => {
           const isNavigating = navigatingId === tool.id;
 
           return (
-            <HStack
+            <Flex
               key={tool.id}
-              as="button"
               onClick={() => handleToolClick(tool)}
               w="full"
-              p={4}
+              minW={0}
+              p={3}
               borderRadius="xl"
               bg={chipBg}
               border="1px solid"
               borderColor={chipBorder}
-              justifyContent="space-between"
-              alignItems="center"
+              direction="row"
+              align="center"
+              justify="space-between"
               cursor="pointer"
               role="group"
               transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
               _hover={{
                 bg: chipHoverBg,
                 borderColor: chipHoverBorder,
-                transform: "translateY(-2px)",
+                transform: isVertical ? "translateX(4px)" : "translateY(-2px)",
                 shadow: "md",
               }}
               _active={{
-                transform: "translateY(0)",
+                transform: "none",
                 shadow: "sm",
               }}
-              outline="none"
-              _focus={{
-                ring: 2,
-                ringColor: "brand.400",
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleToolClick(tool);
+                }
               }}
             >
-              <HStack spacing={3} overflow="hidden" flex={1}>
-                {/* Icon Container */}
-                <Box
-                  bg={iconBoxBg}
-                  color={iconColor}
-                  p={2.5}
-                  borderRadius="lg"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  flexShrink={0}
-                  transition="all 0.2s ease"
-                  _groupHover={{
-                    bg: "brand.600",
-                    color: "white",
-                  }}
-                >
-                  <Icon as={tool.icon} boxSize={5} />
-                </Box>
+              {/* Left: Icon */}
+              <Flex
+                bg={iconBoxBg}
+                color={iconColor}
+                boxSize="38px"
+                borderRadius="lg"
+                align="center"
+                justify="center"
+                flexShrink={0}
+                mr={3}
+                transition="all 0.2s ease"
+                _groupHover={{
+                  bg: "brand.600",
+                  color: "white",
+                }}
+              >
+                <Icon as={tool.icon} boxSize={5} />
+              </Flex>
 
-                {/* Tool Details */}
-                <VStack align="start" spacing={0.5} overflow="hidden" textAlign="left">
-                  <HStack spacing={1.5} maxW="full">
-                    <Text
-                      fontSize="sm"
-                      fontWeight="bold"
-                      color={headingColor}
-                      noOfLines={1}
-                      _groupHover={{ color: "brand.600" }}
-                      transition="color 0.2s"
+              {/* Middle: Text details */}
+              <Flex
+                direction="column"
+                align="flex-start"
+                flex={1}
+                minW={0}
+                overflow="hidden"
+                textAlign="left"
+              >
+                <Flex align="center" gap={1.5} w="full" minW={0}>
+                  <Text
+                    fontSize="sm"
+                    fontWeight="bold"
+                    color={headingColor}
+                    noOfLines={1}
+                    title={tool.name}
+                    _groupHover={{ color: "brand.600" }}
+                    transition="color 0.2s"
+                  >
+                    {tool.name}
+                  </Text>
+                  {tool.badge && (
+                    <Badge
+                      colorScheme="brand"
+                      variant="subtle"
+                      fontSize="9px"
+                      borderRadius="full"
+                      px={1.5}
+                      flexShrink={0}
                     >
-                      {tool.name}
-                    </Text>
-                    {tool.badge && (
-                      <Badge
-                        colorScheme="brand"
-                        variant="subtle"
-                        fontSize="9px"
-                        borderRadius="full"
-                        px={1.5}
-                      >
-                        {tool.badge}
-                      </Badge>
-                    )}
-                  </HStack>
-
-                  {tool.subtext && (
-                    <Text
-                      fontSize="xs"
-                      color={subtextColor}
-                      noOfLines={1}
-                      display={{ base: "none", lg: "block" }}
-                    >
-                      {tool.subtext}
-                    </Text>
+                      {tool.badge}
+                    </Badge>
                   )}
-                </VStack>
-              </HStack>
+                </Flex>
 
-              {/* Right Chevron Arrow / Spinner */}
-              <Box flexShrink={0} ml={2}>
+                {tool.subtext && (
+                  <Text
+                    fontSize="xs"
+                    color={subtextColor}
+                    noOfLines={1}
+                    w="full"
+                    minW={0}
+                    title={tool.subtext}
+                  >
+                    {tool.subtext}
+                  </Text>
+                )}
+              </Flex>
+
+              {/* Right: Chevron Arrow or Spinner */}
+              <Flex flexShrink={0} ml={2} align="center" justify="center">
                 {isNavigating ? (
                   <Spinner size="xs" color="brand.500" />
                 ) : (
                   <Icon
-                    as={FiChevronRight}
+                    as={isVertical ? FiArrowRight : FiChevronRight}
                     boxSize={4}
                     color={chevronColor}
                     transition="all 0.2s ease"
                     _groupHover={{
                       color: chevronHoverColor,
-                      transform: "translateX(3px)",
+                      transform: isVertical ? "translateX(3px)" : "translateX(3px)",
                     }}
                   />
                 )}
-              </Box>
-            </HStack>
+              </Flex>
+            </Flex>
           );
         })}
       </SimpleGrid>

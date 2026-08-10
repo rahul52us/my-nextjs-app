@@ -345,10 +345,10 @@ const PDFWatermarker: React.FC = observer(() => {
   };
 
   return (
-    <div className={`min-h-screen ${pageBg} p-4 md:p-8 lg:p-12 font-sans`}>
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-8">
+    <div className={`min-h-screen ${pageBg} p-4 md:p-6 lg:p-8 font-sans`}>
+      <div className="max-w-[1450px] mx-auto flex flex-col lg:flex-row gap-6 items-start justify-center">
         {/* Left Control Panel */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="w-full lg:w-[340px] flex-shrink-0 space-y-6">
           <div
             className={`${cardBg} ${panelBorder} p-6 rounded-3xl shadow-xl border sticky top-8`}
           >
@@ -587,8 +587,8 @@ const PDFWatermarker: React.FC = observer(() => {
           </div>
         </div>
 
-        {/* Right Preview Panel */}
-        <div className="lg:col-span-8">
+        {/* Center Live Preview Panel */}
+        <div className="flex-1 w-full min-w-0">
           <div
             className={`${previewBg} rounded-[2.5rem] p-6 lg:p-10 border-4 ${panelBorder} shadow-inner min-h-[700px] flex flex-col items-center`}
           >
@@ -709,8 +709,14 @@ const PDFWatermarker: React.FC = observer(() => {
             </p>
           </div>
         </div>
+
+        {/* Right Sticky Sidebar: ContinueToSection */}
+        {pdfFile && (
+          <div className="w-full lg:w-[320px] xl:w-[340px] lg:sticky lg:top-[32px] self-start flex-shrink-0">
+            <ContinueToSection currentTool="pdf-watermark" variant="vertical" convertedFiles={[{ file: pdfFile, name: pdfFile.name, type: pdfFile.type }]} />
+          </div>
+        )}
       </div>
-      {pdfFile && <ContinueToSection currentTool="pdf-watermark" />}
     </div>
   );
 });

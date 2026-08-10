@@ -37,6 +37,11 @@ import ContinueToSection from "../../../../../component/common/ContinueToSection
 
 const MotionBox = motion(Box);
 
+const formatSize = (bytes: number) =>
+  bytes / 1024 < 1024
+    ? (bytes / 1024).toFixed(1) + " KB"
+    : (bytes / (1024 * 1024)).toFixed(2) + " MB";
+
 const AICompressor: React.FC = () => {
   const [originalFile, setOriginalFile]     = useState<File | null>(null);
   const [originalUrl, setOriginalUrl]       = useState<string | null>(null);
@@ -184,20 +189,15 @@ const AICompressor: React.FC = () => {
         };
       };
     },
-    // intentionally NOT listing mode/quality/targetSizeMB here —
-    // we pass them explicitly so callers always control the values
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [compressedUrl, toast]
   );
 
-  // ── Dropzone ─────────────────────────────────────────────────────
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (file) {
         setOriginalFile(file);
         setOriginalUrl(URL.createObjectURL(file));
-        // Pass current slider values explicitly to avoid stale closure
         compressImage(file, mode, quality, targetSizeMB);
       }
     },
@@ -213,7 +213,7 @@ const AICompressor: React.FC = () => {
   const handleDownload = () => {
     if (!compressedUrl) return;
     const link = document.createElement("a");
-    link.href     = compressedUrl;
+    link.href = compressedUrl;
     link.download = `optimized_${originalFile?.name || "image.jpg"}`;
     link.click();
   };
@@ -236,7 +236,6 @@ const AICompressor: React.FC = () => {
     <Box minH="100vh" bg={bg} py={{ base: 6, md: 12 }}>
       <Container maxW="container.xl">
 
-        {/* Header */}
         <Flex justify="space-between" align="center" mb={10}>
           <HStack spacing={3}>
             <Box bg="brand.600" p={2} borderRadius="xl" color="white" shadow="lg">
@@ -258,12 +257,13 @@ const AICompressor: React.FC = () => {
           )}
         </Flex>
 
-        <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
-
-          {/* ── Sidebar Controls ── */}
-          <Box gridColumn={{ lg: "span 4" }}>
-            <VStack spacing={6} align="stretch">
-              <Box bg={cardBg} p={6} borderRadius="3xl" shadow="sm" border="1px" borderColor={cardBorder}>
+        <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+          <Box flex="1" w="full" minW={0}>
+            <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={8}>
+              {/* Sidebar Controls */}
+              <Box gridColumn={{ lg: "span 4" }}>
+                <VStack spacing={6} align="stretch">
+                  <Box bg={cardBg} p={6} borderRadius="3xl" shadow="sm" border="1px" borderColor={cardBorder}>
 
                 {/* Mode toggle */}
                 <HStack bg={secondaryBg} p={1} borderRadius="2xl" mb={6}>
@@ -406,7 +406,7 @@ const AICompressor: React.FC = () => {
                     <HStack justify="space-between" mb={3} px={2}>
                       <Badge variant="subtle">Original</Badge>
                       <Text fontSize="xs" fontWeight="bold" color={textMuted}>
-                        {(originalFile.size / 1024).toFixed(1)} KB
+                        {originalFile.size ? formatSize(originalFile.size) : "0 KB"}
                       </Text>
                     </HStack>
                     <Box borderRadius="2xl" overflow="hidden" height="300px" bg={dropInnerBg}>
@@ -414,66 +414,86 @@ const AICompressor: React.FC = () => {
                     </Box>
                   </Box>
 
-                  {/* Compressed */}
-                  <Box
-                    bg={cardBg} p={4} borderRadius="3xl" border="1px"
-                    borderColor={useColorModeValue("brand.100", "brand.600")} shadow="sm"
-                  >
-                    <HStack justify="space-between" mb={3} px={2}>
-                      <Badge colorScheme="brand">Optimized</Badge>
-                      <Text fontSize="xs" fontWeight="bold" color={useColorModeValue("brand.400", "brand.200")}>
-                        {compressedFile ? (compressedFile.size / 1024).toFixed(1) : "—"} KB
-                      </Text>
-                    </HStack>
-                    <Box
-                      borderRadius="2xl" overflow="hidden" height="300px" bg={dropInnerBg}
-                      display="flex" alignItems="center" justifyContent="center"
-                    >
-                      {loading ? (
-                        <VStack spacing={3}>
-                          <Spinner color="brand.500" size="xl" />
-                          <Text fontSize="xs" color={textMuted}>Compressing…</Text>
-                        </VStack>
-                      ) : (
-                        compressedUrl && (
-                          <Image src={compressedUrl} alt="compressed" w="full" h="full" objectFit="contain" />
-                        )
+                  {/* Optimized */}
+                      <Box bg={cardBg} p={4} borderRadius="3xl" border="1px" borderColor={cardBorder}>
+                        <Flex justify="space-between" align="center" mb={3}>
+                          <Text fontSize="xs" fontWeight="black" textTransform="uppercase" color="brand.500">
+                            Optimized
+                          </Text>
+                          {compressedFile && (
+                            <HStack spacing={1}>
+                              <Badge colorScheme="green" variant="solid" borderRadius="md">
+                                {formatSize(compressedFile.size)}
+                              </Badge>
+                              {originalFile.size > 0 && (
+                                <Badge colorScheme="purple" variant="subtle" borderRadius="md">
+                                  -{Math.round((1 - compressedFile.size / originalFile.size) * 100)}%
+                                </Badge>
+                              )}
+                            </HStack>
+                          )}
+                        </Flex>
+                        <Box
+                          h="260px" borderRadius="2xl" overflow="hidden" bg={secondaryBg} p={2}
+                          display="flex" alignItems="center" justifyContent="center"
+                        >
+                          {loading ? (
+                            <VStack spacing={3}>
+                              <Spinner color="brand.500" size="xl" />
+                              <Text fontSize="xs" color={textMuted}>Compressing…</Text>
+                            </VStack>
+                          ) : (
+                            compressedUrl && (
+                              <Image src={compressedUrl} alt="compressed" w="full" h="full" objectFit="contain" />
+                            )
+                          )}
+                        </Box>
+                      </Box>
+                    </SimpleGrid>
+
+                    <AnimatePresence>
+                      {compressedFile && !loading && (
+                        <MotionBox
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          w="full"
+                        >
+                          <Button
+                            w="full" h="70px" colorScheme="gray"
+                            bg={useColorModeValue("gray.900", "gray.700")}
+                            _hover={{ bg: "brand.600" }}
+                            color="white" borderRadius="2xl"
+                            leftIcon={<MdFileDownload size="20px" />}
+                            onClick={handleDownload}
+                          >
+                            Download Optimized Image
+                          </Button>
+                        </MotionBox>
                       )}
-                    </Box>
-                  </Box>
-                </SimpleGrid>
-
-                <AnimatePresence>
-                  {compressedFile && !loading && (
-                    <MotionBox
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      w="full"
-                    >
-                      <Button
-                        w="full" h="70px" colorScheme="gray"
-                        bg={useColorModeValue("gray.900", "gray.700")}
-                        _hover={{ bg: "brand.600" }}
-                        color="white" borderRadius="2xl"
-                        leftIcon={<MdFileDownload size="20px" />}
-                        onClick={handleDownload}
-                      >
-                        Download Optimized Image
-                      </Button>
-                    </MotionBox>
-                  )}
-                </AnimatePresence>
-              </VStack>
-            )}
+                    </AnimatePresence>
+                  </VStack>
+                )}
+              </Box>
+            </SimpleGrid>
           </Box>
-        </SimpleGrid>
 
-        {(compressedFile || originalFile) && (
-          <ContinueToSection
-            currentTool="compress-image"
-            convertedFiles={[{ blob: compressedFile || undefined, file: originalFile || undefined, name: originalFile ? originalFile.name : 'image.jpg', type: originalFile ? originalFile.type : 'image/jpeg' }]}
-          />
-        )}
+          {/* Right Sticky Sidebar */}
+          {(compressedFile || originalFile) && (
+            <Box
+              w={{ base: "full", lg: "320px", xl: "340px" }}
+              position={{ base: "relative", lg: "sticky" }}
+              top={{ lg: "100px" }}
+              alignSelf="flex-start"
+              flexShrink={0}
+            >
+              <ContinueToSection
+                currentTool="compress-image"
+                variant="vertical"
+                convertedFiles={[{ blob: compressedFile || undefined, file: originalFile || undefined, name: originalFile ? originalFile.name : 'image.jpg', type: originalFile ? originalFile.type : 'image/jpeg' }]}
+              />
+            </Box>
+          )}
+        </Flex>
       </Container>
     </Box>
   );

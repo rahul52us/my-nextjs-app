@@ -569,6 +569,17 @@ const AIasist: React.FC = observer(() => {
             </div>
           )}
         </main>
+
+        {/* Right Sticky Sidebar: ContinueToSection */}
+        {image && (
+          <aside className={`hidden xl:block w-80 border-l p-4 overflow-y-auto flex-shrink-0 ${sidebarBg}`}>
+            <ContinueToSection
+              currentTool="image-editor"
+              variant="vertical"
+              convertedFiles={[{ url: image.src, type: "image/png" }]}
+            />
+          </aside>
+        )}
       </div>
 
       {/* QR Modal */}
@@ -595,12 +606,6 @@ const AIasist: React.FC = observer(() => {
             </button>
           </div>
         </div>
-      )}
-      {image && (
-        <ContinueToSection
-          currentTool="image-editor"
-          convertedFiles={[{ url: image.src, type: "image/png" }]}
-        />
       )}
     </div>
   );

@@ -378,221 +378,229 @@ const ImagesToPdf: React.FC = () => {
         Images to PDF & Base64 Converter
       </Heading>
 
-      <VStack spacing={6} align="stretch">
+      <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center" maxW="1350px" mx="auto">
+        {/* Main Workspace */}
+        <VStack spacing={6} align="stretch" flex="1" w="full" minW={0}>
 
-        {/* ✅ FIX 1: Custom styled upload box — now a working dropzone */}
-        <Input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleFileChange}
-          display="none"
-          id="image-upload-input"
-        />
-        <Box
-          as="label"
-          htmlFor="image-upload-input"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexDirection="column"
-          gap={3}
-          p={8}
-          border="2px dashed"
-          borderColor={
-            isDragActive ? "teal.400" : files.length > 0 ? "teal.400" : borderColor
-          }
-          borderRadius="xl"
-          bg={
-            isDragActive
-              ? useColorModeValue("teal.100", "teal.800")
-              : files.length > 0
-                ? useColorModeValue("teal.50", "teal.900")
-                : cardBg
-          }
-          cursor="pointer"
-          transition="all 0.2s"
-          _hover={{
-            borderColor: "teal.400",
-            bg: useColorModeValue("teal.50", "teal.900"),
-          }}
-          // NEW: drag-and-drop wiring. onDragOver MUST call preventDefault()
-          // or the browser will reject the drop (and just open the file instead).
-          onDragEnter={handleDragEnter}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <Icon
-            as={FaUpload}
-            boxSize={8}
-            color={isDragActive || files.length > 0 ? "teal.500" : "gray.400"}
+          {/* ✅ FIX 1: Custom styled upload box — now a working dropzone */}
+          <Input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            display="none"
+            id="image-upload-input"
           />
-          <Text
-            fontWeight={isDragActive || files.length > 0 ? "semibold" : "normal"}
-            color={isDragActive || files.length > 0 ? "teal.600" : "gray.500"}
-            fontSize="sm"
-            textAlign="center"
+          <Box
+            as="label"
+            htmlFor="image-upload-input"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            flexDirection="column"
+            gap={3}
+            p={8}
+            borderRadius="2xl"
+            border="2px dashed"
+            borderColor={isDragActive ? "brand.400" : borderColor}
+            bg={isDragActive ? useColorModeValue("brand.50", "gray.700") : cardBg}
+            cursor="pointer"
+            transition="all 0.2s"
+            _hover={{ borderColor: "brand.400", shadow: "md" }}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
-            {isDragActive
-              ? "Drop images here"
-              : files.length > 0
-                ? `✓ ${files.length} image${files.length > 1 ? "s" : ""} selected`
-                : "Click to choose images or drag & drop"}
-          </Text>
-          <Text fontSize="xs" color="gray.400">
-            Supports: JPG, PNG, WEBP, GIF
-          </Text>
-        </Box>
+            <Flex
+              w={14} h={14} borderRadius="2xl" bg="brand.500" color="white"
+              align="center" justify="center" shadow="lg"
+            >
+              <FaUpload size={24} />
+            </Flex>
+            <VStack spacing={0} textAlign="center">
+              <Text fontWeight="bold" fontSize="md" color={textColor}>
+                {isDragActive ? "Drop images here" : "Click to select or drag & drop images"}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                Supports PNG, JPG, JPEG, WEBP, GIF
+              </Text>
+            </VStack>
+          </Box>
 
-        {/* Draggable file list */}
+          {files.length > 0 && (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="images">
+                {(provided) => (
+                  <Wrap
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    spacing={4}
+                    justify="center"
+                    bg={cardBg}
+                    p={4}
+                    borderRadius="2xl"
+                    boxShadow="sm"
+                  >
+                    {files.map((file, index) => (
+                      <Draggable key={file.name + index} draggableId={file.name + index} index={index}>
+                        {(provided) => (
+                          <WrapItem
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <Box
+                              position="relative"
+                              borderWidth="1px"
+                              borderRadius="xl"
+                              overflow="hidden"
+                              boxShadow="sm"
+                              bg={bgColor}
+                              p={2}
+                              w="140px"
+                              h="160px"
+                              display="flex"
+                              flexDirection="column"
+                              alignItems="center"
+                              justifyContent="spaceBetween"
+                            >
+                              <IconButton
+                                aria-label="Remove image"
+                                icon={<FaTrashAlt />}
+                                size="xs"
+                                colorScheme="red"
+                                position="absolute"
+                                top={1}
+                                right={1}
+                                onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== index))}
+                                zIndex={2}
+                              />
+                              <Box w="full" h="100px" overflow="hidden" borderRadius="lg">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={file.name}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                              </Box>
+                              <Text fontSize="2xs" fontWeight="bold" noOfLines={1} mt={1} textAlign="center">
+                                {file.name}
+                              </Text>
+                            </Box>
+                          </WrapItem>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </Wrap>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
+
+          {/* Action buttons */}
+          <Wrap spacing={4} justify="center">
+            <WrapItem>
+              <Button
+                onClick={handleGeneratePDF}
+                leftIcon={loading ? <Spinner size="sm" /> : <FaFilePdf />}
+                colorScheme="brand"
+                size="lg"
+                variant="solid"
+                boxShadow="lg"
+                borderRadius="full"
+                isDisabled={loading || files.length === 0}
+                width={{ base: "100%", sm: "auto" }}
+              >
+                Convert to PDF & Download
+              </Button>
+            </WrapItem>
+
+            <WrapItem>
+              <Button
+                onClick={handleGenerateBase64}
+                leftIcon={<FaCode />}
+                colorScheme="purple"
+                size="lg"
+                variant="solid"
+                boxShadow="lg"
+                borderRadius="full"
+                isDisabled={loading || files.length === 0}
+                width={{ base: "100%", sm: "auto" }}
+              >
+                Generate Base64
+              </Button>
+            </WrapItem>
+
+            <WrapItem>
+              <Button
+                onClick={handleClearAll}
+                leftIcon={<FaTrash />}
+                colorScheme="red"
+                size="lg"
+                variant="solid"
+                boxShadow="lg"
+                borderRadius="full"
+                width={{ base: "100%", sm: "auto" }}
+              >
+                Clear All
+              </Button>
+            </WrapItem>
+          </Wrap>
+
+          {/* Base64 output */}
+          {base64Strings.length > 0 && (
+            <>
+              <Textarea
+                value={base64Strings.join("\n")}
+                readOnly
+                placeholder="Base64 strings will appear here"
+                size="sm"
+                bg={cardBg}
+                borderRadius="md"
+                boxShadow="sm"
+                rows={10}
+              />
+              <Button
+                onClick={copyToClipboard}
+                leftIcon={<FaClipboard />}
+                colorScheme="teal"
+                size="md"
+                variant="solid"
+                boxShadow="sm"
+                borderRadius="full"
+                width={{ base: "100%", sm: "auto" }}
+                alignSelf="center"
+              >
+                Copy to Clipboard
+              </Button>
+            </>
+          )}
+        </VStack>
+
+        {/* Right Sticky Sidebar */}
         {files.length > 0 && (
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="files">
-              {(provided) => (
-                <Flex
-                  wrap="wrap"
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  gap={2}
-                >
-                  {files.map((file, index) => (
-                    <Draggable
-                      key={`${file.name}-${index}`}
-                      draggableId={`${file.name}-${index}`}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <Box
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          p={2}
-                          bg={cardBg}
-                          boxShadow="md"
-                          borderRadius="md"
-                          border="1px solid"
-                          borderColor={borderColor}
-                          minW="120px"
-                          maxW="200px"
-                        >
-                          <Text isTruncated fontSize="xs" maxW="180px">
-                            {file.name}
-                          </Text>
-                          <IconButton
-                            aria-label="Remove"
-                            icon={<FaTrashAlt />}
-                            onClick={() =>
-                              setFiles(files.filter((_, idx) => idx !== index))
-                            }
-                            size="xs"
-                            mt={2}
-                            colorScheme="red"
-                            variant="ghost"
-                          />
-                        </Box>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </Flex>
-              )}
-            </Droppable>
-          </DragDropContext>
-        )}
-
-        {/* ✅ FIX 2: Wrap — buttons mobile pe stack honge */}
-        <Wrap spacing={3} justify="center">
-          <WrapItem flex={{ base: "1 1 100%", sm: "0 1 auto" }}>
-            <Button
-              onClick={handleGeneratePDF}
-              leftIcon={loading ? <Spinner size="sm" /> : <FaFilePdf />}
-              isDisabled={files.length === 0 || loading}
-              colorScheme="brand"
-              size="lg"
-              variant="solid"
-              boxShadow="lg"
-              borderRadius="full"
-              width={{ base: "100%", sm: "auto" }}
-            >
-              {loading ? "Generating..." : "Generate PDF"}
-            </Button>
-          </WrapItem>
-
-          <WrapItem flex={{ base: "1 1 100%", sm: "0 1 auto" }}>
-            <Button
-              onClick={handleGenerateBase64}
-              leftIcon={loading ? <Spinner size="sm" /> : <FaCode />}
-              isDisabled={files.length === 0 || loading}
-              colorScheme="green"
-              size="lg"
-              variant="solid"
-              boxShadow="lg"
-              borderRadius="full"
-              width={{ base: "100%", sm: "auto" }}
-            >
-              {loading ? "Generating..." : "Generate Base64"}
-            </Button>
-          </WrapItem>
-
-          <WrapItem flex={{ base: "1 1 100%", sm: "0 1 auto" }}>
-            <Button
-              onClick={handleClearAll}
-              leftIcon={<FaTrash />}
-              colorScheme="red"
-              size="lg"
-              variant="solid"
-              boxShadow="lg"
-              borderRadius="full"
-              width={{ base: "100%", sm: "auto" }}
-            >
-              Clear All
-            </Button>
-          </WrapItem>
-        </Wrap>
-
-        {/* Base64 output */}
-        {base64Strings.length > 0 && (
-          <>
-            <Textarea
-              value={base64Strings.join("\n")}
-              readOnly
-              placeholder="Base64 strings will appear here"
-              size="sm"
-              bg={cardBg}
-              borderRadius="md"
-              boxShadow="sm"
-              rows={10}
+          <Box
+            w={{ base: "full", lg: "320px", xl: "340px" }}
+            position={{ base: "relative", lg: "sticky" }}
+            top={{ lg: "100px" }}
+            alignSelf="flex-start"
+            flexShrink={0}
+          >
+            <ContinueToSection
+              currentTool="image-to-pdf"
+              variant="vertical"
+              convertedFiles={[{
+                blob: pdfBlob || undefined,
+                file: pdfBlob ? new File([pdfBlob], "images-converted.pdf", { type: "application/pdf" }) : undefined,
+                name: "images-converted.pdf",
+                type: "application/pdf"
+              }]}
             />
-            <Button
-              onClick={copyToClipboard}
-              leftIcon={<FaClipboard />}
-              colorScheme="teal"
-              size="md"
-              variant="solid"
-              boxShadow="sm"
-              borderRadius="full"
-              width={{ base: "100%", sm: "auto" }}
-              alignSelf="center"
-            >
-              Copy to Clipboard
-            </Button>
-          </>
+          </Box>
         )}
-
-        {files.length > 0 && (
-          <ContinueToSection
-            currentTool="image-to-pdf"
-            convertedFiles={[{
-              blob: pdfBlob || undefined,
-              file: pdfBlob ? new File([pdfBlob], "images-converted.pdf", { type: "application/pdf" }) : undefined,
-              name: "images-converted.pdf",
-              type: "application/pdf"
-            }]}
-          />
-        )}
-      </VStack>
+      </Flex>
     </Box>
   );
 };

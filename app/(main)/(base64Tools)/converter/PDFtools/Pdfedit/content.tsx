@@ -18,7 +18,6 @@ import {
 } from 'react-icons/fi';
 import stores from '../../../../../store/stores';
 import { useFileTransfer } from '../../../../../context/FileTransferContext';
-import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -461,13 +460,6 @@ const AdvancedPDFEditorContent: React.FC = () => {
             onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
             isDisabled={currentPage === numPages} aria-label="next" />
         </HStack>
-
-        {file && (
-          <ContinueToSection
-            currentTool="pdf-edit"
-            convertedFiles={[{ file, name: file.name, type: 'application/pdf' }]}
-          />
-        )}
 
       </VStack>
     </Box>

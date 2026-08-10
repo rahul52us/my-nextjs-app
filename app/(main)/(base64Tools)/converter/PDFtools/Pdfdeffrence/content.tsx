@@ -16,7 +16,6 @@ import {
 
 import { useEffect } from 'react';
 import { useFileTransfer } from '../../../../../context/FileTransferContext';
-import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -381,13 +380,6 @@ const FileComparer = () => {
 
             </TabPanels>
           </Tabs>
-
-          {(fileNames.left || fileNames.right) && (
-            <ContinueToSection
-              currentTool="pdf-deffrence"
-              convertedFiles={[{ name: fileNames.left || fileNames.right || "compared-document.pdf", type: "application/pdf" }]}
-            />
-          )}
         </Stack>
       </Container>
     </Box>

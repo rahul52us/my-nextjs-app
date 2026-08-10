@@ -225,118 +225,147 @@ const SkyBlueExtractor: React.FC = () => {
 
   return (
     <Box minH="100vh" bg="transparent" py={12} px={4}>
-      <Container maxW="container.xl">
-        <VStack spacing={10} align="stretch">
-          {/* Hero Section */}
-          <Flex direction="column" align="center" textAlign="center">
-            <ChakraHStack spacing={2} mb={4}>
-              <Badge colorScheme="brand" variant="solid" px={3} py={1} borderRadius="full">PDF</Badge>
-              <Badge colorScheme="cyan" variant="solid" px={3} py={1} borderRadius="full">DOCX</Badge>
-            </ChakraHStack>
-            <Heading size="2xl" color={textColor} fontWeight="900" mb={3} letterSpacing="tight">
-              SkyBlue <Text as="span" color={accentColor}>Asset Studio</Text>
-            </Heading>
-            <Text fontSize="lg" color={secondaryTextColor} maxW="2xl">
-              Professional document deconstruction. Extract every embedded image layer with zero quality loss.
-            </Text>
-          </Flex>
+      <Container maxW="1350px" px={{ base: 4, md: 8 }}>
+        <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+          {/* Main Extraction Area */}
+          <VStack spacing={12} flex="1" w="full" minW={0} align="stretch">
 
-          {/* Upload Area */}
-          <Box
-            {...getRootProps()}
-            bg={cardColor}
-            p={16}
-            borderRadius="3xl"
-            border="2px dashed"
-            borderColor={isDragActive ? "brand.400" : "brand.200"}
-            boxShadow="2xl"
-            cursor="pointer"
-            transition="0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-            _hover={{ transform: "translateY(-4px)", boxShadow: "3xl", borderColor: "brand.400" }}
-          >
-            <input {...getInputProps()} />
-            <VStack spacing={6}>
-              <Box p={5} bg={lightBgColor} borderRadius="full" border="1px solid" borderColor="brand.100">
-                <Icon as={FileUp} w={10} h={10} color="brand.500" />
-              </Box>
-              <VStack spacing={1}>
-                <Text fontSize="xl" fontWeight="bold" color={textColor}>
-                  {isDragActive ? "Release to Scan" : "Drag & Drop Document"}
+            {/* Header Section */}
+            <Flex direction="column" align="center" textAlign="center">
+              <ChakraHStack bg={lightBgColor} px={4} py={1.5} borderRadius="full" mb={4} border="1px solid" borderColor="brand.100">
+                <Icon as={Wand2} w={4} h={4} color="brand.500" />
+                <Text fontSize="xs" fontWeight="extrabold" color="brand.600" letterSpacing="widest" textTransform="uppercase">
+                  Vector & Bitmap Engine v4.0
                 </Text>
-                <Text color={secondaryTextColor}>Supports .PDF and .DOCX formats</Text>
+              </ChakraHStack>
+              <Heading size="2xl" color={textColor} fontWeight="900" mb={3} letterSpacing="tight">
+                SkyBlue <Text as="span" color={accentColor}>Asset Studio</Text>
+              </Heading>
+              <Text fontSize="lg" color={secondaryTextColor} maxW="2xl">
+                Professional document deconstruction. Extract every embedded image layer with zero quality loss.
+              </Text>
+            </Flex>
+
+            {/* Upload Area */}
+            <Box
+              {...getRootProps()}
+              bg={cardColor}
+              p={16}
+              borderRadius="3xl"
+              border="2px dashed"
+              borderColor={isDragActive ? "brand.400" : "brand.200"}
+              boxShadow="2xl"
+              cursor="pointer"
+              transition="0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+              _hover={{ transform: "translateY(-4px)", boxShadow: "3xl", borderColor: "brand.400" }}
+            >
+              <input {...getInputProps()} />
+              <VStack spacing={6}>
+                <Box p={5} bg={lightBgColor} borderRadius="full" border="1px solid" borderColor="brand.100">
+                  <Icon as={FileUp} w={10} h={10} color="brand.500" />
+                </Box>
+                <VStack spacing={2} textAlign="center">
+                  <Text fontSize="xl" fontWeight="black" color="brand.900">
+                    {isDragActive ? "Drop document to process" : "Select PDF or Word Document"}
+                  </Text>
+                  <Text fontSize="sm" color="brand.400" fontWeight="medium">
+                    Native PDF (.pdf) & Microsoft Word (.docx) supported
+                  </Text>
+                </VStack>
               </VStack>
-            </VStack>
-          </Box>
+            </Box>
 
-          {/* Features Bar */}
-          <SimpleGrid columns={[1, 3]} spacing={6}>
-            <FeatureItem icon={ShieldCheck} title="Privacy First" desc="Extraction happens entirely in-browser" />
-            <FeatureItem icon={Zap} title="Instant Speed" desc="High-performance layer deconstruction" />
-            <FeatureItem icon={Wand2} title="Smart Cropping" desc="Auto-detects hidden document graphics" />
-          </SimpleGrid>
+            {/* Features Info */}
+            <SimpleGrid columns={[1, 3]} spacing={6} w="full">
+              <FeatureItem icon={Zap} title="Instant Parse" desc="Multi-threaded processing" />
+              <FeatureItem icon={ShieldCheck} title="Privacy First" desc="Zero cloud uploads" />
+              <FeatureItem icon={ImageIcon} title="HD Extraction" desc="Original DPI preserved" />
+            </SimpleGrid>
 
-          {isProcessing && (
-            <Center py={10} flexDirection="column">
-              <Spinner size="xl" thickness="4px" speed="0.8s" color="brand.500" mb={4} />
-              <Text fontWeight="bold" color={textColor}>Analyzing Document Layers...</Text>
-              <Text fontSize="sm" color={secondaryTextColor}>Isolating bitmap assets</Text>
-            </Center>
-          )}
+            {/* Processing Spinner */}
+            {isProcessing && (
+              <Center py={12}>
+                <VStack spacing={4}>
+                  <Spinner size="xl" color="brand.500" thickness="4px" speed="0.8s" />
+                  <Text fontWeight="bold" color="brand.600" fontSize="sm">Deconstructing document structure...</Text>
+                </VStack>
+              </Center>
+            )}
 
-          {/* Results Area */}
-          {images.length > 0 && (
-            <ScaleFade in={true}>
-              <VStack align="stretch" spacing={6}>
-                <Flex justify="space-between" align="center" bg="white" p={5} borderRadius="2xl" shadow="lg">
-                  <ChakraHStack spacing={3}>
-                    <Icon as={Layers} color="brand.500" />
-                    <Text fontWeight="800" color="brand.800" fontSize="lg">
-                      {images.length} Assets Recovered
-                    </Text>
-                  </ChakraHStack>
-                  <Button
-                    leftIcon={<Download size={18}/>}
-                    colorScheme="brand"
-                    borderRadius="full"
-                    px={8}
-                    onClick={downloadAll}
-                    shadow="brand.200"
-                  >
-                    Download ZIP
-                  </Button>
-                </Flex>
-
-                <SimpleGrid columns={[1, 2, 3, 4]} spacing={6}>
-                  {images.map((img) => (
-                    <Box
-                      key={img.id}
-                      bg={cardColor}
-                      borderRadius="2xl"
-                      overflow="hidden"
-                      border="1px solid"
-                      borderColor={borderColor}
-                      transition="0.2s"
-                      _hover={{ shadow: "xl", transform: "scale(1.02)" }}
-                    >
-                      <Box h="200px" bg="gray.50" p={3} position="relative">
-                        <Image src={img.url} alt="asset" h="100%" w="100%" objectFit="contain" />
-                        <Badge position="absolute" top={3} right={3} colorScheme={img.format === 'PDF' ? 'brand' : 'cyan'} variant="solid">
-                          {img.format}
-                        </Badge>
-                      </Box>
-                      <Box p={4}>
-                        <Text fontSize="sm" fontWeight="bold" noOfLines={1} color="brand.900" mb={1}>{img.name}</Text>
-                        <Text fontSize="xs" fontWeight="medium" color="brand.300">{img.dimensions}</Text>
-                      </Box>
+            {/* Extracted Images Grid */}
+            {images.length > 0 && !isProcessing && (
+              <ScaleFade in={true}>
+                <VStack spacing={8} align="stretch" w="full">
+                  <Flex align="center" justify="space-between" bg={cardColor} p={6} borderRadius="2xl" border="1px solid" borderColor={borderColor}>
+                    <Box>
+                      <Text fontWeight="black" fontSize="lg" color="brand.900">Assets Extracted</Text>
+                      <Text fontSize="xs" color="brand.400" fontWeight="bold">Total {images.length} high-resolution items</Text>
                     </Box>
-                  ))}
-                </SimpleGrid>
-              </VStack>
-            </ScaleFade>
+                    <Button
+                      leftIcon={<Download size={18} />}
+                      colorScheme="brand"
+                      size="lg"
+                      borderRadius="full"
+                      px={8}
+                      onClick={downloadAll}
+                      shadow="brand.200"
+                    >
+                      Download ZIP
+                    </Button>
+                  </Flex>
+
+                  <SimpleGrid columns={[1, 2, 3, 4]} spacing={6}>
+                    {images.map((img) => (
+                      <Box
+                        key={img.id}
+                        bg={cardColor}
+                        borderRadius="2xl"
+                        overflow="hidden"
+                        border="1px solid"
+                        borderColor={borderColor}
+                        transition="0.2s"
+                        _hover={{ shadow: "xl", transform: "scale(1.02)" }}
+                      >
+                        <Box h="200px" bg="gray.50" p={3} position="relative">
+                          <Image src={img.url} alt="asset" h="100%" w="100%" objectFit="contain" />
+                          <Badge position="absolute" top={3} right={3} colorScheme={img.format === 'PDF' ? 'brand' : 'cyan'} variant="solid">
+                            {img.format}
+                          </Badge>
+                        </Box>
+                        <Box p={4}>
+                          <Text fontSize="sm" fontWeight="bold" noOfLines={1} color="brand.900" mb={1}>{img.name}</Text>
+                          <Text fontSize="xs" fontWeight="medium" color="brand.300">{img.dimensions}</Text>
+                        </Box>
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                </VStack>
+              </ScaleFade>
+            )}
+          </VStack>
+
+          {/* Right Sticky ContinueToSection Sidebar */}
+          {images.length > 0 && (
+            <Box
+              w={{ base: "full", lg: "320px", xl: "340px" }}
+              position={{ base: "relative", lg: "sticky" }}
+              top={{ lg: "100px" }}
+              alignSelf="flex-start"
+              flexShrink={0}
+            >
+              <ContinueToSection
+                currentTool="image-extract"
+                variant="vertical"
+                convertedFiles={images.map((img) => ({
+                  url: img.url,
+                  blob: img.blob,
+                  name: img.name,
+                }))}
+              />
+            </Box>
           )}
-        </VStack>
+        </Flex>
       </Container>
-      {images.length > 0 && <ContinueToSection currentTool="image-extract" />}
     </Box>
   );
 };

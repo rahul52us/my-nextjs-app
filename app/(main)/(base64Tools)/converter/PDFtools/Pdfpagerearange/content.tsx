@@ -139,173 +139,186 @@ const RearrangePages = () => {
     );
   }
 
-  return (
-    <Box minH="100vh" bg={bgMain} py={10}>
-      <Container maxW="container.xl">
-        <VStack spacing={8} align="stretch">
-          {/* Header */}
-          <Flex
-            justify="space-between"
-            align="center"
-            bg={cardBg}
+  return (    <Box minH="100vh" bg={bgMain} py={10}>
+      <Container maxW="1350px" px={{ base: 4, md: 8 }}>
+        <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+          <VStack spacing={8} align="stretch" flex="1" w="full" minW={0}>
+            {/* Header */}
+            <Flex
+              justify="space-between"
+              align="center"
+              bg={cardBg}
 
-            p={6}
-            borderRadius="xl"
-            shadow="sm"
-            border="1px solid"
-            borderColor={borderClr}
-          >
-            <Box>
-              <Heading size="lg" color="brand.600">PDF Architect</Heading>
-              <Text color={textGray} fontSize="sm">Rearrange or remove pages with ease</Text>
-            </Box>
-            {file && (
-              <HStack spacing={3}>
-                <Button leftIcon={<DeleteIcon />} variant="ghost" colorScheme="red" onClick={() => setFile(null)}>
-                  Discard
-                </Button>
-                <Button
-                  leftIcon={<DownloadIcon />}
-                  colorScheme="brand"
-                  shadow="md"
-                  isLoading={isProcessing}
-                  onClick={downloadRearrangedPDF}
-                >
-                  Save & Download
-                </Button>
-              </HStack>
-            )}
-          </Flex>
-
-          {/* Upload Area */}
-          {!file ? (
-            <Box
-              {...getRootProps()}
-              h="400px"
-              border="2px dashed"
-              borderColor={isDragActive ? "brand.400" : "gray.300"}
-              bg={isDragActive ? "brand.50" : boxBg}
-              borderRadius="2xl"
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
-              transition="all 0.3s"
-              _hover={{ borderColor: "brand.500", bg: hoverBg }}
+              p={6}
+              borderRadius="xl"
+              shadow="sm"
+              border="1px solid"
+              borderColor={borderClr}
             >
-              <input {...getInputProps()} />
-              <Icon as={AddIcon} w={10} h={10} mb={4} color="brand.500" />
-              <Heading size="md" mb={2} fontWeight="600">Click or drag PDF to upload</Heading>
-              <Text color="gray.400">Support for files up to 50MB</Text>
-            </Box>
-          ) : (
-            <Box bg={cardBg}
- p={10} borderRadius="2xl" border="1px solid" borderColor={borderClr} shadow="inner">
-              <Document
-                file={file}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={<Spinner color="brand.500" m={10} />}
+              <Box>
+                <Heading size="lg" color="brand.600">PDF Architect</Heading>
+                <Text color={textGray} fontSize="sm">Rearrange or remove pages with ease</Text>
+              </Box>
+              {file && (
+                <HStack spacing={3}>
+                  <Button leftIcon={<DeleteIcon />} variant="ghost" colorScheme="red" onClick={() => setFile(null)}>
+                    Discard
+                  </Button>
+                  <Button
+                    leftIcon={<DownloadIcon />}
+                    colorScheme="brand"
+                    shadow="md"
+                    isLoading={isProcessing}
+                    onClick={downloadRearrangedPDF}
+                  >
+                    Save & Download
+                  </Button>
+                </HStack>
+              )}
+            </Flex>
+
+            {/* Upload Dropzone */}
+            {!file && (
+              <Box
+                {...getRootProps()}
+                p={12}
+                border="2px dashed"
+                borderColor="brand.300"
+                borderRadius="2xl"
+                bg={cardBg}
+
+                textAlign="center"
+                cursor="pointer"
+                transition="0.2s"
+                _hover={{ borderColor: "brand.500", bg: hoverBg }}
               >
-                <DragDropContext onDragEnd={onDragEnd}>
-                  <Droppable droppableId="pdf-grid" direction="horizontal">
-                    {(provided) => (
-                      <Flex
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        wrap="wrap"
-                        gap={12}
-                        justify="center"
-                        minH="300px"
-                      >
-                        {pages.map((pageItem, index) => (
-                          <Draggable key={pageItem.id} draggableId={pageItem.id} index={index}>
-                            {(provided, snapshot) => (
-                              <Box
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                style={{ ...provided.draggableProps.style }}
-                                position="relative"
-                                role="group"
-                              >
-                                <Badge
-                                  position="absolute"
-                                  top="-15px"
-                                  left="50%"
-                                  transform="translateX(-50%)"
-                                  zIndex={10}
-                                  colorScheme="brand"
-                                  variant="solid"
-                                  rounded="full"
-                                  px={3}
-                                  shadow="md"
-                                >
-                                  {index + 1}
-                                </Badge>
+                <input {...getInputProps()} />
+                <VStack spacing={3}>
+                  <AddIcon boxSize={8} color="brand.500" />
+                  <Heading size="md">Drop your PDF file here</Heading>
+                  <Text color={textGray} fontSize="sm">or click to choose file from device</Text>
+                </VStack>
+              </Box>
+            )}
 
-                                <IconButton
-                                  aria-label="Remove"
-                                  icon={<CloseIcon fontSize="10px" />}
-                                  size="xs"
-                                  colorScheme="red"
-                                  position="absolute"
-                                  top="-10px"
-                                  right="-10px"
-                                  rounded="full"
-                                  zIndex={20}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removePage(pageItem.id);
-                                  }}
-                                  opacity={0}
-                                  _groupHover={{ opacity: 1 }}
-                                  transition="0.2s"
-                                />
-
+            {/* Drag and Drop Workspace */}
+            {file && (
+              <Box
+                bg={boxBg}
+                p={8}
+                borderRadius="2xl"
+                shadow="md"
+                border="1px solid"
+                borderColor={borderClr}
+              >
+                <Document
+                  file={file}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={
+                    <VStack py={10}>
+                      <Spinner size="xl" color="brand.500" />
+                      <Text color={textGray} mt={4}>Rendering page previews...</Text>
+                    </VStack>
+                  }
+                >
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="pdf-pages" direction="horizontal">
+                      {(provided) => (
+                        <Flex
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          wrap="wrap"
+                          gap={6}
+                          justify="center"
+                        >
+                          {pages.map((pageItem, index) => (
+                            <Draggable
+                              key={pageItem.id}
+                              draggableId={pageItem.id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
                                 <Box
-                                  bg={cardBg}
-
-                                  borderRadius="lg"
-                                  overflow="hidden"
-                                  border="2px solid"
-                                  borderColor={snapshot.isDragging ? "brand.500" : "gray.200"}
-                                  shadow={snapshot.isDragging ? "2xl" : "sm"}
-                                  transition="0.2s"
-                                  transform={snapshot.isDragging ? "scale(1.05)" : "none"}
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  position="relative"
+                                  role="group"
                                 >
-                                  <Page
-                                    pageNumber={pageItem.originalIndex + 1}
-                                    width={160}
-                                    renderTextLayer={false}
-                                    renderAnnotationLayer={false}
+                                  {/* Delete Page Badge */}
+                                  <IconButton
+                                    aria-label="Remove Page"
+                                    icon={<CloseIcon fontSize="8px" />}
+                                    size="xs"
+                                    colorScheme="red"
+                                    position="absolute"
+                                    top="-10px"
+                                    right="-10px"
+                                    rounded="full"
+                                    zIndex={20}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removePage(pageItem.id);
+                                    }}
+                                    opacity={0}
+                                    _groupHover={{ opacity: 1 }}
+                                    transition="0.2s"
                                   />
-                                  <Box py={2} bg={bgMain} borderTop="1px solid" borderColor={borderClr}>
-                                    <Text fontSize="xs" fontWeight="bold" textAlign="center" color="gray.500">
-                                      ORIGINAL: {pageItem.originalIndex + 1}
-                                    </Text>
+
+                                  <Box
+                                    bg={cardBg}
+
+                                    borderRadius="lg"
+                                    overflow="hidden"
+                                    border="2px solid"
+                                    borderColor={snapshot.isDragging ? "brand.500" : "gray.200"}
+                                    shadow={snapshot.isDragging ? "2xl" : "sm"}
+                                    transition="0.2s"
+                                    transform={snapshot.isDragging ? "scale(1.05)" : "none"}
+                                  >
+                                    <Page
+                                      pageNumber={pageItem.originalIndex + 1}
+                                      width={160}
+                                      renderTextLayer={false}
+                                      renderAnnotationLayer={false}
+                                    />
+                                    <Box py={2} bg={bgMain} borderTop="1px solid" borderColor={borderClr}>
+                                      <Text fontSize="xs" fontWeight="bold" textAlign="center" color="gray.500">
+                                        ORIGINAL: {pageItem.originalIndex + 1}
+                                      </Text>
+                                    </Box>
                                   </Box>
                                 </Box>
-                              </Box>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </Flex>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </Document>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </Flex>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                </Document>
+              </Box>
+            )}
+          </VStack>
+
+          {/* Right Sticky ContinueToSection Sidebar */}
+          {file && (
+            <Box
+              w={{ base: "full", lg: "340px", xl: "360px" }}
+              position={{ base: "relative", lg: "sticky" }}
+              top={{ lg: "100px" }}
+              alignSelf="flex-start"
+              flexShrink={0}
+            >
+              <ContinueToSection
+                currentTool="pdf-rearrange"
+                variant="vertical"
+                convertedFiles={[{ file, name: file.name, type: 'application/pdf' }]}
+              />
             </Box>
           )}
-        </VStack>
-
-        {file && (
-          <ContinueToSection
-            currentTool="pdf-rearrange"
-            convertedFiles={[{ file, name: file.name, type: 'application/pdf' }]}
-          />
-        )}
+        </Flex>
       </Container>
     </Box>
   );

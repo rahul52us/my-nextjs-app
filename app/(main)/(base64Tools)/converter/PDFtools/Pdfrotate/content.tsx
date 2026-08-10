@@ -15,6 +15,8 @@ import {
     DeleteIcon, DownloadIcon, RepeatIcon
 } from '@chakra-ui/icons';
 import { FaFilePdf, FaSyncAlt, FaTools, FaUpload } from 'react-icons/fa';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 // PDF Worker setup
 if (typeof window !== 'undefined') {
@@ -94,17 +96,14 @@ const PdfRotatorContent: React.FC = () => {
 
     return (
         <Box minH="100vh" bg="gray.50" py={10}>
-            <Container maxW="container.xl">
+            <Container maxW="1350px" px={{ base: 4, md: 8 }}>
                 <Flex justify="space-between" align="center" mb={8}>
-                    <VStack align="start" spacing={0}>
-                        <Heading size="lg" color="brand.600" display="flex" alignItems="center" gap={3}>
-                            <Icon as={FaSyncAlt} /> PDF Rotator
-                        </Heading>
-                        <Text color="gray.500" fontSize="sm">Rotate specific pages or the entire document</Text>
-                    </VStack>
+                    <Heading size="lg" display="flex" alignItems="center" gap={2}>
+                        <Icon as={FaSyncAlt} color="brand.500" /> Rotate PDF Pages
+                    </Heading>
                     {file && (
-                        <Button leftIcon={<DeleteIcon />} colorScheme="red" variant="ghost" onClick={() => { setFile(null); setFileUrl(''); }}>
-                            Clear
+                        <Button leftIcon={<DeleteIcon />} variant="ghost" colorScheme="red" onClick={() => setFile(null)}>
+                            Remove PDF
                         </Button>
                     )}
                 </Flex>
@@ -125,81 +124,103 @@ const PdfRotatorContent: React.FC = () => {
                         </VStack>
                     </Center>
                 ) : (
-                    <Flex direction={{ base: "column", lg: "row" }} gap={8}>
-                        {/* Preview Section */}
-                        <Box flex={2} bg="white" rounded="2xl" shadow="sm" border="1px" borderColor="gray.100" overflow="hidden">
-                            <Box p={4} borderBottom="1px" borderColor="gray.100" bg="gray.50">
-                                <HStack>
-                                    <Icon as={FaFilePdf} color="red.500" />
-                                    <Text fontWeight="bold" fontSize="sm" isTruncated>{file.name}</Text>
-                                </HStack>
-                            </Box>
-                            <Box h="70vh" overflowY="auto" p={6} bg="gray.200">
-                                <Center>
-                                    <Document
-                                        file={fileUrl}
-                                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                        loading={<Spinner size="xl" />}
-                                    >
-                                        <Stack spacing={8}>
-                                            {Array.from({ length: numPages }).map((_, i) => (
-                                                <Box key={i} shadow="2xl" bg="white">
-                                                    <Page pageNumber={i + 1} width={500} renderTextLayer={false} renderAnnotationLayer={false} />
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Document>
-                                </Center>
-                            </Box>
-                        </Box>
-
-                        {/* Controls Section */}
-                        <Box flex={1}>
-                            <VStack spacing={6} align="stretch" position="sticky" top="20px">
-                                <Box bg="white" p={6} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
-                                    <VStack align="stretch" spacing={5}>
+                    <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+                        {/* Main Rotator Workspace */}
+                        <Box flex="1" w="full" minW={0}>
+                            <Flex direction={{ base: "column", lg: "row" }} gap={8}>
+                                {/* Preview Section */}
+                                <Box flex={2} bg="white" rounded="2xl" shadow="sm" border="1px" borderColor="gray.100" overflow="hidden">
+                                    <Box p={4} borderBottom="1px" borderColor="gray.100" bg="gray.50">
                                         <HStack>
-                                            <Icon as={FaTools} color="brand.500" />
-                                            <Heading size="sm">Tools</Heading>
+                                            <Icon as={FaFilePdf} color="red.500" />
+                                            <Text fontWeight="bold" fontSize="sm" isTruncated>{file.name}</Text>
                                         </HStack>
+                                    </Box>
+                                    <Box h="70vh" overflowY="auto" p={6} bg="gray.200">
+                                        <Center>
+                                            <Document
+                                                file={fileUrl}
+                                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                                loading={<Spinner size="xl" />}
+                                            >
+                                                <Stack spacing={8}>
+                                                    {Array.from({ length: numPages }).map((_, i) => (
+                                                        <Box key={i} shadow="2xl" bg="white">
+                                                            <Page pageNumber={i + 1} width={500} renderTextLayer={false} renderAnnotationLayer={false} />
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Document>
+                                        </Center>
+                                    </Box>
+                                </Box>
 
-                                        <Box>
-                                            <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>ROTATION</Text>
-                                            <HStack>
-                                                <Button leftIcon={<RepeatIcon />} flex={1} onClick={handleRotate} colorScheme="brand" variant="outline">
-                                                    +90°
-                                                </Button>
-                                                <Box flex={1} textAlign="center" py={2} bg="brand.500" color="white" rounded="md" fontWeight="bold">
-                                                    {rotation}°
+                                {/* Controls Section */}
+                                <Box flex={1}>
+                                    <VStack spacing={6} align="stretch" position="sticky" top="20px">
+                                        <Box bg="white" p={6} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
+                                            <VStack align="stretch" spacing={5}>
+                                                <HStack>
+                                                    <Icon as={FaTools} color="brand.500" />
+                                                    <Heading size="sm">Tools</Heading>
+                                                </HStack>
+
+                                                <Box>
+                                                    <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>ROTATION</Text>
+                                                    <HStack>
+                                                        <Button leftIcon={<RepeatIcon />} flex={1} onClick={handleRotate} colorScheme="brand" variant="outline">
+                                                            +90°
+                                                        </Button>
+                                                        <Box flex={1} textAlign="center" py={2} bg="brand.500" color="white" rounded="md" fontWeight="bold">
+                                                            {rotation}°
+                                                        </Box>
+                                                    </HStack>
                                                 </Box>
-                                            </HStack>
-                                        </Box>
 
-                                        <Box>
-                                            <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>APPLY TO PAGES</Text>
-                                            <Input
-                                                placeholder="all, 1-3, 5"
-                                                value={pageSelection}
-                                                onChange={(e) => setPageSelection(e.target.value)}
-                                                focusBorderColor="brand.400"
-                                            />
-                                            <Text fontSize="10px" color="gray.400" mt={1}>Example: "all" or "1, 2-5, 8"</Text>
-                                        </Box>
+                                                <Box>
+                                                    <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2}>APPLY TO PAGES</Text>
+                                                    <Input
+                                                        placeholder="all, 1-3, 5"
+                                                        value={pageSelection}
+                                                        onChange={(e) => setPageSelection(e.target.value)}
+                                                        focusBorderColor="brand.400"
+                                                    />
+                                                    <Text fontSize="10px" color="gray.400" mt={1}>Example: "all" or "1, 2-5, 8"</Text>
+                                                </Box>
 
-                                        <Button
-                                            colorScheme="brand"
-                                            size="lg"
-                                            h="60px"
-                                            leftIcon={isProcessing ? <Spinner size="sm" /> : <DownloadIcon />}
-                                            onClick={downloadRotatedPdf}
-                                            isDisabled={isProcessing}
-                                        >
-                                            {isProcessing ? "Processing..." : "Save & Download"}
-                                        </Button>
+                                                <Button
+                                                    colorScheme="brand"
+                                                    size="lg"
+                                                    h="60px"
+                                                    leftIcon={isProcessing ? <Spinner size="sm" /> : <DownloadIcon />}
+                                                    onClick={downloadRotatedPdf}
+                                                    isDisabled={isProcessing}
+                                                >
+                                                    {isProcessing ? "Processing..." : "Save & Download"}
+                                                </Button>
+                                            </VStack>
+                                        </Box>
                                     </VStack>
                                 </Box>
-                            </VStack>
+                            </Flex>
                         </Box>
+
+                        {/* Right Sticky ContinueToSection Sidebar */}
+                        {file && (
+                            <Box
+                                w={{ base: "full", lg: "320px", xl: "340px" }}
+                                position={{ base: "relative", lg: "sticky" }}
+                                top={{ lg: "100px" }}
+                                alignSelf="flex-start"
+                                flexShrink={0}
+                            >
+                                <ContinueToSection
+                                    currentTool="pdf-rotate"
+                                    variant="vertical"
+                                    convertedFiles={[{ file, name: file.name, type: 'application/pdf' }]}
+                                />
+                            </Box>
+                        )}
                     </Flex>
                 )}
             </Container>

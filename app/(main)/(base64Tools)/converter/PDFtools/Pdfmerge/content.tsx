@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import {
     Box,
+    Flex,
     Button,
     Container,
     VStack,
@@ -19,6 +20,7 @@ import {
     Spinner,
     Badge,
     Tooltip,
+    useColorModeValue,
 } from '@chakra-ui/react';
 import {
     FiFileText,
@@ -33,6 +35,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
+import { useFileTransfer } from '../../../../../context/FileTransferContext';
+import ContinueToSection from '../../../../../component/common/ContinueToSection';
 
 const MotionBox = motion(Box);
 const MotionListItem = motion(ListItem);
@@ -102,147 +106,174 @@ const PdfMergerContent = () => {
             bgGradient="radial(circle at 20% 20%, brand.50 0%, transparent 40%), radial(circle at 80% 80%, brand.50 0%, transparent 40%)"
             py={20}
         >
-            <Container maxW="container.md">
-                <VStack spacing={8} align="stretch">
+            <Container maxW="1350px" px={{ base: 4, md: 8 }}>
+                <VStack spacing={10} align="stretch">
 
-                    {/* Header Section */}
+                    {/* Title */}
                     <VStack spacing={3} textAlign="center">
-                        <Badge colorScheme="brand" variant="subtle" px={3} py={1} borderRadius="full" textTransform="uppercase" letterSpacing="widest">
-                            PDF Toolbox
+                        <Badge colorScheme="brand" variant="subtle" px={3} py={1} borderRadius="full">
+                            PDF Toolkit
                         </Badge>
-                        <Heading size="2xl" color="gray.900" fontWeight="900" letterSpacing="tight">
-                            PDF <Text as="span" color="brand.500">Merger</Text>
+                        <Heading size="2xl" fontWeight="900" letterSpacing="tight">
+                            Merge <Text as="span" color="brand.400">PDF</Text> Files
                         </Heading>
                         <Text color="gray.500" fontSize="lg" fontWeight="medium">
                             Drag, reorder, and combine your documents with ease.
                         </Text>
                     </VStack>
 
-                    {/* Drag & Drop Area */}
-                    <MotionBox
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
+                    <Flex
+                        direction={{ base: "column", lg: "row" }}
+                        gap={{ base: 8, lg: 10 }}
+                        align="flex-start"
+                        justify="center"
                     >
-                        <Center
-                            as="label"
-                            htmlFor="file-upload"
-                            p={12}
-                            cursor="pointer"
-                            border="2px dashed"
-                            borderColor="brand.200"
-                            borderRadius="3xl"
-                            bg="white"
-                            shadow="sm"
-                            transition="all 0.3s ease"
-                            _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: 'brand.50' }}
-                            flexDirection="column"
-                            position="relative"
-                            overflow="hidden"
-                        >
-                            <VStack spacing={4}>
-                                <Box bg="brand.500" color="white" p={4} borderRadius="2xl" shadow="0 10px 20px -5px rgba(0, 0, 0, 0.15)">
-                                    <Icon as={FiFilePlus} boxSize={8} />
-                                </Box>
-                                <VStack spacing={1}>
-                                    <Text fontWeight="bold" fontSize="xl" color="gray.800">Choose PDF files</Text>
-                                    <Text fontSize="sm" color="gray.400">or drag and drop them here</Text>
-                                </VStack>
-                            </VStack>
-                            <input id="file-upload" type="file" multiple accept="application/pdf" hidden onChange={handleFileChange} ref={fileInputRef} />
-                        </Center>
-                    </MotionBox>
-
-                    {/* List Section */}
-                    <AnimatePresence mode="popLayout">
-                        {files.length > 0 && (
+                        {/* Main Uploader & File Queue Area */}
+                        <VStack spacing={8} flex="1" w="full" maxW={{ base: "100%", lg: "850px" }} align="stretch">
+                            {/* Drag & Drop Area */}
                             <MotionBox
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                bg="white"
-                                shadow="2xl"
-                                borderRadius="3xl"
-                                border="1px solid"
-                                borderColor="gray.100"
-                                overflow="hidden"
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
                             >
-                                <Box px={6} py={4} bg="white" borderBottom="1px solid" borderColor="gray.50">
-                                    <HStack justify="space-between">
-                                        <HStack spacing={3}>
-                                            <Text fontWeight="800" fontSize="xs" color="brand.500" textTransform="uppercase" letterSpacing="widest">
-                                                Queue
-                                            </Text>
-                                            <Badge borderRadius="full" px={2} colorScheme="brand">{files.length}</Badge>
-                                        </HStack>
-                                        <Button leftIcon={<FiTrash2 />} size="xs" variant="ghost" colorScheme="red" onClick={clearAll} borderRadius="full">
-                                            Clear All
-                                        </Button>
-                                    </HStack>
-                                </Box>
-
-                                <List spacing={0}>
-                                    <AnimatePresence>
-                                        {files.map((item, index) => (
-                                            <MotionListItem
-                                                key={item.id}
-                                                layout
-                                                initial={{ x: -20, opacity: 0 }}
-                                                animate={{ x: 0, opacity: 1 }}
-                                                exit={{ x: 20, opacity: 0 }}
-                                                px={6} py={4}
-                                                _notLast={{ borderBottom: '1px solid', borderColor: 'gray.50' }}
-                                                display="flex"
-                                                alignItems="center"
-                                                justifyContent="space-between"
-                                                _hover={{ bg: 'brand.50' }}
-                                            >
-                                                <HStack spacing={4} overflow="hidden">
-                                                    <Text fontSize="xs" fontWeight="bold" color="gray.300" w="18px">{index + 1}</Text>
-                                                    <Icon as={FiFileText} color="red.400" boxSize={5} />
-                                                    <VStack align="start" spacing={0}>
-                                                        <Text fontSize="sm" fontWeight="bold" color="gray.700" isTruncated maxW={["140px", "280px"]}>
-                                                            {item.file.name}
-                                                        </Text>
-                                                        <Text fontSize="xs" color="gray.400">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</Text>
-                                                    </VStack>
-                                                </HStack>
-
-                                                <HStack spacing={1}>
-                                                    <Tooltip label="Move Up" hasArrow>
-                                                        <IconButton aria-label="up" icon={<FiArrowUp />} size="sm" variant="ghost" isDisabled={index === 0} onClick={() => moveFile(index, 'up')} borderRadius="lg" />
-                                                    </Tooltip>
-                                                    <Tooltip label="Move Down" hasArrow>
-                                                        <IconButton aria-label="down" icon={<FiArrowDown />} size="sm" variant="ghost" isDisabled={index === files.length - 1} onClick={() => moveFile(index, 'down')} borderRadius="lg" />
-                                                    </Tooltip>
-                                                    <Divider orientation="vertical" h="20px" mx={2} />
-                                                    <IconButton aria-label="remove" icon={<FiX />} size="sm" variant="ghost" colorScheme="red" onClick={() => removeFile(item.id)} borderRadius="lg" />
-                                                </HStack>
-                                            </MotionListItem>
-                                        ))}
-                                    </AnimatePresence>
-                                </List>
+                                <Center
+                                    as="label"
+                                    htmlFor="file-upload"
+                                    p={12}
+                                    cursor="pointer"
+                                    border="2px dashed"
+                                    borderColor="brand.200"
+                                    borderRadius="3xl"
+                                    bg="white"
+                                    shadow="sm"
+                                    transition="all 0.3s ease"
+                                    _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: 'brand.50' }}
+                                    flexDirection="column"
+                                    position="relative"
+                                    overflow="hidden"
+                                >
+                                    <VStack spacing={4}>
+                                        <Box bg="brand.500" color="white" p={4} borderRadius="2xl" shadow="0 10px 20px -5px rgba(0, 0, 0, 0.15)">
+                                            <Icon as={FiFilePlus} boxSize={8} />
+                                        </Box>
+                                        <VStack spacing={1}>
+                                            <Text fontWeight="bold" fontSize="xl" color="gray.800">Choose PDF files</Text>
+                                            <Text fontSize="sm" color="gray.400">or drag and drop them here</Text>
+                                        </VStack>
+                                    </VStack>
+                                    <input id="file-upload" type="file" multiple accept="application/pdf" hidden onChange={handleFileChange} ref={fileInputRef} />
+                                </Center>
                             </MotionBox>
-                        )}
-                    </AnimatePresence>
 
-                    {/* Merge Button */}
-                    <Button
-                        size="lg"
-                        colorScheme="brand"
-                        h="70px"
-                        borderRadius="2xl"
-                        fontSize="lg"
-                        fontWeight="bold"
-                        leftIcon={isMerging ? <Spinner size="sm" /> : <FiLink />}
-                        isDisabled={files.length < 2 || isMerging}
-                        onClick={mergePdfs}
-                        shadow="0 20px 40px -10px rgba(0, 0, 0, 0.15)"
-                        _hover={{ transform: 'translateY(-2px)', shadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)' }}
-                        _active={{ transform: 'translateY(0)' }}
-                        transition="all 0.3s cubic-bezier(.23,1,.32,1)"
-                    >
-                        {isMerging ? 'Combining your files...' : `Merge Documents`}
-                    </Button>
+                            {/* List Section */}
+                            <AnimatePresence mode="popLayout">
+                                {files.length > 0 && (
+                                    <MotionBox
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        bg="white"
+                                        shadow="2xl"
+                                        borderRadius="3xl"
+                                        border="1px solid"
+                                        borderColor="gray.100"
+                                        overflow="hidden"
+                                    >
+                                        <Box px={6} py={4} bg="white" borderBottom="1px solid" borderColor="gray.50">
+                                            <HStack justify="space-between">
+                                                <HStack spacing={3}>
+                                                    <Text fontWeight="800" fontSize="xs" color="brand.500" textTransform="uppercase" letterSpacing="widest">
+                                                        Queue
+                                                    </Text>
+                                                    <Badge borderRadius="full" px={2} colorScheme="brand">{files.length}</Badge>
+                                                </HStack>
+                                                <Button leftIcon={<FiTrash2 />} size="xs" variant="ghost" colorScheme="red" onClick={clearAll} borderRadius="full">
+                                                    Clear All
+                                                </Button>
+                                            </HStack>
+                                        </Box>
+
+                                        <List spacing={0}>
+                                            <AnimatePresence>
+                                                {files.map((item, index) => (
+                                                    <MotionListItem
+                                                        key={item.id}
+                                                        layout
+                                                        initial={{ x: -20, opacity: 0 }}
+                                                        animate={{ x: 0, opacity: 1 }}
+                                                        exit={{ x: 20, opacity: 0 }}
+                                                        px={6} py={4}
+                                                        _notLast={{ borderBottom: '1px solid', borderColor: 'gray.50' }}
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        justifyContent="space-between"
+                                                        _hover={{ bg: 'brand.50' }}
+                                                    >
+                                                        <HStack spacing={4} overflow="hidden">
+                                                            <Text fontSize="xs" fontWeight="bold" color="gray.300" w="18px">{index + 1}</Text>
+                                                            <Icon as={FiFileText} color="red.400" boxSize={5} />
+                                                            <VStack align="start" spacing={0}>
+                                                                <Text fontSize="sm" fontWeight="bold" color="gray.700" isTruncated maxW={["140px", "280px"]}>
+                                                                    {item.file.name}
+                                                                </Text>
+                                                                <Text fontSize="xs" color="gray.400">{(item.file.size / (1024 * 1024)).toFixed(2)} MB</Text>
+                                                            </VStack>
+                                                        </HStack>
+
+                                                        <HStack spacing={1}>
+                                                            <Tooltip label="Move Up" hasArrow>
+                                                                <IconButton aria-label="up" icon={<FiArrowUp />} size="sm" variant="ghost" isDisabled={index === 0} onClick={() => moveFile(index, 'up')} borderRadius="lg" />
+                                                            </Tooltip>
+                                                            <Tooltip label="Move Down" hasArrow>
+                                                                <IconButton aria-label="down" icon={<FiArrowDown />} size="sm" variant="ghost" isDisabled={index === files.length - 1} onClick={() => moveFile(index, 'down')} borderRadius="lg" />
+                                                            </Tooltip>
+                                                            <Divider orientation="vertical" h="20px" mx={2} />
+                                                            <IconButton aria-label="remove" icon={<FiX />} size="sm" variant="ghost" colorScheme="red" onClick={() => removeFile(item.id)} borderRadius="lg" />
+                                                        </HStack>
+                                                    </MotionListItem>
+                                                ))}
+                                            </AnimatePresence>
+                                        </List>
+                                    </MotionBox>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Merge Button */}
+                            <Button
+                                size="lg"
+                                colorScheme="brand"
+                                h="70px"
+                                borderRadius="2xl"
+                                fontSize="lg"
+                                fontWeight="bold"
+                                leftIcon={isMerging ? <Spinner size="sm" /> : <FiLink />}
+                                isDisabled={files.length < 2 || isMerging}
+                                onClick={mergePdfs}
+                                shadow="0 20px 40px -10px rgba(0, 0, 0, 0.15)"
+                                _hover={{ transform: 'translateY(-2px)', shadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)' }}
+                                _active={{ transform: 'translateY(0)' }}
+                                transition="all 0.3s cubic-bezier(.23,1,.32,1)"
+                            >
+                                {isMerging ? 'Combining your files...' : `Merge Documents`}
+                            </Button>
+                        </VStack>
+
+                        {/* Right Sticky ContinueToSection Sidebar */}
+                        {files.length > 0 && (
+                            <Box
+                                w={{ base: "full", lg: "340px", xl: "360px" }}
+                                position={{ base: "relative", lg: "sticky" }}
+                                top={{ lg: "100px" }}
+                                alignSelf="flex-start"
+                                flexShrink={0}
+                            >
+                                <ContinueToSection
+                                    currentTool="pdf-merge"
+                                    variant="vertical"
+                                    convertedFiles={files.map(f => ({ file: f.file, name: f.file.name, type: 'application/pdf' }))}
+                                />
+                            </Box>
+                        )}
+                    </Flex>
                 </VStack>
             </Container>
         </Box>

@@ -225,234 +225,215 @@ const FileConverter = observer(() => {
         }
       `}</style>
 
-      <Container maxW="container.lg">
-        <VStack spacing={8}>
-
-          {/* ── Header ── */}
-          <VStack spacing={3} textAlign="center">
-            <HStack
-              bg={badgeBg}
-              px={3} py={1}
-              borderRadius="full"
-              border="1px solid"
-              borderColor={`${accentHex}40`}
-            >
-              <Icon as={Zap} boxSize={3.5} color={accentHex} />
-              <Text fontSize="xs" fontWeight="bold" color={accentHex} letterSpacing="wider">
-                INSTANT CONVERSION
-              </Text>
-            </HStack>
-
-            <Heading size="2xl" fontWeight="800" letterSpacing="tight" color={headingColor}>
-              Format<Text as="span" color={accentHex}>Flow</Text>
-            </Heading>
-
-            <Text color={subText} fontSize="lg" maxW="500px">
-              The professional way to convert CSV and Excel files.
-              Safe, fast, and stays in your browser.
-            </Text>
-          </VStack>
-
-          {/* ── Main Card ── */}
-          <Card
-            w="full"
-            borderRadius="3xl"
-            bg={cardBg}
-            boxShadow={isDark
-              ? "0 8px 32px rgba(0,0,0,0.5)"
-              : "0 8px 32px rgba(0,122,172,0.1)"}
+      <Container maxW="1350px" py={12} px={4}>
+        {/* ── Hero Header ── */}
+        <VStack spacing={3} textAlign="center" mb={10}>
+          <HStack
+            spacing={2}
+            px={4} py={1.5}
+            bg={isDark ? "rgba(0,122,172,0.15)" : "rgba(0,122,172,0.08)"}
+            borderRadius="full"
             border="1px solid"
-            borderColor={cardBorder}
-            overflow="hidden"
+            borderColor={accentHex}
           >
-            <CardBody p={8}>
-
-              {/* ── Dropzone ── */}
-              <Box
-                {...getRootProps()}
-                p={16}
-                border="2px dashed"
-                borderColor={isDragActive ? accentHex : dropBorder}
-                bg={isDragActive ? dropDragBg : dropBg}
-                borderRadius="2xl"
-                cursor="pointer"
-                transition="all 0.3s ease"
-                _hover={{
-                  transform: "scale(1.01)",
-                  borderColor: accentHex,
-                  bg: dropBgHover,
-                  boxShadow: `0 0 0 4px ${accentHex}18`,
-                }}
-              >
-                <input {...getInputProps()} />
-                <VStack spacing={4}>
-                  <Center
-                    w={20} h={20}
-                    bg={cardBg}
-                    borderRadius="2xl"
-                    boxShadow={isDark ? "0 4px 16px rgba(0,0,0,0.4)" : "lg"}
-                    border="1px solid"
-                    borderColor={cardBorder}
-                    transform={file ? "rotate(0deg)" : "rotate(-5deg)"}
-                    transition="transform 0.3s ease"
-                  >
-                    <Icon
-                      as={file ? FileCheck : FileUp}
-                      w={10} h={10}
-                      color={file ? "green.400" : accentHex}
-                    />
-                  </Center>
-
-                  <VStack spacing={1}>
-                    <Text fontWeight="800" fontSize="xl" color={headingColor}>
-                      {file ? file.name : "Drag & Drop File"}
-                    </Text>
-                    <Text color={subText} fontSize="sm">
-                      Supports .csv, .xlsx, and .xls (Max 50MB)
-                    </Text>
-                  </VStack>
-
-                  {file ? (
-                    <Badge
-                      px={4} py={1}
-                      borderRadius="full"
-                      bg={badgeBg}
-                      color={accentHex}
-                      border="1px solid"
-                      borderColor={`${accentHex}40`}
-                      fontWeight="bold"
-                    >
-                      ✓ Ready to process
-                    </Badge>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      borderRadius="full"
-                      pointerEvents="none"
-                      borderColor={accentHex}
-                      color={accentHex}
-                      _hover={{}}
-                    >
-                      Browse files
-                    </Button>
-                  )}
-                </VStack>
-              </Box>
-
-              {/* ── Data Preview ── */}
-              {rowData.length > 0 && (
-                <Box mt={10}>
-                  <Flex justify="space-between" align="flex-end" mb={6}>
-                    <VStack align="start" spacing={0}>
-                      <HStack color={accentHex}>
-                        <TableIcon size={18} />
-                        <Text fontWeight="bold" fontSize="sm" letterSpacing="widest" textTransform="uppercase">
-                          Data Preview
-                        </Text>
-                      </HStack>
-                      <Heading size="md" color={headingColor}>Inspect Records</Heading>
-                    </VStack>
-
-                    <HStack>
-                      <Badge
-                        variant="outline"
-                        px={3}
-                        borderRadius="md"
-                        color={accentHex}
-                        borderColor={`${accentHex}50`}
-                      >
-                        {rowData.length} Total Rows
-                      </Badge>
-                      <Tooltip label="Remove file">
-                        <IconButton
-                          aria-label="clear"
-                          icon={<Trash2 size={18} />}
-                          onClick={clearState}
-                          size="md"
-                          variant="ghost"
-                          colorScheme="red"
-                          borderRadius="xl"
-                        />
-                      </Tooltip>
-                    </HStack>
-                  </Flex>
-
-                  <Box
-                    className={gridTheme}
-                    h="400px"
-                    w="100%"
-                    borderRadius="2xl"
-                    overflow="hidden"
-                    border="1px solid"
-                    borderColor={gridBorder}
-                  >
-                    <AgGridReact
-                      ref={gridRef}
-                      rowData={rowData}
-                      columnDefs={columnDefs}
-                      onGridReady={onGridReady}
-                      pagination={true}
-                      paginationPageSize={10}
-                      defaultColDef={{ flex: 1, minWidth: 150 }}
-                    />
-                  </Box>
-                </Box>
-              )}
-
-              {/* ── Convert Button ── */}
-              <Box mt={10}>
-                <Button
-                  isDisabled={!file}
-                  isLoading={loading}
-                  loadingText="Processing..."
-                  onClick={convertFile}
-                  size="lg"
-                  w="full"
-                  h="70px"
-                  fontSize="lg"
-                  fontWeight="bold"
-                  borderRadius="2xl"
-                  leftIcon={<ArrowRightLeft size={22} />}
-                  bg={accentHex}
-                  color="white"
-                  boxShadow={`0 15px 30px -10px ${accentHex}88`}
-                  _hover={{
-                    bg: accentHex,
-                    transform: "translateY(-2px)",
-                    boxShadow: `0 20px 35px -10px ${accentHex}99`,
-                  }}
-                  _active={{ transform: "scale(0.98)", bg: accentHexDark }}
-                  _disabled={{ opacity: 0.5, cursor: "not-allowed", transform: "none" }}
-                  transition="all 0.2s"
-                >
-                  Download as {file?.name.endsWith(".csv") ? "Excel (.xlsx)" : "CSV (.csv)"}
-                </Button>
-              </Box>
-            </CardBody>
-          </Card>
-
-          {file && (
-            <ContinueToSection
-              currentTool="excel-to-csv"
-              convertedFiles={[{ file, name: `${file.name.replace(/\.[^/.]+$/, "")}.csv`, type: 'text/csv' }]}
-            />
-          )}
-
-          {/* ── Footer ── */}
-          <HStack spacing={6} color={footerColor} fontSize="sm" pb={4}>
-            <HStack>
-              <Icon as={ShieldCheck} w={4} h={4} />
-              <Text>Client-side only</Text>
-            </HStack>
-            <Divider orientation="vertical" h="15px" />
-            <HStack>
-              <Icon as={Download} w={4} h={4} />
-              <Text>No data uploaded to any server</Text>
-            </HStack>
+            <Icon as={Zap} boxSize={3.5} color={accentHex} />
+            <Text fontSize="xs" fontWeight="bold" color={accentHex} letterSpacing="wider">
+              INSTANT CONVERSION
+            </Text>
           </HStack>
 
+          <Heading size="2xl" fontWeight="800" letterSpacing="tight" color={headingColor}>
+            Format<Text as="span" color={accentHex}>Flow</Text>
+          </Heading>
+
+          <Text color={subText} fontSize="lg" maxW="500px">
+            The professional way to convert CSV and Excel files.
+            Safe, fast, and stays in your browser.
+          </Text>
         </VStack>
+
+        <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 8, lg: 10 }} align="flex-start" justify="center">
+          {/* Main Workspace */}
+          <VStack spacing={8} flex="1" w="full" minW={0} align="center">
+
+            {/* ── Main Card ── */}
+            <Card
+              w="full"
+              borderRadius="3xl"
+              bg={cardBg}
+              boxShadow={isDark
+                ? "0 8px 32px rgba(0,0,0,0.5)"
+                : "0 8px 32px rgba(0,122,172,0.1)"}
+              border="1px solid"
+              borderColor={cardBorder}
+              overflow="hidden"
+            >
+              <CardBody p={8}>
+
+                {/* ── Dropzone ── */}
+                <Box
+                  {...getRootProps()}
+                  p={16}
+                  border="2px dashed"
+                  borderColor={isDragActive ? accentHex : dropBorder}
+                  bg={isDragActive ? dropDragBg : dropBg}
+                  borderRadius="2xl"
+                  cursor="pointer"
+                  transition="all 0.3s ease"
+                  _hover={{
+                    borderColor: accentHex,
+                    bg: dropBgHover,
+                    transform: "translateY(-2px)",
+                    boxShadow: "lg",
+                  }}
+                >
+                  <input {...getInputProps()} />
+                  <Center flexDirection="column" gap={4}>
+                    <Box
+                      p={5}
+                      borderRadius="2xl"
+                      bg={file ? "rgba(0,122,172,0.1)" : dropBgHover}
+                      color={accentHex}
+                      transition="transform 0.2s"
+                      _groupHover={{ transform: "scale(1.1)" }}
+                    >
+                      <Icon as={file ? FileCheck : FileUp} w={10} h={10} />
+                    </Box>
+                    <VStack spacing={1}>
+                      <Text fontWeight="bold" fontSize="lg" color={headingColor}>
+                        {file ? file.name : "Drop your Excel or CSV file here"}
+                      </Text>
+                      <Text fontSize="sm" color={subText}>
+                        {file
+                          ? `${(file.size / 1024).toFixed(1)} KB — Click or drop to replace`
+                          : "Supports .xlsx, .xls, .csv up to 50MB"}
+                      </Text>
+                    </VStack>
+                    {file && (
+                      <Badge colorScheme="brand" variant="subtle" px={3} py={1} borderRadius="full" fontSize="xs">
+                        Ready to convert
+                      </Badge>
+                    )}
+                  </Center>
+                </Box>
+
+                {/* ── AG Grid Preview Section ── */}
+                {file && (
+                  <Box mt={8}>
+                    {/* Toolbar above grid */}
+                    <Flex justify="space-between" align="center" mb={4}>
+                      <HStack spacing={2}>
+                        <Icon as={TableIcon} color={accentHex} boxSize={5} />
+                        <Text fontWeight="bold" fontSize="md" color={headingColor}>
+                          Data Preview
+                        </Text>
+                        <Badge colorScheme="brand" variant="subtle" borderRadius="md" px={2}>
+                          {rowData.length} rows
+                        </Badge>
+                      </HStack>
+                      <HStack spacing={3}>
+                        <Tooltip label="Remove file">
+                          <IconButton
+                            aria-label="Remove file"
+                            icon={<Trash2 size={16} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={clearState}
+                          />
+                        </Tooltip>
+                      </HStack>
+                    </Flex>
+
+                    {/* AG Grid Container */}
+                    <Box
+                      className={gridTheme}
+                      h="360px"
+                      w="full"
+                    >
+                      <AgGridReact
+                        ref={gridRef}
+                        rowData={rowData}
+                        columnDefs={columnDefs}
+                        pagination={true}
+                        paginationPageSize={10}
+                        paginationPageSizeSelector={[10, 25, 50]}
+                        defaultColDef={{
+                          sortable: true,
+                          filter: true,
+                          resizable: true,
+                          flex: 1,
+                          minWidth: 100,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+
+                {/* ── Conversion Options & Download ── */}
+                <Box mt={8}>
+                  <Button
+                    isDisabled={!file || rowData.length === 0}
+                    isLoading={loading}
+                    loadingText="Converting..."
+                    onClick={convertFile}
+                    size="lg"
+                    w="full"
+                    h="60px"
+                    fontSize="md"
+                    fontWeight="bold"
+                    borderRadius="2xl"
+                    leftIcon={<Download size={20} />}
+                    bg={accentHex}
+                    color="white"
+                    boxShadow={`0 15px 30px -10px ${accentHex}88`}
+                    _hover={{
+                      bg: accentHex,
+                      transform: "translateY(-2px)",
+                      boxShadow: `0 20px 35px -10px ${accentHex}99`,
+                    }}
+                    _active={{ transform: "scale(0.98)", bg: accentHexDark }}
+                    _disabled={{ opacity: 0.5, cursor: "not-allowed", transform: "none" }}
+                    transition="all 0.2s"
+                  >
+                    Download as {file?.name.endsWith(".csv") ? "Excel (.xlsx)" : "CSV (.csv)"}
+                  </Button>
+                </Box>
+              </CardBody>
+            </Card>
+
+            {/* ── Footer ── */}
+            <HStack spacing={6} color={footerColor} fontSize="sm" pb={4}>
+              <HStack>
+                <Icon as={ShieldCheck} w={4} h={4} />
+                <Text>Client-side only</Text>
+              </HStack>
+              <Divider orientation="vertical" h="15px" />
+              <HStack>
+                <Icon as={Download} w={4} h={4} />
+                <Text>No data uploaded to any server</Text>
+              </HStack>
+            </HStack>
+
+          </VStack>
+
+          {/* Right Sticky Sidebar */}
+          {file && (
+            <Box
+              w={{ base: "full", lg: "320px", xl: "340px" }}
+              position={{ base: "relative", lg: "sticky" }}
+              top={{ lg: "100px" }}
+              alignSelf="flex-start"
+              flexShrink={0}
+            >
+              <ContinueToSection
+                currentTool="excel-to-csv"
+                variant="vertical"
+                convertedFiles={[{ file, name: `${file.name.replace(/\.[^/.]+$/, "")}.csv`, type: 'text/csv' }]}
+              />
+            </Box>
+          )}
+        </Flex>
       </Container>
     </Box>
   );

@@ -3,6 +3,7 @@
 import React, { useState, useRef, DragEvent } from 'react';
 import {
     Box,
+    Flex,
     Button,
     Container,
     VStack,
@@ -236,7 +237,7 @@ const ExcelToPdfContent = () => {
             bgGradient={gradient}
             py={20}
         >
-            <Container maxW="container.lg">
+            <Container maxW="1350px" px={{ base: 4, md: 8 }}>
                 <VStack spacing={8} align="stretch">
 
                     {/* Header */}
@@ -252,113 +253,134 @@ const ExcelToPdfContent = () => {
                         </Text>
                     </VStack>
 
-                    <AnimatePresence mode="wait">
-                        {data.length === 0 ? (
-                            <MotionBox
-                                key="uploader"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                            >
-                                <Center
-                                    as="label"
-                                    htmlFor="excel-upload"
-                                    p={20}
-                                    cursor="pointer"
-                                    border="2px dashed"
-                                    borderColor={isDragActive ? 'brand.500' : useColorModeValue("gray.300", "gray.600")}
-                                    borderRadius="3xl"
-                                    bg={isDragActive ? useColorModeValue('brand.50', 'whiteAlpha.50') : cardBg}
-                                    transition="all 0.3s"
-                                    _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: useColorModeValue('brand.50', 'whiteAlpha.50') }}
-                                    flexDirection="column"
-                                    onDragOver={handleDragOver}
-                                    onDragEnter={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                >
-                                    <VStack spacing={4}>
-                                        <Box bg="brand.500" color="white" p={5} borderRadius="2xl" shadow="lg">
-                                            {isProcessing ? <Spinner size="lg" /> : <Icon as={FiUploadCloud} boxSize={10} />}
+                    <Flex
+                        direction={{ base: "column", lg: "row" }}
+                        gap={{ base: 8, lg: 10 }}
+                        align="flex-start"
+                        justify="center"
+                    >
+                        {/* Main Uploader / Table Area */}
+                        <Box flex="1" w="full" maxW={{ base: "100%", lg: "850px" }}>
+                            <AnimatePresence mode="wait">
+                                {data.length === 0 ? (
+                                    <MotionBox
+                                        key="uploader"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                    >
+                                        <Center
+                                            as="label"
+                                            htmlFor="excel-upload"
+                                            p={20}
+                                            cursor="pointer"
+                                            border="2px dashed"
+                                            borderColor={isDragActive ? 'brand.500' : useColorModeValue("gray.300", "gray.600")}
+                                            borderRadius="3xl"
+                                            bg={isDragActive ? useColorModeValue('brand.50', 'whiteAlpha.50') : cardBg}
+                                            transition="all 0.3s"
+                                            _hover={{ borderColor: 'brand.500', shadow: '2xl', bg: useColorModeValue('brand.50', 'whiteAlpha.50') }}
+                                            flexDirection="column"
+                                            onDragOver={handleDragOver}
+                                            onDragEnter={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                        >
+                                            <VStack spacing={4}>
+                                                <Box bg="brand.500" color="white" p={5} borderRadius="2xl" shadow="lg">
+                                                    {isProcessing ? <Spinner size="lg" /> : <Icon as={FiUploadCloud} boxSize={10} />}
+                                                </Box>
+                                                <VStack spacing={1}>
+                                                    <Text fontWeight="bold" fontSize="xl">Click to upload spreadsheet</Text>
+                                                    <Text fontSize="sm" color={textColor}>Supports .XLSX and .XLS files</Text>
+                                                </VStack>
+                                            </VStack>
+                                            <input id="excel-upload" type="file" accept=".xlsx, .xls" hidden onChange={handleFileChange} ref={fileInputRef} />
+                                        </Center>
+                                    </MotionBox>
+                                ) : (
+                                    <MotionBox
+                                        key="preview"
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        bg={cardBg}
+                                        shadow="2xl"
+                                        borderRadius="3xl"
+                                        border="1px solid"
+                                        borderColor={cardBorder}
+                                        overflow="hidden"
+                                    >
+                                        <Box px={6} py={4} bg={secondaryBg} borderBottom="1px solid" borderColor={cardBorder}>
+                                            <HStack justify="space-between">
+                                                <HStack>
+                                                    <Icon as={FiGrid} color="brand.500" />
+                                                    <Text fontWeight="bold" fontSize="sm">Sheet Preview: {fileName}</Text>
+                                                </HStack>
+                                                <HStack spacing={2}>
+                                                    <Tooltip label="Reset and upload new file">
+                                                        <IconButton aria-label="reset" icon={<FiRefreshCw />} size="sm" variant="ghost" onClick={reset} />
+                                                    </Tooltip>
+                                                    <Button leftIcon={<FiDownload />} colorScheme="brand" size="sm" onClick={generatePDF} borderRadius="full">
+                                                        Export PDF
+                                                    </Button>
+                                                </HStack>
+                                            </HStack>
                                         </Box>
-                                        <VStack spacing={1}>
-                                            <Text fontWeight="bold" fontSize="xl">Click to upload spreadsheet</Text>
-                                            <Text fontSize="sm" color={textColor}>Supports .XLSX and .XLS files</Text>
-                                        </VStack>
-                                    </VStack>
-                                    <input id="excel-upload" type="file" accept=".xlsx, .xls" hidden onChange={handleFileChange} ref={fileInputRef} />
-                                </Center>
-                            </MotionBox>
-                        ) : (
-                            <MotionBox
-                                key="preview"
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                bg={cardBg}
-                                shadow="2xl"
-                                borderRadius="3xl"
-                                border="1px solid"
-                                borderColor={cardBorder}
-                                overflow="hidden"
-                            >
-                                <Box px={6} py={4} bg={secondaryBg} borderBottom="1px solid" borderColor={cardBorder}>
-                                    <HStack justify="space-between">
-                                        <HStack>
-                                            <Icon as={FiGrid} color="brand.500" />
-                                            <Text fontWeight="bold" fontSize="sm">Sheet Preview: {fileName}</Text>
-                                        </HStack>
-                                        <HStack spacing={2}>
-                                            <Tooltip label="Reset and upload new file">
-                                                <IconButton aria-label="reset" icon={<FiRefreshCw />} size="sm" variant="ghost" onClick={reset} />
-                                            </Tooltip>
-                                            <Button leftIcon={<FiDownload />} colorScheme="brand" size="sm" onClick={generatePDF} borderRadius="full">
-                                                Export PDF
-                                            </Button>
-                                        </HStack>
-                                    </HStack>
-                                </Box>
 
-                                <TableContainer maxH="400px" overflowY="auto">
-                                    <Table variant="simple" size="sm">
-                                        <Thead bg={tableHeaderBg} position="sticky" top={0} zIndex={1}>
-                                            <Tr>
-                                                {data[0]?.map((header, i) => (
-                                                    <Th key={i} py={4} borderColor={cardBorder}>{header || `Column ${i + 1}`}</Th>
-                                                ))}
-                                            </Tr>
-                                        </Thead>
-                                        <Tbody>
-                                            {data.slice(1, 15).map((row, i) => (
-                                                <Tr key={i} _hover={{ bg: hoverBg }}>
-                                                    {row.map((cell, j) => (
-                                                        <Td key={j} color={useColorModeValue("gray.600", "gray.300")} borderColor={cardBorder}>
-                                                            {cell?.toString() || '-'}
-                                                        </Td>
+                                        <TableContainer maxH="400px" overflowY="auto">
+                                            <Table variant="simple" size="sm">
+                                                <Thead bg={tableHeaderBg} position="sticky" top={0} zIndex={1}>
+                                                    <Tr>
+                                                        {data[0]?.map((header, i) => (
+                                                            <Th key={i} py={4} borderColor={cardBorder}>{header || `Column ${i + 1}`}</Th>
+                                                        ))}
+                                                    </Tr>
+                                                </Thead>
+                                                <Tbody>
+                                                    {data.slice(1, 15).map((row, i) => (
+                                                        <Tr key={i} _hover={{ bg: hoverBg }}>
+                                                            {row.map((cell, j) => (
+                                                                <Td key={j} color={useColorModeValue("gray.600", "gray.300")} borderColor={cardBorder}>
+                                                                    {cell?.toString() || '-'}
+                                                                </Td>
+                                                            ))}
+                                                        </Tr>
                                                     ))}
-                                                </Tr>
-                                            ))}
-                                        </Tbody>
-                                    </Table>
-                                </TableContainer>
+                                                </Tbody>
+                                            </Table>
+                                        </TableContainer>
 
-                                {data.length > 15 && (
-                                    <Box p={3} textAlign="center" bg={secondaryBg} borderTop="1px solid" borderColor={cardBorder}>
-                                        <Text fontSize="xs" color={textColor} fontWeight="bold">
-                                            + {data.length - 15} more rows will be included in the PDF export
-                                        </Text>
-                                    </Box>
+                                        {data.length > 15 && (
+                                            <Box p={3} textAlign="center" bg={secondaryBg} borderTop="1px solid" borderColor={cardBorder}>
+                                                <Text fontSize="xs" color={textColor} fontWeight="bold">
+                                                    + {data.length - 15} more rows will be included in the PDF export
+                                                </Text>
+                                            </Box>
+                                        )}
+                                    </MotionBox>
                                 )}
-                            </MotionBox>
+                            </AnimatePresence>
+
+                            {/* Bottom Security Note */}
+                            <HStack justify="center" spacing={2} opacity={0.6} mt={6}>
+                                <Icon as={FiCheckCircle} color="green.500" />
+                                <Text fontSize="xs" fontWeight="bold" color={textColor}>Data processing stays in your browser</Text>
+                            </HStack>
+                        </Box>
+
+                        {/* Right Sticky ContinueToSection Sidebar */}
+                        {fileName && (
+                            <Box
+                                w={{ base: "full", lg: "340px", xl: "360px" }}
+                                position={{ base: "relative", lg: "sticky" }}
+                                top={{ lg: "100px" }}
+                                alignSelf="flex-start"
+                                flexShrink={0}
+                            >
+                                <ContinueToSection currentTool="excel-to-pdf" variant="vertical" />
+                            </Box>
                         )}
-                    </AnimatePresence>
-
-                    {/* Bottom Security Note */}
-                    <HStack justify="center" spacing={2} opacity={0.6}>
-                        <Icon as={FiCheckCircle} color="green.500" />
-                        <Text fontSize="xs" fontWeight="bold" color={textColor}>Data processing stays in your browser</Text>
-                    </HStack>
-
-                    {fileName && <ContinueToSection currentTool="excel-to-pdf" />}
+                    </Flex>
                 </VStack>
             </Container>
         </Box>
