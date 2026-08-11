@@ -264,8 +264,8 @@ const DashboardLayout = observer(({ children }: { children: React.ReactNode }) =
       </HeaderContainer>
 
       {/* Main Content Area */}
-      <ContentContainer>
-        <Box maxW={pathname.includes('/converter/ocr') || pathname.includes('/tools/task-manager') ? '92%' : '1400px'} mx="auto">
+      <ContentContainer $isFullWidth={pathname.includes('/converter/ocr')}>
+        <Box maxW={pathname.includes('/converter/ocr') ? '100%' : pathname.includes('/tools/task-manager') ? '92%' : '1400px'} mx="auto">
            {children}
         </Box>
       </ContentContainer>
@@ -290,8 +290,8 @@ const HeaderContainer = styled.div<{ $backgroundColor: string }>`
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 `;
 
-const ContentContainer = styled.main`
-  padding: ${contentLargeBodyPadding};
+const ContentContainer = styled.main<{ $isFullWidth?: boolean }>`
+  padding: ${props => props.$isFullWidth ? '0' : contentLargeBodyPadding};
   width: 100%;
   min-height: calc(100vh - ${headerHeight});
   margin-top: ${headerHeight};

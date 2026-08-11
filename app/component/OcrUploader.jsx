@@ -80,6 +80,7 @@ import {
   ChevronLeft,
   Info,
   Lock,
+  Menu,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import stores from "../store/stores";
@@ -953,10 +954,6 @@ function TablesPanel({
 
 function FieldsPanel({
   fields,
-  labelColor,
-  textColor,
-  sectionBg,
-  borderColor,
   onHoverItem,
 }) {
   const toast = useToast();
@@ -976,10 +973,10 @@ function FieldsPanel({
   };
 
   if (!fields || !Object.keys(fields).length)
-    return <Text color={labelColor}>No form fields extracted.</Text>;
+    return <Text p={4} color="gray.500">No form fields extracted.</Text>;
 
   const getFieldValueText = (val) => {
-    if (val === null || val === undefined) return "—";
+    if (val === null || val === undefined) return "Not Found";
     if (typeof val !== "object") return String(val);
     if ("valueString" in val) return String(val.valueString);
     if ("valueDate" in val) return String(val.valueDate);
@@ -994,13 +991,22 @@ function FieldsPanel({
   };
 
   return (
-    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+    <VStack spacing={5} align="stretch" w="100%" p={4} pb={8}>
       {Object.entries(fields).map(([key, value]) => {
         const bounds = value?.boundingRegions ?? null;
-        const textValue = getFieldValueText(value) || JSON.stringify(value);
+        let textValue = getFieldValueText(value) || JSON.stringify(value);
+        if (!textValue || textValue.trim() === "") textValue = "Not Found";
+
+        const isEdited = key === "Vendor Name"; 
+        const borderColor = isEdited ? "red.500" : "gray.200";
+        const labelText = isEdited ? `${key} (edited)` : key;
+        const labelColor = isEdited ? "red.500" : "gray.600";
+
         return (
-          <FormControl
+          <Box
             key={key}
+            position="relative"
+            mt={2}
             onMouseEnter={() => {
               if (bounds && bounds.length > 0 && onHoverItem) {
                 onHoverItem({
@@ -1017,48 +1023,43 @@ function FieldsPanel({
               }
             }}
           >
-            <HStack justify="space-between" mb={1.5}>
-              <FormLabel
-                fontSize="xs"
-                fontWeight="bold"
-                color={labelColor}
-                mb={0}
-                textTransform="uppercase"
-                letterSpacing="wider"
-              >
-                {key}
-              </FormLabel>
-              <HStack spacing={1}>
-                <IconButton
-                  size="xs"
-                  variant="ghost"
-                  aria-label="Copy field value"
-                  icon={
-                    copiedKey === key ? <Check size={12} /> : <Copy size={12} />
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyValue(key, textValue);
-                  }}
-                />
-                {/* <Icon as={Lock} boxSize={3.5} color="gray.400" /> */}
-              </HStack>
-            </HStack>
-            <Input
-              value={textValue}
-              // isReadOnly
-              fontSize="sm"
-              color={textColor}
-              bg={useColorModeValue("white", "gray.900")}
+            <Text
+              position="absolute"
+              top="-8px"
+              left="12px"
+              bg="white"
+              px={1}
+              fontSize="12px"
+              fontWeight="500"
+              color={labelColor}
+              zIndex={1}
+              lineHeight="1"
+            >
+              {labelText}
+            </Text>
+            
+            <Flex
+              borderWidth="1px"
               borderColor={borderColor}
-              borderRadius="xl"
-              // cursor="not-allowed"
-              _focus={{ borderColor: borderColor }}
-            />
-          </FormControl>
+              borderRadius="md"
+              bg="white"
+              align="center"
+              _hover={{ borderColor: isEdited ? "red.600" : "gray.400" }}
+            >
+              <Input
+                value={textValue}
+                fontSize="sm"
+                color="gray.800"
+                variant="unstyled"
+                px={3}
+                h="38px"
+                isReadOnly
+              />
+            </Flex>
+          </Box>
         );
       })}
-    </SimpleGrid>
+    </VStack>
   );
 }
 
@@ -1433,6 +1434,7 @@ export default function OcrUploader() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [aiMessages, setAiMessages] = useState([]);
+  const [activeView, setActiveView] = useState("pdf");
 
   // Chrome PDF viewer page states
   const [currentPage, setCurrentPage] = useState(1);
@@ -1449,16 +1451,20 @@ export default function OcrUploader() {
   const canvasRefs = useRef([]);
   const [hoveredBounds, setHoveredBounds] = useState(null);
 
-  // Colors
-  const bg = useColorModeValue("gray.50", "gray.950");
-  const cardBg = useColorModeValue("white", "gray.900");
-  const borderColor = useColorModeValue("gray.200", "gray.800");
+  // Colors (Premium Glassmorphism & Rich Gradients)
+  const bg = useColorModeValue(
+    "radial-gradient(circle at 0% 0%, #f1f5f9 0%, #e2e8f0 100%)",
+    "radial-gradient(circle at 0% 0%, #0f172a 0%, #020617 100%)"
+  );
+  const cardBg = useColorModeValue("rgba(255, 255, 255, 0.75)", "rgba(15, 23, 42, 0.65)");
+  const borderColor = useColorModeValue("rgba(203, 213, 225, 0.6)", "rgba(51, 65, 85, 0.6)");
   const labelColor = useColorModeValue("gray.500", "gray.400");
-  const textColor = useColorModeValue("gray.800", "gray.100");
-  const sectionBg = useColorModeValue("gray.50", "gray.950");
-  const dragBg = useColorModeValue("brand.50", "rgba(99, 102, 241, 0.08)");
-  const fileIconBg = useColorModeValue("blue.50", "rgba(10, 110, 240, 0.1)");
+  const textColor = useColorModeValue("gray.800", "gray.50");
+  const sectionBg = useColorModeValue("rgba(255, 255, 255, 0.5)", "rgba(30, 41, 59, 0.4)");
+  const dragBg = useColorModeValue("rgba(99, 102, 241, 0.08)", "rgba(99, 102, 241, 0.15)");
+  const fileIconBg = useColorModeValue("blue.100", "rgba(59, 130, 246, 0.15)");
   const fileIconColor = useColorModeValue("blue.600", "blue.300");
+  const glassFilter = "blur(16px)";
 
   const {
     themeStore: { themeConfig },
@@ -2021,33 +2027,58 @@ export default function OcrUploader() {
   const isRenderingPdf = file && fileType === "pdf" && pdfPages.length === 0;
 
   return (
-    <Box minH="100vh" bg={bg} color={textColor} p={0} m={0}>
+    <Box flex={1} display="flex" flexDirection="column" w="100%" h="100%" bg={bg} color={textColor} p={0} m={0} position="relative" overflow="hidden">
+      {/* Background Decorative Globs */}
+      <Box position="fixed" top="-10%" left="-10%" w="40vw" h="40vw" bg="brand.400" rounded="full" filter="blur(120px)" opacity={useColorModeValue(0.15, 0.08)} zIndex={0} pointerEvents="none" />
+      <Box position="fixed" bottom="-10%" right="-10%" w="40vw" h="40vw" bg="purple.400" rounded="full" filter="blur(120px)" opacity={useColorModeValue(0.15, 0.08)} zIndex={0} pointerEvents="none" />
+      
       <AnimatePresence mode="wait">
         {showForm ? (
           // ─── Welcome/Upload View (Edge-to-Edge Full Screen) ───
           <MotionBox
             key="upload-view"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             w="100%"
-            minH="100vh"
+            h="100%"
+            flex={1}
+            display="flex"
+            flexDirection="column"
+            p={0}
+            position="relative"
+            zIndex={1}
           >
-            <Box bg={cardBg} minH="100vh" display="flex" flexDirection="column">
+            <Box 
+              bg={cardBg} 
+              w="100%" 
+              maxW="100%"
+              backdropFilter={glassFilter} 
+              borderRadius="0" 
+              shadow="none" 
+              borderWidth="0" 
+              h="100%"
+              flex={1}
+              display="flex"
+              flexDirection="column"
+              overflow="hidden"
+            >
               <Box
-                bg={`linear-gradient(135deg, ${brandColor}10, transparent)`}
-                p={8}
+                bg={`linear-gradient(135deg, ${brandColor}15, transparent)`}
+                py={4}
+                px={6}
                 borderBottomWidth="1px"
                 borderColor={borderColor}
+                position="relative"
               >
-                <HStack spacing={3} mb={2} w="full">
+                <HStack spacing={4} w="full">
                   <Box
-                    p={2.5}
+                    p={3}
                     borderRadius="2xl"
-                    bg="brand.500"
+                    bg={`linear-gradient(135deg, ${brandColor}, #8b5cf6)`}
                     color="white"
-                    shadow="md"
+                    shadow="lg"
                   >
                     <Zap size={22} />
                   </Box>
@@ -2067,1158 +2098,639 @@ export default function OcrUploader() {
                 </HStack>
               </Box>
 
-              <Box flex={1} p={{ base: 6, md: 12 }}>
+              <Box flex={1} py={2} px={6}>
                 <form onSubmit={handleSubmit} style={{ height: "100%" }}>
-                  <SimpleGrid
-                    columns={{ base: 1, md: 2 }}
-                    spacing={12}
+                  <Flex
+                    direction={{ base: "column", lg: "row" }}
+                    gap={6}
                     w="full"
+                    minH={{ lg: file ? "600px" : "auto" }}
+                    alignItems={file ? "stretch" : "center"}
                   >
-                    {/* Left: Drag & Drop Zone */}
-                    <VStack align="stretch" spacing={4}>
-                      <FormLabel
-                        color={labelColor}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        letterSpacing="wider"
-                        textTransform="uppercase"
-                      >
-                        Upload Document
-                      </FormLabel>
-
-                      <MotionBox
-                        position="relative"
-                        border="2px dashed"
-                        borderColor={isDragging ? "brand.400" : borderColor}
-                        borderRadius="2xl"
-                        bg={isDragging ? dragBg : "transparent"}
-                        py={16}
-                        px={6}
-                        textAlign="center"
-                        cursor="pointer"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ duration: 0.2 }}
-                        _hover={{ borderColor: "brand.400", bg: dragBg }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDragging(true);
-                        }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={handleDrop}
-                      >
-                        <Input
-                          type="file"
-                          accept="application/pdf,image/*"
-                          onChange={handleFileChange}
-                          position="absolute"
-                          top={0}
-                          left={0}
-                          width="100%"
-                          height="100%"
-                          opacity={0}
-                          cursor="pointer"
-                          zIndex={1}
-                        />
-                        <VStack spacing={3} pointerEvents="none">
-                          <MotionBox
-                            animate={isDragging ? { y: -5 } : { y: 0 }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 1.5,
-                              repeatType: "reverse",
-                            }}
-                            w={14}
-                            h={14}
-                            borderRadius="2xl"
-                            bg={useColorModeValue("gray.50", "gray.800")}
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            mx="auto"
-                            shadow="inner"
-                          >
-                            <Upload size={24} color={brandColor} />
-                          </MotionBox>
-                          <Text
-                            fontSize="sm"
-                            fontWeight="semibold"
-                            color={textColor}
-                          >
-                            Drag and drop document here
-                          </Text>
-                          <Text fontSize="xs" color={labelColor}>
-                            or{" "}
-                            <Text as="span" color="brand.400" fontWeight="bold">
-                              browse files
-                            </Text>
-                          </Text>
-                        </VStack>
-                      </MotionBox>
-
-                      <HStack spacing={2} flexWrap="wrap">
-                        {["PDF", "JPG", "PNG", "MAX 10MB"].map((tag) => (
-                          <Badge
-                            key={tag}
-                            px={3}
-                            py={1}
-                            borderRadius="full"
-                            fontSize="10px"
-                            colorScheme="gray"
-                            variant="solid"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </HStack>
-
-                      {file && (
-                        <MotionBox
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          p={3}
-                          bg={useColorModeValue("gray.50", "gray.850")}
-                          borderWidth="1px"
-                          borderColor={borderColor}
-                          borderRadius="xl"
+                    {/* Left: Drag & Drop Zone or Hero Preview */}
+                    <Box 
+                      flex={file ? 1 : "none"} 
+                      w={file ? "auto" : "100%"} 
+                      maxW={file ? "auto" : "3xl"}
+                      mx={file ? 0 : "auto"}
+                      display="flex" 
+                      flexDirection="column"
+                    >
+                      {!file && (
+                        <FormLabel
+                          color={labelColor}
+                          fontSize="xs"
+                          fontWeight="bold"
+                          letterSpacing="wider"
+                          textTransform="uppercase"
+                          textAlign="center"
+                          mb={4}
                         >
-                          <HStack spacing={3}>
-                            <Box
-                              w={10}
-                              h={10}
-                              borderRadius="lg"
-                              bg={fileIconBg}
+                          Upload Document to Begin
+                        </FormLabel>
+                      )}
+
+                      {!file ? (
+                        <MotionBox
+                          position="relative"
+                          border="2px dashed"
+                          borderColor={isDragging ? "brand.400" : borderColor}
+                          borderRadius="3xl"
+                          bg={isDragging ? dragBg : useColorModeValue("rgba(255,255,255,0.4)", "rgba(15,23,42,0.4)")}
+                          py={24}
+                          px={6}
+                          textAlign="center"
+                          cursor="pointer"
+                          backdropFilter={glassFilter}
+                          whileHover={{ scale: 1.02, boxShadow: "0 0 35px rgba(99, 102, 241, 0.4)" }}
+                          transition={{ duration: 0.3 }}
+                          _hover={{ borderColor: "brand.400", bg: dragBg }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            setIsDragging(true);
+                          }}
+                          onDragLeave={() => setIsDragging(false)}
+                          onDrop={handleDrop}
+                          overflow="hidden"
+                        >
+                          {/* Decorative glow inside dropzone */}
+                          <Box position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)" w="full" h="full" bg={`radial-gradient(circle, ${brandColor}20 0%, transparent 70%)`} opacity={isDragging ? 1 : 0} transition="opacity 0.3s" pointerEvents="none" />
+                          
+                          <Input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            onChange={handleFileChange}
+                            position="absolute"
+                            top={0}
+                            left={0}
+                            width="100%"
+                            height="100%"
+                            opacity={0}
+                            cursor="pointer"
+                            zIndex={2}
+                          />
+                          <VStack spacing={6} pointerEvents="none" position="relative" zIndex={1}>
+                            <MotionBox
+                              animate={isDragging ? { y: -10, scale: 1.15 } : { y: 0, scale: 1 }}
+                              transition={{
+                                repeat: Infinity,
+                                duration: 1.5,
+                                repeatType: "reverse",
+                                ease: "easeInOut"
+                              }}
+                              w={20}
+                              h={20}
+                              borderRadius="2xl"
+                              bg={`linear-gradient(135deg, ${brandColor}, #8b5cf6)`}
                               display="flex"
                               alignItems="center"
                               justifyContent="center"
-                              flexShrink={0}
+                              mx="auto"
+                              shadow="2xl"
                             >
-                              <FileText size={18} color={fileIconColor} />
-                            </Box>
-                            <Box flex={1} minW={0}>
+                              <Upload size={36} color="white" />
+                            </MotionBox>
+                            <VStack spacing={2}>
                               <Text
-                                fontSize="sm"
+                                fontSize="xl"
                                 fontWeight="bold"
                                 color={textColor}
-                                noOfLines={1}
                               >
-                                {file.name}
+                                Drag and drop your document here
                               </Text>
-                              <Text fontSize="xs" color={labelColor}>
-                                {(file.size / 1024).toFixed(1)} KB
-                                {fileType && (
-                                  <Badge
-                                    ml={2}
-                                    colorScheme={
-                                      fileType === "image" ? "green" : "blue"
-                                    }
-                                    variant="subtle"
-                                    fontSize="9px"
-                                  >
-                                    {fileType.toUpperCase()}
-                                  </Badge>
-                                )}
+                              <Text fontSize="sm" color={labelColor}>
+                                Supports PDF, JPG, PNG (Max 10MB)
                               </Text>
+                            </VStack>
+                            <Button colorScheme="brand" variant="outline" size="md" borderRadius="xl">
+                              Browse Files
+                            </Button>
+                          </VStack>
+                        </MotionBox>
+                      ) : (
+                        <MotionBox
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          display="flex"
+                          flexDirection="column"
+                          h="100%"
+                          bg={useColorModeValue("rgba(255,255,255,0.4)", "rgba(15,23,42,0.4)")}
+                          borderWidth="1px"
+                          borderColor={borderColor}
+                          borderRadius="3xl"
+                          p={6}
+                          position="relative"
+                          overflow="hidden"
+                          shadow="inner"
+                        >
+                          <Flex justify="space-between" align="center" mb={4}>
+                            <HStack spacing={3}>
+                              <Box w={10} h={10} borderRadius="lg" bg={fileIconBg} display="flex" alignItems="center" justifyContent="center">
+                                <FileText size={18} color={fileIconColor} />
+                              </Box>
+                              <Box>
+                                <Text fontSize="md" fontWeight="bold" color={textColor} noOfLines={1} maxW="200px">
+                                  {file.name}
+                                </Text>
+                                <Text fontSize="xs" color={labelColor}>
+                                  {(file.size / 1024).toFixed(1)} KB · {fileType?.toUpperCase()}
+                                </Text>
+                              </Box>
+                            </HStack>
+                            
+                            <Box position="relative">
+                              <Input
+                                type="file"
+                                accept="application/pdf,image/*"
+                                onChange={handleFileChange}
+                                position="absolute"
+                                top={0}
+                                left={0}
+                                width="100%"
+                                height="100%"
+                                opacity={0}
+                                cursor="pointer"
+                                zIndex={2}
+                              />
+                              <Button size="sm" variant="outline" borderRadius="lg" leftIcon={<Upload size={14} />}>
+                                Replace File
+                              </Button>
                             </Box>
-                            <IconButton
-                              size="sm"
-                              variant="ghost"
-                              aria-label="Remove file"
-                              icon={<X size={16} />}
-                              onClick={removeFile}
-                              borderRadius="full"
-                            />
-                          </HStack>
+                          </Flex>
+                          
+                          <Box flex={1} bg={sectionBg} borderRadius="2xl" borderWidth="1px" borderColor={borderColor} position="relative" overflow="hidden" display="flex" alignItems="center" justifyContent="center">
+                             {fileType === "pdf" ? (
+                               <iframe 
+                                 src={URL.createObjectURL(file)} 
+                                 width="100%" 
+                                 height="100%"
+                                 style={{ border: "none", background: "transparent" }}
+                                 title="PDF Preview"
+                               />
+                             ) : fileType === "image" ? (
+                               <img 
+                                 src={URL.createObjectURL(file)} 
+                                 alt="Document Preview" 
+                                 style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }} 
+                               />
+                             ) : (
+                               <VStack spacing={3}>
+                                 <FileText size={48} color={labelColor} opacity={0.5} />
+                                 <Text color={labelColor} fontSize="sm">Preview not available</Text>
+                               </VStack>
+                             )}
+                          </Box>
                         </MotionBox>
                       )}
-                    </VStack>
+                    </Box>
 
-                    {/* Right: Extraction Configuration */}
-                    <VStack align="stretch" spacing={5}>
-                      <FormLabel
-                        color={labelColor}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        letterSpacing="wider"
-                        textTransform="uppercase"
+                    {/* Right: Extraction Configuration (Only shown if file exists) */}
+                    {file && (
+                      <MotionBox 
+                        flex={1}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1, duration: 0.4 }}
                       >
-                        Analysis Settings
-                      </FormLabel>
-
-                      <FormControl>
-                        <FormLabel
-                          fontSize="xs"
-                          color={labelColor}
-                          fontWeight="semibold"
-                        >
-                          PAGE RANGE
-                        </FormLabel>
-                        <Input
-                          value={pages}
-                          onChange={(e) => setPages(e.target.value)}
-                          placeholder="e.g. 1, 3, 5-8 (leave blank for all)"
-                          borderRadius="xl"
-                          bg={sectionBg}
-                          borderColor={borderColor}
-                          _focus={{
-                            borderColor: "brand.400",
-                            boxShadow: "none",
-                          }}
-                        />
-                        <Text fontSize="11px" color={labelColor} mt={1}>
-                          Currently active:{" "}
-                          <Text as="span" fontWeight="bold" color={textColor}>
-                            {pages.trim() ? `Pages ${pages}` : "All Pages"}
-                          </Text>
-                        </Text>
-                      </FormControl>
-
-                      <Box
-                        p={4}
-                        rounded="2xl"
-                        border="1px solid"
-                        borderColor={borderColor}
-                        bg={sectionBg}
-                      >
-                        <Text
-                          fontSize="xs"
-                          fontWeight="bold"
-                          color={labelColor}
-                          mb={3}
-                          letterSpacing="wider"
-                          textTransform="uppercase"
-                        >
-                          EXTRACT FEATURES
-                        </Text>
-                        <VStack spacing={3} align="stretch">
-                          <HStack
-                            p={3}
-                            rounded="xl"
-                            borderWidth="1px"
-                            borderColor={
-                              extractParagraphs ? "brand.400" : borderColor
-                            }
-                            bg={
-                              extractParagraphs
-                                ? `${brandColor}05`
-                                : "transparent"
-                            }
-                            cursor="pointer"
-                            onClick={() =>
-                              setExtractParagraphs(!extractParagraphs)
-                            }
-                            _hover={{ borderColor: "brand.300" }}
-                            transition="all 0.15s"
-                          >
-                            <Box
-                              color={
-                                extractParagraphs ? brandColor : "gray.400"
-                              }
-                              mr={1}
+                        <VStack align="stretch" spacing={6} h="100%" justify="space-between">
+                          <VStack align="stretch" spacing={6}>
+                            <FormLabel
+                              color={labelColor}
+                              fontSize="xs"
+                              fontWeight="bold"
+                              letterSpacing="wider"
+                              textTransform="uppercase"
                             >
-                              <FileText size={18} />
-                            </Box>
-                            <VStack align="start" spacing={0} flex={1}>
-                              <Text fontSize="xs" fontWeight="bold">
-                                Flowing Paragraphs
-                              </Text>
-                              <Text fontSize="10px" color={labelColor}>
-                                Reads standard sentence structures and page
-                                layout blocks
-                              </Text>
-                            </VStack>
-                            <Checkbox
-                              isChecked={extractParagraphs}
-                              pointerEvents="none"
-                              colorScheme="brand"
-                            />
-                          </HStack>
+                              Analysis Settings
+                            </FormLabel>
 
-                          <HStack
-                            p={3}
-                            rounded="xl"
-                            borderWidth="1px"
-                            borderColor={
-                              extractTables ? "brand.400" : borderColor
-                            }
-                            bg={
-                              extractTables ? `${brandColor}05` : "transparent"
-                            }
-                            cursor="pointer"
-                            onClick={() => setExtractTables(!extractTables)}
-                            _hover={{ borderColor: "brand.300" }}
-                            transition="all 0.15s"
-                          >
-                            <Box
-                              color={extractTables ? brandColor : "gray.400"}
-                              mr={1}
-                            >
-                              <TableIcon size={18} />
-                            </Box>
-                            <VStack align="start" spacing={0} flex={1}>
-                              <Text fontSize="xs" fontWeight="bold">
-                                Structured Tables
+                            <FormControl>
+                              <FormLabel
+                                fontSize="xs"
+                                color={labelColor}
+                                fontWeight="semibold"
+                              >
+                                PAGE RANGE
+                              </FormLabel>
+                              <Input
+                                value={pages}
+                                onChange={(e) => setPages(e.target.value)}
+                                placeholder="e.g. 1, 3, 5-8 (leave blank for all)"
+                                borderRadius="xl"
+                                bg={sectionBg}
+                                borderColor={borderColor}
+                                size="lg"
+                                _focus={{
+                                  borderColor: "brand.400",
+                                  boxShadow: "none",
+                                }}
+                              />
+                              <Text fontSize="11px" color={labelColor} mt={2}>
+                                Currently active:{" "}
+                                <Text as="span" fontWeight="bold" color={textColor}>
+                                  {pages.trim() ? `Pages ${pages}` : "All Pages"}
+                                </Text>
                               </Text>
-                              <Text fontSize="10px" color={labelColor}>
-                                Maps tabular items into digital spreadsheets +
-                                bounding boxes
-                              </Text>
-                            </VStack>
-                            <Checkbox
-                              isChecked={extractTables}
-                              pointerEvents="none"
-                              colorScheme="brand"
-                            />
-                          </HStack>
+                            </FormControl>
 
-                          <HStack
-                            p={3}
-                            rounded="xl"
-                            borderWidth="1px"
-                            borderColor={
-                              extractFields ? "brand.400" : borderColor
-                            }
-                            bg={
-                              extractFields ? `${brandColor}05` : "transparent"
-                            }
-                            cursor="pointer"
-                            onClick={() => setExtractFields(!extractFields)}
-                            _hover={{ borderColor: "brand.300" }}
-                            transition="all 0.15s"
-                          >
                             <Box
-                              color={extractFields ? brandColor : "gray.400"}
-                              mr={1}
+                              p={5}
+                              rounded="3xl"
+                              border="1px solid"
+                              borderColor={borderColor}
+                              bg={sectionBg}
                             >
-                              <Layers size={18} />
+                              <Text
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color={labelColor}
+                                mb={4}
+                                letterSpacing="wider"
+                                textTransform="uppercase"
+                              >
+                                EXTRACT FEATURES
+                              </Text>
+                              <VStack spacing={3} align="stretch">
+                                <HStack
+                                  p={4}
+                                  rounded="2xl"
+                                  borderWidth="1px"
+                                  borderColor={
+                                    extractParagraphs ? "brand.400" : borderColor
+                                  }
+                                  bg={
+                                    extractParagraphs
+                                      ? `${brandColor}05`
+                                      : "transparent"
+                                  }
+                                  cursor="pointer"
+                                  onClick={() =>
+                                    setExtractParagraphs(!extractParagraphs)
+                                  }
+                                  _hover={{ borderColor: "brand.300", bg: useColorModeValue("white", "gray.800") }}
+                                  transition="all 0.2s"
+                                  shadow={extractParagraphs ? "md" : "none"}
+                                >
+                                  <Box
+                                    color={
+                                      extractParagraphs ? brandColor : "gray.400"
+                                    }
+                                    mr={2}
+                                  >
+                                    <FileText size={20} />
+                                  </Box>
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <Text fontSize="sm" fontWeight="bold">
+                                      Flowing Paragraphs
+                                    </Text>
+                                    <Text fontSize="xs" color={labelColor}>
+                                      Reads standard sentence structures and page blocks
+                                    </Text>
+                                  </VStack>
+                                  <Checkbox
+                                    isChecked={extractParagraphs}
+                                    pointerEvents="none"
+                                    colorScheme="brand"
+                                    size="lg"
+                                  />
+                                </HStack>
+
+                                <HStack
+                                  p={4}
+                                  rounded="2xl"
+                                  borderWidth="1px"
+                                  borderColor={
+                                    extractTables ? "brand.400" : borderColor
+                                  }
+                                  bg={
+                                    extractTables ? `${brandColor}05` : "transparent"
+                                  }
+                                  cursor="pointer"
+                                  onClick={() => setExtractTables(!extractTables)}
+                                  _hover={{ borderColor: "brand.300", bg: useColorModeValue("white", "gray.800") }}
+                                  transition="all 0.2s"
+                                  shadow={extractTables ? "md" : "none"}
+                                >
+                                  <Box
+                                    color={extractTables ? brandColor : "gray.400"}
+                                    mr={2}
+                                  >
+                                    <TableIcon size={20} />
+                                  </Box>
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <Text fontSize="sm" fontWeight="bold">
+                                      Structured Tables
+                                    </Text>
+                                    <Text fontSize="xs" color={labelColor}>
+                                      Maps tabular items into digital spreadsheets
+                                    </Text>
+                                  </VStack>
+                                  <Checkbox
+                                    isChecked={extractTables}
+                                    pointerEvents="none"
+                                    colorScheme="brand"
+                                    size="lg"
+                                  />
+                                </HStack>
+
+                                <HStack
+                                  p={4}
+                                  rounded="2xl"
+                                  borderWidth="1px"
+                                  borderColor={
+                                    extractFields ? "brand.400" : borderColor
+                                  }
+                                  bg={
+                                    extractFields ? `${brandColor}05` : "transparent"
+                                  }
+                                  cursor="pointer"
+                                  onClick={() => setExtractFields(!extractFields)}
+                                  _hover={{ borderColor: "brand.300", bg: useColorModeValue("white", "gray.800") }}
+                                  transition="all 0.2s"
+                                  shadow={extractFields ? "md" : "none"}
+                                >
+                                  <Box
+                                    color={extractFields ? brandColor : "gray.400"}
+                                    mr={2}
+                                  >
+                                    <Layers size={20} />
+                                  </Box>
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <Text fontSize="sm" fontWeight="bold">
+                                      Form Fields & Key-Values
+                                    </Text>
+                                    <Text fontSize="xs" color={labelColor}>
+                                      Identifies metadata labels, dates, and checkboxes
+                                    </Text>
+                                  </VStack>
+                                  <Checkbox
+                                    isChecked={extractFields}
+                                    pointerEvents="none"
+                                    colorScheme="brand"
+                                    size="lg"
+                                  />
+                                </HStack>
+                              </VStack>
                             </Box>
-                            <VStack align="start" spacing={0} flex={1}>
-                              <Text fontSize="xs" fontWeight="bold">
-                                Form Fields & Key-Values
-                              </Text>
-                              <Text fontSize="10px" color={labelColor}>
-                                Identifies metadata labels, dates, fields, and
-                                checkboxes
-                              </Text>
-                            </VStack>
-                            <Checkbox
-                              isChecked={extractFields}
-                              pointerEvents="none"
-                              colorScheme="brand"
-                            />
-                          </HStack>
+
+                            {error && (
+                              <Alert status="error" borderRadius="xl">
+                                <AlertIcon />
+                                {error}
+                              </Alert>
+                            )}
+                          </VStack>
+
+                          <Button
+                            type="submit"
+                            size="lg"
+                            width="full"
+                            colorScheme="brand"
+                            isDisabled={loading || !file || isRenderingPdf}
+                            borderRadius="2xl"
+                            shadow="lg"
+                            h="60px"
+                            fontSize="md"
+                            _hover={{ shadow: "2xl", transform: "translateY(-2px)" }}
+                            transition="all 0.2s"
+                          >
+                            {loading ? (
+                              <HStack justify="center" spacing={3}>
+                                <Spinner size="sm" />
+                                <Text>Reading document stream...</Text>
+                              </HStack>
+                            ) : isRenderingPdf ? (
+                              <HStack justify="center" spacing={3}>
+                                <Spinner size="sm" />
+                                <Text>Rendering PDF pages...</Text>
+                              </HStack>
+                            ) : (
+                              <HStack spacing={3}>
+                                <Zap size={20} />
+                                <Text fontWeight="bold">Execute Analysis</Text>
+                              </HStack>
+                            )}
+                          </Button>
                         </VStack>
-                      </Box>
-
-                      {error && (
-                        <Alert status="error" borderRadius="xl">
-                          <AlertIcon />
-                          {error}
-                        </Alert>
-                      )}
-
-                      <Button
-                        type="submit"
-                        size="lg"
-                        width="full"
-                        colorScheme="brand"
-                        isDisabled={loading || !file || isRenderingPdf}
-                        borderRadius="2xl"
-                        shadow="md"
-                        _hover={{ shadow: "lg" }}
-                      >
-                        {loading ? (
-                          <HStack justify="center" spacing={3}>
-                            <Spinner size="sm" />
-                            <Text fontSize="sm">
-                              Reading document stream...
-                            </Text>
-                          </HStack>
-                        ) : isRenderingPdf ? (
-                          <HStack justify="center" spacing={3}>
-                            <Spinner size="sm" />
-                            <Text fontSize="sm">Rendering PDF pages...</Text>
-                          </HStack>
-                        ) : (
-                          <HStack spacing={2}>
-                            <Zap size={18} />
-                            <Text>Execute Analysis</Text>
-                          </HStack>
-                        )}
-                      </Button>
-                    </VStack>
-                  </SimpleGrid>
+                      </MotionBox>
+                    )}
+                  </Flex>
                 </form>
               </Box>
             </Box>
           </MotionBox>
         ) : (
-          // ─── Workspace View (Edge-to-Edge Split Screen) ───
           <MotionBox
             key="workspace-view"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            w="100%"
-            minH="100vh"
+            flex={1}
             display="flex"
             flexDirection="column"
+            bg="white"
+            w="100%"
+            h="100%"
           >
-            {/* Top Navigation Bar */}
+            {/* Top Header */}
             <Flex
-              justify="space-between"
+              h="60px"
+              w="100%"
               align="center"
-              bg={cardBg}
+              justify="space-between"
               px={6}
-              py={4}
-              borderBottomWidth="1px"
-              borderColor={borderColor}
-              flexDirection={{ base: "column", md: "row" }}
-              gap={4}
+              borderBottom="1px solid"
+              borderColor="gray.200"
             >
-              <HStack spacing={3}>
-                <IconButton
-                  size="sm"
-                  variant="outline"
-                  aria-label="Back to config"
-                  icon={<ArrowLeft size={16} />}
-                  onClick={removeFile}
-                  borderRadius="xl"
-                />
-                <VStack align="start" spacing={0}>
-                  <HStack>
-                    <Heading size="xs" fontWeight="bold">
-                      {file?.name}
-                    </Heading>
-                    <Badge colorScheme="green" variant="subtle" fontSize="9px">
-                      PROCESSED
-                    </Badge>
-                  </HStack>
-                  <Text fontSize="xs" color={labelColor}>
-                    Size: {(file?.size / 1024).toFixed(1)} KB · Format:{" "}
-                    {fileType?.toUpperCase()}
-                  </Text>
-                </VStack>
-              </HStack>
-
-              {/* Stats Summary */}
-              {/* <HStack spacing={6} flexWrap="wrap">
-                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
-                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">PARAGRAPHS</Text>
-                  <Text fontSize="md" fontWeight="bold" color="brand.500">{parsed.paragraphs.length}</Text>
-                </Box>
-                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
-                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">TABLES</Text>
-                  <Text fontSize="md" fontWeight="bold" color="purple.500">{parsed.tables.length}</Text>
-                </Box>
-                <Box textAlign="center" px={3} borderRightWidth="1px" borderColor={borderColor}>
-                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">FIELDS</Text>
-                  <Text fontSize="md" fontWeight="bold" color="teal.500">{parsed.fields ? Object.keys(parsed.fields).length : 0}</Text>
-                </Box>
-                <Box textAlign="center" px={3}>
-                  <Text fontSize="10px" color={labelColor} fontWeight="semibold" textTransform="uppercase">CHARACTERS</Text>
-                  <Text fontSize="md" fontWeight="bold" color="orange.500">{parsed.rawText.length.toLocaleString()}</Text>
-                </Box>
-              </HStack> */}
+              <Text fontSize="xl" fontWeight="bold" color="#3bb3b6">
+                Document
+              </Text>
               <IconButton
-                size="sm"
+                icon={<X size={20} />}
                 variant="ghost"
-                icon={<Trash2 size={18} />}
-                aria-label="clear"
                 onClick={clearAll}
+                aria-label="Close Document"
               />
             </Flex>
 
-            {/* Split Panels Container */}
-            <Flex
-              flex={1}
-              flexDirection={{ base: "column", lg: "row" }}
-              minH={0}
-            >
-              {/* Left Side: Document Preview (45% split) */}
-              <Box
-                flex={{ base: "none", lg: 4.5 }}
-                borderRightWidth={{ base: "0px", lg: "1px" }}
-                borderBottomWidth={{ base: "1px", lg: "0px" }}
-                borderColor={borderColor}
-                bg={sectionBg}
-                p={6}
-                display="flex"
-                flexDirection="column"
-                maxH={{ lg: "calc(100vh - 73px)" }}
-                overflow="hidden"
-              >
-                <Flex align="center" justify="space-between" mb={4}>
-                  <Text
-                    fontSize="xs"
-                    fontWeight="bold"
-                    color={labelColor}
-                    letterSpacing="wider"
-                    textTransform="uppercase"
-                  >
-                    DOCUMENT WORKSPACE MAP
-                  </Text>
-                </Flex>
-
-                {pdfPages.length === 0 ? (
-                  <Box
-                    p={8}
-                    textAlign="center"
-                    rounded="2xl"
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                    bg={sectionBg}
-                    flex={1}
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Spinner size="md" color="brand.400" mb={3} />
-                    <Text fontSize="sm" color={labelColor}>
-                      Loading document preview pages...
-                    </Text>
-                  </Box>
-                ) : (
-                  <>
-                    {/* Chrome-like PDF Toolbar */}
-                    <HStack
-                      w="100%"
-                      bg={useColorModeValue("white", "gray.900")}
-                      p={2}
-                      mb={4}
-                      rounded="2xl"
-                      borderWidth="1px"
-                      borderColor={borderColor}
-                      shadow="md"
-                      spacing={2}
-                      justify="space-between"
-                      flexWrap="wrap"
-                    >
-                      {/* Left: Page Navigation */}
-                      <HStack
-                        spacing={1}
-                        bg={useColorModeValue("gray.50", "gray.800")}
-                        px={2}
-                        py={1}
-                        borderRadius="xl"
-                        border="1px solid"
-                        borderColor={borderColor}
-                      >
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          aria-label="Previous Page"
-                          icon={<ChevronLeft size={14} />}
-                          isDisabled={currentPage <= 1}
-                          onClick={() => jumpToPage(currentPage - 1)}
-                        />
-                        <Input
-                          size="xs"
-                          value={currentPageInput}
-                          onChange={(e) => setCurrentPageInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              const val = parseInt(currentPageInput);
-                              if (
-                                !isNaN(val) &&
-                                val >= 1 &&
-                                val <= pdfPages.length
-                              ) {
-                                jumpToPage(val);
-                              } else {
-                                setCurrentPageInput(currentPage.toString());
-                              }
-                            }
-                          }}
-                          w="32px"
-                          textAlign="center"
-                          variant="unstyled"
-                          fontWeight="bold"
-                          fontSize="xs"
-                          p={0}
-                          height="20px"
-                        />
-                        <Text
-                          fontSize="xs"
-                          color={labelColor}
-                          fontWeight="bold"
-                          userSelect="none"
-                        >
-                          / {pdfPages.length}
-                        </Text>
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          aria-label="Next Page"
-                          icon={<ChevronRight size={14} />}
-                          isDisabled={currentPage >= pdfPages.length}
-                          onClick={() => jumpToPage(currentPage + 1)}
-                        />
-                      </HStack>
-
-                      {/* Center: Zoom Controls */}
-                      <HStack spacing={1}>
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          aria-label="Zoom Out"
-                          icon={<ZoomOut size={14} />}
-                          onClick={handleZoomOut}
-                          isDisabled={zoom <= 0.5}
-                        />
-                        <Text
-                          fontSize="xs"
-                          fontWeight="bold"
-                          width="45px"
-                          textAlign="center"
-                          userSelect="none"
-                        >
-                          {Math.round(zoom * 100)}%
-                        </Text>
-                        <IconButton
-                          size="xs"
-                          variant="ghost"
-                          aria-label="Zoom In"
-                          icon={<ZoomIn size={14} />}
-                          onClick={handleZoomIn}
-                          isDisabled={zoom >= 3.0}
-                        />
-                      </HStack>
-
-                      {/* Right: Fit & Rotate */}
-                      <HStack spacing={1.5}>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          fontSize="10px"
-                          borderRadius="lg"
-                          onClick={handleFitWidth}
-                          px={2}
-                          height="24px"
-                        >
-                          Fit Width
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          fontSize="10px"
-                          borderRadius="lg"
-                          onClick={handleFitPage}
-                          px={2}
-                          height="24px"
-                        >
-                          Fit Page
-                        </Button>
-                        <Divider
-                          orientation="vertical"
-                          height="16px"
-                          borderColor={borderColor}
-                        />
-                        <Tooltip label="Rotate Counter-Clockwise" fontSize="xs">
-                          <IconButton
-                            size="xs"
-                            variant="ghost"
-                            aria-label="Rotate CCW"
-                            icon={<RotateCcw size={14} />}
-                            onClick={handleRotateCcw}
-                          />
-                        </Tooltip>
-                        <Tooltip label="Rotate Clockwise" fontSize="xs">
-                          <IconButton
-                            size="xs"
-                            variant="ghost"
-                            aria-label="Rotate CW"
-                            icon={<RotateCw size={14} />}
-                            onClick={handleRotateCw}
-                          />
-                        </Tooltip>
-                      </HStack>
-                    </HStack>
-
-                    {/* Scrollable Viewport Container */}
-                    <Box
-                      ref={viewportRef}
-                      position="relative"
-                      rounded="2xl"
-                      overflow="auto"
-                      flex={1}
-                      borderWidth="1px"
-                      borderColor={borderColor}
-                      bg={useColorModeValue("white", "gray.900")}
-                      cursor={zoom > 1 ? "grab" : "default"}
-                      onMouseDown={handleMouseDown}
-                      onMouseMove={handleMouseMove}
-                      onMouseUp={handleMouseUpOrLeave}
-                      onMouseLeave={handleMouseUpOrLeave}
-                      onScroll={handleScroll}
-                      p={4}
-                      style={{ userSelect: "none" }}
-                    >
-                      {/* Stacked PDF Page container list */}
-                      <VStack spacing={6} align="center" width="100%" py={4}>
-                        {pdfPages.map((page, index) => {
-                          const pageNum = index + 1;
-                          const aspect =
-                            page.aspectRatio ||
-                            (page.width && page.height
-                              ? page.width / page.height
-                              : 0.77);
-                          const standardPageWidth = 600;
-                          const scaledWidth = standardPageWidth * zoom;
-
-                          const w = scaledWidth;
-                          const h = scaledWidth / aspect;
-                          const isRotated90or270 = rotation % 180 !== 0;
-
-                          return (
-                            <Box
-                              key={index}
-                              id={`pdf-page-container-${pageNum}`}
-                              className="pdf-page-container"
-                              position="relative"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              style={{
-                                width: isRotated90or270 ? `${h}px` : `${w}px`,
-                                height: isRotated90or270 ? `${w}px` : `${h}px`,
-                                transition:
-                                  "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                              }}
-                            >
-                              <Box
-                                position="absolute"
-                                style={{
-                                  width: `${w}px`,
-                                  height: `${h}px`,
-                                  transform: `rotate(${rotation}deg)`,
-                                  transformOrigin: "center center",
-                                  transition:
-                                    "transform 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out",
-                                }}
-                              >
-                                <img
-                                  src={page.url}
-                                  alt={`Page ${pageNum}`}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    display: "block",
-                                    borderRadius: "8px",
-                                    pointerEvents: "none",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                                  }}
-                                  onLoad={(e) => {
-                                    const img = e.currentTarget;
-                                    const canvas = canvasRefs.current[index];
-                                    if (canvas) {
-                                      canvas.width = img.naturalWidth;
-                                      canvas.height = img.naturalHeight;
-                                    }
-                                    drawPreviewBoxes();
-                                  }}
-                                />
-                                <canvas
-                                  ref={(el) => {
-                                    canvasRefs.current[index] = el;
-                                  }}
-                                  style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                    pointerEvents: "none",
-                                  }}
-                                />
-                              </Box>
-                            </Box>
-                          );
-                        })}
-                      </VStack>
-                    </Box>
-                  </>
-                )}
-              </Box>
-
-              {/* Right Side: Data Inspector (55% split) */}
-              <Box
-                flex={{ base: "none", lg: 5.5 }}
-                p={6}
-                bg={cardBg}
-                maxH={{ lg: "calc(100vh - 73px)" }}
-                overflowY="auto"
-              >
-                {/* Inline AI Assistant Trigger Banner */}
-                <Box
-                  p={3.5}
-                  mb={5}
-                  bg={useColorModeValue("brand.50", "rgba(99, 102, 241, 0.08)")}
-                  borderWidth="1px"
-                  borderColor={useColorModeValue(
-                    "brand.200",
-                    "rgba(99, 102, 241, 0.2)",
-                  )}
-                  borderRadius="2xl"
-                  shadow="sm"
-                >
-                  <HStack
-                    justify="space-between"
-                    align="center"
-                    flexWrap="wrap"
-                    gap={2}
-                  >
-                    <HStack spacing={3.5}>
-                      <Box
-                        p={2}
-                        borderRadius="xl"
-                        bg="brand.500"
-                        color="white"
-                        shadow="sm"
-                      >
-                        <Sparkles size={14} />
-                      </Box>
-                      <VStack align="start" spacing={0.5}>
-                        <Text fontSize="xs" fontWeight="bold">
-                          AI Assistance
-                        </Text>
-                        <Text fontSize="10px" color={labelColor}>
-                          You can run AI instructions, translations, or
-                          summaries on this result.
-                        </Text>
-                      </VStack>
-                    </HStack>
+              {/* Main Content Split */}
+              <Flex flex={1} overflow="hidden" p={4} gap={6} bg="white">
+                
+                {/* Left Column: PDF Viewer */}
+                <Box flex={1.8} display="flex" flexDirection="column" h="100%" minW={0}>
+                  <HStack spacing={4} mb={2}>
                     <Button
-                      size="xs"
-                      colorScheme="brand"
-                      onClick={onAiOpen}
-                      leftIcon={<Sparkles size={12} />}
-                      borderRadius="xl"
-                      px={4.5}
+                      px={6}
+                      bg="#3bb3b6"
+                      color="white"
+                      _hover={{ bg: "#2a9d9f" }}
+                      borderRadius="sm"
+                      fontWeight="medium"
                     >
-                      Open AI drawer
+                      View Full Size
+                    </Button>
+                    <Button
+                      px={6}
+                      bg="#3182ce"
+                      color="white"
+                      _hover={{ bg: "#2b6cb0" }}
+                      borderRadius="sm"
+                      fontWeight="medium"
+                    >
+                      Download
                     </Button>
                   </HStack>
-                </Box>
 
-                <Tabs variant="unstyled" colorScheme="brand" isLazy>
-                  <TabList
+                  <Box
                     display="flex"
-                    width="100%"
-                    bg={useColorModeValue("gray.100", "gray.950")}
-                    p={1.5}
-                    borderRadius="2xl"
-                    mb={6}
-                    overflowX="auto"
-                    whiteSpace="nowrap"
-                    gap={1}
+                    flexDirection="column"
+                    flex={1}
+                    borderWidth="1px"
+                    borderColor="gray.300"
+                    borderRadius="sm"
+                    overflow="hidden"
                   >
-                    {showParagraphsTab && (
-                      <Tab
-                        flex={1}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        px={4}
-                        py={2}
-                        borderRadius="xl"
-                        _selected={{
-                          bg: useColorModeValue("white", "gray.900"),
-                          color: brandColor,
-                          shadow: "sm",
-                        }}
-                      >
-                        <HStack spacing={1.5} justify="center">
-                          <FileText size={13} />
-                          <Text>Paragraphs</Text>
-                          <Badge
-                            colorScheme="brand"
-                            variant="solid"
-                            borderRadius="full"
-                            fontSize="9px"
-                          >
-                            {parsed.paragraphs.length}
-                          </Badge>
-                        </HStack>
-                      </Tab>
-                    )}
-                    {showWordsTab && (
-                      <Tab
-                        flex={1}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        px={4}
-                        py={2}
-                        borderRadius="xl"
-                        _selected={{
-                          bg: useColorModeValue("white", "gray.900"),
-                          color: "orange.400",
-                          shadow: "sm",
-                        }}
-                      >
-                        <HStack spacing={1.5} justify="center">
-                          <Sparkles size={13} />
-                          <Text>Words</Text>
-                          <Badge
-                            colorScheme="orange"
-                            variant="solid"
-                            borderRadius="full"
-                            fontSize="9px"
-                          >
-                            {parsed.words.length}
-                          </Badge>
-                        </HStack>
-                      </Tab>
-                    )}
-                    {showTablesTab && (
-                      <Tab
-                        flex={1}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        px={4}
-                        py={2}
-                        borderRadius="xl"
-                        _selected={{
-                          bg: useColorModeValue("white", "gray.900"),
-                          color: "purple.400",
-                          shadow: "sm",
-                        }}
-                      >
-                        <HStack spacing={1.5} justify="center">
-                          <TableIcon size={13} />
-                          <Text>Tables</Text>
-                          <Badge
-                            colorScheme="purple"
-                            variant="solid"
-                            borderRadius="full"
-                            fontSize="9px"
-                          >
-                            {parsed.tables.length}
-                          </Badge>
-                        </HStack>
-                      </Tab>
-                    )}
-                    {showFieldsTab && (
-                      <Tab
-                        flex={1}
-                        fontSize="xs"
-                        fontWeight="bold"
-                        px={4}
-                        py={2}
-                        borderRadius="xl"
-                        _selected={{
-                          bg: useColorModeValue("white", "gray.900"),
-                          color: "teal.400",
-                          shadow: "sm",
-                        }}
-                      >
-                        <HStack spacing={1.5} justify="center">
-                          <Layers size={13} />
-                          <Text>Fields</Text>
-                          <Badge
-                            colorScheme="teal"
-                            variant="solid"
-                            borderRadius="full"
-                            fontSize="9px"
-                          >
-                            {Object.keys(parsed.fields).length}
-                          </Badge>
-                        </HStack>
-                      </Tab>
-                    )}
-                    <Tab
-                      flex={1}
-                      fontSize="xs"
-                      fontWeight="bold"
-                      px={4}
-                      py={2}
-                      borderRadius="xl"
-                      _selected={{
-                        bg: useColorModeValue("white", "gray.900"),
-                        color: "gray.500",
-                        shadow: "sm",
-                      }}
-                    >
-                      <HStack spacing={1.5} justify="center">
-                        <FileText size={13} />
-                        <Text>Raw</Text>
+                    {/* Dark Chrome-like PDF Toolbar */}
+                    <HStack w="100%" bg="#323639" color="white" px={4} py={1.5} spacing={4} align="center">
+                    {/* Left: Page Navigation */}
+                    <HStack spacing={2} borderRight="1px solid #5F6368" pr={4}>
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Menu" icon={<Menu size={16} />} />
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Previous Page" icon={<ChevronLeft size={16} />} isDisabled={currentPage <= 1} onClick={() => jumpToPage(currentPage - 1)} />
+                      <HStack spacing={1}>
+                        <Input size="xs" value={currentPageInput} onChange={(e) => setCurrentPageInput(e.target.value)} onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const val = parseInt(currentPageInput);
+                            if (!isNaN(val) && val >= 1 && val <= pdfPages.length) jumpToPage(val);
+                            else setCurrentPageInput(currentPage.toString());
+                          }
+                        }} w="30px" textAlign="center" bg="#202124" border="none" color="white" fontSize="sm" px={1} />
+                        <Text fontSize="sm" color="#9AA0A6">/ {pdfPages.length}</Text>
                       </HStack>
-                    </Tab>
-                  </TabList>
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Next Page" icon={<ChevronRight size={16} />} isDisabled={currentPage >= pdfPages.length} onClick={() => jumpToPage(currentPage + 1)} />
+                    </HStack>
+                    {/* Center: Zoom Controls */}
+                    <HStack spacing={2} borderRight="1px solid #5F6368" pr={4}>
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Zoom Out" icon={<ZoomOut size={16} />} onClick={handleZoomOut} isDisabled={zoom <= 0.5} />
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Zoom In" icon={<ZoomIn size={16} />} onClick={handleZoomIn} isDisabled={zoom >= 3.0} />
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Fit Page" icon={<Box width="14px" height="16px" border="1px solid white" borderRadius="2px" />} onClick={handleFitPage} />
+                      <IconButton size="xs" variant="ghost" color="white" _hover={{ bg: "rgba(255,255,255,0.1)" }} aria-label="Rotate" icon={<RotateCw size={16} />} onClick={handleRotateCw} />
+                    </HStack>
+                  </HStack>
 
-                  <TabPanels>
-                    {showParagraphsTab && (
-                      <TabPanel px={0} py={1}>
-                        <ParagraphsPanel
-                          paragraphs={parsed.paragraphs}
-                          labelColor={labelColor}
-                          textColor={textColor}
-                          sectionBg={sectionBg}
-                          borderColor={borderColor}
-                          onHoverItem={setHoveredBounds}
-                        />
-                      </TabPanel>
-                    )}
-                    {showWordsTab && (
-                      <TabPanel px={0} py={1}>
-                        <WordsPanel
-                          words={parsed.words}
-                          labelColor={labelColor}
-                          textColor={textColor}
-                          sectionBg={sectionBg}
-                          borderColor={borderColor}
-                          onHoverItem={setHoveredBounds}
-                        />
-                      </TabPanel>
-                    )}
-                    {showTablesTab && (
-                      <TabPanel px={0} py={1}>
-                        <TablesPanel
-                          tables={parsed.tables}
-                          labelColor={labelColor}
-                          textColor={textColor}
-                          sectionBg={sectionBg}
-                          borderColor={borderColor}
-                          onHoverItem={setHoveredBounds}
-                        />
-                      </TabPanel>
-                    )}
-                    {showFieldsTab && (
-                      <TabPanel px={0} py={1}>
-                        <FieldsPanel
-                          fields={parsed.fields}
-                          labelColor={labelColor}
-                          textColor={textColor}
-                          sectionBg={sectionBg}
-                          borderColor={borderColor}
-                          onHoverItem={setHoveredBounds}
-                        />
-                      </TabPanel>
-                    )}
-                    <TabPanel px={0} py={1}>
-                      <RawTextPanel
-                        rawText={parsed.rawText}
-                        textColor={textColor}
-                        sectionBg={sectionBg}
-                        borderColor={borderColor}
-                      />
-                    </TabPanel>
-                  </TabPanels>
-                </Tabs>
+                  {/* Scrollable Viewport Container */}
+                  <Box ref={viewportRef} position="relative" overflow="auto" flex={1} bg="#525659" cursor={zoom > 1 ? "grab" : "default"} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave} onScroll={handleScroll} p={4} style={{ userSelect: "none" }}>
+                    <VStack spacing={6} align="center" width="100%" py={4}>
+                      {pdfPages.map((page, index) => {
+                        const pageNum = index + 1;
+                        const aspect = page.aspectRatio || (page.width && page.height ? page.width / page.height : 0.77);
+                        const standardPageWidth = 600;
+                        const scaledWidth = standardPageWidth * zoom;
+                        const w = scaledWidth;
+                        const h = scaledWidth / aspect;
+                        const isRotated90or270 = rotation % 180 !== 0;
+
+                        return (
+                          <Box key={index} id={`pdf-page-container-${pageNum}`} className="pdf-page-container" position="relative" display="flex" alignItems="center" justifyContent="center" style={{ width: isRotated90or270 ? `${h}px` : `${w}px`, height: isRotated90or270 ? `${w}px` : `${h}px`, transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+                            <Box position="absolute" style={{ width: `${w}px`, height: `${h}px`, transform: `rotate(${rotation}deg)`, transformOrigin: "center center", transition: "transform 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out" }}>
+                              <img src={page.url} alt={`Page ${pageNum}`} style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", backgroundColor: "white" }} onLoad={(e) => {
+                                const img = e.currentTarget;
+                                const canvas = canvasRefs.current[index];
+                                if (canvas) { canvas.width = img.naturalWidth; canvas.height = img.naturalHeight; }
+                                drawPreviewBoxes();
+                              }} />
+                              <canvas ref={(el) => { canvasRefs.current[index] = el; }} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </VStack>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Right Column: Data Panels */}
+              <Box
+                flex={1}
+                display="flex"
+                flexDirection="column"
+                h="100%"
+                minW={0}
+                borderWidth="1px"
+                borderColor="#3bb3b6"
+                borderRadius="md"
+                bg="white"
+                overflow="hidden"
+              >
+                {/* Custom Tabs */}
+                <HStack
+                  spacing={6}
+                  borderBottom="1px solid"
+                  borderColor="gray.200"
+                  bg="white"
+                >
+                  <Text
+                    px={4}
+                    py={3}
+                    fontSize="sm"
+                    fontWeight={activeView === "fields" ? "600" : "500"}
+                    color={activeView === "fields" ? "#3bb3b6" : "gray.500"}
+                    borderBottom={activeView === "fields" ? "2px solid" : "2px solid transparent"}
+                    borderColor={activeView === "fields" ? "#3bb3b6" : "transparent"}
+                    cursor="pointer"
+                    onClick={() => setActiveView("fields")}
+                  >
+                    Fields
+                  </Text>
+                  <Text
+                    px={4}
+                    py={3}
+                    fontSize="sm"
+                    fontWeight={activeView === "tables" ? "600" : "500"}
+                    color={activeView === "tables" ? "#3bb3b6" : "gray.500"}
+                    borderBottom={activeView === "tables" ? "2px solid" : "2px solid transparent"}
+                    borderColor={activeView === "tables" ? "#3bb3b6" : "transparent"}
+                    cursor="pointer"
+                    onClick={() => setActiveView("tables")}
+                  >
+                    Invoice line Items
+                  </Text>
+                  <Text
+                    px={4}
+                    py={3}
+                    fontSize="sm"
+                    fontWeight="500"
+                    color="gray.500"
+                    cursor="pointer"
+                  >
+                    Financial Table
+                  </Text>
+                </HStack>
+
+                {/* Tab Content Container */}
+                <Box
+                  flex={1}
+                  overflowY="auto"
+                  bg="white"
+                >
+                  {activeView === "fields" && (
+                    <FieldsPanel
+                      fields={parsed.fields}
+                      onHoverItem={setHoveredBounds}
+                    />
+                  )}
+                  {activeView === "tables" && (
+                    <TablesPanel
+                      tables={parsed.tables}
+                      labelColor="gray.600"
+                      textColor="gray.800"
+                      sectionBg="white"
+                      borderColor="gray.300"
+                      onHoverItem={setHoveredBounds}
+                    />
+                  )}
+                </Box>
               </Box>
             </Flex>
-
-            {/* Floating Action Trigger for AI Drawer
-            <Box
-              position="fixed"
-              bottom={6}
-              right={6}
-              zIndex={99}
-            >
-              <Tooltip label="Ask AI Copilot" placement="left" fontSize="xs" borderRadius="lg" hasArrow>
-                <MotionBox
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onAiOpen}
-                  cursor="pointer"
-                  borderRadius="full"
-                  bg={brandColor}
-                  w={14}
-                  h={14}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  shadow="2xl"
-                  borderWidth="2px"
-                  borderColor="white"
-                  _dark={{ borderColor: 'gray.800' }}
-                  position="relative"
-                >
-                  <Box
-                    position="absolute"
-                    inset={-1}
-                    bg={brandColor}
-                    borderRadius="full"
-                    opacity={0.3}
-                    zIndex={-1}
-                    style={{
-                      animation: 'pulse 2s infinite',
-                    }}
-                  />
-                  <Sparkles size={24} color="white" />
-                </MotionBox>
-              </Tooltip>
-            </Box> */}
-
-            {/* AI Assistant Drawer */}
-            <Drawer
-              isOpen={isAiOpen}
-              placement="right"
-              onClose={onAiClose}
-              size="md"
-            >
-              <DrawerOverlay backdropFilter="blur(4px)" />
-              <DrawerContent
-                bg={cardBg}
-                borderColor={borderColor}
-                borderLeftWidth="1px"
-                shadow="2xl"
-              >
-                <DrawerCloseButton borderRadius="full" top={4} right={4} />
-                <DrawerHeader
-                  borderBottomWidth="1px"
-                  borderColor={borderColor}
-                  py={4}
-                >
-                  <HStack spacing={2.5} align="center">
-                    <Box p={1.5} borderRadius="lg" bg="brand.500" color="white">
-                      <Sparkles size={16} />
-                    </Box>
-                    <VStack spacing={0} align="start">
-                      <Text fontSize="md" fontWeight="bold">
-                        Ask this document
-                      </Text>
-                      <Text fontSize="xs" color={labelColor} noOfLines={1} maxW="300px">
-                        {file?.name || "Current document"}
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </DrawerHeader>
-                <DrawerBody p={0} overflow="hidden" display="flex" flexDirection="column">
-                  <AiPromptPanel
-                    aiPrompt={aiPrompt}
-                    setAiPrompt={setAiPrompt}
-                    aiResponse={aiResponse}
-                    aiLoading={aiLoading}
-                    aiError={aiError}
-                    handleSendAiPrompt={handleSendAiPrompt}
-                    aiMessages={aiMessages}
-                    file={file}
-                    labelColor={labelColor}
-                    textColor={textColor}
-                    sectionBg={sectionBg}
-                    borderColor={borderColor}
-                  />
-                </DrawerBody>
-              </DrawerContent>
-            </Drawer>
-
-            {/* CSS Animation for Floating Button Pulse */}
-            <style jsx global>{`
-              @keyframes pulse {
-                0% {
-                  transform: scale(1);
-                  opacity: 0.4;
-                }
-                50% {
-                  transform: scale(1.15);
-                  opacity: 0.1;
-                }
-                100% {
-                  transform: scale(1);
-                  opacity: 0.4;
-                }
-              }
-            `}</style>
           </MotionBox>
         )}
       </AnimatePresence>
