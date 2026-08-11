@@ -14,7 +14,10 @@ import {
     useColorModeValue,
     HStack,
     Spinner,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
@@ -175,97 +178,117 @@ const UrlToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                URL to Base64
-            </Heading>
-            <VStack spacing={2} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Enter URL
-                    </FormLabel>
-                    <Input
-                        type="text"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        placeholder="Enter URL (e.g., https://example.com/image.png)"
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                    />
-                </FormControl>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
+                    >
+                        URL to Base64
+                    </Heading>
+                    <VStack spacing={2} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Enter URL
+                            </FormLabel>
+                            <Input
+                                type="text"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                placeholder="Enter URL (e.g., https://example.com/image.png)"
+                                bg={useColorModeValue("white", "gray.700")}
+                                rounded="md"
+                            />
+                        </FormControl>
 
-                <Button
-                    colorScheme="brand"
-                    onClick={handleUrlToBase64}
-                    isDisabled={!url || loading} // Disable button during loading
+                        <Button
+                            colorScheme="brand"
+                            onClick={handleUrlToBase64}
+                            isDisabled={!url || loading} // Disable button during loading
+                        >
+                            {loading ? <Spinner size="sm" /> : "Convert URL to Base64"}
+                        </Button>
+
+                        {fileName && (
+                            <FormControl>
+                                <FormLabel fontSize="lg" fontWeight="semibold">
+                                    File Name: {fileName}
+                                </FormLabel>
+                            </FormControl>
+                        )}
+
+                        <Textarea
+                            value={base64}
+                            readOnly
+                            placeholder="Base64 output will appear here"
+                            rows={8}
+                            bg={useColorModeValue("white", "gray.700")}
+                            rounded="md"
+                        />
+
+                        <HStack spacing={4}>
+                            <Button
+                                colorScheme="brand"
+                                leftIcon={<FaClipboard />}
+                                onClick={handleCopyToClipboard}
+                                isDisabled={!base64}
+                            >
+                                Copy to Clipboard
+                            </Button>
+
+                            <Button
+                                colorScheme="green"
+                                leftIcon={<FaDownload />}
+                                onClick={handleDownload}
+                                isDisabled={!base64}
+                            >
+                                Download Base64
+                            </Button>
+
+                            <Button
+                                colorScheme="purple"
+                                leftIcon={<FaShareAlt />}
+                                onClick={handleShare}
+                                isDisabled={!base64}
+                            >
+                                Share Base64
+                            </Button>
+
+                            <Button
+                                colorScheme="red"
+                                leftIcon={<FaTrashAlt />}
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
                 >
-                    {loading ? <Spinner size="sm" /> : "Convert URL to Base64"}
-                </Button>
-
-                {fileName && (
-                    <FormControl>
-                        <FormLabel fontSize="lg" fontWeight="semibold">
-                            File Name: {fileName}
-                        </FormLabel>
-                    </FormControl>
-                )}
-
-                <Textarea
-                    value={base64}
-                    readOnly
-                    placeholder="Base64 output will appear here"
-                    rows={8}
-                    bg={useColorModeValue("white", "gray.700")}
-                    rounded="md"
-                />
-
-                <HStack spacing={4}>
-                    <Button
-                        colorScheme="brand"
-                        leftIcon={<FaClipboard />}
-                        onClick={handleCopyToClipboard}
-                        isDisabled={!base64}
-                    >
-                        Copy to Clipboard
-                    </Button>
-
-                    <Button
-                        colorScheme="green"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        isDisabled={!base64}
-                    >
-                        Download Base64
-                    </Button>
-
-                    <Button
-                        colorScheme="purple"
-                        leftIcon={<FaShareAlt />}
-                        onClick={handleShare}
-                        isDisabled={!base64}
-                    >
-                        Share Base64
-                    </Button>
-
-                    <Button
-                        colorScheme="red"
-                        leftIcon={<FaTrashAlt />}
-                        onClick={handleReset}
-                    >
-                        Reset
-                    </Button>
-                </HStack>
-            </VStack>
-        </Box>
+                    <ContinueToSection
+                        currentTool="url-encoder"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: fileName || "url-encoded.txt", type: "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

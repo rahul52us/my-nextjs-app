@@ -20,6 +20,8 @@ import {
     ModalBody,
     ModalFooter,
     useDisclosure,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
 import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import stores from "../../../../../store/stores";
@@ -117,93 +119,113 @@ const Base64PdfContent = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor}>
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Base64 to Pdf
-            </Heading>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                    >
+                        Base64 to Pdf
+                    </Heading>
 
-            <VStack spacing={2} align="stretch">
-                {/* User Instructions */}
+                    <VStack spacing={2} align="stretch">
+                        {/* User Instructions */}
 
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Base64 Input
-                    </FormLabel>
-                    <Textarea
-                        value={base64}
-                        onChange={handleBase64Change}
-                        placeholder="Paste your Base64 string here"
-                        rows={5}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
-                    />
-                </FormControl>
-                <Button
-                    colorScheme="green"
-                    width="full"
-                    onClick={handleConvert}
-                    _hover={{ bg: "green.600" }}
-                    fontFamily="'Courier New', monospace"
-                >
-                    Convert & Download
-                </Button>
-                <Button
-                    colorScheme="brand"
-                    width="full"
-                    onClick={handleTogglePreview}
-                    mt={2}
-                    _hover={{ bg: "brand.600" }}
-                    fontFamily="'Courier New', monospace"
-                >
-                    {showPreview ? "Hide Preview" : "Show Preview"}
-                </Button>
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Base64 Input
+                            </FormLabel>
+                            <Textarea
+                                value={base64}
+                                onChange={handleBase64Change}
+                                placeholder="Paste your Base64 string here"
+                                rows={5}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
+                        <Button
+                            colorScheme="green"
+                            width="full"
+                            onClick={handleConvert}
+                            _hover={{ bg: "green.600" }}
+                            fontFamily="'Courier New', monospace"
+                        >
+                            Convert & Download
+                        </Button>
+                        <Button
+                            colorScheme="brand"
+                            width="full"
+                            onClick={handleTogglePreview}
+                            mt={2}
+                            _hover={{ bg: "brand.600" }}
+                            fontFamily="'Courier New', monospace"
+                        >
+                            {showPreview ? "Hide Preview" : "Show Preview"}
+                        </Button>
 
-                {warningMessage && (
-                    <Text fontSize="sm" color="red.500" textAlign="center" mt={2}>
-                        {warningMessage}
-                    </Text>
-                )}
+                        {warningMessage && (
+                            <Text fontSize="sm" color="red.500" textAlign="center" mt={2}>
+                                {warningMessage}
+                            </Text>
+                        )}
 
-                <Box mb={2}>
-                    <Text fontSize="lg" fontWeight="semibold" textAlign="center">
-                        Instructions:
-                    </Text>
-                    <VStack align="stretch" spacing={3} mt={2}>
-                        <Text fontSize="sm">
-                            1. Paste your <strong>Base64 string</strong> into the provided input
-                            field.
-                        </Text>
-                        <Text fontSize="sm">
-                            2. Click <strong>"Convert & Download"</strong> to convert and
-                            download the file.
-                        </Text>
-                        <Text fontSize="sm">
-                            3. Optionally, click <strong>"Show Preview"</strong> to see a
-                            preview of the image.
-                        </Text>
-                        <Text fontSize="sm" color="red.500">
-                            * Ensure the Base64 string starts with "data:" for accurate
-                            conversion.
-                        </Text>
+                        <Box mb={2}>
+                            <Text fontSize="lg" fontWeight="semibold" textAlign="center">
+                                Instructions:
+                            </Text>
+                            <VStack align="stretch" spacing={3} mt={2}>
+                                <Text fontSize="sm">
+                                    1. Paste your <strong>Base64 string</strong> into the provided input
+                                    field.
+                                </Text>
+                                <Text fontSize="sm">
+                                    2. Click <strong>"Convert & Download"</strong> to convert and
+                                    download the file.
+                                </Text>
+                                <Text fontSize="sm">
+                                    3. Optionally, click <strong>"Show Preview"</strong> to see a
+                                    preview of the image.
+                                </Text>
+                                <Text fontSize="sm" color="red.500">
+                                    * Ensure the Base64 string starts with "data:" for accurate
+                                    conversion.
+                                </Text>
+                            </VStack>
+                        </Box>
+
                     </VStack>
                 </Box>
 
-            </VStack>
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-pdf"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: "decoded.pdf", type: "application/pdf" }] : []}
+                    />
+                </Box>
+            </Flex>
 
             {/* Modal for Image Preview */}
             <Modal isOpen={isOpen} onClose={handleReset} size="sm">
@@ -232,13 +254,7 @@ const Base64PdfContent = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-            {base64 && (
-                <ContinueToSection
-                    currentTool="base64-to-pdf"
-                    convertedFiles={[{ name: "decoded.pdf", type: "application/pdf" }]}
-                />
-            )}
-        </Box>
+        </Container>
     );
 };
 

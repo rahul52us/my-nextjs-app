@@ -15,7 +15,10 @@ import {
     useToast,
     HStack,
     Text,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
 
@@ -214,102 +217,122 @@ const PdfToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color="teal.500"
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                PDF to Base64
-            </Heading>
-            <VStack spacing={4} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Choose a PDF File
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                        p={1}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color="teal.500"
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
+                    >
+                        PDF to Base64
+                    </Heading>
+                    <VStack spacing={4} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Choose a PDF File
+                            </FormLabel>
+                            <Input
+                                type="file"
+                                accept=".pdf,application/pdf"
+                                onChange={handleFileChange}
+                                bg={useColorModeValue("white", "gray.700")}
+                                rounded="md"
+                                p={1}
+                            />
+                        </FormControl>
+
+                        {fileName && (
+                            <Text fontWeight="medium">Selected File: {fileName}</Text>
+                        )}
+
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Select Output Format
+                            </FormLabel>
+                            <Select value={format} onChange={(e) => setFormat(e.target.value)}>
+                                <option value="dataUri">Data URI (data:application/pdf;base64,...)</option>
+                                <option value="embedTag">HTML Embed Tag (&lt;embed src="..." /&gt;)</option>
+                                <option value="iframeTag">HTML Iframe Tag (&lt;iframe src="..." /&gt;)</option>
+                                <option value="plainText">Plain Base64 String</option>
+                                <option value="htmlLink">HTML Hyperlink (Download)</option>
+                                <option value="json">JSON</option>
+                                <option value="xml">XML</option>
+                            </Select>
+                        </FormControl>
+
+                        <Textarea
+                            value={formattedOutput()}
+                            readOnly
+                            placeholder="Formatted output will appear here"
+                            rows={8}
+                            bg={useColorModeValue("white", "gray.700")}
+                            rounded="md"
+                            fontFamily="monospace"
+                        />
+
+                        <HStack spacing={4}>
+                            <Button
+                                colorScheme="brand"
+                                leftIcon={<FaClipboard />}
+                                onClick={handleCopyToClipboard}
+                                isDisabled={!base64}
+                            >
+                                Copy
+                            </Button>
+
+                            <Button
+                                colorScheme="green"
+                                leftIcon={<FaDownload />}
+                                onClick={handleDownload}
+                                isDisabled={!base64}
+                            >
+                                Download
+                            </Button>
+
+                            <Button
+                                colorScheme="teal"
+                                leftIcon={<FaShareAlt />}
+                                onClick={handleShare}
+                                isDisabled={!base64}
+                            >
+                                Share
+                            </Button>
+
+                            <Button
+                                colorScheme="red"
+                                leftIcon={<FaTrashAlt />}
+                                onClick={handleReset}
+                                isDisabled={!base64}
+                            >
+                                Reset
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="pdf-to-base64"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: fileName || "pdf-base64.txt", type: "text/plain" }] : []}
                     />
-                </FormControl>
-
-                {fileName && (
-                    <Text fontWeight="medium">Selected File: {fileName}</Text>
-                )}
-
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Select Output Format
-                    </FormLabel>
-                    <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-                        <option value="dataUri">Data URI (data:application/pdf;base64,...)</option>
-                        <option value="embedTag">HTML Embed Tag (&lt;embed src="..." /&gt;)</option>
-                        <option value="iframeTag">HTML Iframe Tag (&lt;iframe src="..." /&gt;)</option>
-                        <option value="plainText">Plain Base64 String</option>
-                        <option value="htmlLink">HTML Hyperlink (Download)</option>
-                        <option value="json">JSON</option>
-                        <option value="xml">XML</option>
-                    </Select>
-                </FormControl>
-
-                <Textarea
-                    value={formattedOutput()}
-                    readOnly
-                    placeholder="Formatted output will appear here"
-                    rows={8}
-                    bg={useColorModeValue("white", "gray.700")}
-                    rounded="md"
-                    fontFamily="monospace"
-                />
-
-                <HStack spacing={4}>
-                    <Button
-                        colorScheme="brand"
-                        leftIcon={<FaClipboard />}
-                        onClick={handleCopyToClipboard}
-                        isDisabled={!base64}
-                    >
-                        Copy
-                    </Button>
-
-                    <Button
-                        colorScheme="green"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        isDisabled={!base64}
-                    >
-                        Download
-                    </Button>
-
-                    <Button
-                        colorScheme="teal"
-                        leftIcon={<FaShareAlt />}
-                        onClick={handleShare}
-                        isDisabled={!base64}
-                    >
-                        Share
-                    </Button>
-
-                    <Button
-                        colorScheme="red"
-                        leftIcon={<FaTrashAlt />}
-                        onClick={handleReset}
-                        isDisabled={!base64}
-                    >
-                        Reset
-                    </Button>
-                </HStack>
-            </VStack>
-        </Box>
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

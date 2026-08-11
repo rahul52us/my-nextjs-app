@@ -17,7 +17,9 @@ import {
     Flex,
     HStack,
     Spinner,
+    Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { FaExchangeAlt, FaTrashAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
@@ -90,143 +92,163 @@ const Base64ToHexContent: React.FC = () => {
 } = stores;
 
     return (
-        <Box p={4} bg="transparent" color={textColor} borderRadius="md" boxShadow="lg">
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Base64 to Hex
-            </Heading>
-
-            <VStack spacing={6} align="stretch">
-                {/* Base64 Input Section */}
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Enter Base64 String
-                    </FormLabel>
-                    <Textarea
-                        placeholder="Paste your Base64 encoded text here"
-                        value={base64Input}
-                        onChange={(e) => setBase64Input(e.target.value)}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rows={5}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
-                    />
-                </FormControl>
-
-                {/* Conversion and Clear Buttons */}
-                <HStack spacing={4} justify="space-between">
-                    <Button
-                        colorScheme="teal"
-                        size="lg"
-                        leftIcon={<Icon as={FaExchangeAlt} />}
-                        onClick={handleConversion}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
                     >
-                        Convert to Hex
-                    </Button>
+                        Base64 to Hex
+                    </Heading>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        display={base64Input?.trim() ? undefined : "none"}
-                        leftIcon={<Icon as={FaTrashAlt} />}
-                        onClick={handleClear}
-                    >
-                        Clear Input
-                    </Button>
-                </HStack>
+                    <VStack spacing={6} align="stretch">
+                        {/* Base64 Input Section */}
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Enter Base64 String
+                            </FormLabel>
+                            <Textarea
+                                placeholder="Paste your Base64 encoded text here"
+                                value={base64Input}
+                                onChange={(e) => setBase64Input(e.target.value)}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rows={5}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
 
-                {/* Divider */}
-                <Divider borderColor="teal.500" />
-
-                {/* Hex Output Section */}
-                <Box>
-                    <Text fontSize="lg" fontWeight="semibold" mb={2}>
-                        Hex Output
-                    </Text>
-                    <Box
-                        p={4}
-                        bg={useColorModeValue("gray.200", "gray.700")}
-                        color={useColorModeValue("gray.800", "white")}
-                        borderRadius="md"
-                        maxH="160px"
-                        overflowY="auto"
-                        whiteSpace="pre-wrap"
-                        wordBreak="break-word"
-                        mb={4}
-                    >
-                        {loading ? (
-                            <Flex justify="center" align="center" height="100%">
-                                <Spinner size="lg" color="teal.500" />
-                            </Flex>
-                        ) : (
-                            hexOutput || "Your converted hex will appear here."
-                        )}
-                    </Box>
-
-                    {/* Action Buttons */}
-                    {hexOutput ? (
-                        <HStack spacing={4} align="stretch">
-                            <Text
-                                color="brand.500"
-                                onClick={() => handleCopyToClipboard(hexOutput)}
-                                cursor="pointer"
-                                fontWeight="semibold"
-                                textDecoration="underline"
-                                fontSize="sm"
+                        {/* Conversion and Clear Buttons */}
+                        <HStack spacing={4} justify="space-between">
+                            <Button
+                                colorScheme="teal"
+                                size="lg"
+                                leftIcon={<Icon as={FaExchangeAlt} />}
+                                onClick={handleConversion}
                             >
-                                Copy to Clipboard
-                            </Text>
+                                Convert to Hex
+                            </Button>
 
-                            <Text
-                                color="green.500"
-                                onClick={() => handleDownload(hexOutput)}
-                                cursor="pointer"
-                                fontWeight="semibold"
-                                textDecoration="underline"
-                                fontSize="sm"
+                            <Button
+                                colorScheme="red"
+                                size="lg"
+                                display={base64Input?.trim() ? undefined : "none"}
+                                leftIcon={<Icon as={FaTrashAlt} />}
+                                onClick={handleClear}
                             >
-                                Download Output
-                            </Text>
+                                Clear Input
+                            </Button>
                         </HStack>
-                    ) : null}
-                </Box>
-                <Box mb={6}>
-                    <Text fontSize="lg" fontWeight="semibold" textAlign="center">
-                        Instructions:
-                    </Text>
-                    <VStack align="stretch" spacing={3} mt={2}>
-                        <Text fontSize="sm">
-                            1. Paste your <strong>Base64 string</strong> into the provided input
-                            field.
-                        </Text>
-                        <Text fontSize="sm">
-                            2. Click <strong>"Convert to Hex"</strong> to convert the Base64 string.
-                        </Text>
-                        <Text fontSize="sm">
-                            3. Optionally, click <strong>"Copy to Clipboard"</strong> to copy the
-                            hex output or <strong>"Download Output"</strong> to save the result as a file.
-                        </Text>
-                        <Text fontSize="sm" color="red.500">
-                            * Ensure the Base64 string starts with "data:" for accurate
-                            conversion.
-                        </Text>
+
+                        {/* Divider */}
+                        <Divider borderColor="teal.500" />
+
+                        {/* Hex Output Section */}
+                        <Box>
+                            <Text fontSize="lg" fontWeight="semibold" mb={2}>
+                                Hex Output
+                            </Text>
+                            <Box
+                                p={4}
+                                bg={useColorModeValue("gray.200", "gray.700")}
+                                color={useColorModeValue("gray.800", "white")}
+                                borderRadius="md"
+                                maxH="160px"
+                                overflowY="auto"
+                                whiteSpace="pre-wrap"
+                                wordBreak="break-word"
+                                mb={4}
+                            >
+                                {loading ? (
+                                    <Flex justify="center" align="center" height="100%">
+                                        <Spinner size="lg" color="teal.500" />
+                                    </Flex>
+                                ) : (
+                                    hexOutput || "Your converted hex will appear here."
+                                )}
+                            </Box>
+
+                            {/* Action Buttons */}
+                            {hexOutput ? (
+                                <HStack spacing={4} align="stretch">
+                                    <Text
+                                        color="brand.500"
+                                        onClick={() => handleCopyToClipboard(hexOutput)}
+                                        cursor="pointer"
+                                        fontWeight="semibold"
+                                        textDecoration="underline"
+                                        fontSize="sm"
+                                    >
+                                        Copy to Clipboard
+                                    </Text>
+
+                                    <Text
+                                        color="green.500"
+                                        onClick={() => handleDownload(hexOutput)}
+                                        cursor="pointer"
+                                        fontWeight="semibold"
+                                        textDecoration="underline"
+                                        fontSize="sm"
+                                    >
+                                        Download Output
+                                    </Text>
+                                </HStack>
+                            ) : null}
+                        </Box>
+                        <Box mb={6}>
+                            <Text fontSize="lg" fontWeight="semibold" textAlign="center">
+                                Instructions:
+                            </Text>
+                            <VStack align="stretch" spacing={3} mt={2}>
+                                <Text fontSize="sm">
+                                    1. Paste your <strong>Base64 string</strong> into the provided input
+                                    field.
+                                </Text>
+                                <Text fontSize="sm">
+                                    2. Click <strong>"Convert to Hex"</strong> to convert the Base64 string.
+                                </Text>
+                                <Text fontSize="sm">
+                                    3. Optionally, click <strong>"Copy to Clipboard"</strong> to copy the
+                                    hex output or <strong>"Download Output"</strong> to save the result as a file.
+                                </Text>
+                                <Text fontSize="sm" color="red.500">
+                                    * Ensure the Base64 string starts with "data:" for accurate
+                                    conversion.
+                                </Text>
+                            </VStack>
+                        </Box>
                     </VStack>
                 </Box>
-            </VStack>
-        </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={hexOutput ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-hex"
+                        variant="vertical"
+                        convertedFiles={hexOutput ? [{ name: "output.txt", type: "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

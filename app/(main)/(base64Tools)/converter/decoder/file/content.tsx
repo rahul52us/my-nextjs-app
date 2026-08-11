@@ -29,8 +29,10 @@ import {
     Tab,
     Spinner,
     Flex,
-    Icon
+    Icon,
+    Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef } from "ag-grid-community";
 import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
@@ -673,102 +675,122 @@ const Base64ToFileContent = () => {
         : 0;
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                mb={6}
-                textTransform="uppercase"
-            >
-                Base64 to File Converter
-            </Heading>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        mb={6}
+                        textTransform="uppercase"
+                    >
+                        Base64 to File Converter
+                    </Heading>
 
-            {error && (
-                <Text color="red.500" textAlign="center" mb={4}>
-                    {error}
-                </Text>
-            )}
+                    {error && (
+                        <Text color="red.500" textAlign="center" mb={4}>
+                            {error}
+                        </Text>
+                    )}
 
-            <VStack spacing={6} align="stretch">
-                <FormControl>
-                    <FormLabel fontWeight="semibold">Base64 Input</FormLabel>
-                    <Textarea
-                        value={base64}
-                        onChange={handleBase64Change}
-                        placeholder="Paste your Base64 string here"
-                        rows={5}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
+                    <VStack spacing={6} align="stretch">
+                        <FormControl>
+                            <FormLabel fontWeight="semibold">Base64 Input</FormLabel>
+                            <Textarea
+                                value={base64}
+                                onChange={handleBase64Change}
+                                placeholder="Paste your Base64 string here"
+                                rows={5}
+                                bg={useColorModeValue("white", "gray.700")}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel fontWeight="semibold">Upload Base64 File (.txt)</FormLabel>
+
+                          <Box
+                            as="label"
+                            htmlFor="base64-txt-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
+                            borderRadius="xl"
+                            bg={isDragActive ? dragActiveBg : dropzoneBg}
+                            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                              borderColor: "blue.500",
+                              bg: dropzoneHoverBg,
+                            }}
+                            onDragEnter={handleDragEnter}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <Icon as={FaFileAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
+                            <Text fontWeight="semibold" color={dropzoneTextColor}>
+                              {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              .txt files only
+                            </Text>
+                            <Input
+                              id="base64-txt-upload"
+                              type="file"
+                              accept=".txt"
+                              onChange={handleFileUpload}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
+
+                        <Button colorScheme="green" onClick={handleDownload} width="full">
+                            Download File
+                        </Button>
+
+                        <HStack spacing={4}>
+                            <Button colorScheme="brand" onClick={handleShare} width="full">
+                                Share File
+                            </Button>
+                            <Button colorScheme="brand" onClick={handleTogglePreview} width="full">
+                                {showPreview ? "Hide Preview" : "Show Preview"}
+                            </Button>
+                        </HStack>
+
+                        <Text fontSize="sm" color="gray.500" textAlign="center">
+                            If no prefix is given, the converter will attempt to detect the file
+                            type automatically.
+                        </Text>
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-file"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: generateFileName(fileType || "application/octet-stream"), type: fileType || "application/octet-stream" }] : []}
                     />
-                </FormControl>
-
-                <FormControl>
-  <FormLabel fontWeight="semibold">Upload Base64 File (.txt)</FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="base64-txt-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
-    borderRadius="xl"
-    bg={isDragActive ? dragActiveBg : dropzoneBg}
-    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      borderColor: "blue.500",
-      bg: dropzoneHoverBg,
-    }}
-    onDragEnter={handleDragEnter}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <Icon as={FaFileAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
-    <Text fontWeight="semibold" color={dropzoneTextColor}>
-      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      .txt files only
-    </Text>
-    <Input
-      id="base64-txt-upload"
-      type="file"
-      accept=".txt"
-      onChange={handleFileUpload}
-      display="none"
-    />
-  </Box>
-</FormControl>
-
-                <Button colorScheme="green" onClick={handleDownload} width="full">
-                    Download File
-                </Button>
-
-                <HStack spacing={4}>
-                    <Button colorScheme="brand" onClick={handleShare} width="full">
-                        Share File
-                    </Button>
-                    <Button colorScheme="brand" onClick={handleTogglePreview} width="full">
-                        {showPreview ? "Hide Preview" : "Show Preview"}
-                    </Button>
-                </HStack>
-
-                <Text fontSize="sm" color="gray.500" textAlign="center">
-                    If no prefix is given, the converter will attempt to detect the file
-                    type automatically.
-                </Text>
-            </VStack>
+                </Box>
+            </Flex>
 
             <Drawer
                 isOpen={isOpen}
@@ -962,7 +984,7 @@ const Base64ToFileContent = () => {
                     </DrawerFooter>
                 </DrawerContent>
             </Drawer>
-        </Box>
+        </Container>
     );
 };
 

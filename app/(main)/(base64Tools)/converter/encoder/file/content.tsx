@@ -16,6 +16,8 @@ import {
     HStack,
     Text,
     Icon,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt, FaFileAlt  } from "react-icons/fa";
 import { saveAs } from "file-saver";
@@ -236,140 +238,154 @@ const FileToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                File to Base64
-            </Heading>
-            <VStack spacing={2} align="stretch">
-               <FormControl>
-  <FormLabel fontSize="lg" fontWeight="semibold">
-    Choose a File
-  </FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="file-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragging ? "brand.500" : useColorModeValue("brand.300", "brand.500")}
-    borderRadius="xl"
-    bg={isDragging ? useColorModeValue("brand.100", "gray.600") : useColorModeValue("brand.50", "gray.700")}
-    cursor="pointer"
-    transition="all 0.2s"
-    onDragOver={handleDragOver}
-    onDragEnter={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-    _hover={{
-      borderColor: "brand.500",
-      bg: useColorModeValue("brand.100", "gray.600"),
-    }}
-  >
-    <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
-    <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
-      Click to upload or drag & drop
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      Any file supported
-    </Text>
-    <Input
-      id="file-upload"
-      type="file"
-      onChange={handleFileChange}
-      display="none"
-    />
-  </Box>
-</FormControl>
-
-                {fileName && (
-                    <FormControl>
-                        <FormLabel fontSize="lg" fontWeight="semibold">
-                            File: {fileName}
-                        </FormLabel>
-                    </FormControl>
-                )}
-
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Select Output Format
-                    </FormLabel>
-                    <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-                        <option value="plainText">Plain Text (Base64String)</option>
-                        <option value="dataUri">Data URI (data:;base64,Base64String)</option>
-                        <option value="htmlLink">HTML Hyperlink (Download)</option>
-                        <option value="json">JSON</option>
-                        <option value="xml">XML</option>
-                    </Select>
-                </FormControl>
-
-                <Textarea
-                    value={formattedOutput()}
-                    readOnly
-                    placeholder="Formatted output will appear here"
-                    rows={8}
-                    bg={useColorModeValue("white", "gray.700")}
-                    rounded="md"
-                />
-
-                <HStack spacing={4}>
-                    <Button
-                        colorScheme="brand"
-                        leftIcon={<FaClipboard />}
-                        onClick={handleCopyToClipboard}
-                        isDisabled={!base64}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
                     >
-                        Copy to Clipboard
-                    </Button>
+                        File to Base64
+                    </Heading>
+                    <VStack spacing={2} align="stretch">
+                       <FormControl>
+                          <FormLabel fontSize="lg" fontWeight="semibold">
+                            Choose a File
+                          </FormLabel>
 
-                    <Button
-                        colorScheme="green"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        isDisabled={!base64}
-                    >
-                        Download Base64
-                    </Button>
+                          <Box
+                            as="label"
+                            htmlFor="file-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragging ? "brand.500" : useColorModeValue("brand.300", "brand.500")}
+                            borderRadius="xl"
+                            bg={isDragging ? useColorModeValue("brand.100", "gray.600") : useColorModeValue("brand.50", "gray.700")}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            onDragOver={handleDragOver}
+                            onDragEnter={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            _hover={{
+                              borderColor: "brand.500",
+                              bg: useColorModeValue("brand.100", "gray.600"),
+                            }}
+                          >
+                            <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
+                            <Text fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+                              Click to upload or drag & drop
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              Any file supported
+                            </Text>
+                            <Input
+                              id="file-upload"
+                              type="file"
+                              onChange={handleFileChange}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
 
-                    <Button
-                        colorScheme="teal"
-                        leftIcon={<FaShareAlt />}
-                        onClick={handleShare}
-                        isDisabled={!base64}
-                    >
-                        Share
-                    </Button>
+                        {fileName && (
+                            <FormControl>
+                                <FormLabel fontSize="lg" fontWeight="semibold">
+                                    File: {fileName}
+                                </FormLabel>
+                            </FormControl>
+                        )}
 
-                    <Button
-                        colorScheme="red"
-                        leftIcon={<FaTrashAlt />}
-                        onClick={handleReset}
-                        isDisabled={!base64}
-                    >
-                        Reset
-                    </Button>
-                </HStack>
-                {base64 && (
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Select Output Format
+                            </FormLabel>
+                            <Select value={format} onChange={(e) => setFormat(e.target.value)}>
+                                <option value="plainText">Plain Text (Base64String)</option>
+                                <option value="dataUri">Data URI (data:;base64,Base64String)</option>
+                                <option value="htmlLink">HTML Hyperlink (Download)</option>
+                                <option value="json">JSON</option>
+                                <option value="xml">XML</option>
+                            </Select>
+                        </FormControl>
+
+                        <Textarea
+                            value={formattedOutput()}
+                            readOnly
+                            placeholder="Formatted output will appear here"
+                            rows={8}
+                            bg={useColorModeValue("white", "gray.700")}
+                            rounded="md"
+                        />
+
+                        <HStack spacing={4}>
+                            <Button
+                                colorScheme="brand"
+                                leftIcon={<FaClipboard />}
+                                onClick={handleCopyToClipboard}
+                                isDisabled={!base64}
+                            >
+                                Copy to Clipboard
+                            </Button>
+
+                            <Button
+                                colorScheme="green"
+                                leftIcon={<FaDownload />}
+                                onClick={handleDownload}
+                                isDisabled={!base64}
+                            >
+                                Download Base64
+                            </Button>
+
+                            <Button
+                                colorScheme="teal"
+                                leftIcon={<FaShareAlt />}
+                                onClick={handleShare}
+                                isDisabled={!base64}
+                            >
+                                Share
+                            </Button>
+
+                            <Button
+                                colorScheme="red"
+                                leftIcon={<FaTrashAlt />}
+                                onClick={handleReset}
+                                isDisabled={!base64}
+                            >
+                                Reset
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
                     <ContinueToSection
                         currentTool="file-to-base64"
-                        convertedFiles={[{ name: fileName || "file-base64.txt", type: "text/plain" }]}
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: fileName || "file-base64.txt", type: "text/plain" }] : []}
                     />
-                )}
-            </VStack>
-        </Box>
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

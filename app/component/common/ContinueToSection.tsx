@@ -82,6 +82,10 @@ export const ContinueToSection: React.FC<ContinueToSectionProps> = ({
   const detectedFormat = detectOutputType(convertedFiles, currentToolMeta?.outputType);
   const relatedTools: ToolMeta[] = getDynamicRelatedTools(currentTool, detectedFormat, maxTools, convertedFiles);
 
+  if (!convertedFiles || convertedFiles.length === 0) {
+    return null;
+  }
+
   if (!relatedTools || relatedTools.length === 0) {
     return null;
   }

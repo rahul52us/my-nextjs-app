@@ -17,7 +17,9 @@ import {
     Flex,
     HStack,
     Spinner,
+    Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import {
     FaExchangeAlt,
     FaTrashAlt,
@@ -89,148 +91,168 @@ const Base64ToTextContent: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} borderRadius="md" boxShadow="lg">
-            <Heading
-                as="h1"
-                size="xl"
-                color="teal.500"
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Base64 to Text
-            </Heading>
-
-            <VStack spacing={6} align="stretch">
-                {/* Base64 Input Section */}
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Enter Base64 String
-                    </FormLabel>
-                    <Textarea
-                        placeholder="Paste your Base64 encoded text here"
-                        value={base64Input}
-                        onChange={(e) => setBase64Input(e.target.value)}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rows={5}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
-                    />
-                </FormControl>
-
-                {/* Conversion and Clear Buttons */}
-                <HStack spacing={4} justify="space-between">
-                    <Button
-                        colorScheme="teal"
-                        size="lg"
-                        leftIcon={<Icon as={FaExchangeAlt} />}
-                        onClick={handleConversion}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color="teal.500"
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
                     >
-                        Convert to Text
-                    </Button>
+                        Base64 to Text
+                    </Heading>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        display={base64Input?.trim() ? undefined : "none"}
-                        leftIcon={<Icon as={FaTrashAlt} />}
-                        onClick={handleClear}
-                    >
-                        Clear Input
-                    </Button>
-                </HStack>
+                    <VStack spacing={6} align="stretch">
+                        {/* Base64 Input Section */}
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Enter Base64 String
+                            </FormLabel>
+                            <Textarea
+                                placeholder="Paste your Base64 encoded text here"
+                                value={base64Input}
+                                onChange={(e) => setBase64Input(e.target.value)}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rows={5}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
 
-                {/* Divider */}
-                <Divider borderColor="teal.500" />
+                        {/* Conversion and Clear Buttons */}
+                        <HStack spacing={4} justify="space-between">
+                            <Button
+                                colorScheme="teal"
+                                size="lg"
+                                leftIcon={<Icon as={FaExchangeAlt} />}
+                                onClick={handleConversion}
+                            >
+                                Convert to Text
+                            </Button>
 
-                {/* Text Output Section */}
-                <Box>
-                    <Flex justifyContent="space-between" mb={2}>
-                        <Text fontSize="lg" fontWeight="semibold">
-                            Text Output
-                        </Text>
-                        {textOutput && (
-                            <HStack spacing={4} align="stretch">
-                                <Text
-                                    color="brand.500"
-                                    onClick={handleCopyToClipboard}
-                                    cursor="pointer"
-                                    fontWeight="semibold"
-                                    textDecoration="underline"
-                                    fontSize="sm"
-                                >
-                                    Copy to Clipboard
+                            <Button
+                                colorScheme="red"
+                                size="lg"
+                                display={base64Input?.trim() ? undefined : "none"}
+                                leftIcon={<Icon as={FaTrashAlt} />}
+                                onClick={handleClear}
+                            >
+                                Clear Input
+                            </Button>
+                        </HStack>
+
+                        {/* Divider */}
+                        <Divider borderColor="teal.500" />
+
+                        {/* Text Output Section */}
+                        <Box>
+                            <Flex justifyContent="space-between" mb={2}>
+                                <Text fontSize="lg" fontWeight="semibold">
+                                    Text Output
                                 </Text>
+                                {textOutput && (
+                                    <HStack spacing={4} align="stretch">
+                                        <Text
+                                            color="brand.500"
+                                            onClick={handleCopyToClipboard}
+                                            cursor="pointer"
+                                            fontWeight="semibold"
+                                            textDecoration="underline"
+                                            fontSize="sm"
+                                        >
+                                            Copy to Clipboard
+                                        </Text>
 
-                                <Text
-                                    color="green.500"
-                                    onClick={handleDownload}
-                                    cursor="pointer"
-                                    fontWeight="semibold"
-                                    textDecoration="underline"
-                                    fontSize="sm"
-                                >
-                                    Download Text Output
-                                </Text>
-                            </HStack>
-                        )}
-                    </Flex>
-
-                    <Box
-                        p={4}
-                        bg={useColorModeValue("gray.200", "gray.700")}
-                        color={useColorModeValue("gray.800", "white")}
-                        borderRadius="md"
-                        maxH="160px"
-                        overflowY="auto"
-                        whiteSpace="pre-wrap"
-                        wordBreak="break-word"
-                        mb={4}
-                    >
-                        {loading ? (
-                            <Flex justify="center" align="center" height="100%">
-                                <Spinner size="lg" color="teal.500" />
+                                        <Text
+                                            color="green.500"
+                                            onClick={handleDownload}
+                                            cursor="pointer"
+                                            fontWeight="semibold"
+                                            textDecoration="underline"
+                                            fontSize="sm"
+                                        >
+                                            Download Text Output
+                                        </Text>
+                                    </HStack>
+                                )}
                             </Flex>
-                        ) : (
-                            textOutput || "Your converted text will appear here."
-                        )}
-                    </Box>
-                </Box>
-                <Box mb={6}>
-                    <Text fontSize="lg" fontWeight="semibold" textAlign="center">
-                        Instructions:
-                    </Text>
-                    <VStack align="stretch" spacing={3} mt={2}>
-                        <Text fontSize="sm">
-                            1. Paste your <strong>Base64 string</strong> into the provided input
-                            field.
-                        </Text>
-                        <Text fontSize="sm">
-                            2. Click <strong>"Convert to Text"</strong> to convert the Base64
-                            string into readable text.
-                        </Text>
-                        <Text fontSize="sm">
-                            3. Optionally, click <strong>"Copy to Clipboard"</strong> to copy
-                            the converted text.
-                        </Text>
-                        <Text fontSize="sm">
-                            4. Alternatively, click <strong>"Download Text Output"</strong> to
-                            download the text as a file.
-                        </Text>
-                        <Text fontSize="sm" color="red.500">
-                            * Ensure the Base64 string is valid for accurate conversion.
-                        </Text>
+
+                            <Box
+                                p={4}
+                                bg={useColorModeValue("gray.200", "gray.700")}
+                                color={useColorModeValue("gray.800", "white")}
+                                borderRadius="md"
+                                maxH="160px"
+                                overflowY="auto"
+                                whiteSpace="pre-wrap"
+                                wordBreak="break-word"
+                                mb={4}
+                            >
+                                {loading ? (
+                                    <Flex justify="center" align="center" height="100%">
+                                        <Spinner size="lg" color="teal.500" />
+                                    </Flex>
+                                ) : (
+                                    textOutput || "Your converted text will appear here."
+                                )}
+                            </Box>
+                        </Box>
+                        <Box mb={6}>
+                            <Text fontSize="lg" fontWeight="semibold" textAlign="center">
+                                Instructions:
+                            </Text>
+                            <VStack align="stretch" spacing={3} mt={2}>
+                                <Text fontSize="sm">
+                                    1. Paste your <strong>Base64 string</strong> into the provided input
+                                    field.
+                                </Text>
+                                <Text fontSize="sm">
+                                    2. Click <strong>"Convert to Text"</strong> to convert the Base64
+                                    string into readable text.
+                                </Text>
+                                <Text fontSize="sm">
+                                    3. Optionally, click <strong>"Copy to Clipboard"</strong> to copy
+                                    the converted text.
+                                </Text>
+                                <Text fontSize="sm">
+                                    4. Alternatively, click <strong>"Download Text Output"</strong> to
+                                    download the text as a file.
+                                </Text>
+                                <Text fontSize="sm" color="red.500">
+                                    * Ensure the Base64 string is valid for accurate conversion.
+                                </Text>
+                            </VStack>
+                        </Box>
                     </VStack>
                 </Box>
-            </VStack>
-        </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={textOutput ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-text"
+                        variant="vertical"
+                        convertedFiles={textOutput ? [{ name: "output.txt", type: "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

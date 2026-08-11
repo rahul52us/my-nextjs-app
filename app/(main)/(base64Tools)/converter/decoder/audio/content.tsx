@@ -12,7 +12,10 @@ import {
     useColorModeValue,
     useToast,
     HStack,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { saveAs } from "file-saver";
 import { FaDownload, FaShareAlt } from "react-icons/fa";
 import stores from "../../../../../store/stores";
@@ -129,72 +132,92 @@ const Base64ToAudioContent = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH='78vh'>
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                Base64 to Audio
-            </Heading>
-            <VStack spacing={4} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Paste Base64 Audio String
-                    </FormLabel>
-                    <Textarea
-                        value={base64Input}
-                        onChange={(e) => setBase64Input(e.target.value)}
-                        placeholder="Paste Base64 string here"
-                        rows={6}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                    />
-                </FormControl>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
+                    >
+                        Base64 to Audio
+                    </Heading>
+                    <VStack spacing={4} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Paste Base64 Audio String
+                            </FormLabel>
+                            <Textarea
+                                value={base64Input}
+                                onChange={(e) => setBase64Input(e.target.value)}
+                                placeholder="Paste Base64 string here"
+                                rows={6}
+                                bg={useColorModeValue("white", "gray.700")}
+                                rounded="md"
+                            />
+                        </FormControl>
 
-                <Button
-                    colorScheme="brand"
-                    onClick={handleBase64Input}
-                    isDisabled={!base64Input}
+                        <Button
+                            colorScheme="brand"
+                            onClick={handleBase64Input}
+                            isDisabled={!base64Input}
+                        >
+                            Load Audio from Base64
+                        </Button>
+
+                        {audioUrl && (
+                            <Box mt={4}>
+                                <audio controls>
+                                    <source src={audioUrl} type="audio/mpeg" />
+                                    Your browser does not support the audio element.
+                                </audio>
+
+                                <HStack>
+                                    <Button
+                                        colorScheme="green"
+                                        mt={4}
+                                        onClick={handleDownload}
+                                        leftIcon={<FaDownload />}
+                                    >
+                                        Download Audio
+                                    </Button>
+
+                                    <Button
+                                        colorScheme="purple"
+                                        mt={4}
+                                        onClick={handleShare}
+                                        leftIcon={<FaShareAlt />}
+                                    >
+                                        Share Audio
+                                    </Button>
+                                </HStack>
+                            </Box>
+                        )}
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={audioUrl ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
                 >
-                    Load Audio from Base64
-                </Button>
-
-                {audioUrl && (
-                    <Box mt={4}>
-                        <audio controls>
-                            <source src={audioUrl} type="audio/mpeg" />
-                            Your browser does not support the audio element.
-                        </audio>
-
-                        <HStack>
-                            <Button
-                                colorScheme="green"
-                                mt={4}
-                                onClick={handleDownload}
-                                leftIcon={<FaDownload />}
-                            >
-                                Download Audio
-                            </Button>
-
-                            <Button
-                                colorScheme="purple"
-                                mt={4}
-                                onClick={handleShare}
-                                leftIcon={<FaShareAlt />}
-                            >
-                                Share Audio
-                            </Button>
-                        </HStack>
-                    </Box>
-                )}
-            </VStack>
-        </Box>
+                    <ContinueToSection
+                        currentTool="base64-to-audio"
+                        variant="vertical"
+                        convertedFiles={audioUrl ? [{ name: "audio.mp3", type: "audio/mpeg" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

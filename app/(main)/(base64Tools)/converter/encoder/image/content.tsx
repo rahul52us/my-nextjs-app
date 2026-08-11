@@ -16,6 +16,8 @@ import {
     Image,
     Text,
     SimpleGrid,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
 import { FaClipboard, FaDownload, FaTrashAlt, FaShareAlt } from "react-icons/fa";
 import { saveAs } from "file-saver";
@@ -234,119 +236,138 @@ const ImageToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor} minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color="teal.500"
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                Image to Base64
-            </Heading>
-            <VStack spacing={4} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Choose an Image
-                    </FormLabel>
-                    <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        bg={useColorModeValue("white", "gray.700")}
-                        rounded="md"
-                        p={1}
-                    />
-                </FormControl>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color="teal.500"
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
+                    >
+                        Image to Base64
+                    </Heading>
+                    <VStack spacing={4} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Choose an Image
+                            </FormLabel>
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                bg={useColorModeValue("white", "gray.700")}
+                                rounded="md"
+                                p={1}
+                            />
+                        </FormControl>
 
-                {imagePreview && (
-                    <Box textAlign="center" py={4} bg={useColorModeValue("gray.50", "gray.700")} rounded="md">
-                        <Text mb={2} fontWeight="semibold">Image Preview:</Text>
-                        <Image
-                            src={imagePreview}
-                            alt="Preview"
-                            maxH="300px"
-                            mx="auto"
-                            objectFit="contain"
+                        {imagePreview && (
+                            <Box textAlign="center" py={4} bg={useColorModeValue("gray.50", "gray.700")} rounded="md">
+                                <Text mb={2} fontWeight="semibold">Image Preview:</Text>
+                                <Image
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    maxH="300px"
+                                    mx="auto"
+                                    objectFit="contain"
+                                    rounded="md"
+                                    shadow="md"
+                                />
+                                <Text mt={2} fontSize="sm" color="gray.500">{fileName} ({fileType})</Text>
+                            </Box>
+                        )}
+
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Select Output Format
+                            </FormLabel>
+                            <Select value={format} onChange={(e) => setFormat(e.target.value)}>
+                                <option value="dataUri">Data URI (data:image/...;base64,...)</option>
+                                <option value="imgTag">HTML Image Tag (&lt;img src="..." /&gt;)</option>
+                                <option value="cssBg">CSS Background Image (background-image: url(...))</option>
+                                <option value="plainText">Plain Base64 String</option>
+                                <option value="htmlLink">HTML Hyperlink (Download)</option>
+                                <option value="json">JSON</option>
+                                <option value="xml">XML</option>
+                            </Select>
+                        </FormControl>
+
+                        <Textarea
+                            value={formattedOutput()}
+                            readOnly
+                            placeholder="Formatted output will appear here"
+                            rows={8}
+                            bg={useColorModeValue("white", "gray.700")}
                             rounded="md"
-                            shadow="md"
+                            fontFamily="monospace"
                         />
-                        <Text mt={2} fontSize="sm" color="gray.500">{fileName} ({fileType})</Text>
-                    </Box>
-                )}
 
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Select Output Format
-                    </FormLabel>
-                    <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-                        <option value="dataUri">Data URI (data:image/...;base64,...)</option>
-                        <option value="imgTag">HTML Image Tag (&lt;img src="..." /&gt;)</option>
-                        <option value="cssBg">CSS Background Image (background-image: url(...))</option>
-                        <option value="plainText">Plain Base64 String</option>
-                        <option value="htmlLink">HTML Hyperlink (Download)</option>
-                        <option value="json">JSON</option>
-                        <option value="xml">XML</option>
-                    </Select>
-                </FormControl>
+                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                            <Button
+                                colorScheme="brand"
+                                leftIcon={<FaClipboard />}
+                                onClick={handleCopyToClipboard}
+                                isDisabled={!base64}
+                                w="full"
+                            >
+                                Copy
+                            </Button>
 
-                <Textarea
-                    value={formattedOutput()}
-                    readOnly
-                    placeholder="Formatted output will appear here"
-                    rows={8}
-                    bg={useColorModeValue("white", "gray.700")}
-                    rounded="md"
-                    fontFamily="monospace"
-                />
+                            <Button
+                                colorScheme="green"
+                                leftIcon={<FaDownload />}
+                                onClick={handleDownload}
+                                isDisabled={!base64}
+                                w="full"
+                            >
+                                Download
+                            </Button>
 
-                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
-                    <Button
-                        colorScheme="brand"
-                        leftIcon={<FaClipboard />}
-                        onClick={handleCopyToClipboard}
-                        isDisabled={!base64}
-                        w="full"
-                    >
-                        Copy
-                    </Button>
+                            <Button
+                                colorScheme="teal"
+                                leftIcon={<FaShareAlt />}
+                                onClick={handleShare}
+                                isDisabled={!base64}
+                                w="full"
+                            >
+                                Share
+                            </Button>
 
-                    <Button
-                        colorScheme="green"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        isDisabled={!base64}
-                        w="full"
-                    >
-                        Download
-                    </Button>
+                            <Button
+                                colorScheme="red"
+                                leftIcon={<FaTrashAlt />}
+                                onClick={handleReset}
+                                isDisabled={!base64}
+                                w="full"
+                            >
+                                Reset
+                            </Button>
+                        </SimpleGrid>
+                    </VStack>
+                </Box>
 
-                    <Button
-                        colorScheme="teal"
-                        leftIcon={<FaShareAlt />}
-                        onClick={handleShare}
-                        isDisabled={!base64}
-                        w="full"
-                    >
-                        Share
-                    </Button>
-
-                    <Button
-                        colorScheme="red"
-                        leftIcon={<FaTrashAlt />}
-                        onClick={handleReset}
-                        isDisabled={!base64}
-                        w="full"
-                    >
-                        Reset
-                    </Button>
-                </SimpleGrid>
-            </VStack>
-            {base64 && <ContinueToSection currentTool="image-to-base64" />}
-        </Box>
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="image-to-base64"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: fileName || "image-base64.txt", type: fileType || "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

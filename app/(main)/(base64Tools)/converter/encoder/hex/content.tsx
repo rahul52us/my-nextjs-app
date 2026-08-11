@@ -18,7 +18,9 @@ import {
     HStack,
     Spinner,
     Input,
+    Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { FaExchangeAlt, FaTrashAlt, FaShareAlt, FaCopy , FaCode} from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
@@ -247,174 +249,194 @@ const HexToBase64Content: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor}>
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Hex to Base64
-            </Heading>
-
-            <VStack spacing={6} align="stretch">
-                {/* Hex Input Section */}
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Enter Hex String
-                    </FormLabel>
-                    <Textarea
-                        placeholder="Paste your Hex encoded text here"
-                        value={hexInput}
-                        onChange={(e) => setHexInput(e.target.value)}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rows={5}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
-                    />
-                </FormControl>
-
-                {/* File Upload Section */}
-                <FormControl>
-  <FormLabel fontSize="lg" fontWeight="semibold">
-    Upload File with Hex Content
-  </FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="hex-file-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
-    borderRadius="xl"
-    bg={isDragActive ? dragActiveBg : dropzoneBg}
-    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      borderColor: "brand.500",
-      bg: dropzoneHoverBg,
-    }}
-    onDragEnter={handleDragEnter}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <Icon as={FaCode} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
-    <Text fontWeight="semibold" color={dropzoneTextColor}>
-      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Hex file"}
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      .txt files only
-    </Text>
-    <Input
-      id="hex-file-upload"
-      type="file"
-      accept=".txt"
-      onChange={handleFileUpload}
-      display="none"
-    />
-  </Box>
-</FormControl>
-
-                {/* Action Buttons */}
-                <HStack spacing={4} justify="space-between">
-                    <Button
-                        colorScheme="teal"
-                        size="lg"
-                        leftIcon={<Icon as={FaExchangeAlt} />}
-                        onClick={handleConversion}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
                     >
-                        Convert to Base64
-                    </Button>
+                        Hex to Base64
+                    </Heading>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        display={hexInput?.trim() ? undefined : "none"}
-                        leftIcon={<Icon as={FaTrashAlt} />}
-                        onClick={handleClear}
-                    >
-                        Clear Input
-                    </Button>
-                </HStack>
+                    <VStack spacing={6} align="stretch">
+                        {/* Hex Input Section */}
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Enter Hex String
+                            </FormLabel>
+                            <Textarea
+                                placeholder="Paste your Hex encoded text here"
+                                value={hexInput}
+                                onChange={(e) => setHexInput(e.target.value)}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rows={5}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
 
-                {/* Divider */}
-                <Divider borderColor="teal.500" />
+                        {/* File Upload Section */}
+                        <FormControl>
+                          <FormLabel fontSize="lg" fontWeight="semibold">
+                            Upload File with Hex Content
+                          </FormLabel>
 
-                {/* Output Section */}
-                <Box>
-                    <Flex justifyContent="space-between" mb={2}>
-                        <Text fontSize="lg" fontWeight="semibold">
-                            Base64 Output
-                        </Text>
-                        {base64Output && (
-                            <HStack spacing={4} align="stretch">
-                                <Button
-                                    colorScheme="brand"
-                                    size="sm"
-                                    leftIcon={<Icon as={FaCopy} />}
-                                    onClick={handleCopyToClipboard}
-                                >
-                                    Copy to Clipboard
-                                </Button>
+                          <Box
+                            as="label"
+                            htmlFor="hex-file-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
+                            borderRadius="xl"
+                            bg={isDragActive ? dragActiveBg : dropzoneBg}
+                            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                              borderColor: "brand.500",
+                              bg: dropzoneHoverBg,
+                            }}
+                            onDragEnter={handleDragEnter}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <Icon as={FaCode} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
+                            <Text fontWeight="semibold" color={dropzoneTextColor}>
+                              {isDragActive ? "Drop it here" : "Click to upload or drag & drop Hex file"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              .txt files only
+                            </Text>
+                            <Input
+                              id="hex-file-upload"
+                              type="file"
+                              accept=".txt"
+                              onChange={handleFileUpload}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
 
-                                <Button
-                                    colorScheme="green"
-                                    size="sm"
-                                    onClick={handleDownload}
-                                >
-                                    Download Output
-                                </Button>
+                        {/* Action Buttons */}
+                        <HStack spacing={4} justify="space-between">
+                            <Button
+                                colorScheme="teal"
+                                size="lg"
+                                leftIcon={<Icon as={FaExchangeAlt} />}
+                                onClick={handleConversion}
+                            >
+                                Convert to Base64
+                            </Button>
 
-                                <Button
-                                    colorScheme="teal"
-                                    size="sm"
-                                    leftIcon={<Icon as={FaShareAlt} />}
-                                    onClick={handleShare}
-                                >
-                                    Share Result
-                                </Button>
-                            </HStack>
-                        )}
-                    </Flex>
+                            <Button
+                                colorScheme="red"
+                                size="lg"
+                                display={hexInput?.trim() ? undefined : "none"}
+                                leftIcon={<Icon as={FaTrashAlt} />}
+                                onClick={handleClear}
+                            >
+                                Clear Input
+                            </Button>
+                        </HStack>
 
-                    <Box
-                        p={4}
-                        bg={useColorModeValue("gray.200", "gray.700")}
-                        color={useColorModeValue("gray.800", "white")}
-                        borderRadius="md"
-                        maxH="160px"
-                        overflowY="auto"
-                        whiteSpace="pre-wrap"
-                        wordBreak="break-word"
-                        mb={4}
-                    >
-                        {loading ? (
-                            <Flex justify="center" align="center" height="100%">
-                                <Spinner size="lg" color="teal.400" />
+                        {/* Divider */}
+                        <Divider borderColor="teal.500" />
+
+                        {/* Output Section */}
+                        <Box>
+                            <Flex justifyContent="space-between" mb={2}>
+                                <Text fontSize="lg" fontWeight="semibold">
+                                    Base64 Output
+                                </Text>
+                                {base64Output && (
+                                    <HStack spacing={4} align="stretch">
+                                        <Button
+                                            colorScheme="brand"
+                                            size="sm"
+                                            leftIcon={<Icon as={FaCopy} />}
+                                            onClick={handleCopyToClipboard}
+                                        >
+                                            Copy to Clipboard
+                                        </Button>
+
+                                        <Button
+                                            colorScheme="green"
+                                            size="sm"
+                                            onClick={handleDownload}
+                                        >
+                                            Download Output
+                                        </Button>
+
+                                        <Button
+                                            colorScheme="teal"
+                                            size="sm"
+                                            leftIcon={<Icon as={FaShareAlt} />}
+                                            onClick={handleShare}
+                                        >
+                                            Share Result
+                                        </Button>
+                                    </HStack>
+                                )}
                             </Flex>
-                        ) : (
-                            base64Output || "Your converted Base64 will appear here."
-                        )}
-                    </Box>
+
+                            <Box
+                                p={4}
+                                bg={useColorModeValue("gray.200", "gray.700")}
+                                color={useColorModeValue("gray.800", "white")}
+                                borderRadius="md"
+                                maxH="160px"
+                                overflowY="auto"
+                                whiteSpace="pre-wrap"
+                                wordBreak="break-word"
+                                mb={4}
+                            >
+                                {loading ? (
+                                    <Flex justify="center" align="center" height="100%">
+                                        <Spinner size="lg" color="teal.400" />
+                                    </Flex>
+                                ) : (
+                                    base64Output || "Your converted Base64 will appear here."
+                                )}
+                            </Box>
+                        </Box>
+                    </VStack>
                 </Box>
-            </VStack>
-        </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64Output ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="hex-to-base64"
+                        variant="vertical"
+                        convertedFiles={base64Output ? [{ name: "base64_output.txt", type: "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

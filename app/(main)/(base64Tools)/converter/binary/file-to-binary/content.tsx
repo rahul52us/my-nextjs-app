@@ -17,7 +17,9 @@ import {
   HStack,
   Spinner,
   Input,
+  Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import {
   FaExchangeAlt,
   FaTrashAlt,
@@ -214,153 +216,173 @@ const FileToBinaryContent: React.FC = () => {
   };
 
   return (
-    <Box p={4} bg="transparent" color={textColor}>
-      <Heading
-        as="h1"
-        size="xl"
-        color={themeConfig.colors.brand[300]}
-        textAlign="center"
-        fontWeight="bold"
-        letterSpacing="wider"
-        lineHeight="short"
-        mb={6}
-        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-        textTransform="uppercase"
-        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-      >
-        File to Binary
-      </Heading>
-
-      <VStack spacing={6} align="stretch">
-        <FormControl>
-          <FormLabel fontSize="lg" fontWeight="semibold">
-            Upload File
-          </FormLabel>
-
-          <Box
-            as="label"
-            htmlFor="file-upload"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            gap={2}
-            p={6}
-            border="2px dashed"
-            borderColor={
-              isDragging
-                ? "teal.500"
-                : useColorModeValue("brand.300", "brand.500")
-            }
-            borderRadius="xl"
-            bg={
-              isDragging
-                ? useColorModeValue("teal.50", "teal.900")
-                : useColorModeValue("brand.50", "gray.700")
-            }
-            cursor="pointer"
-            transition="all 0.2s"
-            _hover={{
-              borderColor: "brand.500",
-              bg: useColorModeValue("brand.100", "gray.600"),
-            }}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+    <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+      <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+        <Box flex={1} w="full">
+          <Heading
+            as="h1"
+            size="xl"
+            color={themeConfig.colors.brand[300]}
+            textAlign="center"
+            fontWeight="bold"
+            letterSpacing="wider"
+            lineHeight="short"
+            mb={6}
+            textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+            textTransform="uppercase"
+            fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
           >
-            <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
-            <Text
-              fontWeight="semibold"
-              color={useColorModeValue("gray.700", "gray.200")}
-            >
-              {isDragging ? "Drop your file here" : "Click to upload or drag & drop"}
-            </Text>
-            <Text fontSize="sm" color="gray.400">
-              Any file type supported
-            </Text>
-            <Input
-              id="file-upload"
-              type="file"
-              onChange={handleFileUpload}
-              display="none"
-            />
-          </Box>
-        </FormControl>
+            File to Binary
+          </Heading>
 
-        <HStack spacing={4} justify="space-between">
-          <Text fontSize="sm" fontWeight="semibold">
-            {fileName ? `File: ${fileName}` : "No file selected"}
-          </Text>
+          <VStack spacing={6} align="stretch">
+            <FormControl>
+              <FormLabel fontSize="lg" fontWeight="semibold">
+                Upload File
+              </FormLabel>
 
-          <Button
-            colorScheme="red"
-            size="lg"
-            display={binaryOutput ? undefined : "none"}
-            leftIcon={<Icon as={FaTrashAlt} />}
-            onClick={handleClear}
-          >
-            Clear
-          </Button>
-        </HStack>
-
-        <Divider borderColor="teal.500" />
-
-        <Box>
-          <Text fontSize="lg" fontWeight="semibold" mb={2}>
-            Binary Output
-          </Text>
-          <Box
-            p={4}
-            bg={useColorModeValue("gray.200", "gray.700")}
-            color={useColorModeValue("gray.800", "white")}
-            borderRadius="md"
-            maxH="160px"
-            overflowY="auto"
-            whiteSpace="pre-wrap"
-            wordBreak="break-word"
-            mb={4}
-          >
-            {loading ? (
-              <Flex justify="center" align="center" height="100%">
-                <Spinner size="lg" color="teal.400" />
-              </Flex>
-            ) : (
-              binaryOutput || "Your file will be converted to binary here."
-            )}
-          </Box>
-          {binaryOutput && (
-            <HStack spacing={4} align="stretch">
-              <Button
-                colorScheme="brand"
-                size="sm"
-                leftIcon={<Icon as={FaCopy} />}
-                onClick={() => handleCopyToClipboard(binaryOutput)}
+              <Box
+                as="label"
+                htmlFor="file-upload"
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                gap={2}
+                p={6}
+                border="2px dashed"
+                borderColor={
+                  isDragging
+                    ? "teal.500"
+                    : useColorModeValue("brand.300", "brand.500")
+                }
+                borderRadius="xl"
+                bg={
+                  isDragging
+                    ? useColorModeValue("teal.50", "teal.900")
+                    : useColorModeValue("brand.50", "gray.700")
+                }
+                cursor="pointer"
+                transition="all 0.2s"
+                _hover={{
+                  borderColor: "brand.500",
+                  bg: useColorModeValue("brand.100", "gray.600"),
+                }}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
-                Copy to Clipboard
-              </Button>
+                <Icon as={FaFileAlt} boxSize={8} color="brand.400" />
+                <Text
+                  fontWeight="semibold"
+                  color={useColorModeValue("gray.700", "gray.200")}
+                >
+                  {isDragging ? "Drop your file here" : "Click to upload or drag & drop"}
+                </Text>
+                <Text fontSize="sm" color="gray.400">
+                  Any file type supported
+                </Text>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  onChange={handleFileUpload}
+                  display="none"
+                />
+              </Box>
+            </FormControl>
+
+            <HStack spacing={4} justify="space-between">
+              <Text fontSize="sm" fontWeight="semibold">
+                {fileName ? `File: ${fileName}` : "No file selected"}
+              </Text>
 
               <Button
-                colorScheme="green"
-                size="sm"
-                onClick={() => handleDownload(binaryOutput)}
+                colorScheme="red"
+                size="lg"
+                display={binaryOutput ? undefined : "none"}
+                leftIcon={<Icon as={FaTrashAlt} />}
+                onClick={handleClear}
               >
-                Download Output
-              </Button>
-
-              <Button
-                colorScheme="teal"
-                size="sm"
-                leftIcon={<Icon as={FaShareAlt} />}
-                onClick={handleShare}
-              >
-                Share Result
+                Clear
               </Button>
             </HStack>
-          )}
+
+            <Divider borderColor="teal.500" />
+
+            <Box>
+              <Text fontSize="lg" fontWeight="semibold" mb={2}>
+                Binary Output
+              </Text>
+              <Box
+                p={4}
+                bg={useColorModeValue("gray.200", "gray.700")}
+                color={useColorModeValue("gray.800", "white")}
+                borderRadius="md"
+                maxH="160px"
+                overflowY="auto"
+                whiteSpace="pre-wrap"
+                wordBreak="break-word"
+                mb={4}
+              >
+                {loading ? (
+                  <Flex justify="center" align="center" height="100%">
+                    <Spinner size="lg" color="teal.400" />
+                  </Flex>
+                ) : (
+                  binaryOutput || "Your file will be converted to binary here."
+                )}
+              </Box>
+              {binaryOutput && (
+                <HStack spacing={4} align="stretch">
+                  <Button
+                    colorScheme="brand"
+                    size="sm"
+                    leftIcon={<Icon as={FaCopy} />}
+                    onClick={() => handleCopyToClipboard(binaryOutput)}
+                  >
+                    Copy to Clipboard
+                  </Button>
+
+                  <Button
+                    colorScheme="green"
+                    size="sm"
+                    onClick={() => handleDownload(binaryOutput)}
+                  >
+                    Download Output
+                  </Button>
+
+                  <Button
+                    colorScheme="teal"
+                    size="sm"
+                    leftIcon={<Icon as={FaShareAlt} />}
+                    onClick={handleShare}
+                  >
+                    Share Result
+                  </Button>
+                </HStack>
+              )}
+            </Box>
+          </VStack>
         </Box>
-      </VStack>
-    </Box>
+
+        {/* Right Sticky Sidebar: ContinueToSection */}
+        <Box
+          display={binaryOutput ? "block" : "none"}
+          w={{ base: "full", lg: "340px", xl: "360px" }}
+          position={{ base: "relative", lg: "sticky" }}
+          top={{ lg: "100px" }}
+          alignSelf="flex-start"
+          flexShrink={0}
+        >
+          <ContinueToSection
+            currentTool="file-to-binary"
+            variant="vertical"
+            convertedFiles={binaryOutput ? [{ name: "binary-output.txt", type: "text/plain" }] : []}
+          />
+        </Box>
+      </Flex>
+    </Container>
   );
 };
 

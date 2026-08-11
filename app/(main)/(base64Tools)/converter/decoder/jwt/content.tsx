@@ -18,7 +18,9 @@ import {
   HStack,
   Spinner,
   Stack,
+  Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import {
   FaLock,
   FaTrashAlt,
@@ -218,230 +220,250 @@ const JwtDecoderContent: React.FC = () => {
   const openFilePicker = () => fileInputRef.current?.click();
 
   return (
-    <Box p={4} bg="transparent" color={textColor}>
-      <Heading
-        as="h1"
-        size="xl"
-        color={themeConfig.colors.brand[300]}
-        textAlign="center"
-        fontWeight="bold"
-        letterSpacing="wider"
-        lineHeight="short"
-        mb={6}
-        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-        textTransform="uppercase"
-        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-      >
-        JWT Decoder
-      </Heading>
+    <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+      <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+        <Box flex={1} w="full">
+          <Heading
+            as="h1"
+            size="xl"
+            color={themeConfig.colors.brand[300]}
+            textAlign="center"
+            fontWeight="bold"
+            letterSpacing="wider"
+            lineHeight="short"
+            mb={6}
+            textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+            textTransform="uppercase"
+            fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+          >
+            JWT Decoder
+          </Heading>
 
-      <VStack spacing={6} align="stretch">
+          <VStack spacing={6} align="stretch">
 
-        {/* ── JWT Text Input ── */}
-        <FormControl>
-          <FormLabel fontSize="lg" fontWeight="semibold">Enter JWT Token</FormLabel>
-          <Textarea
-            placeholder="Paste your JWT token here (header.payload.signature)"
-            value={jwtInput}
-            onChange={(e) => setJwtInput(e.target.value)}
-            size="lg"
-            bg={useColorModeValue("white", "gray.700")}
-            _focus={{ borderColor: "teal.500" }}
-            rows={5}
-            rounded="md"
-            fontFamily="'Courier New', monospace"
-          />
-        </FormControl>
+            {/* ── JWT Text Input ── */}
+            <FormControl>
+              <FormLabel fontSize="lg" fontWeight="semibold">Enter JWT Token</FormLabel>
+              <Textarea
+                placeholder="Paste your JWT token here (header.payload.signature)"
+                value={jwtInput}
+                onChange={(e) => setJwtInput(e.target.value)}
+                size="lg"
+                bg={useColorModeValue("white", "gray.700")}
+                _focus={{ borderColor: "teal.500" }}
+                rows={5}
+                rounded="md"
+                fontFamily="'Courier New', monospace"
+              />
+            </FormControl>
 
-        {/* ── Styled File Upload ── */}
-        <FormControl>
-          <FormLabel fontSize="lg" fontWeight="semibold">Load JWT from File</FormLabel>
+            {/* ── Styled File Upload ── */}
+            <FormControl>
+              <FormLabel fontSize="lg" fontWeight="semibold">Load JWT from File</FormLabel>
 
-          {/* Hidden native input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".txt"
-            onChange={handleFileUpload}
-            style={{ display: "none" }}
-          />
+              {/* Hidden native input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt"
+                onChange={handleFileUpload}
+                style={{ display: "none" }}
+              />
 
-          {uploadedFileName ? (
-            /* File selected state */
-            <Flex
-              align="center"
-              justify="space-between"
-              px={4}
-              py={3}
-              bg={fileBg}
-              border="1.5px solid"
-              borderColor="teal.400"
-              borderRadius="lg"
-              gap={3}
-            >
-              <HStack spacing={3} flex={1} minW={0}>
-                <Icon as={FaFileAlt} color="teal.400" flexShrink={0} boxSize={4} />
-                <Text fontSize="sm" color={fileNameColor} fontFamily="monospace" isTruncated>
-                  {uploadedFileName}
-                </Text>
+              {uploadedFileName ? (
+                /* File selected state */
+                <Flex
+                  align="center"
+                  justify="space-between"
+                  px={4}
+                  py={3}
+                  bg={fileBg}
+                  border="1.5px solid"
+                  borderColor="teal.400"
+                  borderRadius="lg"
+                  gap={3}
+                >
+                  <HStack spacing={3} flex={1} minW={0}>
+                    <Icon as={FaFileAlt} color="teal.400" flexShrink={0} boxSize={4} />
+                    <Text fontSize="sm" color={fileNameColor} fontFamily="monospace" isTruncated>
+                      {uploadedFileName}
+                    </Text>
+                  </HStack>
+                  <HStack spacing={2} flexShrink={0}>
+                    <Button size="xs" variant="ghost" colorScheme="teal" onClick={openFilePicker}>
+                      Change
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      leftIcon={<Icon as={FaTimes} />}
+                      onClick={handleRemoveFile}
+                    >
+                      Remove
+                    </Button>
+                  </HStack>
+                </Flex>
+              ) : (
+                /* No file — dashed drop zone, click OR drag-and-drop */
+                <Flex
+                  align="center"
+                  justify="space-between"
+                  px={4}
+                  py={4}
+                  bg={isDragActive ? dragActiveBg : fileBg}
+                  border="1.5px dashed"
+                  borderColor={isDragActive ? dragActiveBorder : fileBorder}
+                  borderRadius="lg"
+                  cursor="pointer"
+                  transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                  onClick={openFilePicker}
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  _hover={{ borderColor: "teal.400", bg: uploadHoverBg }}
+                  transition="all 0.2s"
+                  gap={3}
+                  flexWrap="wrap"
+                >
+                  <HStack spacing={3}>
+                    <Icon as={FaUpload} color={isDragActive ? "teal.400" : mutedColor} boxSize={4} />
+                    <Text fontSize="sm" color={isDragActive ? "teal.500" : mutedColor}>
+                      {isDragActive ? (
+                        "Drop it here"
+                      ) : (
+                        <>Click or drag & drop a <strong>.txt</strong> file containing your JWT</>
+                      )}
+                    </Text>
+                  </HStack>
+                  <Button
+                    size="sm"
+                    colorScheme="teal"
+                    variant="outline"
+                    leftIcon={<Icon as={FaUpload} />}
+                    onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
+                    flexShrink={0}
+                  >
+                    Choose File
+                  </Button>
+                </Flex>
+              )}
+            </FormControl>
+
+            {/* ── Action Buttons ── */}
+            <Stack spacing={4} direction={["column", "row"]} justify="space-between">
+              <Button colorScheme="teal" size="lg" leftIcon={<Icon as={FaLock} />} onClick={handleDecode}>
+                Decode JWT
+              </Button>
+              {jwtInput?.trim() && (
+                <Button colorScheme="red" size="lg" leftIcon={<Icon as={FaTrashAlt} />} onClick={handleClear}>
+                  Clear
+                </Button>
+              )}
+            </Stack>
+
+            <Divider borderColor="teal.500" />
+
+            {/* ── Output Header ── */}
+            <Flex align="center" justify="space-between" mb={2}>
+              <HStack spacing={3}>
+                <Text fontSize="xl" fontWeight="semibold">Decoded JWT Output</Text>
+                {validJwt === true && (
+                  <HStack color="green.400" spacing={1}>
+                    <Icon as={FaCheckCircle} />
+                    <Text>Valid format</Text>
+                  </HStack>
+                )}
+                {validJwt === false && (
+                  <HStack color="red.400" spacing={1}>
+                    <Icon as={FaExclamationTriangle} />
+                    <Text>Invalid JWT</Text>
+                  </HStack>
+                )}
               </HStack>
-              <HStack spacing={2} flexShrink={0}>
-                <Button size="xs" variant="ghost" colorScheme="teal" onClick={openFilePicker}>
-                  Change
+            </Flex>
+
+            {/* ── Output Sections ── */}
+            <VStack spacing={4} align="stretch">
+              {(["Header", "Payload", "Signature"] as const).map((section) => {
+                const content =
+                  section === "Header" ? headerOutput :
+                  section === "Payload" ? payloadOutput :
+                  signatureOutput;
+                return (
+                  <Box key={section} p={4} bg={useColorModeValue("gray.200", "gray.700")} borderRadius="md">
+                    <Text fontSize="lg" fontWeight="semibold" mb={2}>{section}</Text>
+                    <Box
+                      p={3}
+                      bg={useColorModeValue("white", "gray.800")}
+                      color={useColorModeValue("gray.800", "white")}
+                      borderRadius="md"
+                      whiteSpace="pre-wrap"
+                      wordBreak="break-word"
+                      minH={section === "Payload" ? "160px" : "120px"}
+                      fontFamily="'Courier New', monospace"
+                      fontSize="sm"
+                    >
+                      {loading ? <Spinner size="sm" /> : content || `${section} will appear here.`}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </VStack>
+
+            {/* ── Copy / Download ── */}
+            {(headerOutput || payloadOutput || signatureOutput) && (
+              <HStack spacing={4} pt={4} flexWrap="wrap">
+                <Button
+                  colorScheme="brand"
+                  size="md"
+                  leftIcon={<Icon as={FaCopy} />}
+                  onClick={() => handleCopy(`${headerOutput}\n\n${payloadOutput}\n\n${signatureOutput}`, "JWT data")}
+                >
+                  Copy All
+                </Button>
+                <Button colorScheme="green" size="md" onClick={handleDownload}>
+                  Download Result
                 </Button>
                 <Button
-                  size="xs"
-                  variant="ghost"
-                  colorScheme="red"
-                  leftIcon={<Icon as={FaTimes} />}
-                  onClick={handleRemoveFile}
+                  colorScheme="teal"
+                  size="md"
+                  leftIcon={<Icon as={FaCopy} />}
+                  onClick={() => handleCopy(payloadOutput, "Payload")}
                 >
-                  Remove
+                  Copy Payload
                 </Button>
               </HStack>
-            </Flex>
-          ) : (
-            /* No file — dashed drop zone, click OR drag-and-drop */
-            <Flex
-              align="center"
-              justify="space-between"
-              px={4}
-              py={4}
-              bg={isDragActive ? dragActiveBg : fileBg}
-              border="1.5px dashed"
-              borderColor={isDragActive ? dragActiveBorder : fileBorder}
-              borderRadius="lg"
-              cursor="pointer"
-              transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-              onClick={openFilePicker}
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              _hover={{ borderColor: "teal.400", bg: uploadHoverBg }}
-              transition="all 0.2s"
-              gap={3}
-              flexWrap="wrap"
-            >
-              <HStack spacing={3}>
-                <Icon as={FaUpload} color={isDragActive ? "teal.400" : mutedColor} boxSize={4} />
-                <Text fontSize="sm" color={isDragActive ? "teal.500" : mutedColor}>
-                  {isDragActive ? (
-                    "Drop it here"
-                  ) : (
-                    <>Click or drag & drop a <strong>.txt</strong> file containing your JWT</>
-                  )}
-                </Text>
-              </HStack>
-              <Button
-                size="sm"
-                colorScheme="teal"
-                variant="outline"
-                leftIcon={<Icon as={FaUpload} />}
-                onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
-                flexShrink={0}
-              >
-                Choose File
-              </Button>
-            </Flex>
-          )}
-        </FormControl>
-
-        {/* ── Action Buttons ── */}
-        <Stack spacing={4} direction={["column", "row"]} justify="space-between">
-          <Button colorScheme="teal" size="lg" leftIcon={<Icon as={FaLock} />} onClick={handleDecode}>
-            Decode JWT
-          </Button>
-          {jwtInput?.trim() && (
-            <Button colorScheme="red" size="lg" leftIcon={<Icon as={FaTrashAlt} />} onClick={handleClear}>
-              Clear
-            </Button>
-          )}
-        </Stack>
-
-        <Divider borderColor="teal.500" />
-
-        {/* ── Output Header ── */}
-        <Flex align="center" justify="space-between" mb={2}>
-          <HStack spacing={3}>
-            <Text fontSize="xl" fontWeight="semibold">Decoded JWT Output</Text>
-            {validJwt === true && (
-              <HStack color="green.400" spacing={1}>
-                <Icon as={FaCheckCircle} />
-                <Text>Valid format</Text>
-              </HStack>
             )}
-            {validJwt === false && (
-              <HStack color="red.400" spacing={1}>
-                <Icon as={FaExclamationTriangle} />
-                <Text>Invalid JWT</Text>
-              </HStack>
-            )}
-          </HStack>
-        </Flex>
 
-        {/* ── Output Sections ── */}
-        <VStack spacing={4} align="stretch">
-          {(["Header", "Payload", "Signature"] as const).map((section) => {
-            const content =
-              section === "Header" ? headerOutput :
-              section === "Payload" ? payloadOutput :
-              signatureOutput;
-            return (
-              <Box key={section} p={4} bg={useColorModeValue("gray.200", "gray.700")} borderRadius="md">
-                <Text fontSize="lg" fontWeight="semibold" mb={2}>{section}</Text>
-                <Box
-                  p={3}
-                  bg={useColorModeValue("white", "gray.800")}
-                  color={useColorModeValue("gray.800", "white")}
-                  borderRadius="md"
-                  whiteSpace="pre-wrap"
-                  wordBreak="break-word"
-                  minH={section === "Payload" ? "160px" : "120px"}
-                  fontFamily="'Courier New', monospace"
-                  fontSize="sm"
-                >
-                  {loading ? <Spinner size="sm" /> : content || `${section} will appear here.`}
-                </Box>
+            {/* ── Error ── */}
+            {errorMessage && (
+              <Box p={4} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
+                <Text color="red.600" fontWeight="semibold">{errorMessage}</Text>
               </Box>
-            );
-          })}
-        </VStack>
+            )}
 
-        {/* ── Copy / Download ── */}
-        {(headerOutput || payloadOutput || signatureOutput) && (
-          <HStack spacing={4} pt={4} flexWrap="wrap">
-            <Button
-              colorScheme="brand"
-              size="md"
-              leftIcon={<Icon as={FaCopy} />}
-              onClick={() => handleCopy(`${headerOutput}\n\n${payloadOutput}\n\n${signatureOutput}`, "JWT data")}
-            >
-              Copy All
-            </Button>
-            <Button colorScheme="green" size="md" onClick={handleDownload}>
-              Download Result
-            </Button>
-            <Button
-              colorScheme="teal"
-              size="md"
-              leftIcon={<Icon as={FaCopy} />}
-              onClick={() => handleCopy(payloadOutput, "Payload")}
-            >
-              Copy Payload
-            </Button>
-          </HStack>
-        )}
+          </VStack>
+        </Box>
 
-        {/* ── Error ── */}
-        {errorMessage && (
-          <Box p={4} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
-            <Text color="red.600" fontWeight="semibold">{errorMessage}</Text>
-          </Box>
-        )}
-
-      </VStack>
-    </Box>
+        {/* Right Sticky Sidebar: ContinueToSection */}
+        <Box
+          display={headerOutput ? "block" : "none"}
+          w={{ base: "full", lg: "340px", xl: "360px" }}
+          position={{ base: "relative", lg: "sticky" }}
+          top={{ lg: "100px" }}
+          alignSelf="flex-start"
+          flexShrink={0}
+        >
+          <ContinueToSection
+            currentTool="base64-to-jwt"
+            variant="vertical"
+            convertedFiles={headerOutput ? [{ name: "jwt-decoded.txt", type: "text/plain" }] : []}
+          />
+        </Box>
+      </Flex>
+    </Container>
   );
 };
 

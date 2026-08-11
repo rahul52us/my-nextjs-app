@@ -24,6 +24,8 @@ import {
     useDisclosure,
     Input,
     HStack,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
 import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import stores from "../../../../../store/stores";
@@ -238,122 +240,142 @@ const Base64ImageContent = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor}>
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Base64 to Image
-            </Heading>
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                    >
+                        Base64 to Image
+                    </Heading>
 
-            <VStack spacing={4} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Base64 Input
-                    </FormLabel>
-                    <Textarea
-                        value={base64}
-                        onChange={handleBase64Change}
-                        placeholder="Paste your Base64 string here"
-                        rows={5}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
+                    <VStack spacing={4} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Base64 Input
+                            </FormLabel>
+                            <Textarea
+                                value={base64}
+                                onChange={handleBase64Change}
+                                placeholder="Paste your Base64 string here"
+                                rows={5}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel fontSize="lg" fontWeight="semibold">
+                            Upload an Image
+                          </FormLabel>
+
+                          <Box
+                            as="label"
+                            htmlFor="image-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
+                            borderRadius="xl"
+                            bg={isDragActive ? dragActiveBg : dropzoneBg}
+                            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                              borderColor: "blue.500",
+                              bg: dropzoneHoverBg,
+                            }}
+                            onDragEnter={handleDragEnter}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <Icon as={FaImage} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
+                            <Text fontWeight="semibold" color={dropzoneTextColor}>
+                              {isDragActive ? "Drop it here" : "Click to upload or drag & drop Image"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              PNG, JPG, GIF, WEBP supported
+                            </Text>
+                            <Input
+                              id="image-upload"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileUpload}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
+                        <HStack mt={2}>
+                            <Button
+                                colorScheme="green"
+                                width="full"
+                                onClick={handleConvert}
+                                _hover={{ bg: "green.600" }}
+                                fontFamily="'Courier New', monospace"
+                            >
+                                Convert & Download
+                            </Button>
+                            <Button
+                                colorScheme="brand"
+                                width="full"
+                                isDisabled={base64?.trim() ? false : true}
+                                onClick={handleShare}
+                                _hover={{ bg: "brand.600" }}
+                                fontFamily="'Courier New', monospace"
+                            >
+                                Share File
+                            </Button>
+                            <Button
+                                colorScheme="brand"
+                                width="full"
+                                onClick={handleTogglePreview}
+                                _hover={{ bg: "brand.600" }}
+                                fontFamily="'Courier New', monospace"
+                            >
+                                {showPreview ? "Hide Preview" : "Show Preview"}
+                            </Button>
+                        </HStack>
+                        {warningMessage && (
+                            <Text fontSize="sm" color="red.500" textAlign="center" mt={2}>
+                                {warningMessage}
+                            </Text>
+                        )}
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={previewContent ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-image"
+                        variant="vertical"
+                        convertedFiles={previewContent ? [{ url: previewContent, name: "decoded-image.png", type: "image/png" }] : []}
                     />
-                </FormControl>
-                <FormControl>
-  <FormLabel fontSize="lg" fontWeight="semibold">
-    Upload an Image
-  </FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="image-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
-    borderRadius="xl"
-    bg={isDragActive ? dragActiveBg : dropzoneBg}
-    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      borderColor: "blue.500",
-      bg: dropzoneHoverBg,
-    }}
-    onDragEnter={handleDragEnter}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <Icon as={FaImage} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
-    <Text fontWeight="semibold" color={dropzoneTextColor}>
-      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Image"}
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      PNG, JPG, GIF, WEBP supported
-    </Text>
-    <Input
-      id="image-upload"
-      type="file"
-      accept="image/*"
-      onChange={handleFileUpload}
-      display="none"
-    />
-  </Box>
-</FormControl>
-                <HStack mt={2}>
-                    <Button
-                        colorScheme="green"
-                        width="full"
-                        onClick={handleConvert}
-                        _hover={{ bg: "green.600" }}
-                        fontFamily="'Courier New', monospace"
-                    >
-                        Convert & Download
-                    </Button>
-                    <Button
-                        colorScheme="brand"
-                        width="full"
-                        isDisabled={base64?.trim() ? false : true}
-                        onClick={handleShare}
-                        _hover={{ bg: "brand.600" }}
-                        fontFamily="'Courier New', monospace"
-                    >
-                        Share File
-                    </Button>
-                    <Button
-                        colorScheme="brand"
-                        width="full"
-                        onClick={handleTogglePreview}
-                        _hover={{ bg: "brand.600" }}
-                        fontFamily="'Courier New', monospace"
-                    >
-                        {showPreview ? "Hide Preview" : "Show Preview"}
-                    </Button>
-                </HStack>
-                {warningMessage && (
-                    <Text fontSize="sm" color="red.500" textAlign="center" mt={2}>
-                        {warningMessage}
-                    </Text>
-                )}
-            </VStack>
+                </Box>
+            </Flex>
 
             <Modal isOpen={isOpen} onClose={handleReset} size="sm">
                 <ModalOverlay />
@@ -381,13 +403,7 @@ const Base64ImageContent = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-            {previewContent && (
-                <ContinueToSection
-                    currentTool="base64-to-image"
-                    convertedFiles={[{ url: previewContent, name: "decoded-image.png", type: "image/png" }]}
-                />
-            )}
-        </Box>
+        </Container>
     );
 };
 

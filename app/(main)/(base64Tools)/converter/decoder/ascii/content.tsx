@@ -19,7 +19,9 @@ import {
     Spinner,
     Input,
     Stack,
+    Container,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import {
     FaExchangeAlt,
     FaTrashAlt,
@@ -269,169 +271,189 @@ const Base64ToAsciiContent: React.FC = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" color={textColor}>
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                lineHeight="short"
-                mb={6}
-                textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
-                textTransform="uppercase"
-                fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-            >
-                Base64 to ASCII
-            </Heading>
-
-            <VStack spacing={6} align="stretch">
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Enter Base64 String
-                    </FormLabel>
-                    <Textarea
-                        placeholder="Paste your Base64 encoded text here (e.g., aGVsbG8gd29ybGQ=)"
-                        value={base64Input}
-                        onChange={(e) => setBase64Input(e.target.value)}
-                        size="lg"
-                        bg={useColorModeValue("white", "gray.700")}
-                        _focus={{ borderColor: "teal.500" }}
-                        rows={5}
-                        rounded="md"
-                        fontFamily="'Courier New', monospace"
-                    />
-                </FormControl>
-
-                <FormControl>
-  <FormLabel fontSize="lg" fontWeight="semibold">
-    Upload File with Base64 Content
-  </FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="base64-file-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
-    borderRadius="xl"
-    bg={isDragActive ? dragActiveBg : dropzoneBg}
-    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      borderColor: "blue.500",
-      bg: dropzoneHoverBg,
-    }}
-    onDragEnter={handleDragEnter}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <Icon as={FaExchangeAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
-    <Text fontWeight="semibold" color={dropzoneTextColor}>
-      {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      .txt files only • Max 2MB
-    </Text>
-    <Input
-      id="base64-file-upload"
-      type="file"
-      accept=".txt"
-      onChange={handleFileUpload}
-      display="none"
-    />
-  </Box>
-</FormControl>
-
-                <Stack spacing={4} direction={["column", "row"]} justify="space-between">
-                    <Button
-                        colorScheme="teal"
-                        size="lg"
-                        leftIcon={<Icon as={FaExchangeAlt} />}
-                        onClick={handleConversion}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        lineHeight="short"
+                        mb={6}
+                        textShadow="0 2px 10px rgba(0, 0, 0, 0.15)"
+                        textTransform="uppercase"
+                        fontFamily="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
                     >
-                        Convert to ASCII
-                    </Button>
+                        Base64 to ASCII
+                    </Heading>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        display={base64Input?.trim() ? undefined : "none"}
-                        leftIcon={<Icon as={FaTrashAlt} />}
-                        onClick={handleClear}
-                    >
-                        Clear Input
-                    </Button>
-                </Stack>
+                    <VStack spacing={6} align="stretch">
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Enter Base64 String
+                            </FormLabel>
+                            <Textarea
+                                placeholder="Paste your Base64 encoded text here (e.g., aGVsbG8gd29ybGQ=)"
+                                value={base64Input}
+                                onChange={(e) => setBase64Input(e.target.value)}
+                                size="lg"
+                                bg={useColorModeValue("white", "gray.700")}
+                                _focus={{ borderColor: "teal.500" }}
+                                rows={5}
+                                rounded="md"
+                                fontFamily="'Courier New', monospace"
+                            />
+                        </FormControl>
 
-                <Divider borderColor="teal.500" />
+                        <FormControl>
+                          <FormLabel fontSize="lg" fontWeight="semibold">
+                            Upload File with Base64 Content
+                          </FormLabel>
 
-                <Box>
-                    <Flex justifyContent="space-between" mb={2}>
-                        <Text fontSize="lg" fontWeight="semibold">
-                            ASCII Output
-                        </Text>
-                        {asciiOutput && (
-                            <HStack spacing={4} align="stretch">
-                                <Button
-                                    colorScheme="brand"
-                                    size="sm"
-                                    leftIcon={<Icon as={FaCopy} />}
-                                    onClick={handleCopyToClipboard}
-                                >
-                                    Copy to Clipboard
-                                </Button>
+                          <Box
+                            as="label"
+                            htmlFor="base64-file-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
+                            borderRadius="xl"
+                            bg={isDragActive ? dragActiveBg : dropzoneBg}
+                            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                              borderColor: "blue.500",
+                              bg: dropzoneHoverBg,
+                            }}
+                            onDragEnter={handleDragEnter}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <Icon as={FaExchangeAlt} boxSize={8} color={isDragActive ? "blue.500" : "blue.400"} />
+                            <Text fontWeight="semibold" color={dropzoneTextColor}>
+                              {isDragActive ? "Drop it here" : "Click to upload or drag & drop Base64 file"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              .txt files only • Max 2MB
+                            </Text>
+                            <Input
+                              id="base64-file-upload"
+                              type="file"
+                              accept=".txt"
+                              onChange={handleFileUpload}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
 
-                                <Button
-                                    colorScheme="green"
-                                    size="sm"
-                                    onClick={handleDownload}
-                                >
-                                    Download Output
-                                </Button>
+                        <Stack spacing={4} direction={["column", "row"]} justify="space-between">
+                            <Button
+                                colorScheme="teal"
+                                size="lg"
+                                leftIcon={<Icon as={FaExchangeAlt} />}
+                                onClick={handleConversion}
+                            >
+                                Convert to ASCII
+                            </Button>
 
-                                <Button
-                                    colorScheme="teal"
-                                    size="sm"
-                                    leftIcon={<Icon as={FaShareAlt} />}
-                                    onClick={handleShare}
-                                >
-                                    Share Result
-                                </Button>
-                            </HStack>
-                        )}
-                    </Flex>
+                            <Button
+                                colorScheme="red"
+                                size="lg"
+                                display={base64Input?.trim() ? undefined : "none"}
+                                leftIcon={<Icon as={FaTrashAlt} />}
+                                onClick={handleClear}
+                            >
+                                Clear Input
+                            </Button>
+                        </Stack>
 
-                    <Box
-                        p={4}
-                        bg={useColorModeValue("gray.200", "gray.700")}
-                        color={useColorModeValue("gray.800", "white")}
-                        borderRadius="md"
-                        maxH="160px"
-                        overflowY="auto"
-                        whiteSpace="pre-wrap"
-                        wordBreak="break-word"
-                        mb={4}
-                    >
-                        {loading ? (
-                            <Flex justify="center" align="center" height="100%">
-                                <Spinner size="lg" color="teal.400" />
+                        <Divider borderColor="teal.500" />
+
+                        <Box>
+                            <Flex justifyContent="space-between" mb={2}>
+                                <Text fontSize="lg" fontWeight="semibold">
+                                    ASCII Output
+                                </Text>
+                                {asciiOutput && (
+                                    <HStack spacing={4} align="stretch">
+                                        <Button
+                                            colorScheme="brand"
+                                            size="sm"
+                                            leftIcon={<Icon as={FaCopy} />}
+                                            onClick={handleCopyToClipboard}
+                                        >
+                                            Copy to Clipboard
+                                        </Button>
+
+                                        <Button
+                                            colorScheme="green"
+                                            size="sm"
+                                            onClick={handleDownload}
+                                        >
+                                            Download Output
+                                        </Button>
+
+                                        <Button
+                                            colorScheme="teal"
+                                            size="sm"
+                                            leftIcon={<Icon as={FaShareAlt} />}
+                                            onClick={handleShare}
+                                        >
+                                            Share Result
+                                        </Button>
+                                    </HStack>
+                                )}
                             </Flex>
-                        ) : (
-                            asciiOutput || "Your converted text will appear here."
-                        )}
-                    </Box>
+
+                            <Box
+                                p={4}
+                                bg={useColorModeValue("gray.200", "gray.700")}
+                                color={useColorModeValue("gray.800", "white")}
+                                borderRadius="md"
+                                maxH="160px"
+                                overflowY="auto"
+                                whiteSpace="pre-wrap"
+                                wordBreak="break-word"
+                                mb={4}
+                            >
+                                {loading ? (
+                                    <Flex justify="center" align="center" height="100%">
+                                        <Spinner size="lg" color="teal.400" />
+                                    </Flex>
+                                ) : (
+                                    asciiOutput || "Your converted text will appear here."
+                                )}
+                            </Box>
+                        </Box>
+                    </VStack>
                 </Box>
-            </VStack>
-        </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={asciiOutput ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="base64-to-ascii"
+                        variant="vertical"
+                        convertedFiles={asciiOutput ? [{ name: "ascii_output.txt", type: "text/plain" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 

@@ -16,7 +16,10 @@ import {
     HStack,
     Text,
     Icon,
+    Container,
+    Flex,
 } from "@chakra-ui/react";
+import ContinueToSection from "../../../../../component/common/ContinueToSection";
 import { FaClipboard, FaDownload, FaTrashAlt, FaMusic } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import stores from "../../../../../store/stores";
@@ -222,127 +225,147 @@ const AudioToBase64Content = () => {
     };
 
     return (
-        <Box p={4} bg="transparent" minH="78vh">
-            <Heading
-                as="h1"
-                size="xl"
-                color={themeConfig.colors.brand[300]}
-                textAlign="center"
-                fontWeight="bold"
-                letterSpacing="wider"
-                mb={6}
-                textTransform="uppercase"
-            >
-                Audio to Base64
-            </Heading>
-            <VStack spacing={2} align="stretch">
-              <FormControl>
-  <FormLabel fontSize="lg" fontWeight="semibold">
-    Choose a File
-  </FormLabel>
-
-  <Box
-    as="label"
-    htmlFor="audio-upload"
-    display="flex"
-    flexDirection="column"
-    alignItems="center"
-    justifyContent="center"
-    gap={2}
-    p={6}
-    border="2px dashed"
-    borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
-    borderRadius="xl"
-    bg={isDragActive ? dragActiveBg : dropzoneBg}
-    transform={isDragActive ? "scale(1.01)" : "scale(1)"}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      borderColor: "brand.500",
-      bg: dropzoneHoverBg,
-    }}
-    onDragEnter={handleDragEnter}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <Icon as={FaMusic} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
-    <Text fontWeight="semibold" color={dropzoneTextColor}>
-      {isDragActive ? "Drop it here" : fileName ? fileName : "Click to upload or drag & drop audio file"}
-    </Text>
-    <Text fontSize="sm" color="gray.400">
-      MP3, WAV, OGG, AAC supported
-    </Text>
-    <Input
-      id="audio-upload"
-      type="file"
-      accept="audio/*"
-      onChange={handleFileChange}
-      display="none"
-    />
-  </Box>
-</FormControl>
-
-                {fileName && (
-                    <FormControl>
-                        <FormLabel fontSize="lg" fontWeight="semibold">
-                            File: {fileName}
-                        </FormLabel>
-                    </FormControl>
-                )}
-
-                <FormControl>
-                    <FormLabel fontSize="lg" fontWeight="semibold">
-                        Select Output Format
-                    </FormLabel>
-                    <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-                        <option value="plainText">Plain Text (Base64String)</option>
-                        <option value="dataUri">Data URI (data:;base64,Base64String)</option>
-                        <option value="htmlLink">HTML Hyperlink (Download)</option>
-                        <option value="json">JSON ("fileName": "filename", "base64": "Base64String")</option>
-                        <option value="xml">XML (&lt;file&gt;&lt;name&gt;filename&lt;/name&gt;&lt;base64&gt;Base64String&lt;/base64&gt;&lt;/file&gt;)</option>
-                    </Select>
-                </FormControl>
-
-                <Textarea
-                    value={formattedOutput()}
-                    readOnly
-                    placeholder="Formatted output will appear here"
-                    rows={8}
-                    bg={useColorModeValue("white", "gray.700")}
-                    rounded="md"
-                />
-
-                <HStack spacing={4}>
-                    <Button
-                        colorScheme="brand"
-                        leftIcon={<FaClipboard />}
-                        onClick={handleCopyToClipboard}
-                        isDisabled={!base64}
+        <Container maxW="7xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
+            <Flex direction={{ base: "column", lg: "row" }} gap={8} align="flex-start">
+                <Box flex={1} w="full">
+                    <Heading
+                        as="h1"
+                        size="xl"
+                        color={themeConfig.colors.brand[300]}
+                        textAlign="center"
+                        fontWeight="bold"
+                        letterSpacing="wider"
+                        mb={6}
+                        textTransform="uppercase"
                     >
-                        Copy to Clipboard
-                    </Button>
+                        Audio to Base64
+                    </Heading>
+                    <VStack spacing={2} align="stretch">
+                      <FormControl>
+                          <FormLabel fontSize="lg" fontWeight="semibold">
+                            Choose a File
+                          </FormLabel>
 
-                    <Button
-                        colorScheme="green"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        isDisabled={!base64}
-                    >
-                        Download Base64
-                    </Button>
+                          <Box
+                            as="label"
+                            htmlFor="audio-upload"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            p={6}
+                            border="2px dashed"
+                            borderColor={isDragActive ? dragActiveBorder : dropzoneBorder}
+                            borderRadius="xl"
+                            bg={isDragActive ? dragActiveBg : dropzoneBg}
+                            transform={isDragActive ? "scale(1.01)" : "scale(1)"}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                              borderColor: "brand.500",
+                              bg: dropzoneHoverBg,
+                            }}
+                            onDragEnter={handleDragEnter}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <Icon as={FaMusic} boxSize={8} color={isDragActive ? "brand.500" : "brand.400"} />
+                            <Text fontWeight="semibold" color={dropzoneTextColor}>
+                              {isDragActive ? "Drop it here" : fileName ? fileName : "Click to upload or drag & drop audio file"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.400">
+                              MP3, WAV, OGG, AAC supported
+                            </Text>
+                            <Input
+                              id="audio-upload"
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleFileChange}
+                              display="none"
+                            />
+                          </Box>
+                        </FormControl>
 
-                    <Button
-                        colorScheme="red"
-                        leftIcon={<FaTrashAlt />}
-                        onClick={handleReset}
-                        isDisabled={!base64}
-                    >
-                        Reset
-                    </Button>
-                </HStack>
-            </VStack>
-        </Box>
+                        {fileName && (
+                            <FormControl>
+                                <FormLabel fontSize="lg" fontWeight="semibold">
+                                    File: {fileName}
+                                </FormLabel>
+                            </FormControl>
+                        )}
+
+                        <FormControl>
+                            <FormLabel fontSize="lg" fontWeight="semibold">
+                                Select Output Format
+                            </FormLabel>
+                            <Select value={format} onChange={(e) => setFormat(e.target.value)}>
+                                <option value="plainText">Plain Text (Base64String)</option>
+                                <option value="dataUri">Data URI (data:;base64,Base64String)</option>
+                                <option value="htmlLink">HTML Hyperlink (Download)</option>
+                                <option value="json">JSON ("fileName": "filename", "base64": "Base64String")</option>
+                                <option value="xml">XML (&lt;file&gt;&lt;name&gt;filename&lt;/name&gt;&lt;base64&gt;Base64String&lt;/base64&gt;&lt;/file&gt;)</option>
+                            </Select>
+                        </FormControl>
+
+                        <Textarea
+                            value={formattedOutput()}
+                            readOnly
+                            placeholder="Formatted output will appear here"
+                            rows={8}
+                            bg={useColorModeValue("white", "gray.700")}
+                            rounded="md"
+                        />
+
+                        <HStack spacing={4}>
+                            <Button
+                                colorScheme="brand"
+                                leftIcon={<FaClipboard />}
+                                onClick={handleCopyToClipboard}
+                                isDisabled={!base64}
+                            >
+                                Copy to Clipboard
+                            </Button>
+
+                            <Button
+                                colorScheme="green"
+                                leftIcon={<FaDownload />}
+                                onClick={handleDownload}
+                                isDisabled={!base64}
+                            >
+                                Download Base64
+                            </Button>
+
+                            <Button
+                                colorScheme="red"
+                                leftIcon={<FaTrashAlt />}
+                                onClick={handleReset}
+                                isDisabled={!base64}
+                            >
+                                Reset
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+
+                {/* Right Sticky Sidebar: ContinueToSection */}
+                <Box
+                    display={base64 ? "block" : "none"}
+                    w={{ base: "full", lg: "340px", xl: "360px" }}
+                    position={{ base: "relative", lg: "sticky" }}
+                    top={{ lg: "100px" }}
+                    alignSelf="flex-start"
+                    flexShrink={0}
+                >
+                    <ContinueToSection
+                        currentTool="audio-to-base64"
+                        variant="vertical"
+                        convertedFiles={base64 ? [{ name: fileName || "audio.mp3", type: fileType || "audio/mpeg" }] : []}
+                    />
+                </Box>
+            </Flex>
+        </Container>
     );
 };
 
