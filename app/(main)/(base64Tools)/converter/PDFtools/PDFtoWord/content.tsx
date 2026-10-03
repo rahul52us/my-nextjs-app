@@ -13,6 +13,8 @@ import ConversionPreviewDrawer from "../../../../../component/common/ConversionP
 import { useFileTransfer } from "../../../../../context/FileTransferContext";
 import ContinueToSection from "../../../../../component/common/ContinueToSection";
 
+import { pdfToWord } from '../../../../../utils/pdf/pdfToWord';
+
 const PDFToWordContent = () => {
     type ConversionProgress = { step: string; pct: number; elapsed?: number; timedOut?: boolean };
 
@@ -25,12 +27,8 @@ const PDFToWordContent = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
     const [progress, setProgress] = useState<ConversionProgress | null>(null);
-    const eventSourceRef = useRef<EventSource | null>(null);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startedAtRef = useRef<number>(0);
-    const timedOutRef = useRef(false);
-    const rejectConversionRef = useRef<((error: Error) => void) | null>(null);
 
     const toast = useToast();
 
@@ -71,20 +69,12 @@ const PDFToWordContent = () => {
     const { advanceWorkflow } = useWorkflowAutoAdvance();
 
     const clearConversionTimers = () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (elapsedRef.current) clearInterval(elapsedRef.current);
-        timeoutRef.current = null;
         elapsedRef.current = null;
-    };
-
-    const closeProgressStream = () => {
-        eventSourceRef.current?.close();
-        eventSourceRef.current = null;
     };
 
     useEffect(() => {
         return () => {
-            closeProgressStream();
             clearConversionTimers();
         };
     }, []);
@@ -109,13 +99,11 @@ const PDFToWordContent = () => {
     const convertToWord = async () => {
         if (!selectedFile) return;
         setIsConverting(true);
-        timedOutRef.current = false;
-        closeProgressStream();
         clearConversionTimers();
 
         setPreviewUrl(null);
         setDownloadUrl(null);
-        setProgress({ step: "Uploading file...", pct: 5, elapsed: 0 });
+        setProgress({ step: "Starting conversion in browser...", pct: 5, elapsed: 0 });
         setPreviewOpen(true);
         startedAtRef.current = Date.now();
         elapsedRef.current = setInterval(() => {
@@ -123,119 +111,44 @@ const PDFToWordContent = () => {
                 ...current,
                 elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
             } : current);
-        }, 1000);
+        }, 500);
 
         try {
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-            const startRes = await fetch(
-                `${backendUrl}/convert/pdf-to-word/start`,
-                { method: "POST", body: formData }
-            );
-
-            if (!startRes.ok) {
-                const err = await startRes.json().catch(() => ({}));
-                throw new Error(err.error || "Conversion failed to start");
-            }
-
-            const { jobId, previewUrl: previewPath, downloadUrl: downloadPath } = await startRes.json();
-            const absoluteUrl = (url: string) => url.startsWith("http") ? url : `${backendUrl}${url}`;
-
-            timeoutRef.current = setTimeout(() => {
-                timedOutRef.current = true;
-                closeProgressStream();
-                setIsConverting(false);
-                setProgress((current) => ({
-                    step: "Taking too long? Retry",
-                    pct: current?.pct ?? 90,
-                    elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
-                    timedOut: true,
-                }));
-                rejectConversionRef.current?.(new Error("Conversion is taking too long. Please retry."));
-            }, 90000);
-
-            await new Promise<void>((resolve, reject) => {
-                rejectConversionRef.current = reject;
-                const source = new EventSource(`${backendUrl}/convert/pdf-to-word/progress/${jobId}`);
-                eventSourceRef.current = source;
-
-                source.onmessage = async (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
-
-                        if (data.type === "progress") {
-                            setProgress({ step: data.step, pct: data.pct, elapsed });
-                            return;
-                        }
-
-                        if (data.type === "done") {
-                            setProgress({ step: data.step || "Done!", pct: 100, elapsed });
-                            closeProgressStream();
-                            clearConversionTimers();
-
-                            const [previewRes, docxRes] = await Promise.all([
-                                fetch(absoluteUrl(data.previewUrl || previewPath)),
-                                fetch(absoluteUrl(data.downloadUrl || downloadPath)),
-                            ]);
-
-                            if (!previewRes.ok || !docxRes.ok) {
-                                throw new Error("Converted files are not available");
-                            }
-
-                            const [previewBlob, docxBlob] = await Promise.all([
-                                previewRes.blob(),
-                                docxRes.blob(),
-                            ]);
-
-                            setPreviewUrl(URL.createObjectURL(previewBlob));
-                            setDownloadUrl(URL.createObjectURL(docxBlob));
-                            resolve();
-                        }
-
-                        if (data.type === "error") {
-                            closeProgressStream();
-                            clearConversionTimers();
-                            timedOutRef.current = Boolean(data.timedOut);
-                            setProgress({ step: data.step || "Conversion failed", pct: data.pct || 0, elapsed, timedOut: Boolean(data.timedOut) });
-                            reject(new Error(data.message || "Conversion failed"));
-                        }
-                    } catch (err: any) {
-                        closeProgressStream();
-                        reject(err);
-                    }
-                };
-
-                source.onerror = () => {
-                    closeProgressStream();
-                    reject(new Error("Lost connection to conversion progress"));
-                };
+            const docxBlob = await pdfToWord(selectedFile, {
+                onProgress: ({ step, pct }) => {
+                    const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+                    setProgress({ step, pct, elapsed });
+                }
             });
 
+            const previewBlobUrl = URL.createObjectURL(selectedFile);
+            const docxUrl = URL.createObjectURL(docxBlob);
+
+            setPreviewUrl(previewBlobUrl);
+            setDownloadUrl(docxUrl);
+            setProgress({ step: "Done! Document ready", pct: 100, elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000) });
+
+            toast({
+                title: "Conversion Successful",
+                description: "PDF converted to editable Word (.docx) instantly.",
+                status: "success",
+            });
         } catch (error: any) {
             console.error("Conversion Error:", error);
-            if (!timedOutRef.current) setPreviewOpen(false);
-            if (!timedOutRef.current) {
-                toast({
-                    title: "Conversion Failed",
-                    description: error.message || "An error occurred while processing the PDF.",
-                    status: "error",
-                });
-            }
+            setPreviewOpen(false);
+            toast({
+                title: "Conversion Failed",
+                description: error.message || "An error occurred while processing the PDF.",
+                status: "error",
+            });
         } finally {
-            rejectConversionRef.current = null;
-            closeProgressStream();
             clearConversionTimers();
             setIsConverting(false);
         }
     };
 
     const handlePreviewClose = () => {
-        closeProgressStream();
         clearConversionTimers();
-        timedOutRef.current = false;
         setPreviewOpen(false);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         if (downloadUrl) {
@@ -248,9 +161,7 @@ const PDFToWordContent = () => {
     };
 
     const handleClear = () => {
-        closeProgressStream();
         clearConversionTimers();
-        timedOutRef.current = false;
         setFileName(null);
         setSelectedFile(null);
         if (previewUrl) URL.revokeObjectURL(previewUrl);

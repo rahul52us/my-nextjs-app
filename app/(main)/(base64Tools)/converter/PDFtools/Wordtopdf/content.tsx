@@ -10,6 +10,7 @@ import { FiUploadCloud, FiShield, FiZap, FiCheckCircle, FiTrash2, FiEye } from '
 import ConversionPreviewDrawer from "../../../../../component/common/ConversionPreviewDrawer";
 import { useFileTransfer } from "../../../../../context/FileTransferContext";
 import ContinueToSection from "../../../../../component/common/ContinueToSection";
+import { wordToPdf } from "../../../../../utils/pdf/wordToPdf";
 
 const WordToPdf = () => {
     type ConversionProgress = { step: string; pct: number; elapsed?: number };
@@ -22,7 +23,6 @@ const WordToPdf = () => {
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [progress, setProgress] = useState<ConversionProgress | null>(null);
-    const progressTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
     const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startedAtRef = useRef<number>(0);
 
@@ -60,36 +60,8 @@ const WordToPdf = () => {
     }, []);
 
     const clearProgressTimers = () => {
-        progressTimersRef.current.forEach(clearTimeout);
-        progressTimersRef.current = [];
         if (elapsedRef.current) clearInterval(elapsedRef.current);
         elapsedRef.current = null;
-    };
-
-    const startSimulatedProgress = () => {
-        clearProgressTimers();
-        startedAtRef.current = Date.now();
-        setProgress({ step: "Uploading file...", pct: 10, elapsed: 0 });
-        elapsedRef.current = setInterval(() => {
-            setProgress((current) => current ? {
-                ...current,
-                elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
-            } : current);
-        }, 1000);
-
-        [
-            { delay: 500, step: "Processing document...", pct: 40 },
-            { delay: 1400, step: "Generating PDF...", pct: 75 },
-            { delay: 2400, step: "Finalising...", pct: 95 },
-        ].forEach((item) => {
-            progressTimersRef.current.push(setTimeout(() => {
-                setProgress((current) => ({
-                    step: item.step,
-                    pct: Math.max(current?.pct ?? 0, item.pct),
-                    elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
-                }));
-            }, item.delay));
-        });
     };
 
     useEffect(() => {
@@ -98,7 +70,7 @@ const WordToPdf = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && file.name.endsWith('.docx')) {
+        if (file && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
             setFileName(file.name);
             setSelectedFile(file);
             if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -117,26 +89,27 @@ const WordToPdf = () => {
         setIsGenerating(true);
 
         setPreviewUrl(null);
-        startSimulatedProgress();
+        clearProgressTimers();
+        startedAtRef.current = Date.now();
+        setProgress({ step: "Converting in browser...", pct: 10, elapsed: 0 });
         setPreviewOpen(true);
 
+        elapsedRef.current = setInterval(() => {
+            setProgress((current) => current ? {
+                ...current,
+                elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000),
+            } : current);
+        }, 500);
+
         try {
-            const formData = new FormData();
-            formData.append("file", selectedFile);
+            const pdfBlob = await wordToPdf(selectedFile, {
+                onProgress: ({ step, pct }) => {
+                    const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+                    setProgress({ step, pct, elapsed });
+                }
+            });
 
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/word-to-pdf`,
-                { method: "POST", body: formData }
-            );
-
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err.error || "Conversion failed");
-            }
-
-            // The result is already a PDF — use it directly as preview
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(pdfBlob);
             setProgress({ step: "Done!", pct: 100, elapsed: Math.floor((Date.now() - startedAtRef.current) / 1000) });
             setPreviewUrl(url);
 

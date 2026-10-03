@@ -21,6 +21,7 @@ import { FiUploadCloud, FiCheckCircle, FiTrash2, FiEye } from "react-icons/fi";
 import ConversionPreviewDrawer from "../../../../component/common/ConversionPreviewDrawer";
 import { useFileTransfer } from "../../../../context/FileTransferContext";
 import ContinueToSection from "../../../../component/common/ContinueToSection";
+import { wordToPdf } from "../../../../utils/pdf/wordToPdf";
 
 const WordToPdfConverterContent = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -86,27 +87,13 @@ const WordToPdfConverterContent = () => {
         setPreviewOpen(true);
 
         try {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert/word-to-pdf`,
-                { method: "POST", body: formData }
-            );
-
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err.error || "Conversion failed");
-            }
-
-            // The result is already a PDF — use it directly as the preview
-            const blob = await response.blob();
+            const blob = await wordToPdf(file);
             const url = URL.createObjectURL(blob);
             setPreviewUrl(url);
 
             toast({
                 title: "Conversion Successful",
-                description: "Review the preview, then download your PDF.",
+                description: "Word document converted to PDF instantly.",
                 status: "success",
                 duration: 4000,
                 isClosable: true,
