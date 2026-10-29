@@ -151,7 +151,7 @@ export function PdfWatermark() {
         )}
 
         <Button
-          colorPalette="orange"
+          colorScheme="orange"
           size="lg"
           onClick={handleApply}
           disabled={!file || loading || !options.text.trim()}

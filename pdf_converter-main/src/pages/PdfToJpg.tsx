@@ -84,7 +84,7 @@ export function PdfToJpg() {
         )}
 
         <Button
-          colorPalette="green"
+          colorScheme="green"
           size="lg"
           onClick={handleConvert}
           disabled={!file || loading}
@@ -101,7 +101,7 @@ export function PdfToJpg() {
               <Text fontWeight="bold" color="gray.700">
                 {results.length} page(s) converted
               </Text>
-              <Button size="sm" colorPalette="blue" onClick={handleDownloadAll}>
+              <Button size="sm" colorScheme="blue" onClick={handleDownloadAll}>
                 Download All (ZIP)
               </Button>
             </HStack>

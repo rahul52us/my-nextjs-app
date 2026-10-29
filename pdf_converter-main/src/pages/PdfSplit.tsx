@@ -151,7 +151,7 @@ export function PdfSplit() {
                     aria-label="Remove range"
                     size="xs"
                     variant="ghost"
-                    colorPalette="red"
+                    colorScheme="red"
                     onClick={() => removeRange(index)}
                   >
                     <FiTrash2 />
@@ -183,7 +183,7 @@ export function PdfSplit() {
         )}
 
         <Button
-          colorPalette="red"
+          colorScheme="red"
           size="lg"
           onClick={handleSplit}
           disabled={!file || ranges.length === 0 || loading}

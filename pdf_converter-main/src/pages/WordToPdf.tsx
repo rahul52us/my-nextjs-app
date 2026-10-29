@@ -82,7 +82,7 @@ export function WordToPdf() {
         )}
 
         <Button
-          colorPalette="purple"
+          colorScheme="purple"
           size="lg"
           onClick={handleConvert}
           disabled={!file || loading}

@@ -103,7 +103,7 @@ export function PdfMerge() {
                     aria-label="Remove"
                     size="xs"
                     variant="ghost"
-                    colorPalette="red"
+                    colorScheme="red"
                     onClick={() => removeFile(index)}
                   >
                     <FiTrash2 />
@@ -127,7 +127,7 @@ export function PdfMerge() {
         )}
 
         <Button
-          colorPalette="teal"
+          colorScheme="teal"
           size="lg"
           onClick={handleMerge}
           disabled={files.length < 2 || loading}

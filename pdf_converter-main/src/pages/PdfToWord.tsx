@@ -75,7 +75,7 @@ export function PdfToWord() {
         )}
 
         <Button
-          colorPalette="blue"
+          colorScheme="blue"
           size="lg"
           onClick={handleConvert}
           disabled={!file || loading}

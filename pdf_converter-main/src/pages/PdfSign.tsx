@@ -219,7 +219,7 @@ export function PdfSign() {
             <Button size="sm" variant="outline" onClick={clearSignature}>
               Clear
             </Button>
-            <Button size="sm" colorPalette="blue" onClick={saveSignature}>
+            <Button size="sm" colorScheme="blue" onClick={saveSignature}>
               Save Signature
             </Button>
           </HStack>
@@ -301,7 +301,7 @@ export function PdfSign() {
         )}
 
         <Button
-          colorPalette="cyan"
+          colorScheme="cyan"
           size="lg"
           onClick={handleSign}
           disabled={!file || !signatureDataUrl || loading}
